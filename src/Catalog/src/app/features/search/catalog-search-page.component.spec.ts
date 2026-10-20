@@ -233,6 +233,102 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.book-card--square')).not.toBeNull();
   });
 
+  it('shows a follow action for catalogue books in both grid and list views', async () => {
+    api.search.and.returnValue(of(response));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.book-search-result .book-follow-button')).not.toBeNull();
+
+    fixture.componentInstance.selectView('list');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.book-search-result .book-follow-button')).not.toBeNull();
+  });
+
+  it('follows a catalogue book as a precise edition when it has no work id', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'catalog-watchlist-item',
+      scope: 'Edition',
+      workId: null,
+      isbn13: response.books[0].isbn13,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+    api.search.and.returnValue(of(response));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.book-search-result .book-follow-button') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    if (!button) {
+      return;
+    }
+
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
+      scope: 'Edition',
+      workId: null,
+      isbn13: response.books[0].isbn13,
+      title: response.books[0].title,
+      authors: response.books[0].authors,
+      publisher: response.books[0].publisher,
+      publicationYear: response.books[0].publicationYear,
+      coverUrl: response.books[0].coverUrl,
+    });
+    expect(fixture.nativeElement.querySelector('.book-search-result .book-followed')).not.toBeNull();
+  });
+
+  it('follows every edition of a catalogue book when it has a work id', async () => {
+    const book = {...response.books[0], workId: 'OL42W'};
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'catalog-work-watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+    api.search.and.returnValue(of({...response, books: [book]}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.book-search-result .book-follow-button') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    if (!button) {
+      return;
+    }
+
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      title: book.title,
+      authors: book.authors,
+      publisher: book.publisher,
+      publicationYear: book.publicationYear,
+      coverUrl: book.coverUrl,
+    });
+    expect(fixture.nativeElement.querySelector('.book-search-result .book-followed')).not.toBeNull();
+  });
+
   it('uses the dedicated rare-book endpoint and cards when the rare filter is active', async () => {
     const rareBook: CatalogRareBook = {
       id: 'rare-1',
