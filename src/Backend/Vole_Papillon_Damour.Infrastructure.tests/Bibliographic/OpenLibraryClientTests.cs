@@ -125,10 +125,72 @@ public sealed class OpenLibraryClientTests
         result[0].Isbn13.Should().Be("9782070363735");
         result[0].WorkId.Should().Be("OL123W");
         result[0].Authors.Should().Be("Antoine de Saint-Exupéry");
+        result[0].Publisher.Should().Be("Gallimard");
         result[0].CoverUrl.Should().NotBeNull();
         capturedRequest.Should().NotBeNull();
         capturedRequest!.RequestUri!.Query.Should().Contain("page=2");
         capturedRequest.RequestUri.Query.Should().Contain("limit=10");
+    }
+
+    [Fact]
+    public async Task SearchAsync_WhenPublisherListExceedsWatchlistLimit_OmitsPublisher()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                      "numFound": 1,
+                      "docs": [{
+                        "title": "Harry Potter and the Philosopher's Stone",
+                        "publisher": [
+                          "Alma Littera",
+                          "Letras de Bolsillo",
+                          "Jumava",
+                          "Gallimard jeunesse",
+                          "People's Literature Publishing House",
+                          "Educa Books",
+                          "Paw Prints",
+                          "Pottermore Publishing",
+                          "Dost Kitabevi Yayinlari",
+                          "Kustannusosakeyhtiö Tammi",
+                          "Bloomsbury Childrens",
+                          "Turtleback Books Distributed by Demco Media",
+                          "Росмэн",
+                          "Brand: Raincoast Books",
+                          "SALAMANDRA DE BOLSILLO",
+                          "Crown",
+                          "Bloomsbury Publishing",
+                          "Salamandra Publicacions Y Edicions, S.L.",
+                          "Editions Flammarion",
+                          "GALLIMARD JEUNE",
+                          "Carlsen Verlag",
+                          "Olniansky Tekst",
+                          "Harry Potter",
+                          "Large Print Press",
+                          "SALAMANDRA",
+                          "der horverlag",
+                          "Psychogios",
+                          "French and European Publishing, Inc."
+                        ],
+                        "isbn": ["9782075094450"]
+                      }]
+                    }
+                    """)
+            }));
+        var client = new OpenLibraryClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                OpenLibrarySearchEndpoint = "https://openlibrary.example.test/search.json"
+            }));
+
+        var result = await client.SearchAsync("Harry Potter", 1, 20, CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].Isbn13.Should().Be("9782075094450");
+        result[0].Title.Should().Be("Harry Potter and the Philosopher's Stone");
+        result[0].Publisher.Should().BeNull();
     }
 
     private const string RecordedResponse = """
