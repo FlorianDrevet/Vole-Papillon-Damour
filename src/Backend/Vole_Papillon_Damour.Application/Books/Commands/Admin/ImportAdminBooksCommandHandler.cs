@@ -14,7 +14,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
 public sealed class ImportAdminBooksCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookMetadataEnrichmentQueue metadataEnrichmentQueue)
     : IRequestHandler<ImportAdminBooksCommand, ErrorOr<AdminBooksImportResult>>
 {
     private const int MaximumBatchSize = 100;
@@ -80,6 +81,7 @@ public sealed class ImportAdminBooksCommandHandler(
             .ToListAsync(cancellationToken);
         var knownIsbns = existingIsbns.ToHashSet();
         var results = new List<AdminBooksImportResult.Item>(requestedIsbns.Count);
+        var createdIsbns = new List<Isbn13>(uniqueIsbns.Length);
         var createdCount = 0;
         var alreadyPresentCount = 0;
 
@@ -111,6 +113,7 @@ public sealed class ImportAdminBooksCommandHandler(
                 assoEventsId: null,
                 ImportMovementNote,
                 clientGestureId: null));
+            createdIsbns.Add(isbn13);
             results.Add(new AdminBooksImportResult.Item(
                 isbn13.Value,
                 AdminBooksImportResult.Status.Created));
@@ -119,6 +122,11 @@ public sealed class ImportAdminBooksCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        foreach (var isbn13 in createdIsbns)
+        {
+            metadataEnrichmentQueue.Enqueue(isbn13);
+        }
 
         return new AdminBooksImportResult(
             requestedIsbns.Count,

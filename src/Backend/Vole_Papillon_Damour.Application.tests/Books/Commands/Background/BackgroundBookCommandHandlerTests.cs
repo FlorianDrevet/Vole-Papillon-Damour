@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -321,6 +323,33 @@ public sealed class BackgroundBookCommandHandlerTests
 
         retry.ProcessedCount.Should().Be(0);
         await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenProcessingABatch_WaitsOneSecondBetweenIsbns()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        await fixture.AddBookAsync("9791036377426", quantityAvailable: 0);
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        var resolvedAt = new ConcurrentQueue<long>();
+        resolver.ResolveAsync(Arg.Any<Isbn13>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                resolvedAt.Enqueue(Stopwatch.GetTimestamp());
+                return Task.FromResult<BookMetadataResult?>(null);
+            });
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        await handler.Handle(
+            new EnrichPendingBooksCommand(BatchSize: 2),
+            CancellationToken.None);
+
+        var times = resolvedAt.ToArray();
+        times.Should().HaveCount(2);
+        Stopwatch.GetElapsedTime(times[0], times[1]).Should().BeGreaterThanOrEqualTo(TimeSpan.FromSeconds(1));
     }
 
     [Fact]

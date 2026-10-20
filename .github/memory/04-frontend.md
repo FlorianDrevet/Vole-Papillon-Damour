@@ -690,5 +690,8 @@ ISBN-13, removes canonical duplicates and reports invalid/empty lines. Only ISBN
 are posted to the admin API in sequential batches of 100; photo counts remain unused. Each
 new unique ISBN adds one available copy; already-present books are unchanged. The UI shows
 this stock behavior and can restart the full list after interruption because the API is
-idempotent. The feature is being prepared for DEV and has not been deployed or used to write
-books yet.
+idempotent. The CSV parser requires the exact `ISBN;Nombre_de_photos` header; files headed
+`Isbn13` are rejected. The user tested the first sample import, then requested that CSV-created
+books enter metadata enrichment immediately with a one-second inter-ISBN delay. A local copy
+of the 7,748-ISBN application file has been divided into 155 upload lots of at most 50 rows;
+no full-file import has been performed by the assistant.

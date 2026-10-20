@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Préparer l'import du seul `ISBN_application.csv` après la remise à zéro vérifiée de la base DEV le 2026-10-20. |
-| **Prochaine action** | PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte vers `main`, non fusionnée. Après fusion, déployer l'API et Catalog, relire l'état du Worker puis charger le fichier original dans l'administration Catalog DEV. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import` |
-| **Dernière mise à jour** | 2026-10-20 — l'aperçu local confirme 7 748 ISBN valides, 0 invalide, 0 doublon et 0 ligne vide. L'import corrigé créera 1 exemplaire disponible par nouvel ISBN, avec un mouvement d'entrée attribué à l'administrateur. Builds API et Catalog réussis ; revue responsive à 320, 390 et 1440 px sans débordement horizontal. L'écran est visible en local, mais l'API locale n'est pas démarrée ; aucun test automatisé ni import en base. Le Worker a exécuté Enrich et Sweep avec succès malgré les alertes de probe de démarrage persistantes dans le portail. |
-| **Branche** | `feat/isbn-batch-import`, créée depuis `origin/main`; PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte, non fusionnée. |
+| **Lot en cours** | Préparer l'import progressif du CSV application : 155 fichiers de 50 ISBN maximum dans `C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50`. |
+| **Prochaine action** | Faire relire et fusionner les PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) (suivi des ISBN incomplets) et [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) (enrichissement immédiat avec une seconde entre ISBN), puis déployer API, Worker et Catalog. Charger ensuite les lots un par un et reporter leur état dans `lots_50\avancement.csv`. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import-immediate-enrichment` |
+| **Dernière mise à jour** | 2026-10-20 — lots vérifiés : 7 748 ISBN, 155 fichiers (154×50 et 48), aucun ISBN perdu ou dupliqué. Tests Application 537/537 et Infrastructure 204/204 ; builds API et Worker réussis. L'utilisateur a testé le premier échantillon ; aucun lot complet n'a été importé par l'assistant. La PR #275 n'est pas fusionnée ni déployée. Graphify a extrait l'AST mais n'a pas pu produire la visualisation HTML, le graphe dépassant la limite de 5 000 nœuds. |
+| **Branche** | `feat/isbn-import-immediate-enrichment`, créée depuis `origin/main`; PR [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) ouverte, non fusionnée. La PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) est aussi ouverte. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -82,24 +82,37 @@ Le Worker `vpd-worker-ca-dev-fc` a été redémarré après le contrôle ; Azure
 
 ### Préparation de l'import application — 2026-10-20
 
-La source choisie par l'utilisateur est le seul fichier `ISBN_application.csv`. Son contenu,
-et non les volumes du plan d'import, fait foi : en-tête `ISBN;Nombre_de_photos`, 7 748 lignes
-de données, 7 747 ISBN-13 et un ISBN-10. Les 7 748 ISBN sont distincts et leurs contrôles
-sont valides après normalisation ; `2702112641` devient `9782702112649`. La colonne
-`Nombre_de_photos` est une annotation de la source : elle n'est envoyée ni comme quantité de
-stock, ni comme métadonnée de livre. Le fichier préparé de revue est conservé hors du dépôt ;
-le fichier original reste inchangé.
+La source choisie par l'utilisateur est le fichier
+`C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\isbn_application_import.csv`.
+Le fichier application préparé contient 7 748 ISBN-13 valides et uniques. L'en-tête source
+était `Isbn13;Nombre_de_photos`; le parseur Catalog exige `ISBN;Nombre_de_photos`. La colonne
+`Nombre_de_photos` est conservée pour la compatibilité CSV mais n'est pas utilisée comme
+quantité de stock ni comme métadonnée de livre. Les lots ont été écrits dans
+`C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50` :
+`lot_001.csv` à `lot_154.csv` contiennent 50 ISBN chacun, `lot_155.csv` en contient 48.
+`LISEZ-MOI.md` décrit l'ordre et `avancement.csv` fournit une ligne de suivi par lot,
+initialisée à `A importer`. Les 7 748 lignes sont présentes une seule fois ; le fichier source
+reste inchangé et les CSV de lots restent hors du dépôt.
 
-Le worktree `feat/isbn-batch-import` prépare une route d'administration
+La PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) est fusionnée.
+Elle livre une route d'administration
 `POST /books/admin/books/import` limitée à 100 ISBN-13 par lot, avec validation complète,
 transaction par lot et reprise idempotente. L'écran d'administration Catalog lit le CSV
 original, présente les lignes valides/invalides et envoie les ISBN en lots séquentiels. Chaque
 nouvelle fiche reçoit un exemplaire disponible et une entrée de stock `DirectEntry`, attribuée
 au compte administrateur connecté ; les métadonnées restent en attente. Les fiches déjà
 présentes ne sont pas modifiées, ce qui rend la relance idempotente. Aucun mouvement ni scan
-de session n'est recréé pour les anciens scans effacés. La fonctionnalité corrigée est proposée
-dans la [PR #269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269), ouverte vers
-`main` mais pas encore fusionnée ni déployée ; aucune ligne du CSV n'est encore en base.
+de session n'est recréé pour les anciens scans effacés. L'utilisateur a testé un premier
+échantillon ; aucun lot complet n'a été chargé par l'assistant.
+
+La PR [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) ajoute la mise
+en file immédiate des ISBN créés après le commit SQL et une pause d'une seconde entre ISBN
+dans le traitement de la file API et dans le balayage groupé Worker. La file API est en
+mémoire ; le balayage horaire reste le mécanisme de reprise après redémarrage. La cadence est
+appliquée par processus et n'est pas un limiteur distribué partagé entre API et Worker.
+Cette PR est ouverte, non fusionnée et non déployée. La PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271)
+porte séparément l'écran admin des ISBN en cours d'analyse et leur exclusion du catalogue
+public en cas d'échec ; elle est ouverte et non déployée.
 
 Contrôle du Worker effectué dans Azure Container Apps après le reset :
 `vpd-worker-ca-dev-fc` était `Running` et `Ready for traffic`, avec `minReplicas: 0` et
@@ -107,8 +120,10 @@ Contrôle du Worker effectué dans Azure Container Apps après le reset :
 code 1 et un délai de 1 seconde), mais les invocations `Functions.Enrich` et `Functions.Sweep`
 à 09:00 UTC ont réussi (20,6 s et 24,9 s). Le scaler de timer affichait les quatre règles
 attendues. Recontrôler les alertes et le prochain passage du Worker avant l'envoi des lots.
-Une fois l'API et Catalog déployés, charger le fichier original et vérifier les compteurs de
-création / fiches déjà présentes ainsi que le stock nul ; ne pas charger les autres CSV.
+Après fusion et déploiement des PR nécessaires, importer `lot_001.csv`, vérifier dans Catalog
+les compteurs de création / fiches déjà présentes, le stock créé et le statut d'enrichissement,
+puis mettre à jour `avancement.csv` avant de charger le lot suivant. En cas d'erreur, garder le
+lot concerné identifié et le reprendre de façon idempotente. Ne pas charger les autres CSV.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
