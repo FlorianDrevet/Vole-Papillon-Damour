@@ -616,6 +616,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       : this.browseMode ? 'Le catalogue complet' : 'Tous les livres du catalogue';
   }
 
+  isNumericIsbnSearch(): boolean {
+    return /^[0-9]+$/.test(this.submittedQuery.trim());
+  }
+
   localCountLabel(): string {
     const total = this.rareResponse?.totalCount ?? this.response?.totalCount ?? 0;
     if (this.rareOnly) {

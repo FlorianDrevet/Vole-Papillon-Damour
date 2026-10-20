@@ -267,46 +267,48 @@
           } @else if (externalError) {
             <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
           } @else if (externalResponse) {
-            <div class="external-follow-callout">
-              <div class="external-follow-copy">
-                <p class="external-follow-kicker">Suivre les titres de cette recherche</p>
-                <p id="external-follow-description">
-                  Les éditions affichées ci-dessous correspondent à « {{ submittedQuery.trim() }} ».
-                  Suivez les titres reconnus en une fois, ou choisissez une édition précise.
-                </p>
-                @if (visibleExternalReferences().length && !hasSearchFollowTargets()) {
-                  <p id="external-follow-disabled-hint" class="external-follow-hint">
-                    Le suivi par titre n’est pas disponible pour ces résultats. Choisissez une édition précise ci-dessous.
+            @if (!isNumericIsbnSearch()) {
+              <div class="external-follow-callout">
+                <div class="external-follow-copy">
+                  <p class="external-follow-kicker">Suivre les titres de cette recherche</p>
+                  <p id="external-follow-description">
+                    Les éditions affichées ci-dessous correspondent à « {{ submittedQuery.trim() }} ».
+                    Suivez les titres reconnus en une fois, ou choisissez une édition précise.
                   </p>
+                  @if (visibleExternalReferences().length && !hasSearchFollowTargets()) {
+                    <p id="external-follow-disabled-hint" class="external-follow-hint">
+                      Le suivi par titre n’est pas disponible pour ces résultats. Choisissez une édition précise ci-dessous.
+                    </p>
+                  }
+                </div>
+                @if (searchFollowed()) {
+                  <span class="reference-followed reference-followed--work" role="status">
+                    <span aria-hidden="true">✓</span>
+                    Ces titres sont déjà dans vos livres suivis
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="reference-follow reference-follow--work"
+                    [attr.aria-describedby]="
+                      visibleExternalReferences().length && !hasSearchFollowTargets()
+                        ? 'external-follow-description external-follow-disabled-hint'
+                        : 'external-follow-description'
+                    "
+                    [attr.aria-label]="searchFollowPending() ? 'Ajout en cours' : 'Suivre les titres de cette recherche'"
+                    [attr.aria-busy]="searchFollowPending() ? 'true' : null"
+                    [disabled]="!hasSearchFollowTargets() || referenceFollowPending !== null"
+                    [attr.aria-disabled]="hasSearchFollowTargets() ? null : 'true'"
+                    (click)="followSearchResults()">
+                    @if (searchFollowPending()) {
+                      <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                    } @else {
+                      <span>Suivre ces titres</span>
+                    }
+                  </button>
                 }
               </div>
-              @if (searchFollowed()) {
-                <span class="reference-followed reference-followed--work" role="status">
-                  <span aria-hidden="true">✓</span>
-                  Ces titres sont déjà dans vos livres suivis
-                </span>
-              } @else {
-                <button
-                  type="button"
-                  class="reference-follow reference-follow--work"
-                  [attr.aria-describedby]="
-                    visibleExternalReferences().length && !hasSearchFollowTargets()
-                      ? 'external-follow-description external-follow-disabled-hint'
-                      : 'external-follow-description'
-                  "
-                  [attr.aria-label]="searchFollowPending() ? 'Ajout en cours' : 'Suivre les titres de cette recherche'"
-                  [attr.aria-busy]="searchFollowPending() ? 'true' : null"
-                  [disabled]="!hasSearchFollowTargets() || referenceFollowPending !== null"
-                  [attr.aria-disabled]="hasSearchFollowTargets() ? null : 'true'"
-                  (click)="followSearchResults()">
-                  @if (searchFollowPending()) {
-                    <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
-                  } @else {
-                    <span>Suivre ces titres</span>
-                  }
-                </button>
-              }
-            </div>
+            }
             @if (visibleExternalReferences().length) {
               <p class="external-intro">Ces éditions correspondent à votre recherche « {{ submittedQuery.trim() }} » et l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous pour être prévenu si elle arrive un jour.</p>
               <div class="reference-list">
