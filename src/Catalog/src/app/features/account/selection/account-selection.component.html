@@ -34,7 +34,7 @@
       <h2>Rien dans Ma sélection pour l'instant.</h2>
       <p>Ajoutez un livre depuis le catalogue pour le retrouver à la bourse.</p>
       <a class="selection-account-button" routerLink="/recherche">Parcourir le catalogue</a>
-      <p class="selection-search-note">Pour être prévenu de l'arrivée d'un livre, utilisez <a routerLink="/compte">Mes recherches</a>.</p>
+      <p class="selection-search-note">Pour être prévenu de l'arrivée d'un livre, utilisez <a routerLink="/compte">Livres suivis</a>.</p>
     </div>
   } @else {
     <div class="selection-list">
@@ -144,7 +144,7 @@
     @if (freshnessLine(); as freshness) {
       <p class="selection-freshness">{{ freshness }}</p>
     }
-    <p class="selection-search-note">Vous voulez être prévenu de l'arrivée d'un livre ? C'est le rôle de <a routerLink="/compte">Mes recherches</a>, une liste distincte.</p>
+    <p class="selection-search-note">Vous voulez être prévenu de l'arrivée d'un livre ? C'est le rôle de <a routerLink="/compte">Livres suivis</a>, une liste distincte.</p>
   }
 
   @if (pendingMerge(); as merge) {

@@ -458,7 +458,7 @@
                   <p class="admin-intro">Retrouvez toutes les fiches du fonds, ajustez les exemplaires disponibles et ajoutez une nouvelle fiche à partir d’un ISBN ou du référentiel bibliographique.</p>
                 </div>
                 <section class="catalogue-books-zone" aria-labelledby="catalogue-books-title">
-                <div class="section-heading catalogue-heading">
+                <div class="section-heading section-heading-with-kicker catalogue-heading">
                   <div><span class="section-kicker">Le fonds de livres</span><h2 id="catalogue-books-title">Toutes les fiches</h2><p>{{ catalogueBooksPage()?.totalCount ?? 0 }} fiches · les quantités annoncées restent séparées du stock disponible</p></div>
                   <button class="text-link catalogue-refresh-button" data-testid="catalogue-refresh" type="button" [disabled]="loading()" [attr.aria-busy]="catalogueLoading() ? 'true' : null" [attr.aria-label]="catalogueLoading() ? 'Actualisation du catalogue en cours' : 'Actualiser le catalogue'" (click)="loadCatalogue()">@if (catalogueLoading()) {<vpd-loader data-testid="catalogue-refresh-loader" variant="ring" size="small" label="Actualisation du catalogue"></vpd-loader>} @else {Actualiser}</button>
                 </div>
@@ -649,7 +649,7 @@
                   <div>
                     <span class="section-kicker">Ajouter au fonds</span>
                     <h2 id="catalogue-add-title">Trouver une nouvelle fiche</h2>
-                    <p>Interrogez un ISBN précis ou cherchez un titre dans le référentiel externe, puis vérifiez les informations avant l’ajout.</p>
+                    <p>Recherchez un ISBN ou un titre dans les catalogues de la BnF et d’Open Library, puis vérifiez les informations avant l’ajout.</p>
                   </div>
                   <span class="catalogue-process">1 · Trouver&nbsp;&nbsp; 2 · Vérifier&nbsp;&nbsp; 3 · Ajouter</span>
                 </div>

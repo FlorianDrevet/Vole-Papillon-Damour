@@ -111,6 +111,7 @@
 .availability-list {
   margin-top: auto;
   padding-top: 14px;
+  padding-right: var(--book-card-availability-action-space, 0px);
 }
 
 .availability,

@@ -14,7 +14,7 @@
     <div class="account-state" role="alert">
       <p class="eyebrow">Session à renouveler</p>
       <h1 id="account-title">Mon compte</h1>
-      <p>Votre session n’est plus active. Reconnectez-vous pour retrouver votre liste de recherche.</p>
+      <p>Votre session n’est plus active. Reconnectez-vous pour retrouver vos livres suivis.</p>
       <button type="button" class="account-button secondary" data-testid="member-reconnect" (click)="reconnect()">
         Se reconnecter
       </button>
@@ -26,8 +26,8 @@
           <span class="account-auth-kicker-line" aria-hidden="true"></span>
           <p class="eyebrow">Mon compte · espace personnel</p>
         </div>
-        <h1 id="account-title">Les livres que vous cherchez, au même endroit.</h1>
-        <p class="account-auth-lead">Créez votre espace pour garder une trace des titres qui vous intéressent et être prévenu quand une édition arrive à la bourse aux livres.</p>
+        <h1 id="account-title">Les livres que vous suivez, au même endroit.</h1>
+        <p class="account-auth-lead">Créez votre espace pour suivre les livres qui vous intéressent et recevoir une alerte quand une édition arrive à la bourse aux livres.</p>
 
         <div class="account-benefits" aria-label="Les avantages de votre espace personnel">
           <div class="account-benefit">
@@ -40,8 +40,8 @@
           <div class="account-benefit">
             <span class="account-benefit-index" aria-hidden="true">02</span>
             <div>
-              <h2>Gardez vos recherches</h2>
-              <p>Ajoutez une œuvre ou une édition à votre liste depuis sa fiche.</p>
+              <h2>Suivez les livres qui vous intéressent</h2>
+              <p>Ajoutez une œuvre ou une édition à vos livres suivis depuis sa fiche ou la recherche.</p>
             </div>
           </div>
           <div class="account-benefit">
@@ -62,7 +62,7 @@
           <p class="eyebrow">Accès membre</p>
         </div>
         <h2 id="account-access-title">Votre espace, à votre rythme.</h2>
-        <p>Connectez-vous si vous avez déjà un compte ou créez-en un en quelques instants pour commencer votre liste de recherche.</p>
+        <p>Connectez-vous si vous avez déjà un compte ou créez-en un en quelques instants pour commencer à suivre des livres.</p>
         <p class="account-privacy-notice">
           La création du compte utilise votre adresse e-mail, votre prénom et votre nom lorsqu’ils sont renseignés pour fournir votre espace et vos alertes.
           <a data-testid="account-privacy-link" routerLink="/donnees-personnelles">Voir vos données et vos droits</a>.
@@ -93,7 +93,7 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes livres suivis.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
       <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
@@ -161,7 +161,7 @@
         [attr.aria-selected]="activeTab() === 'watchlist'"
         aria-controls="account-watchlist-panel"
         (click)="selectTab('watchlist')">
-        Mes recherches
+        Livres suivis
       </button>
       <button
         type="button"
@@ -238,15 +238,15 @@
             <vpd-loader
               variant="compact"
               logoSrc="images/papillon_without_back.png"
-              label="Chargement de votre liste…"
+              label="Chargement de vos livres suivis…"
               detail="Quelques secondes"></vpd-loader>
           </div>
         } @else if (watchlist(); as current) {
           @if (current.items.length === 0) {
             <div class="empty-watchlist">
               <span class="empty-mark" aria-hidden="true">⌁</span>
-              <h2>Aucun titre dans votre liste de recherche</h2>
-              <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste de recherche.</p>
+              <h2>Aucun livre suivi pour le moment</h2>
+              <p>Depuis une fiche livre ou la recherche, utilisez « Suivre » pour ajouter une œuvre ou une édition à vos livres suivis.</p>
               <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue <span aria-hidden="true">→</span></a>
             </div>
           } @else {
@@ -487,7 +487,7 @@
                   {{ current.alertStatus === 'Active' ? 'Alertes actives' : 'Alertes suspendues' }}
                 </span>
               </div>
-              <p>Un message groupé peut vous prévenir lorsqu’un titre de votre liste de recherche arrive sur les tables. Il n’y a jamais de réservation.</p>
+              <p>Un message groupé peut vous prévenir lorsqu’un titre de vos livres suivis arrive sur les tables. Il n’y a jamais de réservation.</p>
               @if (current.bounceCount > 0) {
                 <small class="alert-bounce">{{ current.bounceCount }} échec{{ current.bounceCount > 1 ? 's' : '' }} de remise enregistré{{ current.bounceCount > 1 ? 's' : '' }}.</small>
               }
@@ -593,7 +593,7 @@
           <div>
             <p class="eyebrow">Données personnelles</p>
             <h2 id="delete-account-title">Supprimer mon compte.</h2>
-            <p>Cette demande supprime votre profil local, votre liste de recherche, Ma sélection, Ma carte et l’historique de vos alertes. L’accès à Mes achats disparaît ; la Carte de compte est révoquée et les passages associés sont anonymisés. Les lignes utiles à la traçabilité restent sans identité exploitable. Elle demande aussi la suppression de votre identité de connexion externe ; la finalisation peut se poursuivre en arrière-plan.</p>
+            <p>Cette demande supprime votre profil local, vos livres suivis, Ma sélection, Ma carte et l’historique de vos alertes. L’accès à Mes achats disparaît ; la Carte de compte est révoquée et les passages associés sont anonymisés. Les lignes utiles à la traçabilité restent sans identité exploitable. Elle demande aussi la suppression de votre identité de connexion externe ; la finalisation peut se poursuivre en arrière-plan.</p>
           </div>
           @if (!deletionRequested()) {
             <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">
