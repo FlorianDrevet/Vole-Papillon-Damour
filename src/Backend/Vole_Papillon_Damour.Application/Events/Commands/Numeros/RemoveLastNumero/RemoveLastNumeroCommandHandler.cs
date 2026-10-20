@@ -22,11 +22,17 @@ public class RemoveLastNumeroCommandHandler(IEventRepository eventRepository, IM
         }
 
         var parties = assoEvent.Parties?.ToList();
-        if (assoEvent.CurrentPartieIndex < 0 || 
+        if (assoEvent.CurrentPartieIndex < 0 ||
             parties is null ||
-            assoEvent.CurrentPartieIndex >= parties.Count)
+            parties.Count == 0 ||
+            assoEvent.CurrentPartieIndex > parties.Count)
         {
             return mapper.Map<AssoEventResult>(assoEvent);
+        }
+
+        if (assoEvent.CurrentPartieIndex == parties.Count)
+        {
+            assoEvent.CurrentPartieIndex--;
         }
         
         var partie = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);

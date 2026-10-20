@@ -45,6 +45,7 @@
 9. Raw SQL against `Books` must use persisted column `Isbn13`; `BookConfiguration` maps the domain key `Book.Id` to that column.
 10. Use `.agents/skills/book-data-reset/SKILL.md` for an explicitly requested deployed books-data reset; it preserves events/news and requires a verified PITR restore path.
 11. The France Central migration is planned in `docs/infra/migrations/migration-west-europe-france-central.md`; keep rg-vpd-dev and SQL in place, deploy regional replacements in parallel, and do not remove West Europe resources before the rollback window ends.
+12. A completed loto sets `CurrentPartieIndex` to the party count; `RemoveLastNumeroCommandHandler` rewinds to the last party before undoing the final draw. See `.github/memory/03-domain-model.md`.
 
 ## Commands To Remember
 
