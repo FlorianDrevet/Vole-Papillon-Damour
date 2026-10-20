@@ -1,10 +1,15 @@
 import json
+import os
 import re
+import sys
+import tempfile
 import unittest
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+from unittest.mock import patch
 
+import prepare_reset_sql
 from prepare_reset_sql import fetch_disabled_external_ids, render_reset_sql, safe_failure_summary
 
 
@@ -13,6 +18,39 @@ class FakeResponse(BytesIO):
 
 
 class PrepareResetSqlTests(unittest.TestCase):
+    def test_main_uses_graph_tenant_instead_of_azure_subscription_tenant(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            template_path = Path(temporary_directory) / "reset.sql"
+            output_path = Path(temporary_directory) / "prepared.sql"
+            template_path.write_text(
+                "DECLARE @Ids nvarchar(max) = N'__DISABLED_ENTRA_USER_IDS_JSON__';",
+                encoding="utf-8",
+            )
+            environment = {
+                "AZURE_TENANT_ID": "azure-subscription-tenant",
+                "ENTRA_GRAPH_TENANT_ID": "external-id-tenant",
+                "ENTRA_GRAPH_CLIENT_ID": "graph-client-id",
+                "ENTRA_GRAPH_CLIENT_SECRET": "graph-client-secret",
+            }
+            arguments = [
+                "prepare_reset_sql",
+                "--template",
+                str(template_path),
+                "--output",
+                str(output_path),
+            ]
+
+            with (
+                patch.dict(os.environ, environment, clear=True),
+                patch.object(sys, "argv", arguments),
+                patch.object(prepare_reset_sql, "fetch_disabled_external_ids", return_value=[]) as fetch,
+            ):
+                self.assertEqual(0, prepare_reset_sql.main())
+
+        fetch.assert_called_once_with(
+            "external-id-tenant", "graph-client-id", "graph-client-secret"
+        )
+
     def test_safe_failure_summary_reports_structured_entra_error_without_sensitive_details(self):
         from urllib.error import HTTPError
 

@@ -145,6 +145,8 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
 # ENTRA_GRAPH_CLIENT_ID, et le contenu du fichier comme ENTRA_GRAPH_CLIENT_SECRET
 # dans l'environnement development. infra-deploy les injecte dans Key Vault ;
 # aucune valeur n'est ajoutee a un fichier suivi par Git.
+# Ajouter aussi `ENTRA_GRAPH_TENANT_ID` comme variable GitHub (pas un secret),
+# avec le tenant passe a `-TenantId`. `AZURE_TENANT_ID` reste le tenant de l'abonnement.
 
 # 2. User flow d'inscription du catalogue public. La simulation ne modifie rien.
 ./Configure-EntraUserFlow.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `

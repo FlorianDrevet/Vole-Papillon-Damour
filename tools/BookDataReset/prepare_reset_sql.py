@@ -190,7 +190,7 @@ def main() -> int:
 
     try:
         disabled_ids = fetch_disabled_external_ids(
-            os.environ.get("AZURE_TENANT_ID", ""),
+            os.environ.get("ENTRA_GRAPH_TENANT_ID", ""),
             os.environ.get("ENTRA_GRAPH_CLIENT_ID", ""),
             os.environ.get("ENTRA_GRAPH_CLIENT_SECRET", ""),
         )

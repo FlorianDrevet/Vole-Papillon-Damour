@@ -52,6 +52,7 @@ jobs:
         env:
           TARGET_CONFIRMATION: ${{ inputs.target_confirmation }}
           APPLY_RESET: ${{ inputs.apply_reset }}
+          ENTRA_GRAPH_TENANT_ID: ${{ vars.ENTRA_GRAPH_TENANT_ID }}
         run: |
           set -euo pipefail
           if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
@@ -64,6 +65,10 @@ jobs:
           fi
           if [[ "$APPLY_RESET" != "true" && "$APPLY_RESET" != "false" ]]; then
             echo "apply_reset must be true or false." >&2
+            exit 1
+          fi
+          if [[ -z "$ENTRA_GRAPH_TENANT_ID" ]]; then
+            echo "The development environment variable ENTRA_GRAPH_TENANT_ID is required." >&2
             exit 1
           fi
 
@@ -79,7 +84,7 @@ jobs:
       - name: Resolve disabled Entra accounts and prepare reset SQL
         id: prepare-reset
         env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ENTRA_GRAPH_TENANT_ID: ${{ vars.ENTRA_GRAPH_TENANT_ID }}
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
         run: |
