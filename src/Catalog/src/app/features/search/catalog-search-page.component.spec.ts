@@ -562,7 +562,7 @@ describe('CatalogSearchPageComponent', () => {
       .toContain('Résultats pour « saint-exupéry »');
   });
 
-  it('places the work follow action above the edition list', () => {
+  it('explains that the callout follows search results and keeps edition actions below', () => {
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
       query: 'saint-exupéry',
@@ -576,10 +576,34 @@ describe('CatalogSearchPageComponent', () => {
     const callout = fixture.nativeElement.querySelector('.external-follow-callout') as HTMLElement;
 
     expect(callout).not.toBeNull();
-    expect(callout.textContent).toContain('Suivre toutes les éditions');
+    expect(callout.textContent).toContain('Suivre les titres de cette recherche');
     expect(callout.textContent).toContain('édition précise');
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
+  });
+
+  it('uses the submitted search text in the callout instead of one result title', () => {
+    routeParams.next(convertToParamMap({q: 'Le grand'}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'Le grand',
+      items: [
+        {...reference, title: 'Le grand cahier'},
+        {...otherWorkReference, workId: 'OL99W', title: 'Le grand Meaulnes'},
+      ],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const description = fixture.nativeElement.querySelector('#external-follow-description') as HTMLElement;
+    const referenceList = fixture.nativeElement.querySelector('.reference-list') as HTMLElement;
+
+    expect(description.textContent).toContain('« Le grand »');
+    expect(description.textContent).not.toContain('Le grand cahier');
+    expect(referenceList.textContent).toContain('Le grand cahier');
+    expect(referenceList.textContent).toContain('Le grand Meaulnes');
   });
 
   it('enables the title follow action for several editions of the same title', () => {
@@ -600,7 +624,7 @@ describe('CatalogSearchPageComponent', () => {
       .toBeFalse();
   });
 
-  it('follows each identified work when the title follow action is used', async () => {
+  it('follows each distinct work returned for the search, even when titles differ', async () => {
     auth.isAuthenticated.set(true);
     auth.getApiAccessToken.and.resolveTo('member-token');
     memberApi.addWatchlistItem.and.returnValue(of({
@@ -610,12 +634,14 @@ describe('CatalogSearchPageComponent', () => {
       isbn13: null,
       addedAt: '2026-09-05T06:00:00Z',
     }));
+    routeParams.next(convertToParamMap({q: 'Le grand'}));
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
-      query: 'saint-exupéry',
+      query: 'Le grand',
       items: [
-        reference,
-        {...reference, isbn13: '9782070612759', workId: 'OL99W'},
+        {...reference, title: 'Le grand cahier'},
+        {...reference, isbn13: '9782070612759', workId: 'OL99W', title: 'Le grand Meaulnes'},
+        {...reference, isbn13: '9782070612761', workId: null, source: 'BnF', title: 'Le grand cahier'},
       ],
       page: 1,
       pageSize: 20,
@@ -626,17 +652,23 @@ describe('CatalogSearchPageComponent', () => {
     (fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).click();
     await fixture.whenStable();
 
-    expect(memberApi.addWatchlistItem.calls.count()).toBe(2);
-    expect(memberApi.addWatchlistItem.calls.allArgs().map(args => (args[1] as unknown as Record<string, unknown>)['workId']))
-      .toEqual(['OL42W', 'OL99W']);
-    expect(fixture.nativeElement.textContent).toContain('Les éditions ont été ajoutées');
+    const requests = memberApi.addWatchlistItem.calls.allArgs()
+      .map(args => args[1] as unknown as Record<string, unknown>);
+    expect(requests.map(request => request['scope'])).toEqual(['Work', 'Work', 'Edition']);
+    expect(requests.map(request => request['workId'] ?? request['isbn13']))
+      .toEqual(['OL42W', 'OL99W', '9782070612761']);
+    expect(fixture.nativeElement.textContent).toContain('Les titres ont été ajoutés');
   });
 
-  it('keeps one disabled title follow action before unrelated reference results', () => {
+  it('enables following different titles returned for the same search', () => {
+    routeParams.next(convertToParamMap({q: 'Le grand'}));
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
-      query: 'saint-exupéry',
-      items: [reference, otherWorkReference],
+      query: 'Le grand',
+      items: [
+        {...reference, title: 'Le grand cahier'},
+        {...otherWorkReference, title: 'Le grand Meaulnes'},
+      ],
       page: 1,
       pageSize: 20,
     }));
@@ -648,8 +680,8 @@ describe('CatalogSearchPageComponent', () => {
     const button = callout.querySelector('.reference-follow--work') as HTMLButtonElement;
 
     expect(callout).not.toBeNull();
-    expect(button.disabled).toBeTrue();
-    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(button.disabled).toBeFalse();
+    expect(button.getAttribute('aria-disabled')).toBeNull();
     expect(Array.from(callout.parentElement!.children).indexOf(callout))
       .toBeLessThan(Array.from(callout.parentElement!.children).indexOf(referenceList));
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
@@ -671,7 +703,7 @@ describe('CatalogSearchPageComponent', () => {
     const button = callout.querySelector('.reference-follow--work') as HTMLButtonElement;
 
     expect(callout).not.toBeNull();
-    expect(callout.textContent).toContain('Suivez toutes les éditions');
+    expect(callout.textContent).toContain('Suivre les titres de cette recherche');
     expect(button.disabled).toBeTrue();
     expect(button.getAttribute('aria-disabled')).toBe('true');
     button.click();
@@ -709,6 +741,34 @@ describe('CatalogSearchPageComponent', () => {
     expect(card.textContent).toContain('Déjà dans votre liste de recherche');
     await fixture.componentInstance.followReference(reference);
     expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+  });
+
+  it('recognizes that a followed work also covers each listed edition', async () => {
+    auth.isAuthenticated.set(true);
+    memberApi.getWatchlist.and.returnValue(of(emptyWatchlist([{
+      id: 'work-watchlist-item',
+      scope: 'Work',
+      workId: reference.workId,
+      isbn13: null,
+      title: reference.title,
+      authors: reference.authors,
+      publisher: reference.publisher,
+      publicationYear: reference.publicationYear,
+      coverUrl: reference.coverUrl,
+      book: null,
+      addedAt: '2026-09-05T06:00:00Z',
+      lastAlertAt: null,
+    }])));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.reference-card') as HTMLElement;
+
+    expect(card.querySelector('.reference-follow--edition')).toBeNull();
+    expect(card.textContent).toContain('Déjà dans votre liste de recherche');
   });
 
   it('follows any edition from the section callout without opening a modal', async () => {
@@ -786,6 +846,29 @@ describe('CatalogSearchPageComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Folio');
     expect(fixture.nativeElement.querySelector('.external-loader')).toBeNull();
+  });
+
+  it('keeps the previous-page control visible on a short final external page', () => {
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', referencePage: '2'}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [secondEditionReference],
+      page: 2,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const pagination = fixture.nativeElement.querySelector('.external-pagination') as HTMLElement;
+    expect(pagination).not.toBeNull();
+    if (!pagination) {
+      return;
+    }
+    const buttons = pagination.querySelectorAll('button');
+
+    expect(buttons[0].disabled).toBeFalse();
+    expect(buttons[1].disabled).toBeTrue();
   });
 
   it('reloads only the catalogue section when its page changes', async () => {

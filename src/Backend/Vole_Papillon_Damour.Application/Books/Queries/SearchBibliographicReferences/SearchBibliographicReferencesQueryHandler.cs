@@ -39,7 +39,7 @@ public sealed class SearchBibliographicReferencesQueryHandler(
         try
         {
             items = await searchService.SearchAsync(
-                search,
+                search.ToLowerInvariant(),
                 query.Page,
                 query.PageSize,
                 cancellationToken);

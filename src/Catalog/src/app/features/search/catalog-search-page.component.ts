@@ -42,6 +42,13 @@ interface CatalogSearchRouteState {
 
 type CatalogSearchView = 'list' | 'grid';
 
+type CatalogReferenceFollowScope = Extract<CatalogWatchlistScope, 'Work' | 'Edition'>;
+
+interface CatalogReferenceFollowTarget {
+  item: CatalogBookReference;
+  scope: CatalogReferenceFollowScope;
+}
+
 @Component({
   selector: 'app-catalog-search-page',
   standalone: false,
@@ -76,7 +83,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   authPromptOpen = false;
 
   private readonly followedReferenceKeys = new Set<string>();
-  private pendingAuthPrompt: {items: readonly CatalogBookReference[]; scope: CatalogWatchlistScope} | null = null;
+  private pendingAuthPrompt: {targets: readonly CatalogReferenceFollowTarget[]} | null = null;
 
   readonly sortChoices: ReadonlyArray<{
     value: CatalogSort;
@@ -313,7 +320,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   async followReference(
     item: CatalogBookReference,
-    scope: CatalogWatchlistScope = 'Edition',
+    scope: CatalogReferenceFollowScope = 'Edition',
   ): Promise<void> {
     const key = this.referenceFollowKey(item, scope);
     if (!key || this.referenceFollowPending || this.followedReferenceKeys.has(key)) {
@@ -324,7 +331,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
-      this.pendingAuthPrompt = {items: [item], scope};
+      this.pendingAuthPrompt = {targets: [{item, scope}]};
       this.authPromptOpen = true;
       this.changeDetector.markForCheck();
       return;
@@ -356,7 +363,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     };
   }
 
-  bookFollowScope(book: CatalogBook): CatalogWatchlistScope {
+  bookFollowScope(book: CatalogBook): CatalogReferenceFollowScope {
     return book.workId?.trim() ? 'Work' : 'Edition';
   }
 
@@ -369,82 +376,69 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   referenceFollowKey(item: CatalogBookReference, scope: CatalogWatchlistScope): string | null {
-    const target = scope === 'Work' ? item.workId : item.isbn13;
+    const target = scope === 'Work'
+      ? item.workId?.trim().toLowerCase()
+      : this.normalizeIsbn(item.isbn13);
     return target ? `${scope}:${target}` : null;
   }
 
   referenceFollowed(item: CatalogBookReference, scope: CatalogWatchlistScope = 'Edition'): boolean {
     const key = this.referenceFollowKey(item, scope);
-    return key !== null && this.followedReferenceKeys.has(key);
-  }
-
-  workReference(): CatalogBookReference | null {
-    return this.workReferences()[0] ?? null;
-  }
-
-  private workReferences(): CatalogBookReference[] {
-    const items = this.visibleExternalReferences();
-    if (!items.length) {
-      return [];
-    }
-
-    const groups = new Map<string, CatalogBookReference[]>();
-    for (const item of items) {
-      const key = this.referenceTitleKey(item);
-      const group = groups.get(key) ?? [];
-      group.push(item);
-      groups.set(key, group);
-    }
-
-    const rankedGroups = [...groups.values()]
-      .sort((left, right) => right.length - left.length);
-    if (
-      !rankedGroups[0] ||
-      (rankedGroups[1] && rankedGroups[0].length === rankedGroups[1].length)
-    ) {
-      return [];
-    }
-
-    const references = rankedGroups[0].filter(item => Boolean(item.workId?.trim()));
-    const seenWorkIds = new Set<string>();
-    return references.filter(item => {
-      const workId = item.workId?.trim().toLowerCase();
-      if (!workId) {
-        return false;
-      }
-
-      if (seenWorkIds.has(workId)) {
-        return false;
-      }
-
-      seenWorkIds.add(workId);
+    if (key && this.followedReferenceKeys.has(key)) {
       return true;
-    });
+    }
+
+    const workKey = scope === 'Edition' && item.workId
+      ? this.referenceFollowKey(item, 'Work')
+      : null;
+    return workKey !== null && this.followedReferenceKeys.has(workKey);
   }
 
-  workFollowKey(): string | null {
-    return this.workFollowKeyFor(this.workReferences());
+  hasSearchFollowTargets(): boolean {
+    return this.searchFollowTargets().length > 0;
   }
 
-  workFollowPending(): boolean {
-    const key = this.workFollowKey();
+  private searchFollowTargets(): CatalogReferenceFollowTarget[] {
+    const items = this.visibleExternalReferences();
+    const seenKeys = new Set<string>();
+    const targets: CatalogReferenceFollowTarget[] = [];
+    for (const item of items) {
+      const scope: CatalogReferenceFollowScope | null = item.workId?.trim()
+        ? 'Work'
+        : item.isbn13?.trim()
+          ? 'Edition'
+          : null;
+      const key = scope ? this.referenceFollowKey(item, scope) : null;
+      if (scope && key && !seenKeys.has(key)) {
+        seenKeys.add(key);
+        targets.push({item, scope});
+      }
+    }
+
+    return targets;
+  }
+
+  searchFollowKey(): string | null {
+    return this.searchFollowKeyFor(this.searchFollowTargets());
+  }
+
+  searchFollowPending(): boolean {
+    const key = this.searchFollowKey();
     return key !== null && this.referenceFollowPending === key;
   }
 
-  workFollowed(): boolean {
-    const references = this.workReferences();
-    const workIds = [...new Set(
-      references
-        .map(item => item.workId?.trim().toLowerCase())
-        .filter((workId): workId is string => Boolean(workId)),
-    )];
-    return workIds.length > 0 && workIds.every(workId => this.followedReferenceKeys.has(`Work:${workId}`));
+  searchFollowed(): boolean {
+    const targets = this.searchFollowTargets();
+    return targets.length > 0 && targets.every(target => {
+      const key = this.referenceFollowKey(target.item, target.scope);
+      return key !== null && this.followedReferenceKeys.has(key);
+    });
   }
 
-  async followWork(): Promise<void> {
-    const references = this.workReferences();
-    const key = this.workFollowKeyFor(references);
-    if (!key || this.referenceFollowPending || this.workFollowed()) {
+  async followSearchResults(): Promise<void> {
+    const targets = this.searchFollowTargets();
+    const key = this.searchFollowKeyFor(targets);
+    if (!key || this.referenceFollowPending || this.searchFollowed()) {
       return;
     }
 
@@ -452,13 +446,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
-      this.pendingAuthPrompt = {items: references, scope: 'Work'};
+      this.pendingAuthPrompt = {targets};
       this.authPromptOpen = true;
       this.changeDetector.markForCheck();
       return;
     }
 
-    await this.submitWorkFollow(references, key);
+    await this.submitSearchFollow(targets, key);
   }
 
   closeAuthPrompt(): void {
@@ -475,7 +469,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.savePendingReferenceFollow(pending.items, pending.scope);
+    this.savePendingReferenceFollow(pending.targets);
     try {
       const returnUrl = this.referenceReturnUrl();
       if (mode === 'register') {
@@ -486,8 +480,9 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     } catch {
       this.clearPendingReferenceFollow();
       const message = 'La connexion n’a pas pu être démarrée. Réessayez.';
-      if (pending.items.some(item => item.source === 'catalog')) {
-        this.bookFollowErrorKey = this.referenceFollowKey(pending.items[0], pending.scope);
+      const bookTarget = pending.targets.find(target => target.item.source === 'catalog');
+      if (bookTarget) {
+        this.bookFollowErrorKey = this.referenceFollowKey(bookTarget.item, bookTarget.scope);
         this.bookFollowError = message;
       } else {
         this.referenceFollowError = message;
@@ -496,22 +491,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private workFollowKeyFor(items: readonly CatalogBookReference[]): string | null {
-    const workIds = [...new Set(
-      items
-        .map(item => item.workId?.trim().toLowerCase())
-        .filter((workId): workId is string => Boolean(workId)),
+  private searchFollowKeyFor(targets: readonly CatalogReferenceFollowTarget[]): string | null {
+    const keys = [...new Set(
+      targets
+        .map(target => this.referenceFollowKey(target.item, target.scope))
+        .filter((key): key is string => Boolean(key)),
     )];
-    return workIds.length ? `Work:${workIds.join('|')}` : null;
-  }
-
-  private referenceTitleKey(item: CatalogBookReference): string {
-    const title = item.title?.trim() || this.submittedQuery.trim();
-    return title
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ');
+    return keys.length ? `Search:${keys.join('|')}` : null;
   }
 
   private normalizeIsbn(value: string | null | undefined): string | null {
@@ -566,44 +552,39 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async submitWorkFollow(
-    items: readonly CatalogBookReference[],
+  private async submitSearchFollow(
+    targets: readonly CatalogReferenceFollowTarget[],
     key: string,
   ): Promise<void> {
     this.referenceFollowPending = key;
     try {
       const token = await this.auth.getApiAccessToken();
       let addedCount = 0;
-      for (const item of items) {
-        const request = this.followRequest(item, 'Work');
-        if (!request) {
-          continue;
-        }
-
-        const workKey = this.referenceFollowKey(item, 'Work');
-        if (workKey && this.followedReferenceKeys.has(workKey)) {
+      for (const target of targets) {
+        const request = this.followRequest(target.item, target.scope);
+        const targetKey = this.referenceFollowKey(target.item, target.scope);
+        if (!request || !targetKey || this.followedReferenceKeys.has(targetKey)) {
           continue;
         }
 
         await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
-        if (workKey) {
-          this.followedReferenceKeys.add(workKey);
-        }
+        this.followedReferenceKeys.add(targetKey);
         addedCount++;
       }
 
       if (addedCount > 0) {
-        this.referenceFollowMessage = items.some(item => item.source === 'catalog')
+        this.referenceFollowMessage = targets.some(target => target.item.source === 'catalog')
           ? null
           : addedCount === 1
             ? 'Le titre a été ajouté à votre liste de recherche.'
-            : 'Les éditions ont été ajoutées à votre liste de recherche.';
+            : 'Les titres ont été ajoutés à votre liste de recherche.';
       }
     } catch (error: unknown) {
       const message = error instanceof HttpErrorResponse && error.status === 409
         ? 'Un de ces titres est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
         : 'Les titres n’ont pas pu être ajoutés. Réessayez dans un instant.';
-      if (items.some(item => item.source === 'catalog')) {
+      const bookTarget = targets.find(target => target.item.source === 'catalog');
+      if (bookTarget) {
         this.bookFollowErrorKey = key;
         this.bookFollowError = message;
       } else {
@@ -1018,18 +999,9 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
 
     this.clearPendingReferenceFollow();
-    if (pending.scope === 'Work') {
-      const key = this.workFollowKeyFor(pending.items);
-      if (key) {
-        await this.submitWorkFollow(pending.items, key);
-      }
-      return;
-    }
-
-    const item = pending.items[0];
-    const key = this.referenceFollowKey(item, pending.scope);
+    const key = this.searchFollowKeyFor(pending.targets);
     if (key) {
-      await this.submitReferenceFollow(item, pending.scope, key);
+      await this.submitSearchFollow(pending.targets, key);
     }
   }
 
@@ -1055,19 +1027,20 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private watchlistItemKey(item: CatalogWatchlistItem): string | null {
-    const target = item.scope === 'Work' ? item.workId : item.isbn13;
+    const target = item.scope === 'Work'
+      ? item.workId?.trim().toLowerCase()
+      : this.normalizeIsbn(item.isbn13);
     return target ? `${item.scope}:${target}` : null;
   }
 
   private savePendingReferenceFollow(
-    items: readonly CatalogBookReference[],
-    scope: CatalogWatchlistScope,
+    targets: readonly CatalogReferenceFollowTarget[],
   ): void {
     try {
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(
           this.pendingReferenceStorageKey,
-          JSON.stringify({items, scope}),
+          JSON.stringify({targets}),
         );
       }
     } catch {
@@ -1075,10 +1048,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private readPendingReferenceFollow(): {
-    items: CatalogBookReference[];
-    scope: CatalogWatchlistScope;
-  } | null {
+  private readPendingReferenceFollow(): {targets: CatalogReferenceFollowTarget[]} | null {
     try {
       if (typeof sessionStorage === 'undefined') {
         return null;
@@ -1090,6 +1060,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       }
 
       const pending = JSON.parse(raw) as {
+        targets?: Array<{item?: CatalogBookReference; scope?: CatalogWatchlistScope}>;
         items?: CatalogBookReference[];
         item?: CatalogBookReference;
         scope?: CatalogWatchlistScope;
@@ -1099,12 +1070,21 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         : pending.item
           ? [pending.item]
           : [];
-      if (!items.length || (pending.scope !== 'Work' && pending.scope !== 'Edition')) {
+      const targets = Array.isArray(pending.targets)
+        ? pending.targets.flatMap(target =>
+            target.item && (target.scope === 'Work' || target.scope === 'Edition')
+              ? [{item: target.item, scope: target.scope}]
+              : [],
+          )
+        : pending.scope === 'Work' || pending.scope === 'Edition'
+          ? items.map(item => ({item, scope: pending.scope as CatalogReferenceFollowScope}))
+          : [];
+      if (!targets.length) {
         this.clearPendingReferenceFollow();
         return null;
       }
 
-      return {items, scope: pending.scope};
+      return {targets};
     } catch {
       this.clearPendingReferenceFollow();
       return null;
