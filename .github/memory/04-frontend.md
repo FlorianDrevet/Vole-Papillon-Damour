@@ -73,6 +73,11 @@ default. The explicit `includeExhausted=true` URL option, exposed by « Afficher
 book/work pages still keep exhausted fiches visible for alerts and discovery from indexed URLs,
 and the application gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices.
 
+Catalog `/recherche` result cards expose a watchlist action in both list and grid views. The
+search page reuses its typed member watchlist flow, following the whole work when `workId` is
+available and the exact edition otherwise; authenticated watchlist state replaces the action
+with a followed status.
+
 Rare-book cards, Catalog admin links, canonical metadata, sitemap entries and links from
 edition details use the rare-book UUID; the API detail endpoint still accepts legacy slugs
 for existing links. The detail page places condition, ISBN and public description before the
