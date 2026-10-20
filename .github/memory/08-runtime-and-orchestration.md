@@ -253,17 +253,22 @@ The API startup wires:
 ## Cloudflare proxy preparation — 2026-10-20
 
 The Cloudflare zone `volepapillondamour.fr` is on the Free plan and currently awaiting
-nameserver propagation. OVH still delegates to `dns104.ovh.net` and `ns104.ovh.net`; the
-Cloudflare zone contains the 27 non-NS records from OVH, with mail/authentication records
-DNS-only. Cloudflare assigned `david.ns.cloudflare.com` and `monroe.ns.cloudflare.com`.
-The five ACA custom hostnames currently use free Azure-managed certificates. Because proxying
-the subdomain CNAMEs can prevent ACA managed-certificate renewal, the feature branch adds an
-optional `cloudflareOriginCertificateName` binding in Bicep; upload the Origin CA certificate
-to `vpd-cae-dev-fc` before deploying that binding. Cloudflare rejected Origin CA creation with
-an issuer-access error; its troubleshooting guide lists missing member API access as one possible
-cause, while the member list currently shows no API access. Confirm and resolve the account
-prerequisite before issuing the certificate. Do not switch OVH nameservers until the
-origin certificate and deployment are ready. The image transformation feature is not yet
-enabled; after zone activation, keep the Cloudflare Images plan on Free and enable the
-5,000-unique-transformations monthly quota, which returns error 9422 after the cap without
-overage billing.
+nameserver propagation. The OVH console accepted the delegation change and shows
+`david.ns.cloudflare.com` and `monroe.ns.cloudflare.com` as "En cours d'activation" while the
+old `ns104.ovh.net` and `dns104.ovh.net` are "En cours de suppression". Public resolvers still
+return the OVH nameservers, and Cloudflare still reports the zone as pending. Its DNS table has
+the 27 non-NS records copied from OVH; all five website records and all mail/authentication
+records remain DNS-only during propagation. The five ACA hostnames are apex, `www`,
+`backoffice`, `livres`, and `scan`, pointed at the current France Central Container Apps.
+
+The five ACA custom hostnames currently use free Azure-managed certificates. The feature branch
+adds an optional `cloudflareOriginCertificateName` binding in Bicep so a Cloudflare Origin CA
+certificate can replace them before the website hostnames are proxied. Origin CA creation was
+previously rejected while Cloudflare still considered the zone unavailable; retry after the zone
+becomes active, and investigate account API access only if the error persists. Uploading the
+certificate's private key to Azure requires explicit action-time user confirmation. No Azure
+certificate import or deployment has happened yet. Cloudflare Images transformations are not
+enabled; after activation, remain on Free, use the 5,000-unique-transformations monthly cap, and
+allow only `openapi.bnf.fr`, `covers.openlibrary.org`, and `books.google.com`. Free-plan quota
+exhaustion should fail new transforms with error 9422 without overage billing, allowing the
+Catalog's one-time original-image fallback.
