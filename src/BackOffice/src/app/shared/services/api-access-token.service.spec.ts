@@ -1,7 +1,7 @@
 import {TestBed} from '@angular/core/testing';
-import {MsalService} from '@azure/msal-angular';
-import {AccountInfo, AuthenticationResult} from '@azure/msal-browser';
-import {firstValueFrom, of, throwError} from 'rxjs';
+import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
+import {AccountInfo, AuthenticationResult, InteractionStatus} from '@azure/msal-browser';
+import {BehaviorSubject, firstValueFrom, of, throwError} from 'rxjs';
 
 import {ApiAccessTokenService} from './api-access-token.service';
 
@@ -17,8 +17,11 @@ describe('ApiAccessTokenService', () => {
 
   let service: ApiAccessTokenService;
   let msalService: jasmine.SpyObj<MsalService>;
+  let inProgress$: BehaviorSubject<InteractionStatus>;
 
   beforeEach(() => {
+    inProgress$ = new BehaviorSubject<InteractionStatus>(InteractionStatus.None);
+
     const instance = {
       getActiveAccount: jasmine.createSpy('getActiveAccount').and.returnValue(account),
       getAllAccounts: jasmine.createSpy('getAllAccounts').and.returnValue([account]),
@@ -37,6 +40,7 @@ describe('ApiAccessTokenService', () => {
       providers: [
         ApiAccessTokenService,
         {provide: MsalService, useValue: msalService},
+        {provide: MsalBroadcastService, useValue: {inProgress$}},
       ],
     });
 
@@ -51,6 +55,25 @@ describe('ApiAccessTokenService', () => {
       account,
       scopes: ['api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user'],
     });
+  });
+
+  it('waits for MSAL to finish its interaction before acquiring the API token', async () => {
+    const instance = msalService.instance as unknown as {
+      getActiveAccount: jasmine.Spy;
+    };
+    inProgress$.next(InteractionStatus.Startup);
+
+    const tokenPromise = firstValueFrom(service.getApiAccessToken$());
+
+    expect(instance.getActiveAccount).not.toHaveBeenCalled();
+    expect(msalService.acquireTokenSilent).not.toHaveBeenCalled();
+
+    inProgress$.next(InteractionStatus.None);
+    const token = await tokenPromise;
+
+    expect(token).toBe('api-access-token');
+    expect(instance.getActiveAccount).toHaveBeenCalled();
+    expect(msalService.acquireTokenSilent).toHaveBeenCalled();
   });
 
   it('selects and activates the first cached account when no active account exists', async () => {
