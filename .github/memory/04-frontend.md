@@ -243,7 +243,7 @@ the mobile drawer does not duplicate the former `Espace administrateur` link.
 
 As of 2026-09-13, that search follow surface also loads the authenticated watchlist with a
 non-interactive token check and indexes its typed `Work`/`Edition` targets. A matching edition
-renders a status pill (`Déjà dans votre liste de recherche`) instead of an add button; a
+renders a status pill (`Déjà dans vos livres suivis`) instead of an add button; a
 matching work renders the equivalent all-editions status. Follow actions replace the temporary
 `Ajout…` label with the shared small ring loader and, after success, keep the status visible.
 The passive token path never starts an MSAL redirect, and the component ignores duplicate follow
@@ -330,7 +330,7 @@ The route remains private and noindex while the public catalogue stays browseabl
 authentication.
 
 The authenticated Catalog `/compte` surface keeps the member watchlist as the default
-tabbed view. `Ma liste de recherche` renders typed watchlist items with cover fallback,
+tabbed view. `Livres suivis` renders typed watchlist items with cover fallback,
 edition scope, available/future/pending availability and alert dates; `Préférences et
 compte` contains alert suspension, the authenticated identity, administration handoff and
 account deletion. The header account trigger uses the full cached MSAL display name and a
@@ -605,7 +605,7 @@ the production build; the current main change still needs a Scan deployment and 
 ## Catalog member selection
 
 `src/Catalog/src/app/features/account/selection/AccountSelectionComponent` renders the
-member's typed `Ma sélection` independently of the alert watchlist (`Mes recherches`).
+member's typed `Ma sélection` independently of the alert watchlist (`Livres suivis`).
 It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
 for anonymous entries, and uses typed member API calls for removals and not-found reports.
 Personal `NotFound` and `ToRevisit` status writes are retired; a report is created from a
@@ -740,4 +740,4 @@ Responsive visual review covered 320×568, 390×844, and 1440×900 with no horiz
 
 ## Catalog search grid follow action (2026-10-20)
 
-In the public Catalog search grid, the real « Suivre » button sits in the card footer at the bottom right and uses the compact blue typography of the home-card action. The touch target remains at least 44 px, keyboard focus stays visible, the followed state is compact, and list view styling is unchanged. The scoped styles live in `src/Catalog/src/app/features/search/catalog-search-page.component.scss`. The change is in open PR #294.
+In the public Catalog search grid, each card places « Suivre » beside its availability indicator with no extra footer strip. The click writes the book or its editions to the existing member watchlist, which the member interface calls « Livres suivis » to distinguish it from a new catalogue search. The touch target remains at least 44 px, keyboard focus stays visible, the followed state is compact, and list view styling is unchanged. The scoped styles live in `src/Catalog/src/app/features/search/catalog-search-page.component.scss`. The change is in open PR #298.

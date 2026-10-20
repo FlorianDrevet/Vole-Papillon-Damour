@@ -81,7 +81,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlistIntro = computed(() => {
     const count = this.watchlist()?.items.length;
     if (count === undefined) {
-      return 'Votre liste de recherche se prépare. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.';
+      return 'Vos livres suivis se préparent. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.';
     }
 
     const bookLabel = count === 1 ? 'livre suivi' : 'livres suivis';
@@ -430,7 +430,7 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   itemLabel(item: CatalogWatchlistItem): string {
-    return this.itemTitle(item) || item.isbn13 || item.workId || item.rareBookId || 'Titre de la liste de recherche';
+    return this.itemTitle(item) || item.isbn13 || item.workId || item.rareBookId || 'Titre suivi';
   }
 
   itemTitle(item: CatalogWatchlistItem): string | null {

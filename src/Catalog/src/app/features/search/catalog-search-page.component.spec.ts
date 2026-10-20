@@ -738,7 +738,7 @@ describe('CatalogSearchPageComponent', () => {
 
     expect(card.querySelector('.reference-follow--edition')).toBeNull();
     expect(card.querySelector('.reference-followed')).not.toBeNull();
-    expect(card.textContent).toContain('Déjà dans votre liste de recherche');
+    expect(card.textContent).toContain('Déjà dans vos livres suivis');
     await fixture.componentInstance.followReference(reference);
     expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
   });
@@ -768,7 +768,7 @@ describe('CatalogSearchPageComponent', () => {
     const card = fixture.nativeElement.querySelector('.reference-card') as HTMLElement;
 
     expect(card.querySelector('.reference-follow--edition')).toBeNull();
-    expect(card.textContent).toContain('Déjà dans votre liste de recherche');
+    expect(card.textContent).toContain('Déjà dans vos livres suivis');
   });
 
   it('follows any edition from the section callout without opening a modal', async () => {
@@ -799,7 +799,7 @@ describe('CatalogSearchPageComponent', () => {
       coverUrl: 'https://covers.example.test/le-petit-prince.jpg',
     });
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
+    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à vos livres suivis.');
   });
 
   it('renders an asynchronous catalog response in zoneless mode', async () => {
@@ -951,10 +951,10 @@ describe('CatalogSearchPageComponent', () => {
     await followPromise;
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.textContent).toContain('L’édition a été ajoutée à votre liste de recherche.');
+    expect(fixture.nativeElement.textContent).toContain('L’édition a été ajoutée à vos livres suivis.');
     expect(fixture.nativeElement.querySelector('.reference-follow--edition')).toBeNull();
     expect(fixture.nativeElement.querySelector('.reference-followed')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Déjà dans votre liste de recherche');
+    expect(fixture.nativeElement.textContent).toContain('Déjà dans vos livres suivis');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 

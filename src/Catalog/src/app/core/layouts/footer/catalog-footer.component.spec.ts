@@ -33,7 +33,7 @@ describe('CatalogFooterComponent', () => {
       {text: 'Rechercher un livre', href: '/recherche'},
       {text: 'Livres rares', href: '/livres-rares'},
       {text: 'Les prochaines dates', href: '/prochaines-dates'},
-      {text: 'Ma liste de recherche', href: '/compte'},
+      {text: 'Mes livres suivis', href: '/compte'},
     ]);
 
     expect(fixture.nativeElement.textContent).not.toContain('Maxence');

@@ -534,11 +534,11 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       this.referenceFollowMessage = item.source === 'catalog'
         ? null
         : scope === 'Work'
-          ? 'Le titre a été ajouté à votre liste de recherche.'
-          : 'L’édition a été ajoutée à votre liste de recherche.';
+          ? 'Le titre a été ajouté à vos livres suivis.'
+          : 'L’édition a été ajoutée à vos livres suivis.';
     } catch (error: unknown) {
       const message = error instanceof HttpErrorResponse && error.status === 409
-        ? 'Ce titre est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
+        ? 'Ce titre est déjà dans vos livres suivis, ou la liste est pleine.'
         : 'Le titre n’a pas pu être ajouté. Réessayez dans un instant.';
       if (item.source === 'catalog') {
         this.bookFollowErrorKey = key;
@@ -576,12 +576,12 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.referenceFollowMessage = targets.some(target => target.item.source === 'catalog')
           ? null
           : addedCount === 1
-            ? 'Le titre a été ajouté à votre liste de recherche.'
-            : 'Les titres ont été ajoutés à votre liste de recherche.';
+            ? 'Le titre a été ajouté à vos livres suivis.'
+            : 'Les titres ont été ajoutés à vos livres suivis.';
       }
     } catch (error: unknown) {
       const message = error instanceof HttpErrorResponse && error.status === 409
-        ? 'Un de ces titres est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
+        ? 'Un de ces titres est déjà dans vos livres suivis, ou la liste est pleine.'
         : 'Les titres n’ont pas pu être ajoutés. Réessayez dans un instant.';
       const bookTarget = targets.find(target => target.item.source === 'catalog');
       if (bookTarget) {

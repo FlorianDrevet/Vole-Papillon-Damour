@@ -37,7 +37,7 @@ describe('LegalPageComponent', () => {
     const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
     expect(content).toContain('compte');
-    expect(content).toContain('liste de recherche');
+    expect(content).toContain('livres suivis');
     expect(content).toContain('alertes');
     expect(content).toContain('Microsoft Entra');
     expect(content).toContain('Azure Communication Services');

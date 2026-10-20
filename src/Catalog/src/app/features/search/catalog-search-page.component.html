@@ -206,7 +206,7 @@
                       <button
                         type="button"
                         class="reference-follow book-follow-button"
-                        [attr.aria-label]="bookFollowScope(book) === 'Work' ? 'Suivre toutes les éditions de ' + (book.title || 'ce livre') : 'Suivre ' + (book.title || 'ce livre')"
+                        [attr.aria-label]="bookFollowScope(book) === 'Work' ? 'Ajouter toutes les éditions de ' + (book.title || 'ce livre') + ' à mes livres suivis' : 'Ajouter ' + (book.title || 'ce livre') + ' à mes livres suivis'"
                         [attr.aria-busy]="referenceFollowPending === bookFollowKey(book) ? 'true' : null"
                         [disabled]="referenceFollowPending !== null"
                         (click)="followBook(book)">
@@ -255,7 +255,7 @@
           </div>
 
           @if (!submittedQuery.trim() || submittedQuery.trim().length < 2) {
-            <p class="external-empty">Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
+            <p class="external-empty">Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez le suivre pour recevoir une alerte s’il arrive.</p>
           } @else if (externalLoading) {
             <div class="external-loader">
               <vpd-loader
@@ -275,7 +275,7 @@
               @if (searchFollowed()) {
                 <span class="reference-followed reference-followed--work" role="status">
                   <span aria-hidden="true">✓</span>
-                  Ces titres sont déjà dans votre liste de recherche
+                  Ces titres sont déjà dans vos livres suivis
                 </span>
               } @else {
                 <button
@@ -318,7 +318,7 @@
                         @if (referenceFollowed(reference)) {
                           <span class="reference-followed" role="status">
                             <span aria-hidden="true">✓</span>
-                            Déjà dans votre liste de recherche
+                            Déjà dans vos livres suivis
                           </span>
                         } @else {
                           <button
@@ -341,7 +341,7 @@
                 }
               </div>
               @if (referenceFollowMessage) {
-                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
+                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir mes livres suivis</a></p>
               }
               @if (referenceFollowError) {
                 <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
