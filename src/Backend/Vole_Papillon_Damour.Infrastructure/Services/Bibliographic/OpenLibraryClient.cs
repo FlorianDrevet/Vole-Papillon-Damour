@@ -11,6 +11,8 @@ public sealed class OpenLibraryClient(
     HttpClient httpClient,
     IOptions<BibliographicOptions> options) : IOpenLibraryClient
 {
+    private const int MaximumWatchlistPublisherLength = 200;
+
     private readonly BibliographicOptions _options = options.Value;
 
     public async Task<BookMetadataResult?> FindAsync(
@@ -154,12 +156,20 @@ public sealed class OpenLibraryClient(
             }
 
             var coverId = ReadInt(documentElement, "cover_i");
+            // Open Library may aggregate publisher names across editions. Keep an oversized
+            // aggregate out of the optional watchlist snapshot instead of rejecting the follow.
+            var publisher = ReadStrings(documentElement, "publisher");
+            if (publisher?.Length > MaximumWatchlistPublisherLength)
+            {
+                publisher = null;
+            }
+
             results.Add(new BookReferenceSearchItem(
                 isbn13,
                 workId,
                 ReadString(documentElement, "title"),
                 ReadStrings(documentElement, "author_name"),
-                ReadStrings(documentElement, "publisher"),
+                publisher,
                 ReadInt(documentElement, "first_publish_year"),
                 CreateCoverUri(coverId),
                 "OpenLibrary"));

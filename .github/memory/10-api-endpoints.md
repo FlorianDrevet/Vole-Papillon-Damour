@@ -112,6 +112,8 @@ client-only/private.
   cancels the authenticated member's own open report.
 - `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,
   and `pageSize`; the Open Library adapter normalizes/deduplicates ISBN-10/ISBN-13 results.
+  Publisher arrays aggregated across editions are omitted when their joined text exceeds the
+  200-character watchlist metadata limit; other result fields are unchanged.
 - `GET/POST /catalog/me/watchlist` and `DELETE /catalog/me/watchlist/{itemId}` - Entra member
   watchlist reads and edition/work mutations; the API derives the local member from the `oid`
   claim and email, never from a client-provided user id.

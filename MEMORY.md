@@ -48,6 +48,7 @@
 11. The France Central migration is planned in `docs/infra/migrations/migration-west-europe-france-central.md`; keep rg-vpd-dev and SQL in place, deploy regional replacements in parallel, and do not remove West Europe resources before the rollback window ends.
 12. A completed loto sets `CurrentPartieIndex` to the party count; `RemoveLastNumeroCommandHandler` rewinds to the last party before undoing the final draw. See `.github/memory/03-domain-model.md`.
 13. Use `.agents/skills/vpd-prod-backup/SKILL.md` for an explicitly requested local backup. The Azure resources named `rg-vpd-dev`, `vpd-sql-dev`, and `vpdstdevfc` are the user's production environment; do not treat them as disposable development resources.
+14. Open Library reference search can aggregate publishers across editions; values over the 200-character watchlist limit are omitted before follow. See `.github/memory/10-api-endpoints.md`.
 
 ## Commands To Remember
 
