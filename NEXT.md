@@ -40,6 +40,20 @@ indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, ma
 rendre la visualisation HTML avec un graphe de 8 242 nœuds. Après fusion, lancer
 Catalog - deploy ; aucune migration n’est nécessaire.
 
+### Page publique Livres rares du Catalogue — 2026-10-20
+
+La [PR #287](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/287) est ouverte,
+non fusionnée. Elle retire le bloc « Prochaine bourse », demande uniquement les exemplaires
+disponibles même si l’URL conserve `includeSold=true`, garde la pagination API et remplace le
+select de tri par un menu violet accessible au clavier, aligné sur `/recherche`.
+
+Les 9 tests ciblés et le build Catalog passent. La suite complète est à 509/511, avec deux
+échecs AccountCard déjà présents sur le baseline. Le contrôle responsive à 1440×900 et
+390×844 ne montre pas de débordement ; l’API locale était indisponible pour charger des fiches
+réelles. Graphify extrait l’AST mais sa visualisation HTML dépasse la limite de 5 000 nœuds.
+Aucun déploiement ni changement de schéma. Après fusion, lancer Catalog - deploy et vérifier
+la page avec l’API disponible.
+
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
 
 Les tâches T0–T24 ont été livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252),
