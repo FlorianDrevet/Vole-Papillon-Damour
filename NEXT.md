@@ -47,7 +47,7 @@ Validation de la PR #281 : 39 tests ciblés réussis et build Catalog réussi. S
 
 La [PR #294](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/294) a été fusionnée le 2026-10-20. Elle a compacté « Suivre » en mode grille, mais le bouton restait dans un pied de carte séparé.
 
-Le suivi de cette présentation est préparé sur `fix/catalog-grid-follow-inline` : « Suivre » est aligné à droite de la disponibilité dans la carte, sans bandeau inférieur ; la vue liste reste inchangée. Le bouton conserve une cible tactile de 44 px et le statut « Suivi » garde la même hauteur pour l’alignement.
+La [PR #298](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/298) est ouverte, non fusionnée. Elle aligne « Suivre » à droite de la disponibilité dans la carte, sans bandeau inférieur ; la vue liste reste inchangée. Le bouton conserve une cible tactile de 44 px et le statut « Suivi » garde la même hauteur pour l’alignement.
 
 Validation : `npm ci` et build Catalog réussis. npm signale 33 vulnérabilités dans les dépendances installées ; le build conserve les avertissements existants de budget et CommonJS. Aucun test automatisé n’a été lancé. L’API du catalogue répond HTTP 503, donc le contrôle visuel responsive avec des fiches peuplées reste à faire. Graphify a extrait l’AST, mais échoue au rendu HTML sur la limite de 8 272 nœuds. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
 
