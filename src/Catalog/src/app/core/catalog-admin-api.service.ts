@@ -12,6 +12,8 @@ import {
   CatalogAdminAlertPage,
   CatalogAdminAlertOperation,
   CatalogAdminAddBookRequest,
+  CatalogAdminBookImportRequest,
+  CatalogAdminBookImportResponse,
   CatalogAdminBook,
   CatalogAdminCatalogueFilters,
   CatalogAdminBookPage,
@@ -271,6 +273,17 @@ export class CatalogAdminApiService {
   addBook(accessToken: string, request: CatalogAdminAddBookRequest): Observable<CatalogAdminOperation> {
     return this.http.post<CatalogAdminOperation>(
       `${this.apiUrl}/books/admin/books`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  importBooks(
+    accessToken: string,
+    request: CatalogAdminBookImportRequest,
+  ): Observable<CatalogAdminBookImportResponse> {
+    return this.http.post<CatalogAdminBookImportResponse>(
+      `${this.apiUrl}/books/admin/books/import`,
       request,
       this.options(accessToken),
     );

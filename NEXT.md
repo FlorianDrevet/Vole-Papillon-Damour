@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Préparation de l'import ISBN après remise à zéro de la base DEV le 2026-10-20. |
-| **Prochaine action** | Reprendre le plan `C:\Users\flori\Downloads\PLAN_IMPORT_ISBN.md` et préparer l'import des CSV sur la base DEV nettoyée. Examiner les alertes du Worker avant l'import. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-reset-completion` |
-| **Dernière mise à jour** | 2026-10-20 — le reset DEV est commité et vérifié (PITR #39380946520, application #39389885124, contrôle #39390080334). Le Worker est Running avec 1 réplica ; Azure signale aussi des erreurs de probe/scaler à examiner. |
-| **Branche** | `docs/book-reset-completion`, basée sur `origin/main` (`722a0be`), compte-rendu du reset DEV. |
+| **Lot en cours** | Préparer l'import du seul `ISBN_application.csv` après la remise à zéro vérifiée de la base DEV le 2026-10-20. |
+| **Prochaine action** | Faire valider et fusionner la PR d'import, déployer l'API et Catalog, relire l'état du Worker puis charger le fichier original dans l'administration Catalog DEV. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import` |
+| **Dernière mise à jour** | 2026-10-20 — l'aperçu local du CSV original confirme 7 748 ISBN valides, 0 invalide, 0 doublon et 0 ligne vide. Builds API et Catalog réussis, revue responsive à 320 / 390 / 1440 px sans débordement ; aucun test automatisé ni import en base. Le Worker a exécuté Enrich et Sweep avec succès malgré les alertes de probe de démarrage persistantes dans le portail. |
+| **Branche** | `feat/isbn-batch-import`, créée depuis `origin/main`; PR à ouvrir après rebase et revue finale. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -79,6 +79,33 @@ Après réussite de la PITR [#39380946520](https://github.com/FlorianDrevet/Vole
 L'application [#39389885124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39389885124) a retourné `COMMITTED` le 2026-10-20 : le compte protégé iCloud est conservé, aucun profil lié à une identité désactivée n'a été supprimé (Graph en a renvoyé 0), et 5 alertes livres en attente ont été supprimées. L'aperçu de contrôle [#39390080334](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39390080334) montre à zéro toutes les tables livres, scans et alertes répertoriées, 4 profils SQL conservés, et des volumes protégés inchangés : Actualities 23, AssoEvents 29, LinePartie 186, Lots 240, Parties 78, SocialPostImports 21.
 
 Le Worker `vpd-worker-ca-dev-fc` a été redémarré après le contrôle ; Azure Container Apps affiche `Running`, `Ready for traffic` et 1 réplica. Le portail signale également une erreur de probe de démarrage (`ProbeFailed`, code 1), une erreur de scaler (`ScaledObjectCheckFailed`) et d'autres erreurs actives ; les journaux du Worker restent à examiner avant l'import ISBN. L'opération concerne les lignes SQL ; elle ne supprime ni identités Entra ni images rares dans Blob Storage.
+
+### Préparation de l'import application — 2026-10-20
+
+La source choisie par l'utilisateur est le seul fichier `ISBN_application.csv`. Son contenu,
+et non les volumes du plan d'import, fait foi : en-tête `ISBN;Nombre_de_photos`, 7 748 lignes
+de données, 7 747 ISBN-13 et un ISBN-10. Les 7 748 ISBN sont distincts et leurs contrôles
+sont valides après normalisation ; `2702112641` devient `9782702112649`. La colonne
+`Nombre_de_photos` est une annotation de la source : elle n'est envoyée ni comme quantité de
+stock, ni comme métadonnée de livre. Le fichier préparé de revue est conservé hors du dépôt ;
+le fichier original reste inchangé.
+
+Le worktree `feat/isbn-batch-import` prépare une route d'administration
+`POST /books/admin/books/import` limitée à 100 ISBN-13 par lot, avec validation complète,
+transaction par lot et reprise idempotente. L'écran d'administration Catalog lit le CSV
+original, présente les lignes valides/invalides et envoie les ISBN en lots séquentiels. Chaque
+nouvelle fiche reste au stock zéro avec métadonnées en attente ; aucun mouvement, scan ou
+quantité n'est créé par l'import. La fonctionnalité n'est pas encore fusionnée ni déployée,
+donc aucune ligne du CSV n'est encore en base.
+
+Contrôle du Worker effectué dans Azure Container Apps après le reset :
+`vpd-worker-ca-dev-fc` était `Running` et `Ready for traffic`, avec `minReplicas: 0` et
+`maxReplicas: 1`. Le portail listait encore six erreurs de probe au démarrage (cinq retours
+code 1 et un délai de 1 seconde), mais les invocations `Functions.Enrich` et `Functions.Sweep`
+à 09:00 UTC ont réussi (20,6 s et 24,9 s). Le scaler de timer affichait les quatre règles
+attendues. Recontrôler les alertes et le prochain passage du Worker avant l'envoi des lots.
+Une fois l'API et Catalog déployés, charger le fichier original et vérifier les compteurs de
+création / fiches déjà présentes ainsi que le stock nul ; ne pas charger les autres CSV.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 

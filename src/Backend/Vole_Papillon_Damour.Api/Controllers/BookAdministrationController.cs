@@ -138,6 +138,23 @@ public static class BookAdministrationController
                 .WithName("AddAdminBook")
                 .RequireAuthorization("Administration");
 
+            endpoints.MapPost(
+                    "/books/admin/books/import",
+                    async (
+                        ImportAdminBooksRequest? request,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new ImportAdminBooksCommand(request?.Isbns),
+                            cancellationToken);
+                        return result.Match(
+                            imported => Results.Ok(ToResponse(imported)),
+                            error => error.Result());
+                    })
+                .WithName("ImportAdminBooks")
+                .RequireAuthorization("Administration");
+
             endpoints.MapPatch(
                     "/books/admin/books/{isbn13}/metadata",
                     async (
@@ -1012,6 +1029,20 @@ public static class BookAdministrationController
     private static AdminBookPageResponse ToResponse(AdminBookPageResult result) =>
         new(result.GeneratedAt, result.Books.Select(ToResponse).ToArray(), result.TotalCount,
             result.Page, result.PageSize);
+
+    private static AdminBooksImportResponse ToResponse(AdminBooksImportResult result) =>
+        new(
+            result.RequestedCount,
+            result.CreatedCount,
+            result.AlreadyPresentCount,
+            result.Results.Select(item => new AdminBooksImportResponse.Item(
+                item.Isbn13,
+                item.Status switch
+                {
+                    AdminBooksImportResult.Status.Created => AdminBooksImportResponse.Status.Created,
+                    AdminBooksImportResult.Status.AlreadyPresent => AdminBooksImportResponse.Status.AlreadyPresent,
+                    _ => throw new ArgumentOutOfRangeException(nameof(item.Status), item.Status, null)
+                })).ToArray());
 
     private static AdminBookResponse ToResponse(AdminBookResult result) =>
         new(result.Isbn13, result.WorkId, result.Title, result.Authors, result.Publisher,
