@@ -91,8 +91,8 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
 
 1. Le jour J, le visiteur voit le bandeau sur le site, ou scanne le QR code projeté avant le
    début ou pendant une pause, et ouvre le tableau en direct.
-2. Il voit en très grand le dernier numéro, les cinq précédents, la partie et la ligne en cours,
-   les lots, puis la grille des 90 numéros et les numéros du bingo.
+2. Sur téléphone, il voit en très grand le dernier numéro, les cinq précédents, la grille des
+   90 numéros, puis la partie et la ligne en cours, les lots et les numéros du bingo.
 3. Chaque nouveau numéro apparaît sans action de sa part. Si la connexion tombe, un message
    discret l'indique et la page se resynchronise seule au retour du réseau.
 
@@ -153,10 +153,12 @@ Pas de QR code sur cet écran : il n'apparaît qu'avant le début et pendant la 
 
 ### E3 — Contrôles discrets
 
-- La barre de régie (annuler, ligne gagnée, bingo, pause / reprise, palette sombre / claire,
-  plein écran) est **masquée
-  par défaut**. Elle apparaît quand la souris bouge ou qu'elle approche du bas de l'écran, puis
-  se masque après 3 s d'inactivité. Le curseur se masque aussi.
+- La barre d'aide de régie (annuler, ligne gagnée, bingo, pause / reprise, palette sombre / claire,
+  plein écran et raccourcis) est **masquée par défaut**. Elle apparaît quand une touche du clavier
+  est pressée, puis se masque après 3 s sans activité clavier. Le mouvement de la souris révèle
+  uniquement le curseur, qui se masque après 3 s sans mouvement.
+- Une case numérotée du tableau est également cliquable pour tirer ce numéro, comme la saisie
+  clavier chiffres puis Entrée.
 - Saisie clavier : chiffres puis Entrée. La saisie en cours apparaît dans un petit témoin, dans
   un coin, et non au centre de l'écran.
 - Bascule de palette : bouton de la barre et touche **P**, sans recharger la page ni perdre
@@ -166,14 +168,14 @@ Pas de QR code sur cet écran : il n'apparaît qu'avant le début et pendant la 
 
 ### E4 — Tableau en direct mobile (390 px, également lisible sur ordinateur)
 
-De haut en bas :
+De haut en bas sur téléphone :
 
 1. Une pastille d'état : « En direct », « Reconnexion… » ou « Hors ligne ».
 2. Le **dernier numéro** en très grand.
 3. Les **cinq précédents**.
-4. La partie, la ligne et le compteur en cours.
-5. Les **lots**.
-6. La **grille 90** compacte.
+4. La **grille 90** compacte.
+5. La partie, la ligne et le compteur en cours.
+6. Les **lots**.
 7. Les numéros du **bingo**.
 
 Les états « avant le début » et « terminé » reprennent les contenus de E2.
@@ -201,7 +203,7 @@ la fiche. Les autres jours, rien ne change.
 | **RG-01** | Le tableau projeté distingue un numéro **sorti** d'un numéro **non sorti** par un écart de **luminosité** fort, et pas seulement par la teinte. Le dernier numéro et les voisins du « +1 / −1 » ont chacun un troisième et un quatrième état, qui restent lisibles en niveaux de gris. |
 | **RG-02** | Les textes du tableau projeté ont un contraste d'au moins 7:1 avec leur fond (WCAG AAA) et utilisent une police sans empattement, grasse, à chiffres à chasse fixe. Pas de police manuscrite pour les données de jeu. |
 | **RG-03** | Taille minimale, en 1920 × 1080 : chiffres de la grille ≥ 56 px de haut, dernier numéro ≥ 320 px, annonce plein écran ≥ 60 % de la hauteur d'écran. |
-| **RG-04** | Aucun bouton, curseur ou champ de saisie n'est visible sur la projection quand l'animateur n'utilise pas la souris depuis 3 s. |
+| **RG-04** | La barre d'aide de régie n'apparaît qu'après une touche du clavier et se masque après 3 s sans activité clavier. Le curseur apparaît au mouvement de la souris et se masque après 3 s sans mouvement. |
 | **RG-05** | Une action de régie (numéro, annulation, ligne gagnée, bingo) est traitée l'une après l'autre : tant qu'une action est en cours d'envoi, les autres sont refusées côté écran. |
 | **RG-06** | Un numéro déjà sorti dans la partie est refusé avec le message « Le numéro <n> est déjà sorti. », et le tableau ne change pas. |
 | **RG-07** | L'annonce plein écran du numéro dure 2 s, configurable. Une nouvelle saisie la remplace immédiatement. |
@@ -231,8 +233,9 @@ la fiche. Les autres jours, rien ne change.
    rechargement conserve la palette choisie.
 2. Tableau projeté et annonces respectent RG-02 et RG-03 en 1920 × 1080 et restent sans
    débordement en 1280 × 720.
-3. Après 3 s sans souris, aucun contrôle ni curseur n'est visible (RG-04). La saisie de « 4 », «
-   2 », puis Entrée tire le 42.
+3. Une touche clavier affiche la barre d'aide, sans mouvement de souris; elle se masque après 3 s
+   sans frappe. Le curseur suit séparément le mouvement de la souris. La saisie de « 4 », « 2 »,
+   puis Entrée tire le 42; cliquer une case tire le même numéro (RG-04).
 4. Un double-clic sur un numéro ou sur « ligne gagnée » n'enregistre qu'une action (RG-05).
 5. Avant la première partie et après la dernière, backoffice et site affichent les états E2, sans
    erreur dans la console (RG-09).

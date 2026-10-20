@@ -87,8 +87,8 @@
         }
 
         @default {
-          <div class="flex flex-col gap-3.5 lg:flex-row lg:items-start lg:gap-7">
-            <div class="flex flex-col gap-3.5 lg:w-[360px] lg:flex-none lg:gap-4">
+          <div class="grid grid-cols-1 gap-3.5 [grid-template-areas:'summary'_'board'_'details'] lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-x-7 lg:gap-y-4 lg:[grid-template-areas:'summary_board'_'details_board']">
+            <div class="[grid-area:summary] flex min-w-0 flex-col gap-3.5 lg:gap-4">
               <div class="flex flex-col items-center gap-0.5 rounded-[18px] border border-[#1b3c57] bg-[#071b2b] px-4 pb-[22px] pt-[18px]" aria-live="polite">
                 <span class="k">Dernier numéro</span>
                 <span class="text-[184px] font-black leading-[.9] tracking-[-.06em] text-orange tabular-nums lg:text-[200px]">{{ view().lastNumero ?? '—' }}</span>
@@ -104,7 +104,22 @@
                   </div>
                 </div>
               }
+            </div>
 
+            <div class="[grid-area:board] flex min-w-0 flex-col gap-2">
+              <span class="k lg:hidden">Tous les numéros</span>
+              <div class="grid grid-cols-10 gap-[3px] lg:gap-1.5" aria-label="Grille des numéros 1 à 90">
+                @for (cell of view().cells; track cell.value) {
+                  <span class="cell"
+                        [class.cell-on]="cell.state === 'drawn'"
+                        [class.cell-last]="cell.state === 'last'"
+                        [class.cell-nb]="cell.state === 'neighbour'">{{ cell.value }}</span>
+                }
+              </div>
+              <span class="text-xs text-mist">{{ view().drawnCount }} numéros sortis@if (view().neighbours.length > 0) { · voisins du +1 / −1 cerclés }</span>
+            </div>
+
+            <div class="[grid-area:details] flex min-w-0 flex-col gap-3.5">
               <div class="card">
                 <span class="k">Partie {{ view().partieNumber }} / {{ view().partieCount }}</span>
                 <span class="text-2xl font-extrabold tracking-[-.01em] lg:text-[26px]">{{ view().partieName }}</span>
@@ -122,24 +137,11 @@
               </div>
 
               @if (view().showBingo) {
-                <div class="card card-bingo max-lg:order-last">
+                <div class="card card-bingo">
                   <span class="k k-accent">Bingo</span>
                   <span class="text-[30px] font-extrabold tabular-nums lg:text-[32px]">{{ view().bingoWon ? 'Gagné !' : (view().bingoNumeros.join(' · ') || '—') }}</span>
                 </div>
               }
-            </div>
-
-            <div class="flex flex-col gap-2 lg:min-w-0 lg:flex-1">
-              <span class="k lg:hidden">Tous les numéros</span>
-              <div class="grid grid-cols-10 gap-[3px] lg:gap-1.5" aria-label="Grille des numéros 1 à 90">
-                @for (cell of view().cells; track cell.value) {
-                  <span class="cell"
-                        [class.cell-on]="cell.state === 'drawn'"
-                        [class.cell-last]="cell.state === 'last'"
-                        [class.cell-nb]="cell.state === 'neighbour'">{{ cell.value }}</span>
-                }
-              </div>
-              <span class="text-xs text-mist">{{ view().drawnCount }} numéros sortis@if (view().neighbours.length > 0) { · voisins du +1 / −1 cerclés }</span>
             </div>
           </div>
 

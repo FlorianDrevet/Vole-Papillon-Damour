@@ -1,7 +1,7 @@
 <div class="viewport"
      [class.pal-a]="palette() === 'dark'"
      [class.pal-b]="palette() === 'light'"
-     [class.cursor-hidden]="!controlsVisible()">
+     [class.cursor-hidden]="!cursorVisible()">
   <div class="stage" [style.transform]="'translate(-50%, -50%) scale(' + stageScale() + ')'">
     @switch (screen()) {
       @case ('loading') {
@@ -147,7 +147,7 @@
       }
     }
 
-    <!-- E3 · Régie discrète : masquée après 3 s sans souris (RG-04) -->
+    <!-- E3 · Aide clavier : affichée après une touche, masquée après 3 s sans clavier. -->
     @if (controlsVisible() && keyBuffer() !== '') {
       <div class="key-buffer" aria-live="polite">
         <span class="kbd-label">Saisie</span>
