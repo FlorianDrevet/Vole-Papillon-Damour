@@ -55,6 +55,12 @@
           {{ item.publicationYear || '' }}
         </p>
       }
+      @if (item.summary) {
+        <section class="book-summary" aria-labelledby="book-summary-title">
+          <h2 id="book-summary-title">Résumé</h2>
+          <p>{{ item.summary }}</p>
+        </section>
+      }
       @if (item.rareBookId) {
         <a class="rare-book-link" [routerLink]="['/livres-rares', item.rareBookId]">
           Voir la fiche du livre rare →

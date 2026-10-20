@@ -20,6 +20,7 @@ export interface CatalogBook {
   firstSeenAt: string;
   updatedAt: string;
   isRare: boolean;
+  summary?: string | null;
   rareBookSlug?: string | null;
   rareBookId?: string | null;
 }

@@ -144,6 +144,18 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('La fiche arrive…');
   });
 
+  it('shows the bibliographic summary when the API provides one', async () => {
+    const summary = 'Un jeune prince voyage de planète en planète et découvre la valeur de l’amitié.';
+    api.getBook.and.returnValue(of({...book, summary} as CatalogBook));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const summarySection = fixture.nativeElement.querySelector('.book-summary') as HTMLElement | null;
+    expect(summarySection?.textContent).toContain(summary);
+  });
+
   it('lets an authenticated member follow the work from its book page', async () => {
     fixture.detectChanges();
     await fixture.whenStable();

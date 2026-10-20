@@ -1,9 +1,11 @@
+using System.Text.Json;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Similarity;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
@@ -62,6 +64,12 @@ public sealed class GetPublicBookQueryHandler(
         var rareIsbns = rareBook is null || rareBook.IsSold
             ? new HashSet<string>(StringComparer.Ordinal)
             : new HashSet<string>([rareBook.Isbn13], StringComparer.Ordinal);
+        var noticeJson = await dbContext.BookSimilarityProfiles
+            .AsNoTracking()
+            .Where(profile => profile.Isbn13 == isbn13.Value && profile.NoticeFound)
+            .Select(profile => profile.NoticeJson)
+            .SingleOrDefaultAsync(cancellationToken);
+        var summary = ReadSummary(noticeJson, book.Title);
 
         var result = PublicCatalogProjector
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
@@ -70,7 +78,27 @@ public sealed class GetPublicBookQueryHandler(
         return result with
         {
             RareBookSlug = rareBook?.Value,
-            RareBookId = rareBook?.Id
+            RareBookId = rareBook?.Id,
+            Summary = summary
         };
+    }
+
+    private static string? ReadSummary(string? noticeJson, string? title)
+    {
+        if (string.IsNullOrWhiteSpace(noticeJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            var edition = JsonSerializer.Deserialize<SimilarityEdition>(noticeJson);
+            return SimilarityText.CleanSummary(edition?.EditionSummary, title)
+                   ?? SimilarityText.CleanSummary(edition?.OpenLibraryDescription, title);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }

@@ -68,7 +68,10 @@ Each successful live bingo mutation increments the event's `LiveRevision`, saves
   excluded from every availability scope. When enabled, exhausted books are added to the
   selected scope rather than replacing it.
 - `GET /catalog/books/{isbn13}` - anonymous canonical book projection with available and
-  announced quantities kept separate, next-fair date, freshness fields and work identifier.
+  announced quantities kept separate, next-fair date, freshness fields, work identifier and
+  an optional `summary`. The detail query reads a cleaned BnF edition summary first, then an
+  Open Library description, from the stored `BookSimilarityProfile.NoticeJson`; it does not
+  fetch a notice on demand.
 - `GET /catalog/fairs/next` - anonymous next non-cancelled Books event with schedule and
   public address.
 - `GET /catalog/works/{workId}` - anonymous work projection containing its visible editions.
