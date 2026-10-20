@@ -171,6 +171,14 @@ The API startup wires:
   CPU/memory are per replica and may be absent when an app is scaled to zero. The workbook is
   generated from `infra/modules/Monitor/workbooks/generate-performance-workbook.mjs`; after Bicep
   deploy, verify charts/queries against live telemetry and the actual metric series in the portal.
+- Azure Monitor `AppRoleName` values can include the Container Apps environment and app resource
+  name (for example, `[vpd-cae-dev-fc]/vpd-api-ca-dev-fc`), so workbook role filters must use
+  substring matching rather than equality with `OTEL_SERVICE_NAME`. Keep literal
+  `{OriginalFormat}` out of workbook KQL; construct the dynamic property key with `strcat` so the
+  workbook parameter parser does not treat it as a parameter. Empty embedding panels only mean
+  that no matching custom embedding spans were ingested in the selected period; recommendation
+  recomputation can reuse stored vectors and therefore skip `EmbedAsync`. Azure OpenAI token
+  metrics are aggregate usage and do not attribute tokens/cost to a specific recommendation run.
 
 ## DEV observability cost tuning — 2026-09-22
 
