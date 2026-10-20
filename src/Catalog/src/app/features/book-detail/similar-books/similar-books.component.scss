@@ -59,31 +59,40 @@
   line-height: 1.55;
 }
 
-.similar-intro--mobile,
-.similar-privacy--mobile {
+.similar-intro--mobile {
   display: none;
 }
 
-.similar-privacy {
-  max-width: 300px;
-  margin: 0;
-  color: #6d8ba2;
-  font: 400 11px/1.6 var(--catalog-mono);
-  letter-spacing: .04em;
-  text-align: right;
-}
-
 .similar-books-grid {
+  min-width: 0;
   margin-top: 8px;
 }
 
-.similar-carousel-controls {
-  display: flex;
-  min-height: 42px;
+.similar-book-list,
+.similar-skeleton-grid {
+  scrollbar-width: none;
+}
+
+.similar-book-list::-webkit-scrollbar,
+.similar-skeleton-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.similar-carousel {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+}
+
+.similar-carousel--navigable {
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  gap: 12px;
   margin-top: 28px;
+}
+
+.similar-carousel--navigable .similar-books-grid {
+  margin-top: 0;
 }
 
 .similar-carousel-button {
@@ -93,7 +102,7 @@
   flex: none;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--catalog-line-2);
+  border: 1px solid #9dc2da;
   border-radius: 50%;
   background: #fff;
   color: #072b45;
@@ -102,9 +111,19 @@
 }
 
 .similar-carousel-button:hover {
-  border-color: #9dc2da;
+  border-color: #539ecb;
   background: #f7fbfe;
   color: #0c6ea6;
+}
+
+.similar-carousel-button:focus-visible {
+  outline: 3px solid #1497d6;
+  outline-offset: 2px;
+}
+
+.similar-carousel-button:disabled {
+  cursor: default;
+  opacity: .62;
 }
 
 .similar-carousel-button svg {
@@ -127,7 +146,6 @@
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   overscroll-behavior-x: contain;
-  scrollbar-width: thin;
 }
 
 .similar-book-card {
@@ -276,7 +294,6 @@
     line-height: 1.5;
   }
 
-  .similar-privacy[data-zone="R1-mention"],
   .similar-reason-legend {
     display: none;
   }
@@ -286,9 +303,10 @@
     margin-top: 0;
   }
 
-  .similar-carousel-controls {
-    min-height: 40px;
-    margin: 20px 16px 12px;
+  .similar-carousel--navigable {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    gap: 8px;
+    margin: 20px 16px 0;
   }
 
   .similar-carousel-button {
@@ -305,7 +323,6 @@
     scroll-snap-type: x mandatory;
     scroll-padding-inline: 16px;
     overscroll-behavior-x: contain;
-    scrollbar-width: thin;
   }
 
   .similar-book-card {
@@ -323,13 +340,6 @@
     --book-card-home-edition-display: none;
     --book-card-reason-font-size: 9px;
     --book-card-reason-padding: 3px 8px;
-  }
-
-  .similar-privacy--mobile {
-    display: block;
-    margin: 18px 16px 0;
-    color: #6d8ba2;
-    font: 400 10.5px/1.6 var(--catalog-mono);
   }
 
   .similar-skeleton-grid {

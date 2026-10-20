@@ -35,7 +35,7 @@
       </div>
       <p class="cover-caption">Image de couverture indicative · l’édition est identifiée par son ISBN.</p>
       @if (item.workId) {
-        <a class="work-link cover-work-link" [routerLink]="['/oeuvre', item.workId]">Voir toutes les éditions →</a>
+        <a class="work-link cover-work-link" [routerLink]="['/oeuvre', item.workId]">Voir les autres éditions de cette œuvre →</a>
       }
     </div>
 
@@ -180,10 +180,6 @@
         @if (notifyError()) {
           <p class="notify-feedback error" role="alert">{{ notifyError() }}</p>
         }
-      }
-
-      @if (item.workId) {
-        <a class="work-link" [routerLink]="['/oeuvre', item.workId]">Voir les autres éditions de cette œuvre →</a>
       }
     </div>
   </section>

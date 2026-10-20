@@ -879,6 +879,20 @@ git pull
 
 ## En cours
 
+### Fiche livre Catalog — lien œuvre et carrousel — 2026-10-20
+
+Dans le worktree `VPD-catalog-book-detail-polish`, le lien « Voir les autres éditions de
+cette œuvre » reste sous la couverture et n’apparaît plus une seconde fois dans le détail.
+Le carrousel masque sa barre de défilement, place une flèche de chaque côté et retire la
+mention sur les données personnelles. La [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295)
+est ouverte vers `main`, non fusionnée.
+
+Validation : build Catalog réussi ; contrôle Chrome desktop et 390 × 844 avec une API
+fictive, sans débordement horizontal ; `git diff --check` réussi. Aucun test automatisé
+n’a été lancé. L’API de production était suspendue, donc le contrôle avec des données
+réelles reste à faire. `graphify update .` a réextrait l’AST, mais le rendu HTML dépasse la
+limite de 8 272 nœuds. Aucun déploiement ni changement de données.
+
 ### Alignement des documents du catalogue — 2026-10-15
 
 Dans le worktree `Vole-Papillon-Damour-remove-book-locations`, le texte d'administration,
@@ -2336,6 +2350,11 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-10-20, la finition de la fiche Catalog reste limitée au dépôt et à la
+[PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295). Aucun déploiement,
+changement Azure/SQL ou accès aux données de catalogue n’a eu lieu. L’API de production a
+retourné « Service Suspended » ; le contrôle visuel a utilisé une API fictive locale.
+
 Au 2026-10-20, l’ajustement de l’interface publique du Catalog est livré par la
 [PR #283](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/283), fusionnée dans `main`.
 Aucun déploiement ni accès à une API de données réelle n’a été effectué ; l’API locale n’était
@@ -2554,6 +2573,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-20 | Windows | **Catalog — finition de la fiche livre.** Depuis `origin/main` dans le worktree `VPD-catalog-book-detail-polish`, conservation du lien vers les éditions sous la couverture, suppression du doublon et de la mention sur les données personnelles ; le carrousel masque la barre de défilement et place les flèches à ses deux extrémités. Build Catalog réussi ; contrôle Chrome desktop et 390 × 844 avec API fictive, aucun débordement ; tests automatisés non lancés. L’API réelle était suspendue. Graphify a réextrait l’AST, sans visualisation HTML au-delà de 8 272 nœuds. Aucun déploiement ni accès aux données réelles. [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295) ouverte, non fusionnée. |
 | 2026-10-20 | Windows | **Catalog — recherche et navigation simplifiées.** Depuis `origin/main` dans le worktree `VPD-catalog-search-filters-20261020`, tous les genres renvoyés apparaissent dans `/recherche`, le contrôle des livres épuisés disparaît de l’interface et la barre est centrée. « Catalogue par genre » est retiré des menus et du pied de page ; la navigation cesse aussi de charger la liste de genres. Tests ciblés 58/58 et build Catalog réussis ; suite complète 499/502 avec les trois échecs `AccountCardComponent` hors périmètre. Contrôle visuel desktop et 390 × 844 px ; API locale indisponible. Graphify a relu l’AST mais l’export HTML dépasse la limite de 8 239 nœuds. Aucun déploiement ; [PR #283](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/283) fusionnée le 20 octobre 2026. |
 | 2026-10-15 | Windows | **Catalogue — retrait des références de rangement.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-book-locations`, reformulation des libellés d'administration et de scan et alignement des documents, contrats décrits et maquettes sur le modèle actuel. Le vocabulaire et les formulaires de signalement restent inchangés ; aucune fiche, donnée, migration ou API n'a changé. Builds de production Catalog et Scan, `graphify update .` et `git diff --check` réussis. Aucun test automatisé ni contrôle visuel navigateur lancé. [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) ouverte vers `main`, non fusionnée. |
 | 2026-10-01 | Windows | **Infrastructure — ressources minimales ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-aca-minimum-resources`, les six Container Apps DEV utilisent `0.25` vCPU / `0.5Gi` par réplique. Le template et les paramètres Bicep compilent avec des secrets factices locaux ; les avertissements ACS BCP081 préexistants restent. Documentation infra et mémoire mises à jour. `graphify update .` a reconstruit 16 613 nœuds. [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246) ouverte, aucun déploiement Azure effectué. |
