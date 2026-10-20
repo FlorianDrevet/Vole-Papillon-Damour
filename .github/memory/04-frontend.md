@@ -729,6 +729,15 @@ movements and member tracking will be erased, and is disabled for sales, announc
 scan/fair history, and merged fiches. « Retirer des exemplaires » remains a separate,
 audited stock operation.
 
+## Catalog administration catalogue list and ISBN lookup — 2026-10-20
+
+The ordinary book list in `/administration/catalogue` requests five books per API page and
+keeps the existing server-backed pagination. Exact ISBN searches use the external BnF and
+Open Library reference endpoint; a matched result must also be placed in
+`catalogueReferenceResults` because the candidate form is rendered inside that result list.
+The heading uses the existing `section-heading-with-kicker` spacing rule. No API, database,
+or deployment behavior changes.
+
 ## Catalog book detail summary (2026-10-20)
 
 The public `/livres/:slug` detail page renders a `Résumé` section from the optional `summary`
