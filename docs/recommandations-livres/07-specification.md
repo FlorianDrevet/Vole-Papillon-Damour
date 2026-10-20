@@ -99,13 +99,14 @@ score = cos(Q, C)
 
 | Règle | Valeur |
 |---|---|
-| Nombre de livres | au plus **5** (`Recommendations:SimilarMaxCount`) |
+| Nombre de livres | au plus **20** (`Recommendations:SimilarMaxCount`) |
 | Voisins affichables | fiche canonique visible, **disponible ou annoncée**, score ≥ seuil (`Recommendations:SimilarMinScore`, 0,50 au départ, à calibrer) |
-| Minimum pour afficher la section | **2** voisins (`Recommendations:SimilarMinCount`) ; sinon la section n'existe pas (R3-masquee) |
+| Minimum pour afficher la section | **1** voisin (`Recommendations:SimilarMinCount`) ; sans voisin, la section n'existe pas (R3-masquee) |
 | Chargement | après la fiche, sans bloquer son rendu ; squelette pendant le chargement (R3-chargement) |
 | Étiquette | une par carte, issue de la raison : « Tome suivant », « Même série », « Même auteur », « Proche par le thème » (R1-raison, R1-legende) |
 | Carte | la carte d'accueil existante (`app-book-card`, variante `home`), avec pastille de disponibilité (R1-disponibilite) et étiquette |
-| Mobile | défilement horizontal, cartes de 156 px (R2-defilement) |
+| Navigation | carrousel horizontal avec flèches précédent/suivant quand la liste dépasse la largeur disponible |
+| Mobile | défilement tactile horizontal, cartes de 156 px et flèches de navigation (R2-defilement) |
 | Données personnelles | aucune ; mention « sans aucune donnée personnelle » (R1-mention) |
 | Erreur d'API | la section n'existe pas ; aucune erreur visible |
 
@@ -187,7 +188,7 @@ calcul se fait dans le worker).
 | `Recommendations:NeighborsPerBook` | `30` | Voisins conservés |
 | `Recommendations:ProfileBatchSize` | `200` | Profils rafraîchis par nuit |
 | `Recommendations:SimilarMinScore` | `0.50` | Seuil d'affichage |
-| `Recommendations:SimilarMaxCount` / `SimilarMinCount` | `5` / `2` | Fiche |
+| `Recommendations:SimilarMaxCount` / `SimilarMinCount` | `20` / `1` | Fiche |
 | `Recommendations:PersonalMaxCount` / `PersonalMinCount` | `8` / `3` | Pour vous |
 
 ## 7. Critères d'acceptation

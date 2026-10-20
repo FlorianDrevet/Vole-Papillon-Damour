@@ -37,25 +37,77 @@ describe('SimilarBooksComponent', () => {
     expect(loading.getAttribute('aria-busy')).toBe('true');
   });
 
-  it('renders five cards with the exact heading when enough neighbors are returned', () => {
-    api.getSimilarBooks.and.returnValue(of({books: books(5)}));
+  it('renders a single returned neighbor instead of hiding the section', () => {
+    api.getSimilarBooks.and.returnValue(of({books: books(1)}));
 
     fixture.detectChanges();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('h2')?.textContent.trim())
       .toBe('Si ce livre vous a plu.');
-    expect(fixture.nativeElement.querySelectorAll('app-book-card').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('app-book-card').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.similar-carousel-controls')).toBeNull();
   });
 
-  it('hides the whole section when fewer than two neighbors are returned', () => {
-    api.getSimilarBooks.and.returnValue(of({books: books(1)}));
+  it('renders twenty neighbors and lets the reader move forward and backward', () => {
+    api.getSimilarBooks.and.returnValue(of({books: books(20)}));
+
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    const viewport = fixture.nativeElement.querySelector('[data-zone="R2-defilement"]') as HTMLElement;
+    Object.defineProperties(viewport, {
+      clientWidth: {configurable: true, value: 500},
+      scrollWidth: {configurable: true, value: 5000},
+      scrollLeft: {configurable: true, writable: true, value: 0},
+    });
+    const scrollBy = spyOn(viewport, 'scrollBy').and.stub();
+    viewport.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('app-book-card').length).toBe(20);
+    const next = fixture.nativeElement.querySelector('[data-action="similar-next"]') as HTMLButtonElement;
+    expect(next).not.toBeNull();
+    next.click();
+    expect(scrollBy).toHaveBeenCalledWith({left: 425, behavior: 'auto'});
+
+    viewport.scrollLeft = 500;
+    viewport.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    const previous = fixture.nativeElement.querySelector('[data-action="similar-previous"]') as HTMLButtonElement;
+    expect(previous).not.toBeNull();
+    previous.click();
+    expect(scrollBy).toHaveBeenCalledWith({left: -425, behavior: 'auto'});
+  });
+
+  it('keeps the recommendations horizontally scrollable with responsive card sizing', () => {
+    api.getSimilarBooks.and.returnValue(of({books: books(20)}));
+
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    const viewport = fixture.nativeElement.querySelector('[data-zone="R2-defilement"]') as HTMLElement;
+    const card = fixture.nativeElement.querySelector('.similar-book-card') as HTMLElement;
+    const cardWidth = Number.parseFloat(getComputedStyle(card).width);
+
+    expect(getComputedStyle(viewport).overflowX).toBe('auto');
+    expect(getComputedStyle(viewport).scrollSnapType).toContain('mandatory');
+    if (window.innerWidth <= 720) {
+      expect(cardWidth).toBe(156);
+    } else {
+      expect(cardWidth).toBeGreaterThanOrEqual(190);
+      expect(cardWidth).toBeLessThanOrEqual(224);
+    }
+  });
+
+  it('hides the section when the API returns no neighbors', () => {
+    api.getSimilarBooks.and.returnValue(of({books: []}));
 
     fixture.detectChanges();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-zone="R1-section"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
   it('hides the section without an error message when the request fails', () => {

@@ -11,8 +11,8 @@ public sealed class RecommendationOptions
     public int NeighborsPerBook { get; set; } = 30;
     public int ProfileBatchSize { get; set; } = 200;
     public float SimilarMinScore { get; set; } = 0.50f;
-    public int SimilarMaxCount { get; set; } = 5;
-    public int SimilarMinCount { get; set; } = 2;
+    public int SimilarMaxCount { get; set; } = 20;
+    public int SimilarMinCount { get; set; } = 1;
     public int PersonalMaxCount { get; set; } = 8;
     public int PersonalMinCount { get; set; } = 3;
 }

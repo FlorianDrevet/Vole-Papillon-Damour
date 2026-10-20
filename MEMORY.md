@@ -29,6 +29,7 @@
 | `.github/memory/10-api-endpoints.md` | Grouped HTTP endpoints, public/admin split, and live routes |
 | `.github/memory/11-frontend-design-system.md` | Angular Material, Tailwind, theme tokens, and UI guardrails |
 | `.github/memory/12-manual-book-requests.md` | F-12 domain, privacy, rollout, and validation notes |
+| `.github/memory/13-book-recommendations.md` | Similar-book recommendation defaults, API filtering, and Catalog carousel behavior |
 | `.github/memory/changelog.md` | Memory changelog |
 | `.github/memory/dream-state.md` | Dream gate state and code graph choice |
 

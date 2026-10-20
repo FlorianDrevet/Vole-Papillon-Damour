@@ -74,18 +74,68 @@
 }
 
 .similar-books-grid {
-  margin-top: 34px;
+  margin-top: 8px;
+}
+
+.similar-carousel-controls {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.similar-carousel-button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--catalog-line-2);
+  border-radius: 50%;
+  background: #fff;
+  color: #072b45;
+  cursor: pointer;
+  transition: border-color .18s ease, color .18s ease, background-color .18s ease;
+}
+
+.similar-carousel-button:hover {
+  border-color: #9dc2da;
+  background: #f7fbfe;
+  color: #0c6ea6;
+}
+
+.similar-carousel-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .similar-book-list {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  width: 100%;
   gap: 20px;
+  overflow-x: auto;
+  padding: 0 2px 12px;
+  scroll-padding-inline: 2px;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
 }
 
 .similar-book-card {
   display: block;
+  width: clamp(190px, 20vw, 224px);
   min-width: 0;
+  flex: 0 0 clamp(190px, 20vw, 224px);
+  scroll-snap-align: start;
   --book-card-home-cover-height: 300px;
   --book-card-home-status-inset: 12px;
   --book-card-home-status-padding: 5px 10px;
@@ -156,6 +206,9 @@
 }
 
 .similar-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 20px;
   margin-top: 30px;
 }
 
@@ -230,7 +283,17 @@
 
   .similar-books-grid {
     display: block;
-    margin-top: 22px;
+    margin-top: 0;
+  }
+
+  .similar-carousel-controls {
+    min-height: 40px;
+    margin: 20px 16px 12px;
+  }
+
+  .similar-carousel-button {
+    width: 40px;
+    height: 40px;
   }
 
   .similar-book-list {
