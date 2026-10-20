@@ -39,6 +39,9 @@
                     @case ('catalogue') {
                       <svg viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17H7.5A2.5 2.5 0 0 0 5 21.5z"></path><path d="M5 4.5v17M9 6h6M9 10h6"></path></svg>
                     }
+                    @case ('isbn') {
+                      <svg viewBox="0 0 24 24"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14"></path></svg>
+                    }
                     @case ('rare-books') {
                       <svg viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17H7.5A2.5 2.5 0 0 0 5 21.5z"></path><path d="M5 4.5v17M9 7h6M9 11h4"></path><path d="m14.5 15 1.7 1.7 3.3-3.5"></path></svg>
                     }
@@ -379,8 +382,8 @@
             <section class="admin-view" aria-labelledby="admin-title">
               @if (selectedBook(); as book) {
                 <div class="detail-screen">
-                  <div class="breadcrumb"><button class="text-link" type="button" (click)="selectedBook.set(null)">Catalogue</button><span>· Fiche</span></div>
-                  <div class="detail-heading"><div><span class="admin-kicker">Catalogue · Fiche</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'Titre à compléter' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div><a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a></div>
+                  <div class="breadcrumb"><button class="text-link" type="button" (click)="closeBookDetail()">{{ bookDetailReturnSection() === 'isbn-queue' ? 'ISBN en cours d’analyse' : 'Catalogue' }}</button><span>· Fiche</span></div>
+                  <div class="detail-heading"><div><span class="admin-kicker">{{ book.title ? 'Catalogue · Fiche' : 'ISBN en cours d’analyse' }}</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'ISBN en cours d’analyse' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div>@if (book.title) {<a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a>}</div>
                   <div class="detail-layout">
                     <div class="detail-main-column">
                       <section class="detail-section"><div class="section-heading"><h2>Métadonnées</h2><span class="mono-note">{{ book.metadataStatus }}</span></div><div class="metadata-editor"><div class="cover-column">@if (book.coverUrl) {<img class="book-cover" [src]="book.coverUrl" alt="">} @else {<span class="book-cover book-cover-placeholder" aria-hidden="true"></span>}<button class="button button-outline" type="button" disabled>Remplacer</button></div><form class="detail-form" (ngSubmit)="updateMetadata(book)"><label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label><label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label><label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label><label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label><label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label><label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label><button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button></form></div><div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>La correction manuelle est conservée comme telle et ne sera pas écrasée par une prochaine mise à jour automatique.</p></div></section>
@@ -583,6 +586,44 @@
                 }
                 </section>
               }
+            </section>
+          }
+
+          @case ('isbn-queue') {
+            <section class="admin-view" aria-labelledby="admin-title" data-testid="isbn-metadata-queue">
+              <div class="admin-heading">
+                <span class="admin-accent" aria-hidden="true"></span>
+                <span class="admin-kicker">Import des livres</span>
+                <h1 id="admin-title">ISBN en cours d’analyse.</h1>
+                <p class="admin-intro">Les ISBN restent ici tant qu’une notice bibliographique exploitable n’a pas été trouvée. Les échecs affichent leur motif pour choisir de corriger, réessayer ou retirer le livre.</p>
+              </div>
+              @if (isbnMetadataQueue(); as page) {
+                <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
+                  <div class="section-heading">
+                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN à vérifier</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
+                    <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
+                  </div>
+                  <div class="session-list" role="list">
+                    @for (item of page.items; track item.isbn13) {
+                      <article class="session-card" role="listitem" [attr.data-testid]="'isbn-analysis-' + item.isbn13">
+                        <div class="session-card-main">
+                          <div class="session-title-line"><strong class="isbn-label">{{ item.isbn13 }}</strong><span class="status-pill" [class]="statusClass(item.metadataStatus)">{{ metadataQueueStatusLabel(item.metadataStatus) }}</span></div>
+                          @if (item.failureReason) {<p class="session-date">{{ item.failureReason }}</p>}
+                          @if (item.lastAttemptAt) {<small class="session-date">Dernier essai · {{ formatDate(item.lastAttemptAt, true) }} · {{ formatNumber(item.resolveAttempts) }} tentative{{ item.resolveAttempts > 1 ? 's' : '' }}</small>}
+                        </div>
+                        <div class="catalogue-book-actions">
+                          <button class="button button-outline" type="button" [disabled]="loading()" (click)="openBook(item.isbn13, 'isbn-queue')">Corriger</button>
+                          @if (item.metadataStatus !== 'Manual' && item.metadataStatus !== 'Discarded') {<button class="button button-outline" type="button" [disabled]="loading()" (click)="retryIsbnMetadata(item)">Réessayer</button>}
+                          <button class="danger-link" type="button" [disabled]="loading()" (click)="deleteIsbnMetadataCandidate(item)">Supprimer</button>
+                        </div>
+                      </article>
+                    } @empty {
+                      <div class="empty-panel"><h2>Aucun ISBN en attente</h2><p>Les nouveaux ISBN importés apparaîtront ici si leur notice n’est pas encore complète.</p></div>
+                    }
+                  </div>
+                  @if (page.totalCount > page.pageSize) {<div class="pagination"><button type="button" [disabled]="page.page <= 1" (click)="goToIsbnMetadataQueuePage(page.page - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToIsbnMetadataQueuePage(page.page + 1)">→</button></div>}
+                </section>
+              } @else if (loading()) {<p class="admin-status" role="status">Chargement de la file ISBN…</p>}
             </section>
           }
 

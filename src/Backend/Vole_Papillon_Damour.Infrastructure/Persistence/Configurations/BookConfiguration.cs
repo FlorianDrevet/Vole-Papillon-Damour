@@ -76,6 +76,7 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.LastAttemptAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
+        builder.Property(book => book.MetadataFailureReason).HasMaxLength(500);
         builder.Property(book => book.RawPayload).HasColumnType("nvarchar(max)");
         builder.Property(book => book.ManuallyEditedFields).HasColumnType("nvarchar(max)");
 

@@ -288,9 +288,10 @@ public sealed class BookMetadataTests
         var changed = book.RecordMetadataProviderFailure(failedAt);
 
         changed.Should().BeTrue();
-        book.MetadataStatus.Should().Be(BookMetadataStatus.NotFound);
+        book.MetadataStatus.Should().Be(BookMetadataStatus.Failed);
         book.ResolveAttempts.Should().Be(1);
         book.LastAttemptAt.Should().Be(failedAt);
+        book.MetadataFailureReason.Should().NotBeNullOrWhiteSpace();
         book.UpdatedAt.Should().Be(failedAt);
     }
 

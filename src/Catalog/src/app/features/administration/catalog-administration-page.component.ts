@@ -43,6 +43,8 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminBook,
+  CatalogAdminBookMetadataQueue,
+  CatalogAdminBookMetadataQueueItem,
   CatalogAdminBookImportResponse,
   CatalogAdminBookMovement,
   CatalogAdminBookPage,
@@ -120,6 +122,7 @@ type CatalogAdminNavIcon =
   | 'flag'
   | 'phone'
   | 'catalogue'
+  | 'isbn'
   | 'rare-books'
   | 'statistics'
   | 'accounts'
@@ -151,6 +154,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
     label: 'Le fonds de livres',
     items: [
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+      {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
       {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
     ],
@@ -264,6 +268,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
         ? this.catalogueBooksPage()?.totalCount
+        : section === 'isbn-queue'
+          ? this.isbnMetadataQueue()?.totalCount
         : section === 'rare-books'
           ? this.rareBooksFacade.page() ? this.rareBooksFacade.publishedCount() : undefined
         : undefined;
@@ -273,6 +279,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
   readonly catalogueBooksPage = signal<CatalogAdminBookPage | null>(null);
+  readonly isbnMetadataQueue = signal<CatalogAdminBookMetadataQueue | null>(null);
   readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
   readonly catalogueAddCandidate = signal<CatalogBookCandidate | null>(null);
   readonly catalogueCandidateStatus = signal<CatalogBookCandidateStatus | null>(null);
@@ -289,6 +296,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
   readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
+  readonly bookDetailReturnSection = signal<CatalogAdminSection>('catalogue');
   readonly notFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly manualRequestSummary = signal<CatalogManualRequestSummary | null>(null);
   readonly manualRequesterId = signal<string | null>(null);
@@ -344,6 +352,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   catalogueReferenceQuery = '';
   cataloguePage = 1;
   readonly cataloguePageSize = 25;
+  metadataQueuePage = 1;
+  readonly metadataQueuePageSize = 50;
   catalogueAddQuantity = 1;
   catalogueAddNote = 'Ajout depuis le catalogue';
 
@@ -556,6 +566,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'catalogue':
         await this.loadCatalogue();
         break;
+      case 'isbn-queue':
+        await this.loadIsbnMetadataQueue();
+        break;
       case 'rare-books':
         break;
       case 'statistics':
@@ -633,6 +646,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.run('catalogue', async token => {
       await this.loadCataloguePage(token);
     });
+  }
+
+  async loadIsbnMetadataQueue(): Promise<void> {
+    await this.run('isbn-metadata-queue', async token => {
+      await this.loadIsbnMetadataQueuePage(token);
+    });
+  }
+
+  goToIsbnMetadataQueuePage(page: number): void {
+    if (!this.validPage(page, this.isbnMetadataQueue())) {
+      return;
+    }
+    this.metadataQueuePage = page;
+    void this.loadIsbnMetadataQueue();
   }
 
   submitCatalogueSearch(): void {
@@ -985,7 +1012,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.selectedSession.set(null);
   }
 
-  async openBook(isbn13: string): Promise<void> {
+  async openBook(
+    isbn13: string,
+    returnSection: CatalogAdminSection = 'catalogue',
+  ): Promise<void> {
+    this.bookDetailReturnSection.set(returnSection);
+    if (returnSection === 'isbn-queue' && this.activeSection() !== 'catalogue') {
+      await this.router.navigate(['/administration', 'catalogue']);
+    }
     this.activeSection.set('catalogue');
     await this.run('book-detail', async token => {
       const [book, reportSummary] = await Promise.all([
@@ -1014,6 +1048,37 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         workId: book.workId || '',
       });
       await this.rareBooksFacade.resolveCatalogRelation(book.isbn13);
+    });
+  }
+
+  closeBookDetail(): void {
+    this.selectedBook.set(null);
+    const returnSection = this.bookDetailReturnSection();
+    this.bookDetailReturnSection.set('catalogue');
+    if (returnSection === 'isbn-queue') {
+      void this.selectSection('isbn-queue');
+    }
+  }
+
+  async retryIsbnMetadata(item: CatalogAdminBookMetadataQueueItem): Promise<void> {
+    await this.run('isbn-metadata-retry', async token => {
+      await firstValueFrom(this.api.retryBookMetadata(token, item.isbn13));
+      this.showSuccess(`Un nouvel essai a été lancé pour l’ISBN ${item.isbn13}.`);
+      await this.loadIsbnMetadataQueuePage(token);
+    });
+  }
+
+  async deleteIsbnMetadataCandidate(item: CatalogAdminBookMetadataQueueItem): Promise<void> {
+    if (!this.confirmAction(
+      `Retirer l’ISBN ${item.isbn13} de la file ? Le stock disponible sera annulé et l’historique conservé.`,
+    )) {
+      return;
+    }
+
+    await this.run('isbn-metadata-delete', async token => {
+      await firstValueFrom(this.api.deleteBook(token, item.isbn13));
+      this.showSuccess(`L’ISBN ${item.isbn13} a été retiré de la file d’analyse.`);
+      await this.loadIsbnMetadataQueuePage(token);
     });
   }
 
@@ -1156,6 +1221,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async updateMetadata(book: CatalogAdminBook): Promise<void> {
+    const returnSection = this.bookDetailReturnSection();
     await this.run('metadata', async token => {
       await firstValueFrom(this.api.updateMetadata(token, book.isbn13, {
         title: this.optional(this.metadataForm.title),
@@ -1170,8 +1236,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         fields: ['Title', 'Authors', 'Publisher', 'PublicationYear', 'PhysicalFormat', 'Language', 'Genre', 'WorkId'],
       }));
       this.showSuccess('Les métadonnées ont été enregistrées.');
-      await this.openBook(book.isbn13);
-      await this.loadCatalogue();
+      await this.openBook(book.isbn13, returnSection);
+      if (returnSection === 'isbn-queue') {
+        await this.loadIsbnMetadataQueuePage(token);
+      } else {
+        await this.loadCataloguePage(token);
+      }
     });
   }
 
@@ -2569,6 +2639,17 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return value ? labels[value] || value : '—';
   }
 
+  metadataQueueStatusLabel(value: string): string {
+    const labels: Record<string, string> = {
+      Pending: 'En attente',
+      Failed: 'Échec',
+      NotFound: 'Aucune notice trouvée',
+      Resolved: 'Titre incomplet',
+      Manual: 'À corriger',
+    };
+    return labels[value] || value;
+  }
+
   statusClass(value: string | null | undefined): string {
     return (value || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   }
@@ -2599,6 +2680,13 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       search: this.catalogueSearch.trim() || undefined,
       page: this.cataloguePage,
       pageSize: this.cataloguePageSize,
+    })));
+  }
+
+  private async loadIsbnMetadataQueuePage(token: string): Promise<void> {
+    this.isbnMetadataQueue.set(await firstValueFrom(this.api.getBookMetadataQueue(token, {
+      page: this.metadataQueuePage,
+      pageSize: this.metadataQueuePageSize,
     })));
   }
 

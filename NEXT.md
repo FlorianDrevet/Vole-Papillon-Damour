@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Préparer l'import progressif du CSV application : 155 fichiers de 50 ISBN maximum dans `C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50`. |
-| **Prochaine action** | Faire relire et fusionner les PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) (suivi des ISBN incomplets) et [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) (enrichissement immédiat avec une seconde entre ISBN), puis déployer API, Worker et Catalog. Charger ensuite les lots un par un et reporter leur état dans `lots_50\avancement.csv`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import-immediate-enrichment` |
-| **Dernière mise à jour** | 2026-10-20 — lots vérifiés : 7 748 ISBN, 155 fichiers (154×50 et 48), aucun ISBN perdu ou dupliqué. Tests Application 537/537 et Infrastructure 204/204 ; builds API et Worker réussis. L'utilisateur a testé le premier échantillon ; aucun lot complet n'a été importé par l'assistant. La PR #275 n'est pas fusionnée ni déployée. Graphify a extrait l'AST mais n'a pas pu produire la visualisation HTML, le graphe dépassant la limite de 5 000 nœuds. |
-| **Branche** | `feat/isbn-import-immediate-enrichment`, créée depuis `origin/main`; PR [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) ouverte, non fusionnée. La PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) est aussi ouverte. |
+| **Prochaine action** | Revoir et fusionner la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271), puis lancer Books runtime - deploy avec `run_migrations: true`, déployer Catalog et vérifier la file ISBN ainsi que le catalogue public. Ensuite, importer les lots un par un et reporter leur état dans `lots_50\avancement.csv`. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-pr271-conflict-fix` |
+| **Dernière mise à jour** | 2026-10-20 — la branche de la PR #271 a été synchronisée avec `origin/main` pour résoudre ses conflits. Validation combinée : Domain 208, Application 548, API 85, Infrastructure 204 ; 91 tests Catalog ciblés, build Catalog et build Worker réussis ; EF ne détecte aucune modification de modèle en attente. Les checks GitHub sont à vérifier après push. Aucun déploiement ni import de lots. La suite Catalog complète n'a pas été relancée (la PR avait précédemment relevé 489/492 avec trois échecs dans des specs non touchées). Le contrôle visuel authentifié reste à faire. Graphify a extrait l'AST mais n'a pas pu produire la visualisation HTML, le graphe ayant 8 227 nœuds. |
+| **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -105,14 +105,34 @@ présentes ne sont pas modifiées, ce qui rend la relance idempotente. Aucun mou
 de session n'est recréé pour les anciens scans effacés. L'utilisateur a testé un premier
 échantillon ; aucun lot complet n'a été chargé par l'assistant.
 
-La PR [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275) ajoute la mise
+La PR [#275](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/275), fusionnée le
+2026-10-20, ajoute la mise
 en file immédiate des ISBN créés après le commit SQL et une pause d'une seconde entre ISBN
 dans le traitement de la file API et dans le balayage groupé Worker. La file API est en
 mémoire ; le balayage horaire reste le mécanisme de reprise après redémarrage. La cadence est
 appliquée par processus et n'est pas un limiteur distribué partagé entre API et Worker.
-Cette PR est ouverte, non fusionnée et non déployée. La PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271)
-porte séparément l'écran admin des ISBN en cours d'analyse et leur exclusion du catalogue
-public en cas d'échec ; elle est ouverte et non déployée.
+La fonctionnalité n'est pas encore confirmée déployée dans l'environnement DEV.
+
+### File d'analyse des ISBN incomplets — 2026-10-20
+
+La PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) filtre les
+livres `Pending`, `Failed`, `NotFound` ou sans titre des résultats, détails et sitemap publics,
+ainsi que de la liste admin principale. Elle ajoute `/administration/isbn-queue`, qui affiche
+ISBN, statut, raison, tentatives et date, avec les actions de correction, relance et suppression.
+La suppression est auditée : un candidat avec mouvements est marqué `Discarded` et son stock
+disponible est retiré par un mouvement ; une fiche sans mouvement est supprimée. La migration
+`20261020132445_AddBookMetadataFailureReason` ajoute la raison d'échec, limitée à 500 caractères.
+
+La branche de cette PR a été fusionnée localement avec la dernière `origin/main` afin de résoudre
+les conflits de documentation ; elle garde les changements de filtrage, de file, de relance et
+de suppression, ainsi que l'enrichissement immédiat et sa cadence d'une seconde de la PR #275.
+Les validations combinées sont Domain 208, Application 548, API 85, Infrastructure 204 ; 91
+tests Catalog ciblés, builds Catalog et Worker réussis ; `dotnet ef migrations has-pending-model-changes`
+confirme que le modèle correspond à la migration. La suite Catalog complète n'a pas été relancée ;
+le résultat antérieur de la PR était 489/492, avec trois échecs dans AccountCard/CatalogNavigation
+non modifiés. Aucun déploiement ni import n'a eu lieu. Après fusion, appliquer la migration avec
+Books runtime - deploy (`run_migrations: true`), déployer Catalog et vérifier la file et l'absence
+de fiches incomplètes dans le catalogue public avant d'importer le CSV.
 
 Contrôle du Worker effectué dans Azure Container Apps après le reset :
 `vpd-worker-ca-dev-fc` était `Running` et `Ready for traffic`, avec `minReplicas: 0` et

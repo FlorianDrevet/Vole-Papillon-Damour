@@ -71,7 +71,10 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             cancellationToken);
         var metadataToReviewCount = await canonicalBooks.CountAsync(
             book => book.MetadataStatus == BookMetadataStatus.Pending ||
-                    book.MetadataStatus == BookMetadataStatus.NotFound,
+                    book.MetadataStatus == BookMetadataStatus.NotFound ||
+                    book.MetadataStatus == BookMetadataStatus.Failed ||
+                    book.Title == null ||
+                    book.Title.Trim() == string.Empty,
             cancellationToken);
 
         var activeAnnouncements = dbContext.BookAnnouncements

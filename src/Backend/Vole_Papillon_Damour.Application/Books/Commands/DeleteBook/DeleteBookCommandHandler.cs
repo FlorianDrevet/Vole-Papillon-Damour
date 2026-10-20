@@ -2,6 +2,8 @@ using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.Books.Commands.Admin;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
@@ -9,7 +11,9 @@ using Vole_Papillon_Damour.Domain.Common.Errors;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.DeleteBook;
 
-public sealed class DeleteBookCommandHandler(IProjectDbContext dbContext)
+public sealed class DeleteBookCommandHandler(
+    IProjectDbContext dbContext,
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<DeleteBookCommand, ErrorOr<DeleteBookResult>>
 {
     public async Task<ErrorOr<DeleteBookResult>> Handle(
@@ -44,11 +48,50 @@ public sealed class DeleteBookCommandHandler(IProjectDbContext dbContext)
             return Errors.Book.BookHasSales(isbn13.Value);
         }
 
-        var hasHistory = await dbContext.BookMovements
-            .AnyAsync(movement => movement.Isbn13 == isbn13, cancellationToken) ||
-                           await dbContext.BookAnnouncements
-                               .AnyAsync(announcement => announcement.Isbn13 == isbn13, cancellationToken);
-        if (hasHistory)
+        var hasAnnouncements = await dbContext.BookAnnouncements
+            .AnyAsync(announcement => announcement.Isbn13 == isbn13, cancellationToken);
+        if (hasAnnouncements)
+        {
+            return Errors.Book.BookHasHistory(isbn13.Value);
+        }
+
+        var hasMovements = await dbContext.BookMovements
+            .AnyAsync(movement => movement.Isbn13 == isbn13, cancellationToken);
+        var isIncompleteCandidate =
+            book.MetadataStatus is BookMetadataStatus.Pending or BookMetadataStatus.Failed or BookMetadataStatus.NotFound ||
+            string.IsNullOrWhiteSpace(book.Title);
+
+        if (hasMovements && isIncompleteCandidate)
+        {
+            var discardedAt = dateTimeProvider.UtcNow;
+            if (discardedAt.Kind != DateTimeKind.Utc)
+            {
+                return Errors.Book.InvalidScanTimestamp();
+            }
+
+            if (book.QuantityAvailable > 0)
+            {
+                var withdrawal = await BookWithdrawal.WithdrawAsync(
+                    dbContext,
+                    isbn13.Value,
+                    book.QuantityAvailable,
+                    "Retrait d'un ISBN abandonné dans la file d'analyse",
+                    command.DeletedBy,
+                    discardedAt,
+                    cancellationToken);
+                if (withdrawal.IsError)
+                {
+                    return withdrawal.Errors;
+                }
+            }
+
+            book.DiscardMetadataCandidate(discardedAt);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return new DeleteBookResult(isbn13.Value, Deleted: true);
+        }
+
+        if (hasMovements)
         {
             return Errors.Book.BookHasHistory(isbn13.Value);
         }

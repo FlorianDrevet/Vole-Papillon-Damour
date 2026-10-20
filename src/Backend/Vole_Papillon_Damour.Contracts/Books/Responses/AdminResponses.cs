@@ -102,6 +102,25 @@ public sealed record AdminBookPageResponse(
     int Page,
     int PageSize);
 
+public sealed record AdminBookMetadataQueuePageResponse(
+    DateTimeOffset GeneratedAt,
+    IReadOnlyList<AdminBookMetadataQueueItemResponse> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record AdminBookMetadataQueueItemResponse(
+    string Isbn13,
+    string MetadataStatus,
+    string? FailureReason,
+    int ResolveAttempts,
+    DateTimeOffset? LastAttemptAt);
+
+public sealed record AdminBookMetadataRetryResponse(
+    string Isbn13,
+    string MetadataStatus,
+    bool Queued);
+
 public sealed record AdminBookOperationResponse(
     string Isbn13,
     int QuantityAvailable,

@@ -15,6 +15,8 @@ import {
   CatalogAdminBookImportRequest,
   CatalogAdminBookImportResponse,
   CatalogAdminBook,
+  CatalogAdminBookMetadataQueue,
+  CatalogAdminMetadataRetry,
   CatalogAdminCatalogueFilters,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
@@ -147,6 +149,24 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogAdminBookPage>(
       `${this.apiUrl}/books/admin/books`,
       this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  getBookMetadataQueue(
+    accessToken: string,
+    filters: {page?: number; pageSize?: number} = {},
+  ): Observable<CatalogAdminBookMetadataQueue> {
+    return this.http.get<CatalogAdminBookMetadataQueue>(
+      `${this.apiUrl}/books/admin/books/metadata-queue`,
+      this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  retryBookMetadata(accessToken: string, isbn13: string): Observable<CatalogAdminMetadataRetry> {
+    return this.http.post<CatalogAdminMetadataRetry>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/metadata/retry`,
+      null,
+      this.options(accessToken),
     );
   }
 

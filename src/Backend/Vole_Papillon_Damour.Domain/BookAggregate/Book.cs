@@ -33,6 +33,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public DateTime? MetadataFetchedAt { get; private set; }
     public int ResolveAttempts { get; private set; }
     public DateTime? LastAttemptAt { get; private set; }
+    public string? MetadataFailureReason { get; private set; }
     public string? RawPayload { get; private set; }
     public string? ManuallyEditedFields { get; private set; }
 
@@ -191,6 +192,7 @@ public sealed class Book : AggregateRoot<Isbn13>
 
         MetadataStatus = BookMetadataStatus.Manual;
         MetadataSource = BookMetadataSource.Manual;
+        MetadataFailureReason = null;
         ManuallyEditedFields = JsonSerializer.Serialize(
             manuallyEditedFields,
             MetadataJsonOptions);
@@ -285,6 +287,7 @@ public sealed class Book : AggregateRoot<Isbn13>
         changed |= MetadataStatus != nextStatus || MetadataSource != nextSource;
         MetadataStatus = nextStatus;
         MetadataSource = nextSource;
+        MetadataFailureReason = null;
         UpdatedAt = utcFetchedAt;
         return changed;
     }
@@ -317,9 +320,16 @@ public sealed class Book : AggregateRoot<Isbn13>
         return ReadManuallyEditedFields().Contains(field);
     }
 
-    public bool RecordMetadataNotFound(DateTime attemptedAt)
+    public bool RecordMetadataNotFound(
+        DateTime attemptedAt,
+        string failureReason = "Aucune notice bibliographique trouvée pour cet ISBN.")
     {
         var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        if (MetadataStatus == BookMetadataStatus.Discarded)
+        {
+            return false;
+        }
+        var normalizedReason = NormalizeFailureReason(failureReason);
         var changed = false;
 
         if (ResolveAttempts < int.MaxValue)
@@ -336,28 +346,86 @@ public sealed class Book : AggregateRoot<Isbn13>
             changed |= MetadataStatus != BookMetadataStatus.NotFound ||
                        MetadataSource is not null ||
                        MetadataFetchedAt is not null ||
-                       RawPayload is not null;
+                       RawPayload is not null ||
+                       MetadataFailureReason != normalizedReason;
             MetadataStatus = BookMetadataStatus.NotFound;
             MetadataSource = null;
             MetadataFetchedAt = null;
             RawPayload = null;
+            MetadataFailureReason = normalizedReason;
         }
 
         UpdatedAt = utcAttemptedAt;
         return changed;
     }
 
-    public bool RecordMetadataProviderFailure(DateTime attemptedAt)
+    public bool RecordMetadataProviderFailure(
+        DateTime attemptedAt,
+        string failureReason = "Erreur lors de la consultation des fournisseurs de notices.",
+        bool countAttempt = false)
     {
         var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
-        if (MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
+        if (MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Discarded)
         {
             return false;
         }
 
-        var changed = LastAttemptAt != utcAttemptedAt;
+        var normalizedReason = NormalizeFailureReason(failureReason);
+        var changed = LastAttemptAt != utcAttemptedAt ||
+                      MetadataStatus != BookMetadataStatus.Failed ||
+                      MetadataFailureReason != normalizedReason;
+        if (countAttempt && ResolveAttempts < int.MaxValue)
+        {
+            ResolveAttempts++;
+            changed = true;
+        }
+
+        MetadataStatus = BookMetadataStatus.Failed;
+        MetadataFailureReason = normalizedReason;
         LastAttemptAt = utcAttemptedAt;
         UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
+    public bool PrepareMetadataRetry(DateTime retriedAt)
+    {
+        var utcRetriedAt = DomainTime.RequireUtc(retriedAt, nameof(retriedAt));
+        if (MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Discarded)
+        {
+            return false;
+        }
+
+        var changed = MetadataStatus != BookMetadataStatus.Pending ||
+                      LastAttemptAt is not null ||
+                      MetadataFailureReason is not null;
+        MetadataStatus = BookMetadataStatus.Pending;
+        LastAttemptAt = null;
+        MetadataFailureReason = null;
+        UpdatedAt = utcRetriedAt;
+        return changed;
+    }
+
+    public bool DiscardMetadataCandidate(DateTime discardedAt)
+    {
+        var utcDiscardedAt = DomainTime.RequireUtc(discardedAt, nameof(discardedAt));
+        if (MetadataStatus == BookMetadataStatus.Discarded)
+        {
+            return false;
+        }
+
+        if ((MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+            !string.IsNullOrWhiteSpace(Title))
+        {
+            throw new InvalidOperationException("A completed book cannot be discarded as an ISBN metadata candidate.");
+        }
+
+        var changed = MetadataStatus != BookMetadataStatus.Discarded ||
+                      !IsHiddenFromCatalog ||
+                      MetadataFailureReason is not null;
+        MetadataStatus = BookMetadataStatus.Discarded;
+        MetadataFailureReason = null;
+        IsHiddenFromCatalog = true;
+        UpdatedAt = utcDiscardedAt;
         return changed;
     }
 
@@ -435,6 +503,17 @@ public sealed class Book : AggregateRoot<Isbn13>
                 $"The metadata field cannot exceed {maxLength} characters.",
                 parameterName);
         }
+    }
+
+    private static string NormalizeFailureReason(string failureReason)
+    {
+        if (string.IsNullOrWhiteSpace(failureReason))
+        {
+            throw new ArgumentException("A metadata failure reason is required.", nameof(failureReason));
+        }
+
+        var normalized = failureReason.Trim();
+        return normalized.Length <= 500 ? normalized : normalized[..500];
     }
 
     private bool ApplyField(BookMetadataPatch patch, BookMetadataField field)
