@@ -703,6 +703,43 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(row.textContent).toContain('Aucune notice bibliographique exploitable.');
     expect(row.textContent).not.toContain('Titre à compléter');
     expect(row.querySelectorAll('button').length).toBe(3);
+    const actions = row.querySelector('[data-testid="isbn-analysis-actions"]') as HTMLElement;
+    expect(actions.classList.contains('isbn-analysis-actions')).toBeTrue();
+  });
+
+  it('filters the ISBN analysis queue by failure and resets its page', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getBookMetadataQueue.and.returnValue(of({
+      generatedAt: '',
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 50,
+    } as CatalogAdminBookMetadataQueue));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.selectSection('isbn-queue');
+    fixture.componentInstance.metadataQueuePage = 2;
+    fixture.detectChanges();
+    const failedFilter = fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-failed"]') as HTMLButtonElement;
+    expect(failedFilter).not.toBeNull();
+
+    await fixture.componentInstance.setIsbnMetadataQueueFilter('failed');
+
+    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {
+      page: 1,
+      pageSize: 50,
+      metadataStatus: 'Failed',
+    });
+
+    await fixture.componentInstance.setIsbnMetadataQueueFilter('pending');
+
+    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {
+      page: 1,
+      pageSize: 50,
+      metadataStatus: 'Pending',
+    });
   });
 
   it('retries an ISBN from its analysis row and refreshes the queue', async () => {

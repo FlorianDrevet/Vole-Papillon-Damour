@@ -385,6 +385,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly cataloguePageSize = 5;
   metadataQueuePage = 1;
   readonly metadataQueuePageSize = 50;
+  metadataQueueFilter: 'all' | 'pending' | 'failed' = 'all';
   catalogueAddQuantity = 1;
   catalogueAddNote = 'Ajout depuis le catalogue';
 
@@ -684,6 +685,16 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.run('isbn-metadata-queue', async token => {
       await this.loadIsbnMetadataQueuePage(token);
     });
+  }
+
+  async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed'): Promise<void> {
+    if (this.metadataQueueFilter === filter) {
+      return;
+    }
+
+    this.metadataQueueFilter = filter;
+    this.metadataQueuePage = 1;
+    await this.loadIsbnMetadataQueue();
   }
 
   goToIsbnMetadataQueuePage(page: number): void {
@@ -2877,9 +2888,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async loadIsbnMetadataQueuePage(token: string): Promise<void> {
+    const metadataStatus: 'Pending' | 'Failed' | undefined = this.metadataQueueFilter === 'all'
+      ? undefined
+      : this.metadataQueueFilter === 'pending' ? 'Pending' : 'Failed';
+
     this.isbnMetadataQueue.set(await firstValueFrom(this.api.getBookMetadataQueue(token, {
       page: this.metadataQueuePage,
       pageSize: this.metadataQueuePageSize,
+      ...(metadataStatus ? {metadataStatus} : {}),
     })));
   }
 

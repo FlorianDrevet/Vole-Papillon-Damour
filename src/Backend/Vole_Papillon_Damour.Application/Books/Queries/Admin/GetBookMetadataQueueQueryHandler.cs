@@ -42,6 +42,11 @@ public sealed class GetBookMetadataQueueQueryHandler(
                 book.Title == null ||
                 book.Title.Trim() == string.Empty);
 
+        if (query.MetadataStatus is { } metadataStatus)
+        {
+            queue = queue.Where(book => book.MetadataStatus == metadataStatus);
+        }
+
         var totalCount = await queue.CountAsync(cancellationToken);
         var items = await queue
             .OrderBy(book => book.LastAttemptAt)

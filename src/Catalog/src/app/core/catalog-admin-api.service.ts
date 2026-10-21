@@ -155,7 +155,7 @@ export class CatalogAdminApiService {
 
   getBookMetadataQueue(
     accessToken: string,
-    filters: {page?: number; pageSize?: number} = {},
+    filters: {page?: number; pageSize?: number; metadataStatus?: 'Pending' | 'Failed'} = {},
   ): Observable<CatalogAdminBookMetadataQueue> {
     return this.http.get<CatalogAdminBookMetadataQueue>(
       `${this.apiUrl}/books/admin/books/metadata-queue`,

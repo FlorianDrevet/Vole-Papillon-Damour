@@ -707,8 +707,16 @@
               @if (isbnMetadataQueue(); as page) {
                 <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
                   <div class="section-heading">
-                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN à vérifier</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
+                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
                     <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
+                  </div>
+                  <div class="isbn-queue-toolbar">
+                    <span class="isbn-queue-filter-label">Afficher les fiches</span>
+                    <div class="period-chips isbn-queue-filters" role="group" aria-label="Filtrer les ISBN par statut">
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
+                    </div>
                   </div>
                   <div class="session-list" role="list">
                     @for (item of page.items; track item.isbn13) {
@@ -718,14 +726,20 @@
                           @if (item.failureReason) {<p class="session-date">{{ item.failureReason }}</p>}
                           @if (item.lastAttemptAt) {<small class="session-date">Dernier essai · {{ formatDate(item.lastAttemptAt, true) }} · {{ formatNumber(item.resolveAttempts) }} tentative{{ item.resolveAttempts > 1 ? 's' : '' }}</small>}
                         </div>
-                        <div class="catalogue-book-actions">
+                        <div class="catalogue-book-actions isbn-analysis-actions" data-testid="isbn-analysis-actions">
                           <button class="button button-outline" type="button" [disabled]="loading()" (click)="openBook(item.isbn13, 'isbn-queue')">Corriger</button>
                           @if (item.metadataStatus !== 'Manual' && item.metadataStatus !== 'Discarded') {<button class="button button-outline" type="button" [disabled]="loading()" (click)="retryIsbnMetadata(item)">Réessayer</button>}
                           <button class="danger-link" type="button" [disabled]="loading()" (click)="deleteIsbnMetadataCandidate(item)">Supprimer</button>
                         </div>
                       </article>
                     } @empty {
-                      <div class="empty-panel"><h2>Aucun ISBN en attente</h2><p>Les nouveaux ISBN importés apparaîtront ici si leur notice n’est pas encore complète.</p></div>
+                      @if (metadataQueueFilter === 'failed') {
+                        <div class="empty-panel"><h2>Aucun échec</h2><p>Les ISBN dont l’analyse échoue apparaîtront ici avec leur motif.</p></div>
+                      } @else if (metadataQueueFilter === 'pending') {
+                        <div class="empty-panel"><h2>Aucun ISBN en cours</h2><p>Les ISBN en attente d’analyse apparaîtront ici.</p></div>
+                      } @else {
+                        <div class="empty-panel"><h2>Aucun ISBN à vérifier</h2><p>Les nouveaux ISBN importés apparaîtront ici si leur notice n’est pas encore complète.</p></div>
+                      }
                     }
                   </div>
                   @if (page.totalCount > page.pageSize) {<div class="pagination"><button type="button" [disabled]="page.page <= 1" (click)="goToIsbnMetadataQueuePage(page.page - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToIsbnMetadataQueuePage(page.page + 1)">→</button></div>}

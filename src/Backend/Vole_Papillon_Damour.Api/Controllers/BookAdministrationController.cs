@@ -85,11 +85,12 @@ public static class BookAdministrationController
                     async (
                         int? page,
                         int? pageSize,
+                        BookMetadataStatus? metadataStatus,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetBookMetadataQueueQuery(page ?? 1, pageSize ?? 100),
+                            new GetBookMetadataQueueQuery(page ?? 1, pageSize ?? 100, metadataStatus),
                             cancellationToken);
                         return result.Match(
                             queue => Results.Ok(ToResponse(queue)),
