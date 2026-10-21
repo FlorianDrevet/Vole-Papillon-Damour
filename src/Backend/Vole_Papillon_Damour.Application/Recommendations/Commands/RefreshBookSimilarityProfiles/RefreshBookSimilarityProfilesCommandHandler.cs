@@ -66,9 +66,6 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
         }
 
         var candidateIsbns = candidates.Select(book => book.Isbn13.Value).ToArray();
-        var candidateBooks = await dbContext.Books
-            .Where(book => candidateIsbns.Contains(book.Id.Value))
-            .ToDictionaryAsync(book => book.Id.Value, cancellationToken);
         var profiles = await dbContext.BookSimilarityProfiles
             .Where(profile => candidateIsbns.Contains(profile.Isbn13))
             .ToDictionaryAsync(profile => profile.Isbn13, cancellationToken);
@@ -94,11 +91,13 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
             }
             else
             {
-                var book = candidateBooks[isbn13];
+                var book = await dbContext.Books
+                    .SingleOrDefaultAsync(candidateBook => candidateBook.Id == candidate.Isbn13, cancellationToken);
                 var editionSummary = BookSummaryText.Clean(edition.EditionSummary, edition.Title);
                 var openLibrarySummary = BookSummaryText.Clean(edition.OpenLibraryDescription, edition.Title);
                 var summary = editionSummary ?? openLibrarySummary;
-                if (summary is not null &&
+                if (book is not null &&
+                    summary is not null &&
                     book.Summary is null &&
                     (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
                     !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))

@@ -281,9 +281,18 @@ public sealed class EnrichPendingBooksCommandHandler(
                     metadata.RetrievedAt.UtcDateTime,
                     rawPayload: null,
                     coverSource: patch.CoverUrl is null ? null : coverSource,
-                    coverCheckedAt: patch.Fields.Contains(BookMetadataField.CoverUrl)
+                    coverCheckedAt: patch.Fields.Contains(BookMetadataField.CoverUrl) || !existingBookRefresh
                         ? metadata.RetrievedAt.UtcDateTime
                         : null);
+                if (!patch.Fields.Contains(BookMetadataField.Genre))
+                {
+                    RecordGenreRefreshAttempt(
+                        book,
+                        command.IncludeMissingGenres,
+                        command.RefreshAllGenres,
+                        now);
+                }
+
                 if (detailsOnly)
                 {
                     book.RecordBibliographicDetailsRefreshAttempt(now);

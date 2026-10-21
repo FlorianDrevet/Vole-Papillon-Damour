@@ -1,9 +1,11 @@
+using System.Text.Json;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Similarity;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
@@ -65,12 +67,43 @@ public sealed class GetPublicBookQueryHandler(
         var result = PublicCatalogProjector
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
             .Single();
+        var summary = book.Summary;
+        if (summary is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))
+        {
+            var legacyNotice = await dbContext.BookSimilarityProfiles
+                .AsNoTracking()
+                .Where(profile => profile.Isbn13 == isbn13.Value)
+                .Select(profile => profile.NoticeJson)
+                .SingleOrDefaultAsync(cancellationToken);
+            summary = ReadLegacySummary(legacyNotice);
+        }
 
         return result with
         {
             RareBookSlug = rareBook?.Value,
             RareBookId = rareBook?.Id,
-            Summary = book.Summary
+            Summary = summary
         };
+    }
+
+    private static string? ReadLegacySummary(string? noticeJson)
+    {
+        if (string.IsNullOrWhiteSpace(noticeJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            var edition = JsonSerializer.Deserialize<SimilarityEdition>(noticeJson);
+            return edition is null
+                ? null
+                : BookSummaryText.Clean(edition.EditionSummary, edition.Title)
+                  ?? BookSummaryText.Clean(edition.OpenLibraryDescription, edition.Title);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }
