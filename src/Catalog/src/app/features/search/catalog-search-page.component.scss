@@ -1027,6 +1027,15 @@
   font-size: .75rem;
 }
 
+.pagination > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--catalog-slate-3);
+  font-size: .75rem;
+}
+
 .pagination button:disabled {
   color: var(--catalog-slate-3);
   cursor: not-allowed;

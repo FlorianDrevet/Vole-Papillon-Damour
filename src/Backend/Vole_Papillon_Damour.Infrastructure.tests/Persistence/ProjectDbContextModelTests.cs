@@ -51,6 +51,20 @@ public sealed class ProjectDbContextModelTests
         books.FindProperty(nameof(Book.RowVersion))!.ValueGenerated.Should().Be(ValueGenerated.OnAddOrUpdate);
         books.FindProperty(nameof(Book.Title))!.GetCollation().Should().Be("Latin1_General_100_CI_AI");
         books.FindProperty(nameof(Book.Authors))!.GetCollation().Should().Be("Latin1_General_100_CI_AI");
+        books.FindProperty(nameof(Book.Publisher))!.GetCollation().Should().Be("Latin1_General_100_CI_AI");
+
+        var searchIndex = books.GetIndexes().Should().ContainSingle(index =>
+            index.GetDatabaseName() == "IX_Books_PublicCatalog_Search").Which;
+        searchIndex.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(Book.Title));
+        searchIndex.GetFilter()
+            .Should().Be("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+        searchIndex.GetIncludeProperties()
+            .Should().BeEquivalentTo(
+                nameof(Book.Authors),
+                nameof(Book.Publisher),
+                nameof(Book.MetadataStatus),
+                nameof(Book.QuantityAvailable));
     }
 
     [Fact]
@@ -261,10 +275,30 @@ public sealed class ProjectDbContextModelTests
         createIndex.Filter.Should().Be("[ClientGestureId] IS NOT NULL");
     }
 
+    [Fact]
+    public void CatalogSearchMigrationRevertsPublisherToTheDatabaseDefaultCollation()
+    {
+        var migrationBuilder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+        new OptimizeCatalogSearchMigrationProbe().ApplyDown(migrationBuilder);
+
+        migrationBuilder.Operations
+            .OfType<SqlOperation>()
+            .Should()
+            .ContainSingle(operation =>
+                operation.Sql.Contains("DATABASEPROPERTYEX", StringComparison.Ordinal) &&
+                operation.Sql.Contains("ALTER TABLE [Books] ALTER COLUMN [Publisher]", StringComparison.Ordinal));
+    }
+
     private sealed class ClientGestureMigrationProbe :
         Vole_Papillon_Damour.Infrastructure.Migrations.AddRareBookClientGestureId
     {
         public void ApplyUp(MigrationBuilder migrationBuilder) => Up(migrationBuilder);
+    }
+
+    private sealed class OptimizeCatalogSearchMigrationProbe :
+        Vole_Papillon_Damour.Infrastructure.Migrations.OptimizeCatalogSearch
+    {
+        public void ApplyDown(MigrationBuilder migrationBuilder) => Down(migrationBuilder);
     }
 
     private static ProjectDbContext CreateContext()

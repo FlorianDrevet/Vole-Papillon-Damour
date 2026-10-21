@@ -57,7 +57,8 @@ export interface CatalogRecommendationsResponse {
 export interface CatalogSearchResponse {
   generatedAt: string;
   books: CatalogBook[];
-  totalCount: number;
+  totalCount: number | null;
+  hasMore: boolean;
   page: number;
   pageSize: number;
   genres: string[];

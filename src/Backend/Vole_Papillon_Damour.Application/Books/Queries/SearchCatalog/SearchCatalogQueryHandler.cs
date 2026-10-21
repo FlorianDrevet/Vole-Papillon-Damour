@@ -68,126 +68,11 @@ public sealed class SearchCatalogQueryHandler(
             {
                 var pattern = $"%{term}%";
                 filteredBooksQuery = filteredBooksQuery.Where(book =>
-                    EF.Functions.Like(
-                        (book.Title ?? string.Empty)
-                            .Replace("À", "a")
-                            .Replace("Á", "a")
-                            .Replace("Â", "a")
-                            .Replace("Ä", "a")
-                            .Replace("Ç", "c")
-                            .Replace("È", "e")
-                            .Replace("É", "e")
-                            .Replace("Ê", "e")
-                            .Replace("Ë", "e")
-                            .Replace("Î", "i")
-                            .Replace("Ï", "i")
-                            .Replace("Ô", "o")
-                            .Replace("Ö", "o")
-                            .Replace("Ù", "u")
-                            .Replace("Û", "u")
-                            .Replace("Ü", "u")
-                            .Replace("Ÿ", "y")
-                            .ToLower()
-                            .Replace("à", "a")
-                            .Replace("á", "a")
-                            .Replace("â", "a")
-                            .Replace("ä", "a")
-                            .Replace("ç", "c")
-                            .Replace("è", "e")
-                            .Replace("é", "e")
-                            .Replace("ê", "e")
-                            .Replace("ë", "e")
-                            .Replace("î", "i")
-                            .Replace("ï", "i")
-                            .Replace("ô", "o")
-                            .Replace("ö", "o")
-                            .Replace("ù", "u")
-                            .Replace("û", "u")
-                            .Replace("ü", "u")
-                            .Replace("ÿ", "y")
-                            .Replace("œ", "oe"),
-                        pattern) ||
-                    EF.Functions.Like(
-                        (book.Authors ?? string.Empty)
-                            .Replace("À", "a")
-                            .Replace("Á", "a")
-                            .Replace("Â", "a")
-                            .Replace("Ä", "a")
-                            .Replace("Ç", "c")
-                            .Replace("È", "e")
-                            .Replace("É", "e")
-                            .Replace("Ê", "e")
-                            .Replace("Ë", "e")
-                            .Replace("Î", "i")
-                            .Replace("Ï", "i")
-                            .Replace("Ô", "o")
-                            .Replace("Ö", "o")
-                            .Replace("Ù", "u")
-                            .Replace("Û", "u")
-                            .Replace("Ü", "u")
-                            .Replace("Ÿ", "y")
-                            .ToLower()
-                            .Replace("à", "a")
-                            .Replace("á", "a")
-                            .Replace("â", "a")
-                            .Replace("ä", "a")
-                            .Replace("ç", "c")
-                            .Replace("è", "e")
-                            .Replace("é", "e")
-                            .Replace("ê", "e")
-                            .Replace("ë", "e")
-                            .Replace("î", "i")
-                            .Replace("ï", "i")
-                            .Replace("ô", "o")
-                            .Replace("ö", "o")
-                            .Replace("ù", "u")
-                            .Replace("û", "u")
-                            .Replace("ü", "u")
-                            .Replace("ÿ", "y")
-                            .Replace("œ", "oe"),
-                        pattern) ||
-                    EF.Functions.Like(
-                        (book.Publisher ?? string.Empty)
-                            .Replace("À", "a")
-                            .Replace("Á", "a")
-                            .Replace("Â", "a")
-                            .Replace("Ä", "a")
-                            .Replace("Ç", "c")
-                            .Replace("È", "e")
-                            .Replace("É", "e")
-                            .Replace("Ê", "e")
-                            .Replace("Ë", "e")
-                            .Replace("Î", "i")
-                            .Replace("Ï", "i")
-                            .Replace("Ô", "o")
-                            .Replace("Ö", "o")
-                            .Replace("Ù", "u")
-                            .Replace("Û", "u")
-                            .Replace("Ü", "u")
-                            .Replace("Ÿ", "y")
-                            .ToLower()
-                            .Replace("à", "a")
-                            .Replace("á", "a")
-                            .Replace("â", "a")
-                            .Replace("ä", "a")
-                            .Replace("ç", "c")
-                            .Replace("è", "e")
-                            .Replace("é", "e")
-                            .Replace("ê", "e")
-                            .Replace("ë", "e")
-                            .Replace("î", "i")
-                            .Replace("ï", "i")
-                            .Replace("ô", "o")
-                            .Replace("ö", "o")
-                            .Replace("ù", "u")
-                            .Replace("û", "u")
-                            .Replace("ü", "u")
-                            .Replace("ÿ", "y")
-                            .Replace("œ", "oe"),
-                        pattern));
+                    EF.Functions.Like(book.Title, pattern) ||
+                    EF.Functions.Like(book.Authors, pattern) ||
+                    EF.Functions.Like(book.Publisher, pattern));
             }
         }
-
         if (!string.IsNullOrWhiteSpace(query.Genre))
         {
             var genre = query.Genre.Trim();
@@ -266,12 +151,22 @@ public sealed class SearchCatalogQueryHandler(
             .OrderBy(genre => genre, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
 
-        var totalCount = await filteredBooksQuery.CountAsync(cancellationToken);
         var orderedBooksQuery = OrderBooks(filteredBooksQuery, query.Sort, normalizedSearch);
-        var pageBooks = await orderedBooksQuery
-            .Skip(checked((query.Page - 1) * query.PageSize))
-            .Take(query.PageSize)
+        var pageOffset = checked((query.Page - 1) * query.PageSize);
+        var pageBooksWithLookahead = await orderedBooksQuery
+            .Skip(pageOffset)
+            .Take(query.PageSize + 1)
             .ToListAsync(cancellationToken);
+        var hasMore = pageBooksWithLookahead.Count > query.PageSize;
+        if (hasMore)
+        {
+            pageBooksWithLookahead.RemoveAt(pageBooksWithLookahead.Count - 1);
+        }
+
+        var pageBooks = pageBooksWithLookahead;
+        int? totalCount = !hasMore && (pageBooks.Count > 0 || query.Page == 1)
+            ? checked(pageOffset + pageBooks.Count)
+            : null;
 
         var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
         var publishedAvailableRareIsbns = pageIsbns.Length == 0
@@ -312,6 +207,7 @@ public sealed class SearchCatalogQueryHandler(
             nowUtc,
             page,
             totalCount,
+            hasMore,
             query.Page,
             query.PageSize,
             genres);

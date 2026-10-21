@@ -328,7 +328,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.Property<string>("Publisher")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(200)")
+                        .UseCollation("Latin1_General_100_CI_AI");
 
                     b.Property<int>("QuantityAvailable")
                         .ValueGeneratedOnAdd()
@@ -384,6 +385,12 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("RedirectedToIsbn13");
 
                     b.HasIndex("RowVersion");
+
+                    b.HasIndex("Title")
+                        .HasDatabaseName("IX_Books_PublicCatalog_Search")
+                        .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("Title"), new[] { "Authors", "Publisher", "MetadataStatus", "QuantityAvailable" });
 
                     b.HasIndex("UpdatedAt");
 

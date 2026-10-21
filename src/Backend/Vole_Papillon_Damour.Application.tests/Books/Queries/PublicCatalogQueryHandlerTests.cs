@@ -1,5 +1,8 @@
 using System.Data.Common;
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -118,6 +121,31 @@ public sealed class PublicCatalogQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Books.Should().ContainSingle(book => book.Isbn13 == "9782253006329");
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenQueryHasNoAccents_FindsAccentedPublisherWithoutSqlReplacementFunctions()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook(
+            "9782253006329",
+            "Une autre histoire",
+            "Auteur",
+            publisher: "Éditions de l'Écume",
+            quantityAvailable: 1);
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery("ecume", null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Publisher.Should().Be("Éditions de l'Écume");
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("replace(", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -281,8 +309,11 @@ public sealed class PublicCatalogQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.TotalCount.Should().Be(3);
+        result.Value.TotalCount.Should().BeNull();
+        result.Value.HasMore.Should().BeTrue();
         result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Beta");
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase));
         sql.Commands.Should().Contain(command =>
             command.Contains("FROM \"Books\"", StringComparison.Ordinal) &&
             command.Contains("LIMIT", StringComparison.Ordinal) &&
@@ -297,6 +328,31 @@ public sealed class PublicCatalogQueryHandlerTests
             .Should()
             .OnlyContain(command => command.Contains("\"Id\"", StringComparison.Ordinal) &&
                 command.Contains("WHERE", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenFinalPageHasRows_InfersExactTotalWithoutCountQuery()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Alpha", "Auteur", quantityAvailable: 1);
+        fixture.AddBook("9782070363735", "Beta", "Auteur", quantityAvailable: 1);
+        fixture.AddBook("9782253006329", "Gamma", "Auteur", quantityAvailable: 1);
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 3, PageSize: 1,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(3);
+        result.Value.HasMore.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Gamma");
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -315,6 +371,7 @@ public sealed class PublicCatalogQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.TotalCount.Should().Be(0);
+        result.Value.GetType().GetProperty("HasMore")!.GetValue(result.Value).Should().Be(false);
         result.Value.Books.Should().BeEmpty();
 
         var bookCommands = sql.Commands
@@ -729,6 +786,7 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateFunction<string?, string?, bool>("like", SqliteLike);
         var optionsBuilder = new DbContextOptionsBuilder<PublicCatalogTestDbContext>()
             .UseSqlite(connection);
         if (interceptor is not null)
@@ -741,6 +799,31 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
         await context.Database.EnsureCreatedAsync();
         return new PublicCatalogFixture(connection, context);
     }
+
+    private static bool SqliteLike(string? pattern, string? value)
+    {
+        if (pattern is null || value is null)
+        {
+            return false;
+        }
+
+        var normalizedPattern = RemoveDiacritics(pattern);
+        var regexPattern = "^" + string.Concat(normalizedPattern.Select(character => character switch
+        {
+            '%' => ".*",
+            '_' => ".",
+            _ => Regex.Escape(character.ToString())
+        })) + "$";
+        return Regex.IsMatch(
+            RemoveDiacritics(value),
+            regexPattern,
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+    }
+
+    private static string RemoveDiacritics(string value) => new(
+        value.Normalize(NormalizationForm.FormD)
+            .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            .ToArray());
 
     public Book AddBook(
         string isbn,

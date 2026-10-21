@@ -299,7 +299,15 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   goToPage(page: number): void {
-    if (page < 1 || !this.response || page > this.totalPages()) {
+    if (page < 1 || !this.response) {
+      return;
+    }
+
+    if (this.response.totalCount === null) {
+      if (page > this.response.page + 1 || (page > this.response.page && !this.response.hasMore)) {
+        return;
+      }
+    } else if (page > this.totalPages()) {
       return;
     }
 
@@ -621,11 +629,28 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   localCountLabel(): string {
-    const total = this.rareResponse?.totalCount ?? this.response?.totalCount ?? 0;
     if (this.rareOnly) {
+      const total = this.rareResponse?.totalCount ?? 0;
       return `${total} ${total === 1 ? 'livre rare' : 'livres rares'}`;
     }
 
+    const response = this.response;
+    if (!response) {
+      return '0 éditions';
+    }
+
+    if (response.totalCount === null) {
+      if (response.hasMore) {
+        return `Plus de ${response.page * response.pageSize} éditions`;
+      }
+      if (response.books.length === 0 && response.page > 1) {
+        return `Page ${response.page}`;
+      }
+      const lowerBound = (response.page - 1) * response.pageSize + response.books.length;
+      return `${lowerBound} éditions`;
+    }
+
+    const total = response.totalCount;
     return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
   }
 
@@ -643,13 +668,17 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   totalPages(): number {
-    if (!this.response || this.response.totalCount === 0) {
+    if (!this.response || this.response.totalCount === null || this.response.totalCount === 0) {
       return 1;
     }
     return Math.ceil(this.response.totalCount / this.response.pageSize);
   }
 
   pageNumbers(): number[] {
+    if (!this.response || this.response.totalCount === null) {
+      return this.response ? [this.response.page] : [];
+    }
+
     const total = this.totalPages();
     const current = this.response?.page || 1;
     const first = Math.max(1, Math.min(current - 2, total - 4));
@@ -658,7 +687,18 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   resultSummary(): string {
-    const total = this.rareResponse?.totalCount ?? this.response?.totalCount ?? 0;
+    if (!this.rareOnly && this.response?.totalCount === null) {
+      if (this.response.hasMore) {
+        return `Plus de ${this.response.page * this.response.pageSize} titres trouvés dans la bourse aux livres`;
+      }
+      if (this.response.books.length === 0 && this.response.page > 1) {
+        return `Aucun titre sur la page ${this.response.page}`;
+      }
+    }
+
+    const total = this.rareOnly
+      ? this.rareResponse?.totalCount ?? 0
+      : this.response?.totalCount ?? 0;
     if (total === 0) {
       return this.rareOnly
         ? 'Aucun livre rare trouvé dans la bourse aux livres'
@@ -723,6 +763,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
               generatedAt: rareResponse.generatedAt,
               books: [],
               totalCount: rareResponse.totalCount,
+              hasMore: rareResponse.page * rareResponse.pageSize < rareResponse.totalCount,
               page: rareResponse.page,
               pageSize: rareResponse.pageSize,
               genres: [],

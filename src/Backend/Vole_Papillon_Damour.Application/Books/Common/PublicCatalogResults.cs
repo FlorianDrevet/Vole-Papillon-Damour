@@ -39,7 +39,8 @@ public sealed record PublicCatalogBookResult(
 public sealed record PublicCatalogSearchResult(
     DateTime GeneratedAt,
     IReadOnlyList<PublicCatalogBookResult> Books,
-    int TotalCount,
+    int? TotalCount,
+    bool HasMore,
     int Page,
     int PageSize,
     IReadOnlyList<string> Genres);

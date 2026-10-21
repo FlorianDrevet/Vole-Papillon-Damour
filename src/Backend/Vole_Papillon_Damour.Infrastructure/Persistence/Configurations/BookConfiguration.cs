@@ -38,7 +38,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.Authors)
             .HasMaxLength(500)
             .UseCollation("Latin1_General_100_CI_AI");
-        builder.Property(book => book.Publisher).HasMaxLength(200);
+        builder.Property(book => book.Publisher)
+            .HasMaxLength(200)
+            .UseCollation("Latin1_General_100_CI_AI");
         builder.Property(book => book.PhysicalFormat).HasMaxLength(50);
         builder.Property(book => book.Language).HasMaxLength(10);
         builder.Property(book => book.Genre).HasMaxLength(100);
@@ -118,6 +120,16 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.HasIndex(book => book.Genre)
             .HasFilter(publicCatalogFilter)
             .HasDatabaseName("IX_Books_PublicCatalog_Genre");
+        builder.HasIndex(book => book.Title)
+            .IncludeProperties(book => new
+            {
+                book.Authors,
+                book.Publisher,
+                book.MetadataStatus,
+                book.QuantityAvailable
+            })
+            .HasFilter(publicCatalogFilter)
+            .HasDatabaseName("IX_Books_PublicCatalog_Search");
 
         builder.HasOne<Book>()
             .WithMany()

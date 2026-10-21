@@ -48,6 +48,7 @@ describe('CatalogHomePageComponent', () => {
     generatedAt: '2026-09-06T08:00:00Z',
     books: [book],
     totalCount: 412,
+    hasMore: true,
     page: 1,
     pageSize: 3,
     genres: ['Jeunesse', 'Romans', 'Policier'],
