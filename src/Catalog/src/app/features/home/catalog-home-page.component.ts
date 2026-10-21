@@ -21,6 +21,7 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
   books: [],
   totalCount: 0,
+  hasMore: false,
   page: 1,
   pageSize: 4,
   genres: [],
@@ -56,7 +57,8 @@ export class CatalogHomePageComponent implements OnInit {
   loading = signal(true);
   hasLoadError = signal(false);
   recent = signal<CatalogBook[]>([]);
-  recentTotal = signal(0);
+  recentTotal = signal<number | null>(null);
+  recentHasMore = signal(false);
   rare = signal<CatalogRareBook[]>([]);
   genres = signal<string[]>([]);
   nextFair = signal<CatalogFair | null>(null);
@@ -96,6 +98,7 @@ export class CatalogHomePageComponent implements OnInit {
     }).subscribe(({recent, rare, fairs}) => {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
+      this.recentHasMore.set(recent.hasMore);
       this.rare.set(rare.books);
       this.genres.set(recent.genres ?? []);
       this.setFairs(fairs);

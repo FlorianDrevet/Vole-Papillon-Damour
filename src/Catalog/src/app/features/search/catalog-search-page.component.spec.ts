@@ -73,6 +73,7 @@ describe('CatalogSearchPageComponent', () => {
       isRare: false,
     }],
     totalCount: 1,
+    hasMore: false,
     page: 1,
     pageSize: 24,
     genres: ['Jeunesse'],
@@ -111,7 +112,7 @@ describe('CatalogSearchPageComponent', () => {
       'CatalogApiService',
       ['search', 'getPublicRareBooks', 'searchReferences'],
     );
-    api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 24, genres: []}));
+    api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, hasMore: false, page: 1, pageSize: 24, genres: []}));
     api.getPublicRareBooks.and.returnValue(of({
       generatedAt: '',
       books: [],
@@ -932,6 +933,32 @@ describe('CatalogSearchPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).toBeNull();
+  });
+
+  it('shows next-page navigation without inventing an exact total', async () => {
+    const responseWithoutExactTotal = Object.assign({}, response, {
+      totalCount: null,
+      hasMore: true,
+    }) as unknown as CatalogSearchResponse;
+    api.search.and.returnValue(of(responseWithoutExactTotal));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const count = fixture.nativeElement.querySelector('.catalog-block .section-count') as HTMLElement;
+    expect(count.textContent?.trim()).toBe('Plus de 24 éditions');
+
+    const pagination = fixture.nativeElement.querySelector('.pagination:not(.external-pagination)') as HTMLElement;
+    expect(pagination).not.toBeNull();
+    if (!pagination) {
+      return;
+    }
+
+    expect(pagination.textContent).toContain('Page 1');
+    expect(pagination.querySelectorAll('button')).toHaveSize(2);
+    expect((pagination.querySelectorAll('button')[0] as HTMLButtonElement).disabled).toBeTrue();
+    expect((pagination.querySelectorAll('button')[1] as HTMLButtonElement).disabled).toBeFalse();
   });
 
   it('centers the external reference loader in its section', () => {

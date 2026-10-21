@@ -30,6 +30,7 @@ describe('CatalogNavigationComponent', () => {
       generatedAt: '',
       books: [],
       totalCount: 0,
+      hasMore: false,
       page: 1,
       pageSize: 1,
       genres: ['Essais'],

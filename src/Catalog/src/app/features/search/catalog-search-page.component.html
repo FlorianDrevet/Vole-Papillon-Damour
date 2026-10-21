@@ -225,17 +225,23 @@
                 </article>
               }
             </div>
+          } @else if (response && response.totalCount === null && response.page > 1 && !response.hasMore) {
+            <p class="state-message">Aucun livre sur cette page. Revenez à la page précédente.</p>
           } @else {
             <p class="state-message">Aucun livre ne correspond à ces critères. Modifiez votre recherche ou vos filtres.</p>
           }
 
-          @if (!loading && !error && response && response.totalCount > response.pageSize) {
+          @if (!loading && !error && response && (response.page > 1 || response.hasMore || (response.totalCount !== null && response.totalCount > response.pageSize))) {
             <nav class="pagination" aria-label="Pages du catalogue">
               <button type="button" [disabled]="response.page === 1" (click)="goToPage(response.page - 1)">← Précédente</button>
-              @for (page of pageNumbers(); track page) {
-                <button type="button" [class.current]="page === response.page" [attr.aria-current]="page === response.page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
+              @if (response.totalCount !== null) {
+                @for (page of pageNumbers(); track page) {
+                  <button type="button" [class.current]="page === response.page" [attr.aria-current]="page === response.page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
+                }
+              } @else {
+                <span aria-current="page">Page {{ response.page }}</span>
               }
-              <button type="button" [disabled]="response.page >= totalPages()" (click)="goToPage(response.page + 1)">Suivante →</button>
+              <button type="button" [disabled]="response.totalCount !== null ? response.page >= totalPages() : !response.hasMore" (click)="goToPage(response.page + 1)">Suivante →</button>
             </nav>
           }
         </section>

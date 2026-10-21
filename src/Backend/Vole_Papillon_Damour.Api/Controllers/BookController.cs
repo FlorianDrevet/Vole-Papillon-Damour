@@ -817,6 +817,7 @@ public static class BookController
             result.GeneratedAt,
             result.Books.Select(ToResponse).ToArray(),
             result.TotalCount,
+            result.HasMore,
             result.Page,
             result.PageSize,
             result.Genres);
