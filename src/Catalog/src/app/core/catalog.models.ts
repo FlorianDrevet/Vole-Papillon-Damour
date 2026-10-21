@@ -10,6 +10,7 @@ export interface CatalogBook {
   physicalFormat: string | null;
   language: string | null;
   genre: string | null;
+  genres?: string[] | null;
   workId: string | null;
   coverUrl: string | null;
   coverSource?: string | null;
@@ -61,6 +62,16 @@ export interface CatalogSearchResponse {
   hasMore: boolean;
   page: number;
   pageSize: number;
+  genres: string[];
+  genreFacets?: CatalogGenreFacet[];
+}
+
+export interface CatalogGenreFacet {
+  name: string;
+  bookCount: number;
+}
+
+export interface CatalogMemberGenreFavorites {
   genres: string[];
 }
 

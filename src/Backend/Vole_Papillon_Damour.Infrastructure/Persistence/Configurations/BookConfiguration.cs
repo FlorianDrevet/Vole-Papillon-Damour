@@ -72,6 +72,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.MetadataFetchedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
+        builder.Property(book => book.GenresRefreshedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
         builder.Property(book => book.ResolveAttempts)
             .HasDefaultValue(0)
             .IsRequired();
@@ -100,6 +103,8 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.HasIndex(book => book.WorkId);
         builder.HasIndex(book => new { book.MetadataStatus, book.LastAttemptAt });
+        builder.HasIndex(book => new { book.MetadataStatus, book.GenresRefreshedAt })
+            .HasDatabaseName("IX_Books_MetadataStatus_GenresRefreshedAt");
         // Scanette catalog delta: RowVersion > @since AND RowVersion < MIN_ACTIVE_ROWVERSION().
         builder.HasIndex(book => book.RowVersion);
         builder.HasIndex(book => book.UpdatedAt);
@@ -135,5 +140,12 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .WithMany()
             .HasForeignKey(book => book.RedirectedToIsbn13)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(book => book.Genres)
+            .WithOne()
+            .HasForeignKey(genre => genre.BookIsbn13)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(book => book.Genres)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

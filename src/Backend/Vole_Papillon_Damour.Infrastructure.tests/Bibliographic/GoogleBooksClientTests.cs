@@ -45,6 +45,7 @@ public sealed class GoogleBooksClientTests
         result.Authors.Should().Be("Antoine de Saint-Exupéry");
         result.PublicationYear.Should().Be(1946);
         result.Genre.Should().Be("Fiction");
+        result.Genres.Should().Equal("Fiction", "Children's fiction");
         result.CoverUrl.Should().Be("https://books.google.com/books/content?id=volume-42");
         result.CoverSource.Should().Be("GoogleBooks");
     }

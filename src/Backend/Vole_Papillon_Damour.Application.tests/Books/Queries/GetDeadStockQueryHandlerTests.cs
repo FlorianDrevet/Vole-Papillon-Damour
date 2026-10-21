@@ -11,6 +11,7 @@ using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
@@ -163,6 +164,9 @@ internal sealed class DeadStockFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var options = new DbContextOptionsBuilder<DeadStockTestDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -272,6 +276,7 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
         modelBuilder.Entity<Book>(builder =>

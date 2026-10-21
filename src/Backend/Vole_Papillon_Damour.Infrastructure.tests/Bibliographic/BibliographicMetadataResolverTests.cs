@@ -123,7 +123,7 @@ public sealed class BibliographicMetadataResolverTests
 
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
-        result.Should().Be(bnfMetadata with { Genre = "Jeunesse" });
+        result.Should().BeEquivalentTo(bnfMetadata with { Genre = "Jeunesse", Genres = ["Jeunesse"] });
         await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
     }
 
@@ -148,7 +148,7 @@ public sealed class BibliographicMetadataResolverTests
 
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
-        result.Should().Be(bnfMetadata with { Genre = "Essais" });
+        result.Should().BeEquivalentTo(bnfMetadata with { Genre = "Essais", Genres = ["Essais"] });
         await googleBooks.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
     }
 
@@ -171,7 +171,7 @@ public sealed class BibliographicMetadataResolverTests
 
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
-        result.Should().Be(bnfMetadata with { WorkId = "OL42W" });
+        result.Should().BeEquivalentTo(bnfMetadata with { WorkId = "OL42W", Genres = ["Romans"] });
         await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
     }
 
@@ -265,10 +265,11 @@ public sealed class BibliographicMetadataResolverTests
 
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
-        result.Should().Be(bnfMetadata with
+        result.Should().BeEquivalentTo(bnfMetadata with
         {
             CoverUrl = openLibraryMetadata.CoverUrl,
-            CoverSource = "OpenLibrary"
+            CoverSource = "OpenLibrary",
+            Genres = ["Romans"]
         });
         await googleBooks.DidNotReceiveWithAnyArgs().FindAsync(default, default);
     }
@@ -298,10 +299,11 @@ public sealed class BibliographicMetadataResolverTests
 
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
-        result.Should().Be(bnfMetadata with
+        result.Should().BeEquivalentTo(bnfMetadata with
         {
             CoverUrl = googleMetadata.CoverUrl,
-            CoverSource = "GoogleBooks"
+            CoverSource = "GoogleBooks",
+            Genres = ["Romans"]
         });
     }
 

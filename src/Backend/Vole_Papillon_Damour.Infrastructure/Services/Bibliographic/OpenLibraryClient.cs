@@ -44,8 +44,10 @@ public sealed class OpenLibraryClient(
         var workId = workKey?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true
             ? workKey["/works/".Length..]
             : null;
-        var genre = ReadFirstString(documentElement, "subject")
-            ?? ReadFirstString(documentElement, "subject_facet");
+        var genres = ReadStringValues(documentElement, "subject")
+            .Concat(ReadStringValues(documentElement, "subject_facet"))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         var coverUri = CreateCoverUri(coverId);
         if (coverUri is not null &&
             !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
@@ -64,7 +66,8 @@ public sealed class OpenLibraryClient(
             workId,
             DateTimeOffset.UtcNow,
             coverUri is null ? null : "OpenLibrary",
-            Genre: genre);
+            Genre: genres.FirstOrDefault(),
+            Genres: genres);
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)
@@ -109,6 +112,23 @@ public sealed class OpenLibraryClient(
             .Select(item => item.GetString())
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?
             .Trim();
+    }
+
+    private static IReadOnlyList<string> ReadStringValues(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return property
+            .EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.String)
+            .Select(item => item.GetString())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim())
+            .ToArray();
     }
 
     public async Task<IReadOnlyList<BookReferenceSearchItem>> SearchAsync(

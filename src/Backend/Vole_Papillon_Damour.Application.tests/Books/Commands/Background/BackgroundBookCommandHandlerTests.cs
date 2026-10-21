@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.Background;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
@@ -529,6 +530,75 @@ public sealed class BackgroundBookCommandHandlerTests
         result.CoverUpdatedCount.Should().Be(0);
         (await fixture.Context.Books.SingleAsync()).Genre.Should().Be("Romans");
         await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenRefreshingAllGenres_ReplacesTheLegacyGenreSet()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                "Antoine de Saint-Exupéry",
+                "Gallimard",
+                1946,
+                null,
+                null,
+                "Romans",
+                null,
+                [
+                    BookMetadataField.Title,
+                    BookMetadataField.Authors,
+                    BookMetadataField.Publisher,
+                    BookMetadataField.Genre
+                ],
+                Genres: ["Romans"]),
+            BookMetadataSource.Bnf,
+            WorkerNow.AddDays(-31),
+            rawPayload: null);
+        fixture.Context.Entry(book)
+            .Property(nameof(Book.GenresRefreshedAt))
+            .CurrentValue = null;
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Titre fournisseur différent",
+                "Autre auteur",
+                "Autre éditeur",
+                1946,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero),
+                Genre: "Roman",
+                Genres: ["Roman", "Jeunesse"]));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(RefreshAllGenres: true),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.Title.Should().Be("Le Petit Prince");
+        persisted.Authors.Should().Be("Antoine de Saint-Exupéry");
+        persisted.Publisher.Should().Be("Gallimard");
+        persisted.Genre.Should().Be("Roman");
+        persisted.Genres.Select(genre => genre.Name).Should().Equal("Roman", "Jeunesse");
+        (await fixture.Context.Set<BookGenre>()
+            .AsNoTracking()
+            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Select(genre => genre.Name)
+            .ToArrayAsync())
+            .Should().BeEquivalentTo("Roman", "Jeunesse");
+        persisted.GenresRefreshedAt.Should().Be(new DateTime(2026, 9, 3, 20, 0, 0, DateTimeKind.Utc));
     }
 
     [Fact]

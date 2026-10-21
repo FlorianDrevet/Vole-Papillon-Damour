@@ -55,10 +55,7 @@ public sealed class BnfSruClient(
         var publicationYear = ParseYear(
             FirstSubfield(dataFields, ["210", "214"], "d")
             ?? FirstElementValue(recordData, "date"));
-        var genre = FirstSubfield(dataFields, ["608"], "a")
-            ?? FirstSubfield(dataFields, ["606", "610"], "a")
-            ?? FirstElementValue(recordData, "genre")
-            ?? FirstElementValue(recordData, "subject");
+        var genres = ReadGenres(dataFields, recordData);
         var coverUri = CreateCoverUri(isbn13);
         if (coverUri is not null &&
             !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
@@ -77,7 +74,8 @@ public sealed class BnfSruClient(
             null,
             DateTimeOffset.UtcNow,
             coverUri is null ? null : "BnF",
-            Genre: Clean(genre));
+            Genre: genres.FirstOrDefault(),
+            Genres: genres);
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)
@@ -131,6 +129,36 @@ public sealed class BnfSruClient(
             .Where(field => tagSet.Contains(field.Attribute("tag")?.Value ?? string.Empty))
             .Select(field => Subfield(field, code))
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+    }
+
+    internal static IReadOnlyList<string> ReadGenres(
+        IEnumerable<XElement> dataFields,
+        XElement recordData)
+    {
+        var genreTags = new HashSet<string>(["608", "606", "610"], StringComparer.Ordinal);
+        var values = dataFields
+            .Where(field => genreTags.Contains(field.Attribute("tag")?.Value ?? string.Empty))
+            .SelectMany(field => field.Elements()
+                .Where(element => element.Name.LocalName == "subfield" &&
+                                  string.Equals(element.Attribute("code")?.Value, "a", StringComparison.Ordinal))
+                .Select(element => new
+                {
+                    Priority = field.Attribute("tag")?.Value == "608" ? 0 : 1,
+                    Value = element.Value
+                }))
+            .OrderBy(item => item.Priority)
+            .Select(item => item.Value)
+            .Concat(recordData.Descendants()
+                .Where(element => element.Name.LocalName is "genre" or "subject")
+                .OrderBy(element => element.Name.LocalName == "genre" ? 0 : 1)
+                .Select(element => element.Value));
+
+        return values
+            .Select(Clean)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     internal static string? Subfield(XElement dataField, string code)

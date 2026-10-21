@@ -76,6 +76,28 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_SortsGenresByVisibleBookCountThenName()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Roman un", "Auteur", genre: "Roman");
+        fixture.AddBook("9782070363735", "Roman deux", "Auteur", genre: "Roman");
+        fixture.AddBook("9782253006329", "Roman trois", "Auteur", genre: "Roman");
+        fixture.AddBook("9782070612758", "Jeunesse un", "Auteur", genre: "Jeunesse");
+        fixture.AddBook("9782070612765", "Jeunesse deux", "Auteur", genre: "Jeunesse");
+        fixture.AddBook("9782070612772", "Théâtre", "Auteur", genre: "Théâtre");
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Genres.Should().Equal("Roman", "Jeunesse", "Théâtre");
+    }
+
+    [Fact]
     public async Task SearchCatalog_ExcludesBooksThatArePendingOrHaveNoTitle()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -146,6 +168,31 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.Books.Should().ContainSingle().Which.Publisher.Should().Be("Éditions de l'Écume");
         sql.Commands.Should().NotContain(command =>
             command.Contains("replace(", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_FiltersBySecondaryGenreAndReturnsAllGenresForTheBook()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook(
+            "9782070408504",
+            "Roman de science-fiction",
+            "Auteur",
+            genre: "Roman",
+            genres: ["Roman", "Science-fiction"]);
+        fixture.AddBook("9782070363735", "Roman historique", "Auteur", genre: "Roman");
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, "Science-fiction", PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var book = result.Value.Books.Should().ContainSingle().Which;
+        book.Isbn13.Should().Be("9782070408504");
+        book.Genres.Should().Equal("Roman", "Science-fiction");
     }
 
     [Fact]
@@ -313,7 +360,8 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.HasMore.Should().BeTrue();
         result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Beta");
         sql.Commands.Should().NotContain(command =>
-            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase));
+            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase) &&
+            !command.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase));
         sql.Commands.Should().Contain(command =>
             command.Contains("FROM \"Books\"", StringComparison.Ordinal) &&
             command.Contains("LIMIT", StringComparison.Ordinal) &&
@@ -352,7 +400,8 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.HasMore.Should().BeFalse();
         result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Gamma");
         sql.Commands.Should().NotContain(command =>
-            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase));
+            command.Contains("COUNT(", StringComparison.OrdinalIgnoreCase) &&
+            !command.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -380,7 +429,7 @@ public sealed class PublicCatalogQueryHandlerTests
         bookCommands
             .Where(command => !command.Contains("LIKE", StringComparison.Ordinal))
             .Should()
-            .ContainSingle(command => command.Contains("\"Genre\"", StringComparison.Ordinal));
+            .ContainSingle(command => command.Contains("\"BookGenres\"", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -836,7 +885,8 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
         string? coverUrl = null,
         int quantityAvailable = 0,
         bool rare = false,
-        bool hidden = false)
+        bool hidden = false,
+        IReadOnlyCollection<string>? genres = null)
     {
         Isbn13.TryCreate(isbn, out var isbn13).Should().BeTrue();
         var book = Book.Create(isbn13, now.AddMinutes(-10));
@@ -865,7 +915,8 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                     BookMetadataField.CoverUrl,
                     BookMetadataField.WorkId
                 ],
-                workId),
+                workId,
+                Genres: genres),
             now.AddMinutes(-5));
         book.UpdateCatalogVisibility(hidden, now.AddMinutes(-3));
         Context.Books.Add(book);
@@ -1037,6 +1088,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookGenre> BookGenres => Set<BookGenre>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
@@ -1075,6 +1127,19 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.HasMany(book => book.Genres)
+                .WithOne()
+                .HasForeignKey(genre => genre.BookIsbn13)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(book => book.Genres)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<BookGenre>(builder =>
+        {
+            builder.HasKey(genre => new {genre.BookIsbn13, genre.Name});
+            builder.Property(genre => genre.BookIsbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

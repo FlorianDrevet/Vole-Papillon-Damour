@@ -34,7 +34,10 @@ public sealed record PublicCatalogBookResult(
     string? CoverSource = null,
     string? RareBookSlug = null,
     Guid? RareBookId = null,
-    string? Summary = null);
+    string? Summary = null,
+    IReadOnlyList<string>? Genres = null);
+
+public sealed record PublicCatalogGenreFacetResult(string Name, int BookCount);
 
 public sealed record PublicCatalogSearchResult(
     DateTime GeneratedAt,
@@ -43,7 +46,8 @@ public sealed record PublicCatalogSearchResult(
     bool HasMore,
     int Page,
     int PageSize,
-    IReadOnlyList<string> Genres);
+    IReadOnlyList<string> Genres,
+    IReadOnlyList<PublicCatalogGenreFacetResult>? GenreFacets = null);
 
 public sealed record PublicBookFairResult(
     Guid Id,

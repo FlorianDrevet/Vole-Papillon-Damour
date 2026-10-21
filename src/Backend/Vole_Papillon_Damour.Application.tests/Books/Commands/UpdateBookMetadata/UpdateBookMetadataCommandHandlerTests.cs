@@ -5,6 +5,8 @@ using Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Commands.UpdateBookMetadata;
@@ -94,6 +96,54 @@ public sealed class UpdateBookMetadataCommandHandlerTests
         book.Title.Should().BeNull();
         book.Authors.Should().Be("Auteur");
         book.ManuallyEditedFields.Should().Be("[\"Title\",\"Authors\"]");
+    }
+
+    [Fact]
+    public async Task Handle_WhenReplacingGenre_RemovesPreviousGenreRowsFromDatabase()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Romans",
+                null,
+                [BookMetadataField.Genre],
+                Genres: ["Romans"]),
+            BookMetadataSource.Bnf,
+            UpdatedAt.AddDays(-1),
+            rawPayload: null);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+        var handler = CreateHandler(fixture);
+
+        var result = await handler.Handle(
+            new UpdateBookMetadataCommand(
+                "9782070363735",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Conte",
+                null,
+                [BookMetadataField.Genre],
+                AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var genres = await fixture.Context.Set<BookGenre>()
+            .AsNoTracking()
+            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Select(genre => genre.Name)
+            .ToArrayAsync();
+        genres.Should().Equal("Conte");
     }
 
     [Fact]

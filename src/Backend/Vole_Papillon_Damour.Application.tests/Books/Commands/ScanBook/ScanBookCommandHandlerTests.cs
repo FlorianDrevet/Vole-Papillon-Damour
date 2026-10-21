@@ -543,6 +543,9 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
 
         var options = new DbContextOptionsBuilder<ScanBookTestDbContext>()
             .UseSqlite(connection)
@@ -779,6 +782,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
@@ -830,6 +834,12 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte>();
+            builder.HasMany(book => book.Genres)
+                .WithOne()
+                .HasForeignKey(genre => genre.BookIsbn13)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(book => book.Genres)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

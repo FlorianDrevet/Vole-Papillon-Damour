@@ -18,7 +18,9 @@ public sealed class BookEnrichmentFunction(
         using var scope = scopeFactory.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var result = await sender.Send(
-            new EnrichPendingBooksCommand(IncludeMissingGenres: true),
+            new EnrichPendingBooksCommand(
+                IncludeMissingGenres: true,
+                RefreshAllGenres: true),
             cancellationToken);
 
         logger.LogInformation(

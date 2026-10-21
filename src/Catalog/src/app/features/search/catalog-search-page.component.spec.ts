@@ -106,6 +106,7 @@ describe('CatalogSearchPageComponent', () => {
 
   beforeEach(async () => {
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
+    sessionStorage.removeItem('vpd.catalog.pending-genre-favorite');
     response$ = new Subject<CatalogSearchResponse>();
     routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
     api = jasmine.createSpyObj<CatalogApiService>(
@@ -143,8 +144,14 @@ describe('CatalogSearchPageComponent', () => {
     memberApi = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', [
       'addWatchlistItem',
       'getWatchlist',
+      'getGenreFavorites',
+      'addGenreFavorite',
+      'removeGenreFavorite',
     ]);
     memberApi.getWatchlist.and.returnValue(of(emptyWatchlist()));
+    memberApi.getGenreFavorites.and.returnValue(of({genres: []}));
+    memberApi.addGenreFavorite.and.returnValue(of({genres: []}));
+    memberApi.removeGenreFavorite.and.returnValue(of({genres: []}));
 
     await TestBed.configureTestingModule({
       declarations: [
@@ -473,21 +480,96 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Afficher les livres épuisés');
   });
 
-  it('shows every genre supplied by the catalog without a see-all button', async () => {
+  it('keeps a fixed shortlist and sorts the complete genre dialog by book count', async () => {
     const genres = ['Jeunesse', 'Romans', 'Policier', 'Histoire', 'Poésie', 'Théâtre', 'Sciences'];
-    api.search.and.returnValue(of({...response, genres}));
+    const genreFacets = [
+      {name: 'Théâtre', bookCount: 3},
+      {name: 'Sciences', bookCount: 12},
+      {name: 'Romans', bookCount: 3},
+      {name: 'Jeunesse', bookCount: 1},
+    ];
+    api.search.and.returnValue(of({...response, genres, genreFacets}));
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const genreGroup = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLFieldSetElement>('.filter-group'),
-    ).find(group => group.querySelector('legend')?.textContent?.trim() === 'Genre');
-    const options = Array.from(genreGroup?.querySelectorAll('label') ?? [])
-      .map(label => label.textContent?.trim());
+    expect(fixture.componentInstance.availableGenres()).toEqual([
+      'Roman', 'Jeunesse', 'Bande dessinée', 'Manga', 'Policier', 'Thriller',
+      'Science-fiction', 'Fantasy', 'Romance', 'Histoire', 'Biographie',
+      'Documentaire', 'Essai', 'Théâtre', 'Poésie', 'Cuisine',
+    ]);
+    expect(fixture.nativeElement.querySelector('.all-genres-link')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.filters-panel').textContent).not.toContain('Sciences');
 
-    expect(options).toEqual(['Tous les genres', ...genres]);
-    expect(fixture.nativeElement.querySelector('.all-genres-link')).toBeNull();
+    fixture.componentInstance.openGenreDialog();
+    fixture.detectChanges();
+    const options = fixture.componentInstance.filteredGenreOptions().map(option => option.name);
+    expect(options).toEqual(['Sciences', 'Romans', 'Théâtre', 'Jeunesse']);
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('searches genres without accents and applies one selected genre from the dialog', async () => {
+    api.search.and.returnValue(of({...response, genres: ['Théâtre', 'Policier']}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentInstance.openGenreDialog();
+    fixture.componentInstance.genreSearchTerm = 'theatre';
+    expect(fixture.componentInstance.filteredGenreOptions().map(option => option.name)).toEqual(['Théâtre']);
+
+    const applyFilters = spyOn(fixture.componentInstance, 'applyFilters');
+    fixture.componentInstance.selectGenreOption('Théâtre');
+    fixture.componentInstance.applyGenreDialogSelection();
+
+    expect(fixture.componentInstance.genre).toBe('Théâtre');
+    expect(fixture.componentInstance.genreDialogOpen).toBeFalse();
+    expect(applyFilters).toHaveBeenCalledOnceWith();
+  });
+
+  it('closes the genre dialog when Escape is pressed outside the dialog focus', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.openGenreDialog();
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.genreDialogOpen).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('asks for an account before pinning a genre and preserves the action through sign-in', async () => {
+    fixture.detectChanges();
+    await fixture.componentInstance.toggleGenreFavorite('Manga');
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.authPromptOpen).toBeTrue();
+    expect(fixture.componentInstance.authPromptTitle).toContain('épingler un genre');
+    expect(fixture.componentInstance.authPromptBenefits).toEqual([]);
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement).textContent)
+      .not.toContain('liste de suivi');
+
+    await fixture.componentInstance.confirmAuthPrompt('login');
+
+    expect(auth.login).toHaveBeenCalled();
+    expect(sessionStorage.getItem('vpd.catalog.pending-genre-favorite')).toBe('Manga');
+  });
+
+  it('resumes pinning a genre after the member signs in', async () => {
+    sessionStorage.setItem('vpd.catalog.pending-genre-favorite', 'Manga');
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.getGenreFavorites.and.returnValue(of({genres: []}));
+    memberApi.addGenreFavorite.and.returnValue(of({genres: ['Manga']}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(memberApi.addGenreFavorite).toHaveBeenCalledOnceWith('member-token', 'Manga');
+    expect(fixture.componentInstance.genreFavorites).toEqual(['Manga']);
+    expect(sessionStorage.getItem('vpd.catalog.pending-genre-favorite')).toBeNull();
   });
 
   it('centers the search bar within the content width', () => {
@@ -1133,7 +1215,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow')).toBeNull();
   });
 
-  it('does not invent genre filters when the API has no genre metadata', () => {
+  it('keeps the curated genre filters when the API has no genre metadata', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -1141,7 +1223,11 @@ describe('CatalogSearchPageComponent', () => {
       element.querySelectorAll<HTMLInputElement>('.filters-panel input[name="genre"]'),
     ).map(input => input.value);
 
-    expect(options).toEqual(['']);
+    expect(options).toEqual([
+      '', 'Roman', 'Jeunesse', 'Bande dessinée', 'Manga', 'Policier', 'Thriller',
+      'Science-fiction', 'Fantasy', 'Romance', 'Histoire', 'Biographie',
+      'Documentaire', 'Essai', 'Théâtre', 'Poésie', 'Cuisine',
+    ]);
   });
 
   it('opens a branded sort menu instead of relying on the native select popup', () => {

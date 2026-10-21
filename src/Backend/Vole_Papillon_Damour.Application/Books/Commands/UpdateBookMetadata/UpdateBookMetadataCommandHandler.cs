@@ -48,11 +48,13 @@ public sealed class UpdateBookMetadataCommandHandler(
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var book = await dbContext.Books
+            .Include(candidate => candidate.Genres)
             .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
         if (book?.RedirectedToIsbn13 is { } canonicalIsbn13)
         {
             isbn13 = canonicalIsbn13;
             book = await dbContext.Books
+                .Include(candidate => candidate.Genres)
                 .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
         }
 

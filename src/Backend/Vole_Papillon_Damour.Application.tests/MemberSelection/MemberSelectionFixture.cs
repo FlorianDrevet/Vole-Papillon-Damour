@@ -64,6 +64,9 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var optionsBuilder = new DbContextOptionsBuilder<MemberSelectionTestDbContext>()
             .UseSqlite(connection);
         if (commandInterceptor is not null)
@@ -293,6 +296,7 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<ScanSession>();

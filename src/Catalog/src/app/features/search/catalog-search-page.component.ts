@@ -12,11 +12,12 @@ import {ActivatedRoute, ParamMap, Router} from '@angular/router';
 import {Observable, Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
-import {mergeCatalogGenres} from '../../core/catalog-genres';
+import {catalogSearchSidebarGenres} from '../../core/catalog-genres';
 import {
   CatalogAvailability,
   CatalogBook,
   CatalogBookReference,
+  CatalogGenreFacet,
   CatalogSearchParams,
   CatalogSearchResponse,
   CatalogSort,
@@ -81,9 +82,25 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   bookFollowErrorKey: string | null = null;
   bookFollowError: string | null = null;
   authPromptOpen = false;
+  genreDialogOpen = false;
+  genreSearchTerm = '';
+  draftGenre = '';
+  genreFavorites: string[] = [];
+  genreFavoritePending: string | null = null;
+  genreFavoriteError: string | null = null;
+  genreFavoriteMessage: string | null = null;
+  authPromptTitle = 'Connectez-vous pour suivre ce livre';
+  authPromptDescription = 'Créez votre espace gratuit pour ajouter ce titre à votre liste de suivi et être prévenu dès qu’il arrive à la bourse aux livres.';
+  authPromptBenefits: readonly string[] = [
+    'Ajoutez autant de livres que vous voulez à votre liste de suivi',
+    'Recevez une alerte dès qu’une édition suivie arrive au catalogue',
+    'Accès en un instant, sans mot de passe à retenir',
+  ];
+  authPromptHint = 'Le catalogue reste consultable sans compte : seul l’ajout à votre liste de suivi nécessite une connexion.';
 
   private readonly followedReferenceKeys = new Set<string>();
   private pendingAuthPrompt: {targets: readonly CatalogReferenceFollowTarget[]} | null = null;
+  private pendingAuthGenreFavorite: string | null = null;
 
   readonly sortChoices: ReadonlyArray<{
     value: CatalogSort;
@@ -114,6 +131,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   private readonly destroyed = new Subject<void>();
   private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
+  private readonly pendingGenreFavoriteStorageKey = 'vpd.catalog.pending-genre-favorite';
   private routeState: CatalogSearchRouteState | null = null;
   private currentPage = 1;
   private currentReferencePage = 1;
@@ -284,6 +302,14 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('document:keydown.escape', ['$event'])
+  closeGenreDialogOnEscape(event: Event): void {
+    if (this.genreDialogOpen) {
+      event.preventDefault();
+      this.closeGenreDialog();
+    }
+  }
+
   clearFilters(): void {
     this.query = '';
     this.genre = '';
@@ -339,6 +365,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
+      this.resetAuthPromptCopy();
       this.pendingAuthPrompt = {targets: [{item, scope}]};
       this.authPromptOpen = true;
       this.changeDetector.markForCheck();
@@ -467,18 +494,27 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   closeAuthPrompt(): void {
     this.authPromptOpen = false;
     this.pendingAuthPrompt = null;
+    this.pendingAuthGenreFavorite = null;
+    this.resetAuthPromptCopy();
     this.changeDetector.markForCheck();
   }
 
   async confirmAuthPrompt(mode: 'login' | 'register'): Promise<void> {
     const pending = this.pendingAuthPrompt;
+    const pendingGenre = this.pendingAuthGenreFavorite;
     this.authPromptOpen = false;
     this.pendingAuthPrompt = null;
-    if (!pending) {
+    this.pendingAuthGenreFavorite = null;
+    if (!pending && !pendingGenre) {
       return;
     }
 
-    this.savePendingReferenceFollow(pending.targets);
+    if (pending) {
+      this.savePendingReferenceFollow(pending.targets);
+    }
+    if (pendingGenre) {
+      this.savePendingGenreFavorite(pendingGenre);
+    }
     try {
       const returnUrl = this.referenceReturnUrl();
       if (mode === 'register') {
@@ -487,15 +523,23 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         await this.auth.login(returnUrl);
       }
     } catch {
-      this.clearPendingReferenceFollow();
+      if (pending) {
+        this.clearPendingReferenceFollow();
+      }
+      if (pendingGenre) {
+        this.clearPendingGenreFavorite();
+      }
       const message = 'La connexion n’a pas pu être démarrée. Réessayez.';
-      const bookTarget = pending.targets.find(target => target.item.source === 'catalog');
+      const bookTarget = pending?.targets.find(target => target.item.source === 'catalog');
       if (bookTarget) {
         this.bookFollowErrorKey = this.referenceFollowKey(bookTarget.item, bookTarget.scope);
         this.bookFollowError = message;
+      } else if (pendingGenre) {
+        this.genreFavoriteError = message;
       } else {
         this.referenceFollowError = message;
       }
+      this.resetAuthPromptCopy();
       this.changeDetector.markForCheck();
     }
   }
@@ -714,7 +758,68 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       return [];
     }
 
-    return mergeCatalogGenres(this.response?.genres, this.genre);
+    return catalogSearchSidebarGenres(this.genre, this.genreFavorites);
+  }
+
+  openGenreDialog(): void {
+    this.genreSearchTerm = '';
+    this.draftGenre = this.genre;
+    this.genreDialogOpen = true;
+    this.changeDetector.markForCheck();
+  }
+
+  closeGenreDialog(): void {
+    this.genreDialogOpen = false;
+    this.genreSearchTerm = '';
+    this.changeDetector.markForCheck();
+  }
+
+  filteredGenreOptions(): CatalogGenreFacet[] {
+    const options = this.response?.genreFacets?.length
+      ? this.response.genreFacets.map(facet => ({name: facet.name, bookCount: facet.bookCount}))
+      : (this.response?.genres ?? []).map(name => ({name, bookCount: 0}));
+    if (this.genre && !options.some(option => this.sameGenre(option.name, this.genre))) {
+      options.push({name: this.genre, bookCount: 0});
+    }
+
+    const query = this.normalizeGenreSearch(this.genreSearchTerm);
+    return options
+      .filter(option => !query || this.normalizeGenreSearch(option.name).includes(query))
+      .sort((left, right) =>
+        right.bookCount - left.bookCount || left.name.localeCompare(right.name, 'fr-FR'));
+  }
+
+  selectGenreOption(genre: string): void {
+    this.draftGenre = genre;
+    this.changeDetector.markForCheck();
+  }
+
+  applyGenreDialogSelection(): void {
+    this.genre = this.draftGenre;
+    this.closeGenreDialog();
+    this.applyFilters();
+  }
+
+  isGenreFavorite(genre: string): boolean {
+    return this.genreFavorites.some(favorite => this.sameGenre(favorite, genre));
+  }
+
+  async toggleGenreFavorite(genre: string): Promise<void> {
+    this.genreFavoriteError = null;
+    this.genreFavoriteMessage = null;
+
+    if (!this.auth.isAuthenticated()) {
+      this.pendingAuthGenreFavorite = genre;
+      this.authPromptTitle = 'Connectez-vous pour épingler un genre';
+      this.authPromptDescription = 'Enregistrez vos genres favoris sur votre compte pour les retrouver en tête des filtres du catalogue.';
+      this.authPromptBenefits = [];
+      this.authPromptHint = 'Votre compte conserve vos genres épinglés sur tous vos appareils.';
+      this.authPromptOpen = true;
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    await this.setGenreFavorite(genre, !this.isGenreFavorite(genre));
   }
 
   trackBook(_index: number, isbn13: string): string {
@@ -1027,6 +1132,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   private async initializeReferenceFollowState(): Promise<void> {
     const pending = this.readPendingReferenceFollow();
+    const pendingGenre = this.readPendingGenreFavorite();
 
     try {
       await this.auth.initialize();
@@ -1038,7 +1144,15 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    await this.loadReferenceFollowState();
+    await Promise.all([
+      this.loadReferenceFollowState(),
+      this.loadGenreFavoriteState(),
+    ]);
+
+    if (pendingGenre) {
+      this.clearPendingGenreFavorite();
+      await this.setGenreFavorite(pendingGenre, true);
+    }
 
     if (!pending) {
       return;
@@ -1070,6 +1184,104 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     } finally {
       this.changeDetector.markForCheck();
     }
+  }
+
+  private async loadGenreFavoriteState(): Promise<void> {
+    try {
+      const token = await this.auth.tryGetApiAccessToken();
+      if (!token) {
+        return;
+      }
+
+      const response = await firstValueFrom(this.memberApi.getGenreFavorites(token));
+      this.genreFavorites = response.genres;
+    } catch {
+      // The public catalogue remains usable when member preferences are unavailable.
+    } finally {
+      this.changeDetector.markForCheck();
+    }
+  }
+
+  private async setGenreFavorite(genre: string, pinned: boolean): Promise<void> {
+    if (this.genreFavoritePending) {
+      return;
+    }
+
+    this.genreFavoritePending = genre;
+    this.genreFavoriteError = null;
+    this.genreFavoriteMessage = null;
+    this.changeDetector.markForCheck();
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const response = await firstValueFrom(pinned
+        ? this.memberApi.addGenreFavorite(token, genre)
+        : this.memberApi.removeGenreFavorite(token, genre));
+      this.genreFavorites = response.genres;
+      this.genreFavoriteMessage = pinned
+        ? `${genre} est épinglé en tête de vos filtres.`
+        : `${genre} a été retiré de vos genres épinglés.`;
+    } catch {
+      this.genreFavoriteError = 'La préférence de genre n’a pas pu être enregistrée. Réessayez.';
+    } finally {
+      this.genreFavoritePending = null;
+      this.changeDetector.markForCheck();
+    }
+  }
+
+  private sameGenre(left: string, right: string): boolean {
+    return left.trim().toLocaleLowerCase('fr-FR') === right.trim().toLocaleLowerCase('fr-FR');
+  }
+
+  private normalizeGenreSearch(value: string): string {
+    return value
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('fr-FR');
+  }
+
+  private savePendingGenreFavorite(genre: string): void {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(this.pendingGenreFavoriteStorageKey, genre);
+      }
+    } catch {
+      // A blocked session storage should not prevent the normal login redirect.
+    }
+  }
+
+  private readPendingGenreFavorite(): string | null {
+    try {
+      if (typeof sessionStorage === 'undefined') {
+        return null;
+      }
+
+      const genre = sessionStorage.getItem(this.pendingGenreFavoriteStorageKey)?.trim();
+      return genre || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private clearPendingGenreFavorite(): void {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(this.pendingGenreFavoriteStorageKey);
+      }
+    } catch {
+      // The intent is best-effort when browser storage is unavailable.
+    }
+  }
+
+  private resetAuthPromptCopy(): void {
+    this.authPromptTitle = 'Connectez-vous pour suivre ce livre';
+    this.authPromptDescription = 'Créez votre espace gratuit pour ajouter ce titre à votre liste de suivi et être prévenu dès qu’il arrive à la bourse aux livres.';
+    this.authPromptBenefits = [
+      'Ajoutez autant de livres que vous voulez à votre liste de suivi',
+      'Recevez une alerte dès qu’une édition suivie arrive au catalogue',
+      'Accès en un instant, sans mot de passe à retenir',
+    ];
+    this.authPromptHint = 'Le catalogue reste consultable sans compte : seul l’ajout à votre liste de suivi nécessite une connexion.';
   }
 
   private watchlistItemKey(item: CatalogWatchlistItem): string | null {

@@ -288,6 +288,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("GenresRefreshedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsHiddenFromCatalog")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -401,6 +404,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
 
+                    b.HasIndex("MetadataStatus", "GenresRefreshedAt")
+                        .HasDatabaseName("IX_Books_MetadataStatus_GenresRefreshedAt");
+
                     b.HasIndex("MetadataStatus", "LastAttemptAt");
 
                     b.HasIndex("UpdatedAt", "Title")
@@ -462,6 +468,25 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_BookAnnouncements_Quantity_Positive", "[Quantity] > 0");
                         });
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookGenre", b =>
+                {
+                    b.Property<string>("BookIsbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Latin1_General_100_CI_AI");
+
+                    b.HasKey("BookIsbn13", "Name");
+
+                    b.HasIndex("Name", "BookIsbn13")
+                        .HasDatabaseName("IX_BookGenres_Name_BookIsbn13");
+
+                    b.ToTable("BookGenres", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
@@ -1345,6 +1370,21 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("ScanSessions", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.UserAggregate.MemberGenreFavorite", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Genre")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Latin1_General_100_CI_AI");
+
+                    b.HasKey("UserId", "Genre");
+
+                    b.ToTable("MemberGenreFavorites", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.UserAggregate.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1780,6 +1820,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookGenre", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithMany("Genres")
+                        .HasForeignKey("BookIsbn13")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
@@ -1987,6 +2036,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.UserAggregate.MemberGenreFavorite", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.WatchlistAggregate.EmailBounceEvent", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
@@ -2031,6 +2089,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Book", b =>
+                {
+                    b.Navigation("Genres");
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>
