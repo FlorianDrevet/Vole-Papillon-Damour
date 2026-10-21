@@ -62,4 +62,38 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
         result.Value.Page.Should().Be(2);
         result.Value.Items.Should().ContainSingle();
     }
+
+    [Theory]
+    [InlineData(BookMetadataStatus.Pending, 1)]
+    [InlineData(BookMetadataStatus.Failed, 2)]
+    public async Task Handle_FiltersByMetadataStatusBeforePaging(
+        BookMetadataStatus requestedStatus,
+        int expectedTotalCount)
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var failed = await fixture.AddBookAsync("9782070408504", quantityAvailable: 1);
+        failed.RecordMetadataProviderFailure(
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "Le fournisseur de notices est indisponible.");
+        var anotherFailed = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        anotherFailed.RecordMetadataProviderFailure(
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "Aucune notice bibliographique exploitable.");
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetBookMetadataQueueQueryHandler(fixture.Context, clock);
+        var query = new GetBookMetadataQueueQuery(
+            Page: 1,
+            PageSize: 1,
+            MetadataStatus: requestedStatus);
+
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(expectedTotalCount);
+        result.Value.Items.Should().ContainSingle();
+        result.Value.Items[0].MetadataStatus.Should().Be(requestedStatus.ToString());
+    }
 }

@@ -440,6 +440,33 @@ app-catalog-administration-page {
   .isbn-import-metric dd { margin: 7px 0 0; color: var(--admin-ink); font: 500 24px/1 'Newsreader', Georgia, serif; }
   .isbn-import-metric:first-child dd { color: var(--admin-blue); }
 
+  .isbn-analysis-zone {
+    margin-top: 26px;
+    padding: 24px 28px 18px;
+    border: 1px solid var(--admin-line);
+    border-radius: 4px;
+    background: var(--admin-white);
+  }
+
+  .isbn-analysis-zone > .section-heading { margin-top: 0; }
+
+  .isbn-queue-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 12px 14px;
+    border: 1px solid var(--admin-line-soft);
+    border-radius: 4px;
+    background: var(--admin-paper);
+  }
+
+  .isbn-queue-filter-label { color: var(--admin-muted); font-size: 12px; font-weight: 600; }
+  .period-chips.isbn-queue-filters { gap: 6px; margin: 0; }
+  .isbn-analysis-zone .catalogue-book-actions.isbn-analysis-actions { flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .isbn-analysis-zone .isbn-analysis-actions > button { min-height: 40px; white-space: nowrap; }
+
   @media (max-width: 680px) {
     .catalogue-add-zone.isbn-application-import-zone { padding: 18px; }
     .isbn-import-header { align-items: stretch; flex-direction: column; gap: 14px; }
@@ -451,5 +478,9 @@ app-catalog-administration-page {
     .isbn-import-select { width: 100%; }
     .isbn-import-picker-action > span { text-align: center; }
     .isbn-import-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .isbn-analysis-zone { padding: 18px 16px 14px; }
+    .isbn-queue-toolbar { align-items: flex-start; flex-direction: column; }
+    .period-chips.isbn-queue-filters { max-width: 100%; overflow-x: auto; }
+    .isbn-analysis-zone .catalogue-book-actions.isbn-analysis-actions { width: 100%; justify-content: flex-start; }
   }
 }
