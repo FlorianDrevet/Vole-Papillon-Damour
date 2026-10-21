@@ -32,6 +32,11 @@ where Angular component-style budgets require it. Responsive browser checks cove
 and 1280×900 with a development-only mocked authorized session; real MSAL/API validation and
 physical-device checks remain pending.
 
+On 2026-10-21, the anonymous-customer state in cash mode puts a compact « Scanner » card
+action beside its status from 19rem upward and stacks it below that width. The button keeps
+a descriptive accessible name and a 44px touch target; its presentation rules live in the
+global Scan stylesheet to stay within `scanner.component.scss`'s component-style budget.
+
 As of 2026-09-15, the Scan PWA keeps successful automatic synchronization silent: it no
 longer opens a success toast. A transmission that is merely queued for the background
 sync no longer raises the top `(action à faire)` status strip; offline state, synchronization
