@@ -272,7 +272,7 @@ public sealed class BibliographicMetadataResolver(
     {
         return metadata.CoverUrl is null ||
                string.IsNullOrWhiteSpace(metadata.WorkId) ||
-               (metadata.Genres?.Count == 0 && string.IsNullOrWhiteSpace(metadata.Genre)) ||
+               (metadata.Genres is not { Count: > 0 } && string.IsNullOrWhiteSpace(metadata.Genre)) ||
                (includeBibliographicDetails &&
                 (string.IsNullOrWhiteSpace(metadata.Summary) ||
                  string.IsNullOrWhiteSpace(metadata.PhysicalFormat) ||
