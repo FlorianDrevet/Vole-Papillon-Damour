@@ -409,6 +409,9 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var options = new DbContextOptionsBuilder<CatalogDeltaTestDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -657,6 +660,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
         modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());

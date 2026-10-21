@@ -7,6 +7,7 @@ import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
   CatalogMemberCard,
+  CatalogMemberGenreFavorites,
   CatalogRecommendationsResponse,
   CatalogPurchasesResponse,
   CatalogAddedSelectionItem,
@@ -85,6 +86,28 @@ export class CatalogMemberApiService {
     return this.http.get<CatalogWatchlistResponse>(
       `${this.apiUrl}/catalog/me/watchlist`,
       {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getGenreFavorites(accessToken: string): Observable<CatalogMemberGenreFavorites> {
+    return this.http.get<CatalogMemberGenreFavorites>(
+      `${this.apiUrl}/catalog/me/genre-favorites`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  addGenreFavorite(accessToken: string, genre: string): Observable<CatalogMemberGenreFavorites> {
+    return this.http.post<CatalogMemberGenreFavorites>(
+      `${this.apiUrl}/catalog/me/genre-favorites`,
+      {genre},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  removeGenreFavorite(accessToken: string, genre: string): Observable<CatalogMemberGenreFavorites> {
+    return this.http.delete<CatalogMemberGenreFavorites>(
+      `${this.apiUrl}/catalog/me/genre-favorites`,
+      {headers: this.authorizationHeaders(accessToken), body: {genre}},
     );
   }
 

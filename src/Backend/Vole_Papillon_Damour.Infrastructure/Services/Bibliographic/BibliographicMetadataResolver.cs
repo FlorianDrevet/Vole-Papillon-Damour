@@ -236,6 +236,7 @@ public sealed class BibliographicMetadataResolver(
             return primary;
         }
 
+        var genres = MergeGenres(primary, enrichment);
         var coverUrl = primary.CoverUrl ?? enrichment.CoverUrl;
         var coverSource = primary.CoverUrl is not null
             ? primary.CoverSource
@@ -248,16 +249,29 @@ public sealed class BibliographicMetadataResolver(
             WorkId = primary.WorkId ?? enrichment.WorkId,
             CoverUrl = coverUrl,
             CoverSource = coverSource,
-            Genre = string.IsNullOrWhiteSpace(primary.Genre)
-                ? enrichment.Genre
-                : primary.Genre,
+            Genre = genres.FirstOrDefault(),
+            Genres = genres,
         };
+    }
+
+    private static IReadOnlyList<string> MergeGenres(
+        BookMetadataResult primary,
+        BookMetadataResult enrichment)
+    {
+        return new[] {primary.Genres, enrichment.Genres}
+            .Where(values => values is not null)
+            .SelectMany(values => values!)
+            .Concat([primary.Genre, enrichment.Genre])
+            .Where(genre => !string.IsNullOrWhiteSpace(genre))
+            .Select(genre => string.Join(' ', genre!.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private static bool HasCompleteMetadata(BookMetadataResult metadata)
     {
         return metadata.CoverUrl is not null &&
-               !string.IsNullOrWhiteSpace(metadata.Genre);
+               (metadata.Genres?.Count > 0 || !string.IsNullOrWhiteSpace(metadata.Genre));
     }
 
     private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed)

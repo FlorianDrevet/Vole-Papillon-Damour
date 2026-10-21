@@ -11,4 +11,5 @@ public sealed record BookMetadataResult(
     string? WorkId,
     DateTimeOffset RetrievedAt,
     string? CoverSource = null,
-    string? Genre = null);
+    string? Genre = null,
+    IReadOnlyList<string>? Genres = null);

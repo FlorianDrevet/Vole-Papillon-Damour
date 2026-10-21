@@ -11,6 +11,7 @@ using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
@@ -156,6 +157,9 @@ internal sealed class GetBookMetadataFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var options = new DbContextOptionsBuilder<GetBookMetadataTestDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -193,6 +197,7 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
         modelBuilder.Ignore<Product>();

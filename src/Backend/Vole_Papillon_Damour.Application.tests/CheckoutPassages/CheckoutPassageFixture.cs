@@ -362,6 +362,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     public bool ThrowWhenRecommendationDataIsRead { get; set; }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<MemberGenreFavorite> MemberGenreFavorites => Set<MemberGenreFavorite>();
     public DbSet<Book> Books => Set<Book>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
@@ -391,6 +392,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     DbSet<RareBook> IProjectDbContext.RareBooks => throw new NotSupportedException();
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
     DbSet<MemberCard> IProjectDbContext.MemberCards => MemberCards;
+    DbSet<MemberGenreFavorite> IProjectDbContext.MemberGenreFavorites => MemberGenreFavorites;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => throw new NotSupportedException();
     DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor>
         IProjectDbContext.BookNeighbors => ThrowWhenRecommendationDataIsRead
@@ -419,6 +421,8 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.Ignore<RareBookPhoto>();
         modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
         modelBuilder.ApplyConfiguration(new BookConfiguration());
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new MemberGenreFavoriteConfiguration());
         modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.ManuallyEditedFields).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.RowVersion)

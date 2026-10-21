@@ -60,7 +60,10 @@ public static class PublicCatalogProjector
                     new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero),
                     publishedAvailableRareIsbns.Contains(book.Id.Value),
-                    book.CoverSource?.ToString());
+                    book.CoverSource?.ToString(),
+                    Genres: book.Genres.Count > 0
+                        ? book.Genres.Select(genre => genre.Name).ToArray()
+                        : string.IsNullOrWhiteSpace(book.Genre) ? [] : [book.Genre]);
             })
             .ToArray();
     }

@@ -138,11 +138,32 @@
             <span>Tous les genres</span>
           </label>
           @for (availableGenre of availableGenres(); track availableGenre) {
-            <label class="filter-option filter-option--checkbox">
-              <input type="radio" name="genre" [value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
-              <span class="filter-control checkbox-control" aria-hidden="true"></span>
-              <span>{{ availableGenre }}</span>
-            </label>
+            <div class="genre-filter-row">
+              <label class="filter-option filter-option--checkbox">
+                <input type="radio" name="genre" [value]="availableGenre" [attr.value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+                <span class="filter-control checkbox-control" aria-hidden="true"></span>
+                <span>{{ availableGenre }}</span>
+              </label>
+              <button
+                type="button"
+                class="genre-pin-trigger"
+                [attr.aria-label]="(isGenreFavorite(availableGenre) ? 'Retirer ' : 'Épingler ') + availableGenre + (isGenreFavorite(availableGenre) ? ' des genres favoris' : ' dans mes genres favoris')"
+                [attr.aria-pressed]="isGenreFavorite(availableGenre)"
+                [disabled]="genreFavoritePending === availableGenre"
+                (click)="toggleGenreFavorite(availableGenre)">
+                <span aria-hidden="true">{{ isGenreFavorite(availableGenre) ? '★' : '☆' }}</span>
+              </button>
+            </div>
+          }
+          <button type="button" class="all-genres-link" (click)="openGenreDialog()">
+            Parcourir tous les genres
+            <span aria-hidden="true">→</span>
+          </button>
+          @if (genreFavoriteMessage) {
+            <p class="genre-favorite-message" role="status">{{ genreFavoriteMessage }}</p>
+          }
+          @if (genreFavoriteError) {
+            <p class="genre-favorite-error" role="alert">{{ genreFavoriteError }}</p>
           }
         </fieldset>
 
@@ -383,8 +404,95 @@
   </div>
 </section>
 
+@if (genreDialogOpen) {
+  <div class="genre-dialog-backdrop" role="presentation" (click)="closeGenreDialog()">
+    <section
+      class="genre-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="genre-dialog-title"
+      (click)="$event.stopPropagation()">
+      <header class="genre-dialog-header">
+        <div>
+          <p class="filter-kicker">Explorer</p>
+          <h2 id="genre-dialog-title">Tous les genres</h2>
+          <p>Recherchez un genre ou parcourez la liste complète.</p>
+        </div>
+        <button type="button" class="genre-dialog-close" aria-label="Fermer" (click)="closeGenreDialog()">×</button>
+      </header>
+
+      <label class="genre-dialog-search">
+        <span aria-hidden="true">⌕</span>
+        <span class="visually-hidden">Rechercher un genre</span>
+        <input
+          type="search"
+          name="genreSearch"
+          [(ngModel)]="genreSearchTerm"
+          placeholder="Rechercher un genre"
+          autocomplete="off">
+        @if (genreSearchTerm) {
+          <button type="button" aria-label="Effacer la recherche" (click)="genreSearchTerm = ''">×</button>
+        }
+      </label>
+
+      <div class="genre-dialog-list" role="radiogroup" aria-label="Choisir un genre">
+        <button
+          type="button"
+          class="genre-dialog-option genre-dialog-option--all"
+          role="radio"
+          [attr.aria-checked]="draftGenre === ''"
+          (click)="selectGenreOption('')">
+          <span class="genre-dialog-radio" aria-hidden="true"></span>
+          <span>Tous les genres</span>
+        </button>
+        @for (option of filteredGenreOptions(); track option.name) {
+          <div class="genre-dialog-row">
+            <button
+              type="button"
+              class="genre-dialog-option"
+              role="radio"
+              [attr.aria-checked]="draftGenre === option.name"
+              (click)="selectGenreOption(option.name)">
+              <span class="genre-dialog-radio" aria-hidden="true"></span>
+              <span class="genre-dialog-option-name">{{ option.name }}</span>
+              <span class="genre-dialog-count">{{ option.bookCount }} {{ option.bookCount === 1 ? 'livre' : 'livres' }}</span>
+            </button>
+            <button
+              type="button"
+              class="genre-pin-trigger"
+              [attr.aria-label]="(isGenreFavorite(option.name) ? 'Retirer ' : 'Épingler ') + option.name + (isGenreFavorite(option.name) ? ' des genres favoris' : ' dans mes genres favoris')"
+              [attr.aria-pressed]="isGenreFavorite(option.name)"
+              [disabled]="genreFavoritePending === option.name"
+              (click)="toggleGenreFavorite(option.name)">
+              <span aria-hidden="true">{{ isGenreFavorite(option.name) ? '★' : '☆' }}</span>
+            </button>
+          </div>
+        } @empty {
+          <p class="genre-dialog-empty">Aucun genre ne correspond à cette recherche.</p>
+        }
+      </div>
+
+      @if (genreFavoriteMessage) {
+        <p class="genre-favorite-message" role="status">{{ genreFavoriteMessage }}</p>
+      }
+      @if (genreFavoriteError) {
+        <p class="genre-favorite-error" role="alert">{{ genreFavoriteError }}</p>
+      }
+
+      <footer class="genre-dialog-footer">
+        <button type="button" class="genre-dialog-cancel" (click)="closeGenreDialog()">Annuler</button>
+        <button type="button" class="genre-dialog-apply" (click)="applyGenreDialogSelection()">Afficher les résultats</button>
+      </footer>
+    </section>
+  </div>
+}
+
 <app-catalog-auth-prompt
   [open]="authPromptOpen"
+  [title]="authPromptTitle"
+  [description]="authPromptDescription"
+  [benefits]="authPromptBenefits"
+  [hint]="authPromptHint"
   (closed)="closeAuthPrompt()"
   (loginRequested)="confirmAuthPrompt('login')"
   (registerRequested)="confirmAuthPrompt('register')"></app-catalog-auth-prompt>

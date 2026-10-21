@@ -6,6 +6,8 @@ using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
+using Vole_Papillon_Damour.Application.MemberGenres.Commands.SetMyGenreFavorite;
+using Vole_Papillon_Damour.Application.MemberGenres.Queries.GetMyGenreFavorites;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
 using Vole_Papillon_Damour.Application.NotFoundReports.Commands.CancelNotFoundReport;
 using Vole_Papillon_Damour.Application.NotFoundReports.Commands.ReportNotFound;
@@ -19,6 +21,7 @@ using Vole_Papillon_Damour.Contracts.MemberSelection;
 using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Contracts.Purchases;
 using Vole_Papillon_Damour.Contracts.Recommendations;
+using Vole_Papillon_Damour.Contracts.MemberGenres;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -234,6 +237,96 @@ public static class MemberAccountController
                             error => error.Result());
                     })
                 .WithName("GetMyRecommendations")
+                .RequireAuthorization();
+
+            endpoints.MapGet(
+                    "/catalog/me/genre-favorites",
+                    async (
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyGenreFavoritesQuery(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
+                            cancellationToken);
+                        return result.Match(
+                            favorites => Results.Ok(new MemberGenreFavoritesResponse(favorites.Genres)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyGenreFavorites")
+                .RequireAuthorization();
+
+            endpoints.MapPost(
+                    "/catalog/me/genre-favorites",
+                    async (
+                        SetMemberGenreFavoriteRequest request,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetMyGenreFavoriteCommand(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                request.Genre,
+                                IsFavorite: true),
+                            cancellationToken);
+                        return result.Match(
+                            favorites => Results.Ok(new MemberGenreFavoritesResponse(favorites.Genres)),
+                            error => error.Result());
+                    })
+                .WithName("AddMyGenreFavorite")
+                .RequireAuthorization();
+
+            endpoints.MapDelete(
+                    "/catalog/me/genre-favorites",
+                    async (
+                        SetMemberGenreFavoriteRequest request,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetMyGenreFavoriteCommand(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                request.Genre,
+                                IsFavorite: false),
+                            cancellationToken);
+                        return result.Match(
+                            favorites => Results.Ok(new MemberGenreFavoritesResponse(favorites.Genres)),
+                            error => error.Result());
+                    })
+                .WithName("RemoveMyGenreFavorite")
                 .RequireAuthorization();
 
             endpoints.MapGet(

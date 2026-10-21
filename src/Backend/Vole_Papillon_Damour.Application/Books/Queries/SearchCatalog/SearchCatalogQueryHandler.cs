@@ -77,7 +77,7 @@ public sealed class SearchCatalogQueryHandler(
         {
             var genre = query.Genre.Trim();
             filteredBooksQuery = filteredBooksQuery.Where(book =>
-                EF.Functions.Like(book.Genre ?? string.Empty, genre));
+                book.Genres.Any(bookGenre => bookGenre.Name == genre));
         }
 
         var activeAnnouncementIsbns = Array.Empty<Isbn13>();
@@ -139,21 +139,26 @@ public sealed class SearchCatalogQueryHandler(
                 .Any(rareBook => rareBook.Isbn13 == book.Id));
         }
 
-        var genres = (await catalogBooksQuery
-                .Where(book => book.Genre != null && book.Genre != string.Empty)
-                .Select(book => book.Genre!)
-                .Distinct()
-                .OrderBy(genre => genre)
-                .ToListAsync(cancellationToken))
-            .Select(genre => genre.Trim())
-            .Where(genre => !string.IsNullOrWhiteSpace(genre))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(genre => genre, StringComparer.CurrentCultureIgnoreCase)
+        var genreFacetRows = await catalogBooksQuery
+            .SelectMany(book => book.Genres)
+            .Where(bookGenre => bookGenre.Name != string.Empty)
+            .GroupBy(bookGenre => bookGenre.Name)
+            .Select(group => new PublicCatalogGenreFacetResult(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+        var genreFacets = genreFacetRows
+            .GroupBy(facet => facet.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new PublicCatalogGenreFacetResult(
+                group.Key,
+                group.Sum(facet => facet.BookCount)))
+            .OrderByDescending(facet => facet.BookCount)
+            .ThenBy(facet => facet.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
+        var genres = genreFacets.Select(facet => facet.Name).ToArray();
 
         var orderedBooksQuery = OrderBooks(filteredBooksQuery, query.Sort, normalizedSearch);
         var pageOffset = checked((query.Page - 1) * query.PageSize);
         var pageBooksWithLookahead = await orderedBooksQuery
+            .Include(book => book.Genres)
             .Skip(pageOffset)
             .Take(query.PageSize + 1)
             .ToListAsync(cancellationToken);
@@ -210,7 +215,8 @@ public sealed class SearchCatalogQueryHandler(
             hasMore,
             query.Page,
             query.PageSize,
-            genres);
+            genres,
+            genreFacets);
     }
 
     private static IOrderedQueryable<Book> OrderBooks(

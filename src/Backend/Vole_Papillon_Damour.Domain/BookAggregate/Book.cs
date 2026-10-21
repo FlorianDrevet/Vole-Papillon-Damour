@@ -2,12 +2,15 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Domain.BookAggregate;
 
 public sealed class Book : AggregateRoot<Isbn13>
 {
+    private readonly List<BookGenre> _genres = [];
+
     public Isbn13 Isbn13 => Id;
     public Isbn13? RedirectedToIsbn13 { get; private set; }
     public string? WorkId { get; private set; }
@@ -18,6 +21,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public string? PhysicalFormat { get; private set; }
     public string? Language { get; private set; }
     public string? Genre { get; private set; }
+    public IReadOnlyCollection<BookGenre> Genres => _genres;
 
     public int QuantityAvailable { get; private set; }
     public int SalesCount { get; private set; }
@@ -31,6 +35,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public BookMetadataStatus MetadataStatus { get; private set; }
     public BookMetadataSource? MetadataSource { get; private set; }
     public DateTime? MetadataFetchedAt { get; private set; }
+    public DateTime? GenresRefreshedAt { get; private set; }
     public int ResolveAttempts { get; private set; }
     public DateTime? LastAttemptAt { get; private set; }
     public string? MetadataFailureReason { get; private set; }
@@ -273,9 +278,11 @@ public sealed class Book : AggregateRoot<Isbn13>
         }
         changed |= LastAttemptAt != utcFetchedAt ||
                    MetadataFetchedAt != utcFetchedAt ||
+                   GenresRefreshedAt != utcFetchedAt ||
                    RawPayload != rawPayload;
         LastAttemptAt = utcFetchedAt;
         MetadataFetchedAt = utcFetchedAt;
+        GenresRefreshedAt = utcFetchedAt;
         RawPayload = rawPayload;
 
         var nextStatus = manuallyEditedFields.Count == 0
@@ -311,6 +318,21 @@ public sealed class Book : AggregateRoot<Isbn13>
 
         var changed = LastAttemptAt != utcAttemptedAt;
         LastAttemptAt = utcAttemptedAt;
+        UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
+    public bool RecordGenreRefreshAttempt(DateTime attemptedAt)
+    {
+        var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        if (MetadataStatus != BookMetadataStatus.Resolved ||
+            IsMetadataFieldManuallyEdited(BookMetadataField.Genre))
+        {
+            return false;
+        }
+
+        var changed = GenresRefreshedAt != utcAttemptedAt;
+        GenresRefreshedAt = utcAttemptedAt;
         UpdatedAt = utcAttemptedAt;
         return changed;
     }
@@ -482,6 +504,13 @@ public sealed class Book : AggregateRoot<Isbn13>
                     break;
                 case BookMetadataField.Genre:
                     ValidateLength(patch.Genre, 100, nameof(patch.Genre));
+                    if (patch.Genres is not null)
+                    {
+                        foreach (var genre in patch.Genres)
+                        {
+                            ValidateLength(genre, 100, nameof(patch.Genres));
+                        }
+                    }
                     break;
                 case BookMetadataField.CoverUrl:
                     ValidateCoverUrl(patch.CoverUrl);
@@ -535,12 +564,33 @@ public sealed class Book : AggregateRoot<Isbn13>
             case BookMetadataField.Language:
                 return SetValue(Language, patch.Language, value => Language = value);
             case BookMetadataField.Genre:
-                return SetValue(Genre, patch.Genre, value => Genre = value);
+                var primaryGenreChanged = SetValue(Genre, patch.Genre, value => Genre = value);
+                var genreNames = patch.Genres ?? (patch.Genre is null ? [] : [patch.Genre]);
+                return ReplaceGenres(genreNames) || primaryGenreChanged;
             case BookMetadataField.CoverUrl:
                 return SetValue(CoverUrl, patch.CoverUrl, value => CoverUrl = value);
             default:
                 throw new ArgumentOutOfRangeException(nameof(field), field, "The metadata field is not supported.");
         }
+    }
+
+    private bool ReplaceGenres(IEnumerable<string> genreNames)
+    {
+        var normalized = genreNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => string.Join(' ', name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)))
+            .Where(name => name.Length <= 100)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var existing = _genres.Select(genre => genre.Name).ToArray();
+        if (existing.SequenceEqual(normalized, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        _genres.Clear();
+        _genres.AddRange(normalized.Select(name => BookGenre.Create(Id, name)));
+        return true;
     }
 
     private static bool SetValue<T>(T current, T value, Action<T> assign)

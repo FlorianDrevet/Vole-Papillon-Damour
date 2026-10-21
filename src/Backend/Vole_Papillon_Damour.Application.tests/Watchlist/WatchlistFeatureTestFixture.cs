@@ -23,6 +23,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.WatchlistFeature;
 
@@ -48,6 +49,9 @@ internal sealed class WatchlistFeatureTestFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var options = new DbContextOptionsBuilder<WatchlistFeatureTestDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -155,6 +159,7 @@ internal sealed class WatchlistFeatureTestDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();

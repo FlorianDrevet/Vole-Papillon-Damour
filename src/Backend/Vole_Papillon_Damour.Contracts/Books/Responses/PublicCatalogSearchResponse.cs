@@ -7,4 +7,7 @@ public sealed record PublicCatalogSearchResponse(
     bool HasMore,
     int Page,
     int PageSize,
-    IReadOnlyList<string> Genres);
+    IReadOnlyList<string> Genres,
+    IReadOnlyList<PublicCatalogGenreFacetResponse>? GenreFacets = null);
+
+public sealed record PublicCatalogGenreFacetResponse(string Name, int BookCount);

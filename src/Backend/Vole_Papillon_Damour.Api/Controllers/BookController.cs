@@ -820,7 +820,10 @@ public static class BookController
             result.HasMore,
             result.Page,
             result.PageSize,
-            result.Genres);
+            result.Genres,
+            result.GenreFacets?.Select(facet => new PublicCatalogGenreFacetResponse(
+                facet.Name,
+                facet.BookCount)).ToArray());
     }
 
     private static DeadStockResponse ToResponse(DeadStockResult result)
@@ -900,7 +903,8 @@ public static class BookController
             result.CoverSource,
             result.RareBookSlug,
             result.RareBookId,
-            result.Summary);
+            result.Summary,
+            result.Genres);
     }
 
     private static SimilarBookResponse ToSimilarBookResponse(SimilarBookResult result)

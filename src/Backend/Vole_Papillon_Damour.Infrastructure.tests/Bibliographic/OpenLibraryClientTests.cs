@@ -46,6 +46,7 @@ public sealed class OpenLibraryClientTests
         result.Publisher.Should().Be("Gallimard");
         result.PublicationYear.Should().Be(1946);
         result.Genre.Should().Be("Fiction");
+        result.Genres.Should().Equal("Fiction", "Children's fiction", "Children's literature");
         result.WorkId.Should().Be("OL123W");
         result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/12345-L.jpg?default=false");
         result.CoverSource.Should().Be("OpenLibrary");
@@ -203,6 +204,7 @@ public sealed class OpenLibraryClientTests
               "publisher": ["Gallimard"],
               "first_publish_year": 1946,
               "subject": ["Fiction", "Children's fiction"],
+              "subject_facet": ["Children's literature"],
               "cover_i": 12345,
               "key": "/works/OL123W"
             }

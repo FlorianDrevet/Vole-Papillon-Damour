@@ -15,6 +15,7 @@ using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 
@@ -65,6 +66,34 @@ public sealed class ProjectDbContextModelTests
                 nameof(Book.Publisher),
                 nameof(Book.MetadataStatus),
                 nameof(Book.QuantityAvailable));
+    }
+
+    [Fact]
+    public void Model_MapsMultipleBookGenresAndMemberGenreFavorites()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var bookGenres = model.FindEntityType(typeof(BookGenre))!;
+        bookGenres.GetTableName().Should().Be("BookGenres");
+        bookGenres.FindProperty(nameof(BookGenre.Name))!.GetMaxLength().Should().Be(100);
+        bookGenres.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(BookGenre.BookIsbn13), nameof(BookGenre.Name));
+        bookGenres.FindProperty(nameof(BookGenre.Name))!.GetCollation()
+            .Should().Be("Latin1_General_100_CI_AI");
+
+        var books = model.FindEntityType(typeof(Book))!;
+        books.FindProperty(nameof(Book.GenresRefreshedAt))!.IsNullable.Should().BeTrue();
+        books.FindNavigation(nameof(Book.Genres))!.GetPropertyAccessMode()
+            .Should().Be(PropertyAccessMode.Field);
+
+        var favorites = model.FindEntityType(typeof(MemberGenreFavorite))!;
+        favorites.GetTableName().Should().Be("MemberGenreFavorites");
+        favorites.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(MemberGenreFavorite.UserId), nameof(MemberGenreFavorite.Genre));
+        favorites.GetForeignKeys().Should().ContainSingle(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(User) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
     }
 
     [Fact]

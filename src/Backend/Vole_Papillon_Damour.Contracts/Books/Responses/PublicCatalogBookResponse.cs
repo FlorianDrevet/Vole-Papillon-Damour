@@ -21,4 +21,5 @@ public sealed record PublicCatalogBookResponse(
     string? CoverSource = null,
     string? RareBookSlug = null,
     Guid? RareBookId = null,
-    string? Summary = null);
+    string? Summary = null,
+    IReadOnlyList<string>? Genres = null);

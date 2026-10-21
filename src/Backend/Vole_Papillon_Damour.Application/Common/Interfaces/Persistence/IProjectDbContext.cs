@@ -29,9 +29,11 @@ public interface IProjectDbContext
 
     DbSet<Product> Products { get; }
     DbSet<User> Users { get; }
+    DbSet<MemberGenreFavorite> MemberGenreFavorites => throw new NotSupportedException();
     DbSet<AssoEvents> AssoEvents { get; }
     DbSet<Order> Orders { get; }
     DbSet<Book> Books { get; }
+    DbSet<BookGenre> BookGenres => throw new NotSupportedException();
     DbSet<BookAnnouncement> BookAnnouncements { get; }
     DbSet<BookMovement> BookMovements { get; }
     DbSet<ScanSession> ScanSessions { get; }
