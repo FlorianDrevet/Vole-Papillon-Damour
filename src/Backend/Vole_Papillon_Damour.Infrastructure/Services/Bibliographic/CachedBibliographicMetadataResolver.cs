@@ -24,19 +24,26 @@ public sealed class CachedBibliographicMetadataResolver(
         LocalCacheExpiration = TimeSpan.FromHours(6),
     };
 
-    public async Task<BookMetadataResult?> ResolveAsync(Isbn13 isbn13, CancellationToken cancellationToken)
+    public async Task<BookMetadataResult?> ResolveAsync(
+        Isbn13 isbn13,
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails = false)
     {
         var entry = await cache.GetOrCreateAsync(
-            BuildCacheKey(isbn13),
-            (Inner: inner, Isbn13: isbn13),
-            static async (state, ct) => new CacheEntry(await state.Inner.ResolveAsync(state.Isbn13, ct)),
+            BuildCacheKey(isbn13, includeBibliographicDetails),
+            (Inner: inner, Isbn13: isbn13, IncludeBibliographicDetails: includeBibliographicDetails),
+            static async (state, ct) => new CacheEntry(await state.Inner.ResolveAsync(
+                state.Isbn13,
+                ct,
+                state.IncludeBibliographicDetails)),
             EntryOptions,
             cancellationToken: cancellationToken);
 
         return entry.Metadata;
     }
 
-    private static string BuildCacheKey(Isbn13 isbn13) => $"book-metadata:{isbn13.Value}";
+    private static string BuildCacheKey(Isbn13 isbn13, bool includeBibliographicDetails) =>
+        $"book-metadata:{(includeBibliographicDetails ? "details" : "core")}:{isbn13.Value}";
 
     // HybridCache requires a non-null value; a "not found" result is wrapped so
     // it can still be cached (avoiding repeated provider calls for a genuinely

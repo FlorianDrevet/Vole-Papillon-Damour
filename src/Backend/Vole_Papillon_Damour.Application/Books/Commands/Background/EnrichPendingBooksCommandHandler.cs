@@ -102,7 +102,10 @@ public sealed class EnrichPendingBooksCommandHandler(
             BookMetadataResult? metadata;
             try
             {
-                metadata = await metadataResolver.ResolveAsync(isbn13, cancellationToken);
+                metadata = await metadataResolver.ResolveAsync(
+                    isbn13,
+                    cancellationToken,
+                    command.RefreshMissingBibliographicDetails);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
