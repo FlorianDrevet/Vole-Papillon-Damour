@@ -43,6 +43,7 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .UseCollation("Latin1_General_100_CI_AI");
         builder.Property(book => book.PhysicalFormat).HasMaxLength(50);
         builder.Property(book => book.Language).HasMaxLength(10);
+        builder.Property(book => book.Summary).HasMaxLength(20_000);
         builder.Property(book => book.Genre).HasMaxLength(100);
         builder.Property(book => book.CoverUrl).HasMaxLength(2048);
         builder.Property(book => book.CoverSource)
@@ -75,6 +76,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.GenresRefreshedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
+        builder.Property(book => book.BibliographicDetailsRefreshedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
         builder.Property(book => book.ResolveAttempts)
             .HasDefaultValue(0)
             .IsRequired();
@@ -105,6 +109,8 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.HasIndex(book => new { book.MetadataStatus, book.LastAttemptAt });
         builder.HasIndex(book => new { book.MetadataStatus, book.GenresRefreshedAt })
             .HasDatabaseName("IX_Books_MetadataStatus_GenresRefreshedAt");
+        builder.HasIndex(book => new { book.MetadataStatus, book.BibliographicDetailsRefreshedAt })
+            .HasDatabaseName("IX_Books_MetadataStatus_BibliographicDetailsRefreshedAt");
         // Scanette catalog delta: RowVersion > @since AND RowVersion < MIN_ACTIVE_ROWVERSION().
         builder.HasIndex(book => book.RowVersion);
         builder.HasIndex(book => book.UpdatedAt);

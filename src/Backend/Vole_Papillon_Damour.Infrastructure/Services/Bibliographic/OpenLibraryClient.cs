@@ -19,6 +19,7 @@ public sealed class OpenLibraryClient(
         Isbn13 isbn13,
         CancellationToken cancellationToken)
     {
+        var edition = await ReadEditionDetailsAsync(isbn13, cancellationToken);
         using var response = await httpClient.GetAsync(
             BuildRequestUri(isbn13),
             HttpCompletionOption.ResponseHeadersRead,
@@ -35,7 +36,21 @@ public sealed class OpenLibraryClient(
             documents.ValueKind != JsonValueKind.Array ||
             documents.GetArrayLength() == 0)
         {
-            return null;
+            return edition.IsEmpty
+                ? null
+                : new BookMetadataResult(
+                    isbn13.Value,
+                    edition.Title,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "OpenLibrary",
+                    edition.WorkId,
+                    DateTimeOffset.UtcNow,
+                    Summary: BookSummaryText.Clean(edition.Summary, edition.Title),
+                    PhysicalFormat: Clean(edition.PhysicalFormat),
+                    Language: Clean(edition.Language));
         }
 
         var documentElement = documents[0];
@@ -67,7 +82,91 @@ public sealed class OpenLibraryClient(
             DateTimeOffset.UtcNow,
             coverUri is null ? null : "OpenLibrary",
             Genre: genres.FirstOrDefault(),
-            Genres: genres);
+            Genres: genres,
+            Summary: BookSummaryText.Clean(edition.Summary, ReadString(documentElement, "title"))
+                    ?? BookSummaryText.Clean(ReadString(documentElement, "description"), ReadString(documentElement, "title")),
+            PhysicalFormat: Clean(edition.PhysicalFormat ?? ReadString(documentElement, "physical_format")),
+            Language: Clean(edition.Language ?? ReadFirstString(documentElement, "language")));
+    }
+
+    private async Task<OpenLibraryEditionDetails> ReadEditionDetailsAsync(
+        Isbn13 isbn13,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var response = await httpClient.GetAsync(
+                BuildEditionRequestUri(isbn13),
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return OpenLibraryEditionDetails.Empty;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            var root = document.RootElement;
+            var workId = ReadFirstWorkId(root);
+            var title = ReadString(root, "title");
+            var summary = ReadDescription(root);
+            if (summary is null && workId is not null)
+            {
+                summary = await ReadWorkDescriptionAsync(workId, cancellationToken);
+            }
+
+            return new OpenLibraryEditionDetails(
+                title,
+                workId,
+                summary,
+                ReadString(root, "physical_format"),
+                ReadFirstLanguage(root));
+        }
+        catch (HttpRequestException)
+        {
+            return OpenLibraryEditionDetails.Empty;
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return OpenLibraryEditionDetails.Empty;
+        }
+        catch (JsonException)
+        {
+            return OpenLibraryEditionDetails.Empty;
+        }
+    }
+
+    private async Task<string?> ReadWorkDescriptionAsync(
+        string workId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var response = await httpClient.GetAsync(
+                BuildWorkRequestUri(workId),
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            return ReadDescription(document.RootElement);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)
@@ -76,6 +175,22 @@ public sealed class OpenLibraryClient(
             "title,author_name,publisher,first_publish_year,cover_i,key,subject,subject_facet");
         return new Uri(
             $"{_options.OpenLibrarySearchEndpoint}?isbn={isbn13.Value}&limit=1&fields={fields}",
+            UriKind.Absolute);
+    }
+
+    private Uri BuildEditionRequestUri(Isbn13 isbn13)
+    {
+        var endpoint = new Uri(_options.OpenLibrarySearchEndpoint, UriKind.Absolute);
+        return new Uri(
+            $"{endpoint.GetLeftPart(UriPartial.Authority)}/isbn/{isbn13.Value}.json",
+            UriKind.Absolute);
+    }
+
+    private Uri BuildWorkRequestUri(string workId)
+    {
+        var endpoint = new Uri(_options.OpenLibrarySearchEndpoint, UriKind.Absolute);
+        return new Uri(
+            $"{endpoint.GetLeftPart(UriPartial.Authority)}/works/{Uri.EscapeDataString(workId)}.json",
             UriKind.Absolute);
     }
 
@@ -96,6 +211,67 @@ public sealed class OpenLibraryClient(
                property.ValueKind == JsonValueKind.String
             ? property.GetString()
             : null;
+    }
+
+    private static string? ReadDescription(JsonElement element)
+    {
+        if (!element.TryGetProperty("description", out var description))
+        {
+            return null;
+        }
+
+        return description.ValueKind == JsonValueKind.String
+            ? description.GetString()
+            : description.ValueKind == JsonValueKind.Object &&
+              description.TryGetProperty("value", out var value) &&
+              value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+    }
+
+    private static string? ReadFirstWorkId(JsonElement edition)
+    {
+        if (!edition.TryGetProperty("works", out var works) || works.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var work in works.EnumerateArray())
+        {
+            var key = ReadString(work, "key");
+            if (key?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return key["/works/".Length..];
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadFirstLanguage(JsonElement edition)
+    {
+        if (!edition.TryGetProperty("languages", out var languages) ||
+            languages.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var language in languages.EnumerateArray())
+        {
+            var key = language.ValueKind == JsonValueKind.String
+                ? language.GetString()
+                : ReadString(language, "key");
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            var value = key.Trim();
+            var separator = value.LastIndexOf('/');
+            return separator >= 0 ? value[(separator + 1)..] : value;
+        }
+
+        return null;
     }
 
     private static string? ReadFirstString(JsonElement element, string propertyName)
@@ -236,5 +412,21 @@ public sealed class OpenLibraryClient(
                int.TryParse(property.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out number)
             ? number
             : null;
+    }
+
+    private static string? Clean(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private sealed record OpenLibraryEditionDetails(
+        string? Title,
+        string? WorkId,
+        string? Summary,
+        string? PhysicalFormat,
+        string? Language)
+    {
+        public static OpenLibraryEditionDetails Empty { get; } = new(null, null, null, null, null);
+        public bool IsEmpty => Title is null && WorkId is null && Summary is null && PhysicalFormat is null && Language is null;
     }
 }

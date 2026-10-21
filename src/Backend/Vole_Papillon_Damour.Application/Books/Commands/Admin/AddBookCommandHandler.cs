@@ -78,7 +78,8 @@ public sealed class AddBookCommandHandler(
                         command.Genre,
                         command.CoverUrl,
                         fields,
-                        command.WorkId),
+                        command.WorkId,
+                        Summary: command.Summary),
                     addedAt);
             }
             catch (ArgumentException)

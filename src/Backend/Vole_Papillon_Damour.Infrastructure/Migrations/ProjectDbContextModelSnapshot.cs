@@ -271,6 +271,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)")
                         .UseCollation("Latin1_General_100_CI_AI");
 
+                    b.Property<DateTime?>("BibliographicDetailsRefreshedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("CoverCheckedAt")
                         .HasColumnType("datetime2");
 
@@ -367,6 +370,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("Summary")
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -403,6 +410,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsDescending(true, false)
                         .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    b.HasIndex("MetadataStatus", "BibliographicDetailsRefreshedAt")
+                        .HasDatabaseName("IX_Books_MetadataStatus_BibliographicDetailsRefreshedAt");
 
                     b.HasIndex("MetadataStatus", "GenresRefreshedAt")
                         .HasDatabaseName("IX_Books_MetadataStatus_GenresRefreshedAt");

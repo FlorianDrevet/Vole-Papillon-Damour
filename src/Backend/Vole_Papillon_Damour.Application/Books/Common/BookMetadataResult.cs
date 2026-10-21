@@ -12,4 +12,7 @@ public sealed record BookMetadataResult(
     DateTimeOffset RetrievedAt,
     string? CoverSource = null,
     string? Genre = null,
-    IReadOnlyList<string>? Genres = null);
+    IReadOnlyList<string>? Genres = null,
+    string? Summary = null,
+    string? PhysicalFormat = null,
+    string? Language = null);

@@ -11,4 +11,7 @@ public sealed record BookMetadataResponse(
     string? WorkId,
     DateTimeOffset RetrievedAt,
     string? CoverSource = null,
-    string? Genre = null);
+    string? Genre = null,
+    string? Summary = null,
+    string? PhysicalFormat = null,
+    string? Language = null);

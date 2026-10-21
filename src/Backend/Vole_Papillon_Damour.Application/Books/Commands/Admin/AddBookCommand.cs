@@ -20,4 +20,5 @@ public sealed record AddBookCommand(
     string? Genre = null,
     string? CoverUrl = null,
     string? WorkId = null,
-    IReadOnlyCollection<BookMetadataField>? Fields = null) : IRequest<ErrorOr<AdminBookOperationResult>>;
+    IReadOnlyCollection<BookMetadataField>? Fields = null,
+    string? Summary = null) : IRequest<ErrorOr<AdminBookOperationResult>>;

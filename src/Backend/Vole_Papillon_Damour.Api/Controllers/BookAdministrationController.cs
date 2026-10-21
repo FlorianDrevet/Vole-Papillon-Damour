@@ -149,7 +149,8 @@ public static class BookAdministrationController
                                 request.Genre,
                                 request.CoverUrl,
                                 request.WorkId,
-                                fields),
+                                fields,
+                                request.Summary),
                             cancellationToken);
                         return result.Match(
                             operation => Results.Created(
@@ -211,7 +212,8 @@ public static class BookAdministrationController
                                 request.CoverUrl,
                                 fields,
                                 userId,
-                                request.WorkId),
+                                request.WorkId,
+                                request.Summary),
                             cancellationToken);
                         return result.Match(
                             operation => Results.Ok(new
@@ -1111,6 +1113,7 @@ public static class BookAdministrationController
         if (request.Genre is not null) fields.Add(nameof(BookMetadataField.Genre));
         if (request.CoverUrl is not null) fields.Add(nameof(BookMetadataField.CoverUrl));
         if (request.WorkId is not null) fields.Add(nameof(BookMetadataField.WorkId));
+        if (request.Summary is not null) fields.Add(nameof(BookMetadataField.Summary));
         return fields;
     }
 

@@ -87,7 +87,9 @@ public sealed class GoogleBooksClient(
             DateTimeOffset.UtcNow,
             coverUri is null ? null : "GoogleBooks",
             Genre: genres.FirstOrDefault(),
-            Genres: genres);
+            Genres: genres,
+            Summary: BookSummaryText.Clean(ReadString(selected, "description"), ReadString(selected, "title")),
+            Language: ReadString(selected, "language"));
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)

@@ -75,7 +75,9 @@ public sealed class BnfSruClient(
             DateTimeOffset.UtcNow,
             coverUri is null ? null : "BnF",
             Genre: genres.FirstOrDefault(),
-            Genres: genres);
+            Genres: genres,
+            Summary: BookSummaryText.Clean(FirstSubfield(dataFields, ["330"], "a"), Clean(title)),
+            Language: Clean(FirstSubfield(dataFields, ["101"], "a")));
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)

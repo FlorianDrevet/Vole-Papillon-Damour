@@ -74,7 +74,8 @@ public sealed class UpdateBookMetadataCommandHandler(
                 command.Genre,
                 command.CoverUrl,
                 fields,
-                command.WorkId),
+                command.WorkId,
+                Summary: command.Summary),
             updatedAt);
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -106,6 +107,7 @@ public sealed class UpdateBookMetadataCommandHandler(
                 BookMetadataField.Language => IsWithinLength(command.Language, 10),
                 BookMetadataField.Genre => IsWithinLength(command.Genre, 100),
                 BookMetadataField.CoverUrl => IsValidCoverUrl(command.CoverUrl),
+                BookMetadataField.Summary => IsWithinLength(command.Summary, BookSummaryText.MaximumLength),
                 _ => false
             };
 

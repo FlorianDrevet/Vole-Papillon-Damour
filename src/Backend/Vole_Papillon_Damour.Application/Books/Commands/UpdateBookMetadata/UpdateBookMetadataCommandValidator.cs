@@ -1,4 +1,5 @@
 using FluentValidation;
+using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
@@ -36,6 +37,9 @@ public sealed class UpdateBookMetadataCommandValidator : AbstractValidator<Updat
         RuleFor(command => command.Language)
             .MaximumLength(10)
             .When(command => command.Fields?.Contains(BookMetadataField.Language) == true);
+        RuleFor(command => command.Summary)
+            .MaximumLength(BookSummaryText.MaximumLength)
+            .When(command => command.Fields?.Contains(BookMetadataField.Summary) == true);
         RuleFor(command => command.Genre)
             .MaximumLength(100)
             .When(command => command.Fields?.Contains(BookMetadataField.Genre) == true);

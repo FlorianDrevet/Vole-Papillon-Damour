@@ -371,7 +371,10 @@ public static class BookController
                                 metadata.WorkId,
                                 metadata.RetrievedAt,
                                 metadata.CoverSource,
-                                metadata.Genre)),
+                                metadata.Genre,
+                                metadata.Summary,
+                                metadata.PhysicalFormat,
+                                metadata.Language)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")

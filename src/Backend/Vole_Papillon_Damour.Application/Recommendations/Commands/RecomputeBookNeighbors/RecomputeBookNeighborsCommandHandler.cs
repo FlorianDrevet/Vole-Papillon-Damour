@@ -28,13 +28,16 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         }
 
         var now = dateTimeProvider.UtcNow;
-        var visibleIsbns = (await dbContext.Books
+        var visibleBooks = await dbContext.Books
                 .AsNoTracking()
                 .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null)
-                .Select(book => book.Id)
-                .ToListAsync(cancellationToken))
-            .Select(isbn13 => isbn13.Value)
-            .ToHashSet(StringComparer.Ordinal);
+                .Select(book => new { Isbn13 = book.Id, book.Summary })
+                .ToListAsync(cancellationToken);
+        var summariesByIsbn = visibleBooks.ToDictionary(
+            book => book.Isbn13.Value,
+            book => book.Summary,
+            StringComparer.Ordinal);
+        var visibleIsbns = summariesByIsbn.Keys.ToHashSet(StringComparer.Ordinal);
 
         var profiles = await dbContext.BookSimilarityProfiles
             .Where(profile => profile.NoticeFound)
@@ -62,7 +65,7 @@ public sealed class RecomputeBookNeighborsCommandHandler(
             return edition;
         }).ToArray();
 
-        var groupedEditions = WorkGrouping.Group(editions);
+        var groupedEditions = WorkGrouping.Group(editions, summariesByIsbn);
         var profilesNeedingEmbedding = new List<(BookSimilarityProfile Profile, string TextHash)>();
         var embeddingTexts = new List<string>();
         foreach (var grouped in groupedEditions)

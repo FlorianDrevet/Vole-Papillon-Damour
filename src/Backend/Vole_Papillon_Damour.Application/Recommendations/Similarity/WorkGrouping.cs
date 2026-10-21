@@ -4,7 +4,9 @@ public sealed record GroupedEdition(SimilarityEdition Edition, SimilarityFeature
 
 public static class WorkGrouping
 {
-    public static IReadOnlyList<GroupedEdition> Group(IReadOnlyList<SimilarityEdition> editions)
+    public static IReadOnlyList<GroupedEdition> Group(
+        IReadOnlyList<SimilarityEdition> editions,
+        IReadOnlyDictionary<string, string?>? summariesByIsbn = null)
     {
         var raw = editions.Select(e => SimilarityFeatureBuilder.Build(e)).ToArray();
         var parent = Enumerable.Range(0, editions.Count).ToArray();
@@ -40,10 +42,18 @@ public static class WorkGrouping
         {
             var members = group.ToArray();
             var summary = members
-                .Select(i => SimilarityText.CleanSummary(editions[i].EditionSummary, editions[i].Title))
+                .Select(i => summariesByIsbn is not null &&
+                             summariesByIsbn.TryGetValue(editions[i].Isbn13, out var storedSummary)
+                    ? SimilarityText.CleanSummary(storedSummary, editions[i].Title)
+                    : null)
                 .Where(s => s is not null)
                 .OrderByDescending(s => s!.Length)
                 .FirstOrDefault()
+                ?? members
+                    .Select(i => SimilarityText.CleanSummary(editions[i].EditionSummary, editions[i].Title))
+                    .Where(s => s is not null)
+                    .OrderByDescending(s => s!.Length)
+                    .FirstOrDefault()
                 ?? members
                     .Select(i => SimilarityText.CleanSummary(editions[i].OpenLibraryDescription, editions[i].Title))
                     .FirstOrDefault(s => s is not null);
