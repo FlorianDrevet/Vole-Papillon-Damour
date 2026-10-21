@@ -93,7 +93,7 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes livres suivis.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes livres recherchés.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
       <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
@@ -161,7 +161,7 @@
         [attr.aria-selected]="activeTab() === 'watchlist'"
         aria-controls="account-watchlist-panel"
         (click)="selectTab('watchlist')">
-        Livres suivis
+        Livres recherchés
       </button>
       <button
         type="button"
@@ -238,15 +238,15 @@
             <vpd-loader
               variant="compact"
               logoSrc="images/papillon_without_back.png"
-              label="Chargement de vos livres suivis…"
+              label="Chargement de vos livres recherchés…"
               detail="Quelques secondes"></vpd-loader>
           </div>
         } @else if (watchlist(); as current) {
           @if (current.items.length === 0) {
             <div class="empty-watchlist">
               <span class="empty-mark" aria-hidden="true">⌁</span>
-              <h2>Aucun livre suivi pour le moment</h2>
-              <p>Depuis une fiche livre ou la recherche, utilisez « Suivre » pour ajouter une œuvre ou une édition à vos livres suivis.</p>
+              <h2>Aucun livre recherché pour le moment</h2>
+              <p>Ajoutez une œuvre ou une édition depuis sa fiche ou la recherche pour la retrouver ici et recevoir une alerte à son arrivée.</p>
               <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue <span aria-hidden="true">→</span></a>
             </div>
           } @else {
@@ -303,7 +303,7 @@
                         class="remove-button"
                         [disabled]="removingItemId() === item.id"
                         (click)="removeItem(item)">
-                        {{ removingItemId() === item.id ? 'Retrait…' : 'Retirer de ma liste' }}
+                        {{ removingItemId() === item.id ? 'Retrait…' : 'Retirer de mes recherches' }}
                       </button>
                     </div>
                   </div>
@@ -312,7 +312,7 @@
             </div>
           }
         } @else if (!errorMessage()) {
-          <p class="account-state compact">Votre liste n’a pas pu être préparée.</p>
+          <p class="account-state compact">Vos livres recherchés n’ont pas pu être chargés.</p>
         }
       </section>
     } @else if (activeTab() === 'contribution') {
