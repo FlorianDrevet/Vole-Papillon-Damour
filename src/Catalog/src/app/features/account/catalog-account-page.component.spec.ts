@@ -396,13 +396,13 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(api.getWatchlist).toHaveBeenCalledWith('member-token');
     expect(fixture.nativeElement.textContent).toContain('Le livre suivi');
-    expect(fixture.nativeElement.textContent).toContain('Mes livres suivis.');
+    expect(fixture.nativeElement.textContent).toContain('Mes livres recherchés.');
 
     await fixture.componentInstance.removeItem(watchlist.items[0]);
     fixture.detectChanges();
 
     expect(api.removeWatchlistItem).toHaveBeenCalledWith('member-token', 'item-1');
-    expect(fixture.nativeElement.textContent).toContain('Aucun livre suivi pour le moment');
+    expect(fixture.nativeElement.textContent).toContain('Aucun livre recherché pour le moment');
   });
 
   it('shows the separate Entra name claims in the account heading', async () => {
@@ -438,7 +438,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
       'Ma sélection',
       'Mes achats',
-      'Livres suivis',
+      'Livres recherchés',
       'Ma carte',
       'Compte et données',
     ]);
@@ -490,7 +490,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
       'Ma sélection',
       'Mes achats',
-      'Livres suivis',
+      'Livres recherchés',
       'Ma carte',
       'Compte et données',
       'Ma contribution',
@@ -521,7 +521,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.watchlist-cover')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('3 disponibles');
     expect(fixture.nativeElement.textContent).toContain('Dernière alerte');
-    expect(fixture.nativeElement.textContent).toContain('Retirer de ma liste');
+    expect(fixture.nativeElement.textContent).toContain('Retirer de mes recherches');
   });
 
   it('renders a followed rare copy from its own record, including its display-only firm price', async () => {
@@ -613,7 +613,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(card.textContent).not.toContain('Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.');
   });
 
-  it('shows the followed title and all-editions scope in Livres suivis', async () => {
+  it('shows the followed title and all-editions scope in Livres recherchés', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);
     const current = structuredClone(watchlist);
@@ -732,7 +732,7 @@ describe('CatalogAccountPageComponent', () => {
     (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Le service de votre liste est momentanément indisponible');
+    expect(fixture.nativeElement.textContent).toContain('La liste de vos livres recherchés est momentanément indisponible');
     const retryButton = fixture.nativeElement.querySelector(
       '[data-testid="watchlist-retry"]',
     ) as HTMLButtonElement | null;

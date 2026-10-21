@@ -81,11 +81,11 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlistIntro = computed(() => {
     const count = this.watchlist()?.items.length;
     if (count === undefined) {
-      return 'Vos livres suivis se préparent. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.';
+      return 'Retrouvez ici vos livres recherchés. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, avec sa date de disponibilité.';
     }
 
-    const bookLabel = count === 1 ? 'livre suivi' : 'livres suivis';
-    return `${count} ${bookLabel}. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.`;
+    const bookLabel = count === 1 ? 'livre recherché' : 'livres recherchés';
+    return `${count} ${bookLabel}. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, avec sa date de disponibilité.`;
   });
   readonly contributionIntro = computed(() => {
     const since = this.contribution()?.memberSince;
@@ -297,7 +297,7 @@ export class CatalogAccountPageComponent implements OnInit {
           items: current.items.filter(candidate => candidate.id !== item.id),
         });
       }
-      this.successMessage.set('Le titre a été retiré de votre liste.');
+      this.successMessage.set('Le titre a été retiré de vos livres recherchés.');
     } catch (error: unknown) {
       this.errorMessage.set(this.describeError(error));
     } finally {
@@ -608,7 +608,7 @@ export class CatalogAccountPageComponent implements OnInit {
     }
 
     if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)) {
-      return 'Le service de votre liste est momentanément indisponible. Réessayez dans un instant.';
+      return 'La liste de vos livres recherchés est momentanément indisponible. Réessayez dans un instant.';
     }
 
     return 'La session n’a pas pu être renouvelée. Reconnectez-vous pour continuer.';
