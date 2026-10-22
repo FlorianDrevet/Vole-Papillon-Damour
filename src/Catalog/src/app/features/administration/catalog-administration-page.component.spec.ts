@@ -1128,7 +1128,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
 
-    expect(api.getOverview).toHaveBeenCalledWith('access-token');
+    expect(api.getOverview).toHaveBeenCalledWith('access-token', undefined, undefined, true);
 
     await fixture.componentInstance.selectSection('catalogue');
     await fixture.componentInstance.selectSection('sessions');
