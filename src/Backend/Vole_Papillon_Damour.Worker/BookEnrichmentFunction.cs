@@ -12,7 +12,7 @@ public sealed class BookEnrichmentFunction(
 {
     [Function("Enrich")]
     public async Task Run(
-        [TimerTrigger("0 0 * * * *")] TimerInfo timer,
+        [TimerTrigger("0 15 6,18 * * *")] TimerInfo timer,
         CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();

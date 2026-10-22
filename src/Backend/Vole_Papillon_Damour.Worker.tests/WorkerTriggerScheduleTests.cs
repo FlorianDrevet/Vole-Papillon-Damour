@@ -14,9 +14,9 @@ public sealed class WorkerTriggerScheduleTests
     }
 
     [Fact]
-    public void Enrichment_remains_hourly()
+    public void Enrichment_runs_twice_daily()
     {
-        GetSchedule<BookEnrichmentFunction>().Should().Be("0 0 * * * *");
+        GetSchedule<BookEnrichmentFunction>().Should().Be("0 15 6,18 * * *");
     }
 
     [Fact]

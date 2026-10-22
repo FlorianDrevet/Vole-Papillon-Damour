@@ -4,6 +4,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
@@ -507,12 +508,19 @@ public sealed class EnrichPendingBooksCommandHandler(
     {
         var allValues = (values ?? [])
             .Concat(legacyGenre is null ? [] : [legacyGenre]);
-        return allValues
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => Clean(value)!)
-            .Where(value => value.Length <= 100)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        var genres = new List<string>();
+        foreach (var value in allValues)
+        {
+            var cleaned = Clean(value);
+            if (cleaned is not null &&
+                cleaned.Length <= 100 &&
+                !genres.Any(existing => BookGenre.NamesAreEquivalent(existing, cleaned)))
+            {
+                genres.Add(cleaned);
+            }
+        }
+
+        return genres;
     }
 
     private static void RecordExistingBookRefreshAttempt(
