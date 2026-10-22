@@ -518,6 +518,31 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.admin-nav-badge-manual-requests')).not.toBeNull();
   });
 
+  it('initializesCatalogueBadges_whenAdministratorArrivesAtOverview_loadsAllThreeCounts', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 84, page: 1, pageSize: 1}));
+    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 7, page: 1, pageSize: 1}));
+    api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 12, page: 1, pageSize: 1}));
+
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('overview');
+    expect(fixture.componentInstance.navBadge('catalogue')).toBe('84');
+    expect(fixture.componentInstance.navBadge('isbn-queue')).toBe('7');
+    expect(fixture.componentInstance.navBadge('rare-books')).toBe('12');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/catalogue"] .admin-nav-badge')?.textContent.trim()).toBe('84');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/isbn-queue"] .admin-nav-badge')?.textContent.trim()).toBe('7');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/rare-books"] .admin-nav-badge')?.textContent.trim()).toBe('12');
+    expect(fixture.nativeElement.querySelector('option[value="catalogue"]')?.textContent.trim()).toBe('Catalogue (84)');
+    expect(fixture.nativeElement.querySelector('option[value="isbn-queue"]')?.textContent.trim()).toBe('ISBN en cours d’analyse (7)');
+    expect(fixture.nativeElement.querySelector('option[value="rare-books"]')?.textContent.trim()).toBe('Livres rares (12)');
+    expect(api.getBooks).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
+    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
+    expect(api.getRareBooks).toHaveBeenCalledWith('access-token', {status: 'Published', page: 1, pageSize: 1});
+  });
+
   it('hides the badge and the dashboard tile when nothing is open', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -1165,7 +1190,7 @@ describe('CatalogAdministrationPageComponent', () => {
       books: [catalogueBook()],
       totalCount: 1,
       page: 1,
-      pageSize: 25,
+      pageSize: 5,
     }));
 
     fixture.detectChanges();
@@ -1175,7 +1200,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getBooks).toHaveBeenCalledWith('access-token', {
       search: undefined,
       page: 1,
-      pageSize: 25,
+      pageSize: 5,
     });
     expect(fixture.nativeElement.querySelector('[data-testid="catalogue-book-list"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
@@ -1407,7 +1432,7 @@ describe('CatalogAdministrationPageComponent', () => {
       expect(api.getBooks).toHaveBeenCalledWith('access-token', {
         search: 'prince',
         page: 1,
-        pageSize: 25,
+        pageSize: 5,
       });
     } finally {
       jasmine.clock().uninstall();
