@@ -1569,3 +1569,321 @@
     width: 100%;
   }
 }
+
+.filters-content {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  min-width: 0;
+}
+
+.genre-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.availability-option-label--mobile {
+  display: none;
+}
+
+.filter-option--availability input:checked ~ .availability-option-label {
+  color: var(--catalog-ink-2);
+  font-weight: 600;
+}
+
+.mobile-filter-trigger,
+.mobile-filter-heading,
+.mobile-genre-trigger {
+  display: none;
+}
+
+.mobile-filter-trigger-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--catalog-ink-2);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.mobile-filter-trigger-main svg {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.6;
+}
+
+.mobile-filter-count {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--catalog-ink-2);
+  color: var(--catalog-white);
+  font: 600 .66rem/1 var(--catalog-mono);
+}
+
+.mobile-filter-trigger-summary {
+  max-width: 48%;
+  overflow: hidden;
+  margin-left: auto;
+  color: var(--catalog-slate-2);
+  font-size: .72rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-filter-chevron {
+  width: 12px;
+  height: 8px;
+  flex: none;
+  fill: none;
+  stroke: var(--catalog-slate-2);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  transition: transform 150ms ease;
+}
+
+.mobile-filter-trigger[aria-expanded='true'] .mobile-filter-chevron {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 700px) {
+  .results-toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .results-toolbar-actions:has(.view-switch) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .view-switch {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .view-option {
+    min-width: 0;
+    min-height: 36px;
+    flex: 1;
+    padding: 0 6px;
+  }
+
+  .sort-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .sort-control > span:first-child {
+    display: none;
+  }
+
+  .sort-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sort-select-trigger {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+    justify-content: space-between;
+  }
+
+  .search-layout {
+    gap: 0;
+    margin-top: 18px;
+  }
+
+  .filters-panel {
+    display: block;
+    padding: 0;
+  }
+
+  .mobile-filter-trigger {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--catalog-line-strong);
+    border-radius: 3px;
+    background: var(--catalog-white);
+    color: var(--catalog-ink-2);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .mobile-filter-trigger:hover,
+  .mobile-filter-trigger:focus-visible {
+    border-color: var(--catalog-blue-soft);
+    outline: 3px solid rgba(20, 151, 214, .2);
+    outline-offset: 2px;
+  }
+
+  .filters-content {
+    display: none;
+  }
+
+  .filters-panel--mobile-open > .filters-content {
+    display: flex;
+    gap: 14px;
+    margin-top: 9px;
+    padding: 15px;
+    border: 1px solid var(--catalog-line);
+    background: var(--catalog-white);
+  }
+
+  .mobile-filter-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--catalog-ink-2);
+    font-size: .84rem;
+    font-weight: 600;
+  }
+
+  .mobile-filter-heading button {
+    min-height: 36px;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--catalog-blue);
+    cursor: pointer;
+    font: 600 .75rem var(--catalog-body);
+  }
+
+  .filters-content > .filter-kicker {
+    display: none;
+  }
+
+  .filter-group--availability {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .filter-group--availability legend {
+    grid-column: 1 / -1;
+    margin-bottom: 1px;
+    font-size: .84rem;
+  }
+
+  .filter-option--availability {
+    min-width: 0;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 4px;
+    border: 1px solid var(--catalog-line-strong);
+    border-radius: 3px;
+    color: var(--catalog-slate-2);
+    font-size: .68rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .filter-option--availability:has(input:checked) {
+    border-color: var(--catalog-ink-2);
+    background: var(--catalog-ink-2);
+    color: var(--catalog-white);
+  }
+
+  .filter-option--availability input:checked ~ span:last-child {
+    color: var(--catalog-white);
+  }
+
+  .filter-option--availability .filter-control {
+    display: none;
+  }
+
+  .availability-option-label--desktop {
+    display: none;
+  }
+
+  .availability-option-label--mobile {
+    display: inline;
+  }
+
+  .filter-group--genre {
+    gap: 8px;
+  }
+
+  .filter-group--genre legend {
+    margin-bottom: 0;
+    font-size: .84rem;
+  }
+
+  .mobile-genre-trigger {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 11px;
+    border: 1px solid var(--catalog-line-strong);
+    border-radius: 3px;
+    background: var(--catalog-white);
+    color: var(--catalog-ink-2);
+    cursor: pointer;
+    font: .78rem var(--catalog-body);
+    text-align: left;
+  }
+
+  .mobile-genre-trigger:focus-visible {
+    outline: 3px solid rgba(20, 151, 214, .28);
+    outline-offset: 2px;
+  }
+
+  .mobile-genre-trigger svg {
+    width: 12px;
+    height: 8px;
+    flex: none;
+    fill: none;
+    stroke: var(--catalog-slate-2);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+  }
+
+  .genre-filter-options {
+    display: none;
+  }
+
+  .filters-content .filter-divider {
+    background: var(--catalog-line-2);
+  }
+
+  .filters-content .rare-option {
+    min-height: 38px;
+    align-items: center;
+  }
+
+  .filters-content .filter-note {
+    padding-top: 12px;
+  }
+
+  .reset-filters {
+    margin-top: 0;
+  }
+}

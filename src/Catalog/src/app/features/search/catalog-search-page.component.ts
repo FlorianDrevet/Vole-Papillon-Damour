@@ -67,6 +67,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   sort: CatalogSort = 'relevance';
   sortMenuOpen = false;
   sortMenuActiveIndex = 0;
+  mobileFiltersOpen = false;
   browseMode = false;
   view: CatalogSearchView = 'list';
   loading = true;
@@ -310,14 +311,47 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  clearFilters(): void {
+  clearFilters(mobileFiltersTrigger?: HTMLButtonElement): void {
+    const wasOpen = this.mobileFiltersOpen;
     this.query = '';
     this.genre = '';
     this.availability = this.defaultAvailability();
     this.rareOnly = false;
     this.includeExhausted = false;
     this.sort = 'relevance';
+    this.mobileFiltersOpen = false;
+    if (wasOpen) {
+      mobileFiltersTrigger?.focus();
+    }
     this.applyFilters();
+  }
+
+  toggleMobileFilters(trigger?: HTMLButtonElement): void {
+    this.mobileFiltersOpen = !this.mobileFiltersOpen;
+    if (!this.mobileFiltersOpen) {
+      trigger?.focus();
+    }
+  }
+
+  activeMobileFilterCount(): number {
+    return Number(Boolean(this.genre))
+      + Number(this.availability !== this.defaultAvailability())
+      + Number(this.rareOnly);
+  }
+
+  mobileFilterSummary(): string {
+    if (this.genre) {
+      return this.genre;
+    }
+
+    switch (this.availability) {
+      case 'next':
+        return 'Prochaine bourse';
+      case 'all':
+        return 'Toutes les disponibilités';
+      default:
+        return 'Disponible maintenant';
+    }
   }
 
   defaultAvailability(): CatalogAvailability {
