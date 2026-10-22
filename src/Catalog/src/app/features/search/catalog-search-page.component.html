@@ -6,16 +6,19 @@
       [id]="inputId"
       name="query"
       [(ngModel)]="query"
-      placeholder="un titre, un auteur, ou le code-barres"
+      placeholder="Titre, auteur ou ISBN"
       autocomplete="off">
     @if (query) {
       <button type="button" class="search-clear" aria-label="Effacer la recherche" (click)="clearSearch()">×</button>
     }
-    <button type="submit" class="search-submit" [disabled]="loading">
+    <button type="submit" class="search-submit" [disabled]="loading" [attr.aria-busy]="loading ? 'true' : null">
       @if (loading) {
-        <vpd-loader variant="squares" label="Recherche en cours" surface="dark"></vpd-loader>
+        <span class="search-submit-loading" role="status">
+          <span class="search-submit-spinner" aria-hidden="true"></span>
+          <span>Recherche…</span>
+        </span>
       } @else {
-        Rechercher <span aria-hidden="true">↗</span>
+        Rechercher
       }
     </button>
   </form>
