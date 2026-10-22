@@ -23,7 +23,7 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
   totalCount: 0,
   hasMore: false,
   page: 1,
-  pageSize: 4,
+  pageSize: 8,
   genres: [],
 };
 
@@ -83,7 +83,7 @@ export class CatalogHomePageComponent implements OnInit {
     }
 
     forkJoin({
-      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 4}).pipe(catchError(() => {
+      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 8}).pipe(catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),

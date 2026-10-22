@@ -1154,6 +1154,12 @@ h2 {
   margin-top: 32px;
 }
 
+@media (min-width: 701px) {
+  .book-grid[aria-label='Livres arrivés récemment'] > app-book-card:nth-child(n + 5) {
+    display: none;
+  }
+}
+
 .genres-section {
   background: var(--catalog-paper);
 }
@@ -1659,6 +1665,12 @@ h2 {
   .book-grid {
     grid-template-columns: 1fr;
     margin-top: 24px;
+  }
+
+  .book-grid[aria-label='Livres arrivés récemment'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
   }
 
   .genre-grid {
