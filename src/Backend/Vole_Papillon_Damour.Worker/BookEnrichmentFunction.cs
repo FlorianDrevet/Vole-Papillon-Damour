@@ -1,40 +1,23 @@
-using MediatR;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Vole_Papillon_Damour.Application.Books.Commands.Background;
+using Microsoft.DurableTask.Client;
 
 namespace Vole_Papillon_Damour.Worker;
 
-public sealed class BookEnrichmentFunction(
-    IServiceScopeFactory scopeFactory,
-    ILogger<BookEnrichmentFunction> logger)
+public sealed class BookEnrichmentFunction(ILogger<BookEnrichmentFunction> logger)
 {
     [Function("Enrich")]
-    public async Task Run(
-        [TimerTrigger("0 15 6,18 * * *")] TimerInfo timer,
-        CancellationToken cancellationToken)
+    public async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData request,
+        [DurableClient] DurableTaskClient durableClient)
     {
-        using var scope = scopeFactory.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
-        var result = await sender.Send(
-            new EnrichPendingBooksCommand(
-                IncludeMissingGenres: true,
-                RefreshAllGenres: true,
-                RefreshMissingBibliographicDetails: true),
-            cancellationToken);
-
+        var instanceId = await durableClient.ScheduleNewOrchestrationInstanceAsync(
+            EnrichCatalogOrchestrationFunction.FunctionName);
         logger.LogInformation(
-            "Worker enrichment completed. Processed: {Processed}, Resolved: {Resolved}, " +
-            "CoversUpdated: {CoversUpdated}, GenresUpdated: {GenresUpdated}, " +
-            "BibliographicDetailsUpdated: {BibliographicDetailsUpdated}, " +
-            "NotFound: {NotFound}, Failed: {Failed}",
-            result.ProcessedCount,
-            result.ResolvedCount,
-            result.CoverUpdatedCount,
-            result.GenreUpdatedCount,
-            result.BibliographicDetailsUpdatedCount,
-            result.NotFoundCount,
-            result.FailedCount);
+            "Manual book enrichment orchestration started. InstanceId: {InstanceId}",
+            instanceId);
+
+        return await durableClient.CreateCheckStatusResponseAsync(request, instanceId);
     }
 }

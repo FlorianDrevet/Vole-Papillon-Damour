@@ -14,9 +14,21 @@ public sealed class WorkerTriggerScheduleTests
     }
 
     [Fact]
-    public void Enrichment_runs_twice_daily()
+    public void Enrichment_is_started_manually_with_a_function_key()
     {
-        GetSchedule<BookEnrichmentFunction>().Should().Be("0 15 6,18 * * *");
+        var runMethod = typeof(BookEnrichmentFunction).GetMethod(nameof(BookEnrichmentFunction.Run))
+            ?? throw new InvalidOperationException($"Run method not found on {nameof(BookEnrichmentFunction)}.");
+        var attributes = runMethod.GetParameters()
+            .SelectMany(parameter => parameter.GetCustomAttributes());
+        var httpTrigger = attributes.Single(attribute => attribute.GetType().Name == "HttpTriggerAttribute");
+
+        httpTrigger.GetType().GetProperty("AuthLevel")!.GetValue(httpTrigger)!.ToString()
+            .Should().Be("Function");
+        ((IEnumerable<string>)httpTrigger.GetType().GetProperty("Methods")!.GetValue(httpTrigger)!)
+            .Should().ContainSingle("post");
+        runMethod.GetParameters()
+            .SelectMany(parameter => parameter.GetCustomAttributes())
+            .Should().NotContain(attribute => attribute.GetType().Name == "TimerTriggerAttribute");
     }
 
     [Fact]

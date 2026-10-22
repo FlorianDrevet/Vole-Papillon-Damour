@@ -39,6 +39,15 @@ public sealed class EnrichPendingBooksCommandHandler(
             throw new InvalidOperationException("The worker clock must be expressed in UTC.");
         }
 
+        if (command.FullCatalogRefreshStartedAt is { Kind: not DateTimeKind.Utc })
+        {
+            throw new ArgumentException(
+                "A full catalog refresh start time must be expressed in UTC.",
+                nameof(command.FullCatalogRefreshStartedAt));
+        }
+
+        var fullCatalogRefreshStartedAt = command.FullCatalogRefreshStartedAt;
+
         var candidateQuery = dbContext.Books
             .AsNoTracking()
             .Where(book =>
@@ -53,11 +62,27 @@ public sealed class EnrichPendingBooksCommandHandler(
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterFirstAttempt)) ||
                   (book.ResolveAttempts == 2 &&
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterSecondAttempt)))) ||
-                (book.MetadataStatus == BookMetadataStatus.Resolved &&
-                  book.CoverUrl == null &&
-                  (book.CoverCheckedAt == null ||
-                   book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))) ||
+                (fullCatalogRefreshStartedAt != null &&
+                 (book.MetadataStatus == BookMetadataStatus.Pending ||
+                  book.MetadataStatus == BookMetadataStatus.Failed ||
+                  book.MetadataStatus == BookMetadataStatus.NotFound) &&
+                 (book.LastAttemptAt == null ||
+                  book.LastAttemptAt < fullCatalogRefreshStartedAt)) ||
+                (fullCatalogRefreshStartedAt != null &&
+                 (book.MetadataStatus == BookMetadataStatus.Resolved ||
+                  book.MetadataStatus == BookMetadataStatus.Manual) &&
+                 book.CoverUrl == null &&
+                 (book.ManuallyEditedFields == null ||
+                  !book.ManuallyEditedFields.Contains("\"CoverUrl\"")) &&
+                 (book.CoverCheckedAt == null ||
+                  book.CoverCheckedAt < fullCatalogRefreshStartedAt)) ||
+                (fullCatalogRefreshStartedAt == null &&
+                 book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 book.CoverUrl == null &&
+                 (book.CoverCheckedAt == null ||
+                  book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))) ||
                 (command.IncludeMissingGenres &&
+                 !command.RefreshAllGenres &&
                  book.MetadataStatus == BookMetadataStatus.Resolved &&
                  book.Genre == null &&
                  (book.MetadataFetchedAt == null ||
@@ -65,14 +90,47 @@ public sealed class EnrichPendingBooksCommandHandler(
                  (book.LastAttemptAt == null ||
                   book.LastAttemptAt <= now.Subtract(GenreRetryAfter))) ||
                 (command.RefreshAllGenres &&
-                 book.MetadataStatus == BookMetadataStatus.Resolved &&
-                 book.GenresRefreshedAt == null) ||
+                 ((book.MetadataStatus == BookMetadataStatus.Resolved &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Genre\""))) ||
+                  (book.MetadataStatus == BookMetadataStatus.Manual &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Genre\"")))) &&
+                 (fullCatalogRefreshStartedAt == null ||
+                  book.GenresRefreshedAt == null ||
+                  book.GenresRefreshedAt < fullCatalogRefreshStartedAt)) ||
                 (command.RefreshMissingBibliographicDetails &&
                  (book.MetadataStatus == BookMetadataStatus.Resolved ||
                   book.MetadataStatus == BookMetadataStatus.Manual) &&
-                 (book.Summary == null || book.PhysicalFormat == null || book.Language == null) &&
-                 (book.BibliographicDetailsRefreshedAt == null ||
-                  book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter))));
+                 ((book.Title == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Title\""))) ||
+                  (book.Authors == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Authors\""))) ||
+                  (book.Publisher == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Publisher\""))) ||
+                  (book.PublicationYear == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"PublicationYear\""))) ||
+                  (book.WorkId == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"WorkId\""))) ||
+                  (book.Summary == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Summary\""))) ||
+                  (book.PhysicalFormat == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"PhysicalFormat\""))) ||
+                  (book.Language == null &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Language\"")))) &&
+                 (fullCatalogRefreshStartedAt == null
+                     ? book.BibliographicDetailsRefreshedAt == null ||
+                       book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter)
+                     : book.BibliographicDetailsRefreshedAt == null ||
+                       book.BibliographicDetailsRefreshedAt < fullCatalogRefreshStartedAt)));
 
         if (command.Isbn13 is { } requestedIsbn13)
         {
@@ -123,6 +181,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                     command.IncludeMissingGenres,
                     command.RefreshAllGenres,
                     command.RefreshMissingBibliographicDetails,
+                    fullCatalogRefreshStartedAt,
                     cancellationToken);
                 continue;
             }
@@ -140,22 +199,43 @@ public sealed class EnrichPendingBooksCommandHandler(
                 continue;
             }
 
-            var genreOnly = book.MetadataStatus == BookMetadataStatus.Resolved &&
-                            ((command.IncludeMissingGenres && book.Genre is null) ||
-                             (command.RefreshAllGenres && book.GenresRefreshedAt is null));
+            var isFullGenreRefreshCandidate =
+                command.RefreshAllGenres &&
+                (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                !book.IsMetadataFieldManuallyEdited(BookMetadataField.Genre) &&
+                (fullCatalogRefreshStartedAt is null ||
+                 book.GenresRefreshedAt is null ||
+                 book.GenresRefreshedAt < fullCatalogRefreshStartedAt);
+            var genreOnly =
+                (book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 command.IncludeMissingGenres &&
+                 book.Genre is null) ||
+                isFullGenreRefreshCandidate;
             var detailsOnly = command.RefreshMissingBibliographicDetails &&
                               (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
                               HasMissingBibliographicDetails(book) &&
-                              (book.BibliographicDetailsRefreshedAt is null ||
-                               book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter));
+                              (fullCatalogRefreshStartedAt is { } detailsRefreshStartedAt
+                                  ? book.BibliographicDetailsRefreshedAt is null ||
+                                    book.BibliographicDetailsRefreshedAt < detailsRefreshStartedAt
+                                  : book.BibliographicDetailsRefreshedAt is null ||
+                                    book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter));
+            var isFullCatalogCoverRefreshCandidate =
+                fullCatalogRefreshStartedAt is { } coverRefreshStartedAt &&
+                (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                book.CoverUrl is null &&
+                !book.IsMetadataFieldManuallyEdited(BookMetadataField.CoverUrl) &&
+                (book.CoverCheckedAt is null || book.CoverCheckedAt < coverRefreshStartedAt);
             var coverOnly = !genreOnly &&
                             !detailsOnly &&
-                            book.MetadataStatus == BookMetadataStatus.Resolved &&
-                            book.CoverUrl is null &&
-                            (!command.IncludeMissingGenres || book.Genre is not null);
+                            ((book.MetadataStatus == BookMetadataStatus.Resolved &&
+                              book.CoverUrl is null &&
+                              (!command.IncludeMissingGenres || book.Genre is not null)) ||
+                             isFullCatalogCoverRefreshCandidate);
             var existingBookRefresh =
-                (book.MetadataStatus == BookMetadataStatus.Resolved && (coverOnly || genreOnly || detailsOnly)) ||
-                (book.MetadataStatus == BookMetadataStatus.Manual && detailsOnly);
+                (book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 (coverOnly || genreOnly || detailsOnly || isFullCatalogCoverRefreshCandidate)) ||
+                (book.MetadataStatus == BookMetadataStatus.Manual &&
+                 (detailsOnly || genreOnly || coverOnly || isFullCatalogCoverRefreshCandidate));
             if (!existingBookRefresh &&
                 book.MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
             {
@@ -172,6 +252,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                         command.RefreshAllGenres,
                         detailsOnly,
                         coverOnly,
+                        isFullCatalogCoverRefreshCandidate,
                         now);
                 }
                 else
@@ -196,6 +277,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                         command.RefreshAllGenres,
                         detailsOnly,
                         coverOnly,
+                        isFullCatalogCoverRefreshCandidate,
                         now);
                 }
                 else
@@ -209,10 +291,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                 continue;
             }
 
-            var includeCoreMetadata = !existingBookRefresh && !coverOnly;
+            var includeCoreMetadata = detailsOnly || (!existingBookRefresh && !coverOnly);
             var includeGenres = !coverOnly && (!existingBookRefresh || genreOnly);
             var includeDetails = !coverOnly && (!existingBookRefresh || detailsOnly);
-            var includeCover = coverOnly || !existingBookRefresh;
+            var includeCover = coverOnly || isFullCatalogCoverRefreshCandidate || !existingBookRefresh;
             var patch = CreatePatch(
                 metadata,
                 book,
@@ -230,6 +312,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                         command.RefreshAllGenres,
                         detailsOnly,
                         coverOnly,
+                        isFullCatalogCoverRefreshCandidate,
                         now);
                 }
                 else
@@ -258,6 +341,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                         command.RefreshAllGenres,
                         detailsOnly,
                         coverOnly,
+                        isFullCatalogCoverRefreshCandidate,
                         now);
                 }
                 else
@@ -278,6 +362,10 @@ public sealed class EnrichPendingBooksCommandHandler(
             var previousSummary = book.Summary;
             var previousPhysicalFormat = book.PhysicalFormat;
             var previousLanguage = book.Language;
+            var previousAuthors = book.Authors;
+            var previousPublisher = book.Publisher;
+            var previousPublicationYear = book.PublicationYear;
+            var previousWorkId = book.WorkId;
             try
             {
                 book.ApplyAutomaticMetadata(
@@ -288,8 +376,16 @@ public sealed class EnrichPendingBooksCommandHandler(
                     coverSource: patch.CoverUrl is null ? null : coverSource,
                     coverCheckedAt: patch.Fields.Contains(BookMetadataField.CoverUrl) || !existingBookRefresh
                         ? metadata.RetrievedAt.UtcDateTime
-                        : null);
-                if (!patch.Fields.Contains(BookMetadataField.Genre))
+                        : isFullCatalogCoverRefreshCandidate
+                            ? now
+                            : null);
+                if (command.RefreshAllGenres &&
+                    (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                    !book.IsMetadataFieldManuallyEdited(BookMetadataField.Genre))
+                {
+                    book.RecordGenreRefreshAttempt(now);
+                }
+                else if (!patch.Fields.Contains(BookMetadataField.Genre))
                 {
                     RecordGenreRefreshAttempt(
                         book,
@@ -298,7 +394,11 @@ public sealed class EnrichPendingBooksCommandHandler(
                         now);
                 }
 
-                if (detailsOnly)
+                if (detailsOnly ||
+                    (fullCatalogRefreshStartedAt is not null &&
+                     command.RefreshMissingBibliographicDetails &&
+                     (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                     HasMissingBibliographicDetails(book)))
                 {
                     book.RecordBibliographicDetailsRefreshAttempt(now);
                 }
@@ -310,7 +410,11 @@ public sealed class EnrichPendingBooksCommandHandler(
 
                 if (previousSummary != book.Summary ||
                     previousPhysicalFormat != book.PhysicalFormat ||
-                    previousLanguage != book.Language)
+                    previousLanguage != book.Language ||
+                    previousAuthors != book.Authors ||
+                    previousPublisher != book.Publisher ||
+                    previousPublicationYear != book.PublicationYear ||
+                    previousWorkId != book.WorkId)
                 {
                     bibliographicDetailsUpdatedCount++;
                 }
@@ -326,6 +430,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                         command.RefreshAllGenres,
                         detailsOnly,
                         coverOnly,
+                        isFullCatalogCoverRefreshCandidate,
                         now);
                 }
                 else
@@ -394,6 +499,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         bool includeMissingGenres,
         bool refreshAllGenres,
         bool refreshMissingBibliographicDetails,
+        DateTime? fullCatalogRefreshStartedAt,
         CancellationToken cancellationToken)
     {
         var book = await dbContext.Books
@@ -406,7 +512,10 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual)
         {
             var changed = false;
-            if (book.MetadataStatus == BookMetadataStatus.Resolved && book.CoverUrl is null)
+            if ((book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 book.CoverUrl is null &&
+                 fullCatalogRefreshStartedAt is null) ||
+                IsFullCatalogCoverRefreshCandidate(book, fullCatalogRefreshStartedAt))
             {
                 changed |= book.RecordCoverCheck(attemptedAt);
             }
@@ -459,6 +568,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         var title = includeCoreMetadata ? Clean(metadata.Title) : null;
         var authors = includeCoreMetadata ? Clean(metadata.Authors) : null;
         var publisher = includeCoreMetadata ? Clean(metadata.Publisher) : null;
+        var publicationYear = includeCoreMetadata ? metadata.PublicationYear : null;
         var genres = includeGenres ? CleanGenres(metadata.Genres, metadata.Genre) : [];
         var genre = genres.FirstOrDefault();
         var workId = includeCoreMetadata ? Clean(metadata.WorkId) : null;
@@ -469,6 +579,32 @@ public sealed class EnrichPendingBooksCommandHandler(
         var language = includeDetails ? Clean(metadata.Language) : null;
         if (existingBook)
         {
+            if (book.Title is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.Title))
+            {
+                title = null;
+            }
+
+            if (book.Authors is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.Authors))
+            {
+                authors = null;
+            }
+
+            if (book.Publisher is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.Publisher))
+            {
+                publisher = null;
+            }
+
+            if (book.PublicationYear is not null ||
+                book.IsMetadataFieldManuallyEdited(BookMetadataField.PublicationYear))
+            {
+                publicationYear = null;
+            }
+
+            if (book.WorkId is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.WorkId))
+            {
+                workId = null;
+            }
+
             if (book.Summary is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))
             {
                 summary = null;
@@ -492,7 +628,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (title is not null) fields.Add(BookMetadataField.Title);
         if (authors is not null) fields.Add(BookMetadataField.Authors);
         if (publisher is not null) fields.Add(BookMetadataField.Publisher);
-        if (includeCoreMetadata && metadata.PublicationYear is not null) fields.Add(BookMetadataField.PublicationYear);
+        if (publicationYear is not null) fields.Add(BookMetadataField.PublicationYear);
         if (genre is not null) fields.Add(BookMetadataField.Genre);
         if (workId is not null) fields.Add(BookMetadataField.WorkId);
         if (coverUrl is not null) fields.Add(BookMetadataField.CoverUrl);
@@ -504,7 +640,7 @@ public sealed class EnrichPendingBooksCommandHandler(
             title,
             authors,
             publisher,
-            includeCoreMetadata ? metadata.PublicationYear : null,
+            publicationYear,
             PhysicalFormat: physicalFormat,
             Language: language,
             Genre: genre,
@@ -547,9 +683,10 @@ public sealed class EnrichPendingBooksCommandHandler(
         bool refreshAllGenres,
         bool refreshBibliographicDetails,
         bool coverOnly,
+        bool fullCatalogCoverRefresh,
         DateTime attemptedAt)
     {
-        if (coverOnly)
+        if (coverOnly || fullCatalogCoverRefresh)
         {
             book.RecordCoverCheck(attemptedAt);
         }
@@ -567,7 +704,8 @@ public sealed class EnrichPendingBooksCommandHandler(
         bool refreshAllGenres,
         DateTime attemptedAt)
     {
-        if (refreshAllGenres && book.MetadataStatus == BookMetadataStatus.Resolved)
+        if (refreshAllGenres &&
+            book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual)
         {
             return book.RecordGenreRefreshAttempt(attemptedAt);
         }
@@ -580,7 +718,27 @@ public sealed class EnrichPendingBooksCommandHandler(
 
     private static bool HasMissingBibliographicDetails(Book book)
     {
-        return book.Summary is null || book.PhysicalFormat is null || book.Language is null;
+        return (book.Title is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Title)) ||
+               (book.Authors is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Authors)) ||
+               (book.Publisher is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Publisher)) ||
+               (book.PublicationYear is null &&
+                !book.IsMetadataFieldManuallyEdited(BookMetadataField.PublicationYear)) ||
+               (book.WorkId is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.WorkId)) ||
+               (book.Summary is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary)) ||
+               (book.PhysicalFormat is null &&
+                !book.IsMetadataFieldManuallyEdited(BookMetadataField.PhysicalFormat)) ||
+               (book.Language is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Language));
+    }
+
+    private static bool IsFullCatalogCoverRefreshCandidate(
+        Book book,
+        DateTime? fullCatalogRefreshStartedAt)
+    {
+        return fullCatalogRefreshStartedAt is { } refreshStartedAt &&
+               book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual &&
+               book.CoverUrl is null &&
+               !book.IsMetadataFieldManuallyEdited(BookMetadataField.CoverUrl) &&
+               (book.CoverCheckedAt is null || book.CoverCheckedAt < refreshStartedAt);
     }
 
     private static bool TryMapSource(string source, out BookMetadataSource mappedSource)

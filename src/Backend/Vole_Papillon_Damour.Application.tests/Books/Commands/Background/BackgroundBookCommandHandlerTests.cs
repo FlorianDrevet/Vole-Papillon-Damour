@@ -602,6 +602,389 @@ public sealed class BackgroundBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task EnrichPending_WhenFullGenreRefreshRunsAgain_RefreshesPreviouslyRefreshedBooksWithAllGenres()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Romans",
+                "https://covers.example.test/le-petit-prince.jpg",
+                [BookMetadataField.Title, BookMetadataField.Genre, BookMetadataField.CoverUrl],
+                Genres: ["Romans"]),
+            BookMetadataSource.Bnf,
+            WorkerNow.AddDays(-31),
+            rawPayload: null,
+            coverSource: BookCoverSource.Bnf);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(WorkerNow),
+                Genre: "Roman",
+                Genres: ["Roman", "Jeunesse"]));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(RefreshAllGenres: true),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.Genres.Select(genre => genre.Name).Should().BeEquivalentTo("Roman", "Jeunesse");
+        persisted.GenresRefreshedAt.Should().Be(WorkerNow);
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullGenreRefreshFindsNoGenre_DoesNotSelectTheSameOldBookAgain()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var fetchedAt = WorkerNow.AddDays(-31);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "https://covers.example.test/le-petit-prince.jpg",
+                [BookMetadataField.Title, BookMetadataField.CoverUrl]),
+            BookMetadataSource.Bnf,
+            fetchedAt,
+            rawPayload: null,
+            coverSource: BookCoverSource.Bnf);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(fetchedAt)));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+        var command = new EnrichPendingBooksCommand(
+            IncludeMissingGenres: true,
+            RefreshAllGenres: true,
+            FullCatalogRefreshStartedAt: WorkerNow);
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        first.ProcessedCount.Should().Be(1);
+        second.ProcessedCount.Should().Be(0);
+        (await fixture.Context.Books.SingleAsync()).GenresRefreshedAt.Should().Be(WorkerNow);
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullRefreshRuns_RetriesMissingDetailsEvenIfTheyWereCheckedRecently()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Romans",
+                "https://covers.example.test/le-petit-prince.jpg",
+                [BookMetadataField.Title, BookMetadataField.Genre, BookMetadataField.CoverUrl],
+                Genres: ["Romans"]),
+            BookMetadataSource.Bnf,
+            WorkerNow.AddDays(-31),
+            rawPayload: null,
+            coverSource: BookCoverSource.Bnf);
+        fixture.Context.Entry(book)
+            .Property(nameof(Book.BibliographicDetailsRefreshedAt))
+            .CurrentValue = WorkerNow.AddDays(-1);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(WorkerNow),
+                Summary: "Un petit prince quitte sa planète."));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(
+                RefreshAllGenres: true,
+                RefreshMissingBibliographicDetails: true,
+                FullCatalogRefreshStartedAt: WorkerNow),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        (await fixture.Context.Books.SingleAsync()).Summary.Should().Be("Un petit prince quitte sa planète.");
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullRefreshRuns_FillsEveryMissingBibliographicFieldWithoutReplacingExistingValues()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "https://covers.example.test/le-petit-prince.jpg",
+                [BookMetadataField.Title, BookMetadataField.CoverUrl]),
+            BookMetadataSource.Bnf,
+            WorkerNow,
+            rawPayload: null,
+            coverSource: BookCoverSource.Bnf);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Titre fournisseur différent",
+                "Antoine de Saint-Exupéry",
+                "Gallimard",
+                1946,
+                new Uri("https://covers.example.test/autre-couverture.jpg"),
+                "BnF",
+                "work-42",
+                new DateTimeOffset(WorkerNow),
+                "BnF",
+                "Romans",
+                ["Romans", "Jeunesse"],
+                "Un petit prince quitte sa planète.",
+                "Broché",
+                "fr"));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(
+                RefreshAllGenres: true,
+                RefreshMissingBibliographicDetails: true,
+                FullCatalogRefreshStartedAt: WorkerNow),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.Title.Should().Be("Le Petit Prince");
+        persisted.Authors.Should().Be("Antoine de Saint-Exupéry");
+        persisted.Publisher.Should().Be("Gallimard");
+        persisted.PublicationYear.Should().Be(1946);
+        persisted.WorkId.Should().Be("work-42");
+        persisted.CoverUrl.Should().Be("https://covers.example.test/le-petit-prince.jpg");
+        persisted.Summary.Should().Be("Un petit prince quitte sa planète.");
+        persisted.PhysicalFormat.Should().Be("Broché");
+        persisted.Language.Should().Be("fr");
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullRefreshRuns_RetriesRecentlyCheckedMissingCoverOnce()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                "Antoine de Saint-Exupéry",
+                "Gallimard",
+                1946,
+                "Broché",
+                "fr",
+                "Romans",
+                null,
+                [
+                    BookMetadataField.Title,
+                    BookMetadataField.Authors,
+                    BookMetadataField.Publisher,
+                    BookMetadataField.PublicationYear,
+                    BookMetadataField.PhysicalFormat,
+                    BookMetadataField.Language,
+                    BookMetadataField.Genre,
+                    BookMetadataField.Summary,
+                ],
+                Genres: ["Romans"],
+                Summary: "Un petit prince quitte sa planète."),
+            BookMetadataSource.Bnf,
+            WorkerNow,
+            rawPayload: null,
+            coverCheckedAt: WorkerNow.AddDays(-1));
+        fixture.Context.Entry(book)
+            .Property(nameof(Book.BibliographicDetailsRefreshedAt))
+            .CurrentValue = WorkerNow;
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                null,
+                null,
+                null,
+                null,
+                new Uri("https://covers.openlibrary.org/b/id/42-L.jpg"),
+                "OpenLibrary",
+                null,
+                new DateTimeOffset(WorkerNow),
+                "OpenLibrary"));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+        var command = new EnrichPendingBooksCommand(
+            RefreshAllGenres: true,
+            RefreshMissingBibliographicDetails: true,
+            FullCatalogRefreshStartedAt: WorkerNow);
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        first.CoverUpdatedCount.Should().Be(1);
+        second.ProcessedCount.Should().Be(0);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/42-L.jpg");
+        persisted.CoverCheckedAt.Should().Be(WorkerNow);
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullRefreshRuns_RetriesRecentlyNotFoundIsbnsOnce()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.RecordMetadataNotFound(WorkerNow.AddHours(-1));
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince retrouvé",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(WorkerNow)));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+        var command = new EnrichPendingBooksCommand(
+            RefreshAllGenres: true,
+            RefreshMissingBibliographicDetails: true,
+            FullCatalogRefreshStartedAt: WorkerNow);
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        first.ResolvedCount.Should().Be(1);
+        second.ProcessedCount.Should().Be(0);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
+        persisted.Title.Should().Be("Le Petit Prince retrouvé");
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFullGenreRefreshFindsUneditedGenreOnManualBook_UpdatesEveryGenre()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title]),
+            WorkerNow.AddDays(-31));
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(WorkerNow),
+                Genre: "Roman",
+                Genres: ["Roman", "Jeunesse"]));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(RefreshAllGenres: true),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.MetadataStatus.Should().Be(BookMetadataStatus.Manual);
+        persisted.Genres.Select(genre => genre.Name).Should().BeEquivalentTo("Roman", "Jeunesse");
+    }
+
+    [Fact]
     public async Task EnrichPending_WhenProviderReturnsGenreNamesEquivalentUnderDatabaseCollation_DeduplicatesThem()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
