@@ -331,17 +331,48 @@
                   <img
                     *ngIf="coverUrl; else triNoCover"
                     [src]="coverUrl"
-                    [alt]="'Couverture de ' + activeTitle"
+                    [alt]="activeTitle ? 'Couverture de ' + activeTitle : 'Couverture du livre'"
                     (error)="onCoverError()">
-                  <ng-template #triNoCover><vpd-book-cover-placeholder></vpd-book-cover-placeholder></ng-template>
+                  <ng-template #triNoCover>
+                    <div *ngIf="metadataLookupState === 'loading'; else triCoverPlaceholder" class="book-cover-skeleton" aria-hidden="true"></div>
+                    <ng-template #triCoverPlaceholder><vpd-book-cover-placeholder></vpd-book-cover-placeholder></ng-template>
+                  </ng-template>
                 </div>
                 <div class="book-copy">
-                  <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : 'Notice bibliographique en arrière-plan' }}</p>
-                  <h2 id="book-title">{{ activeTitle }}</h2>
+                  <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : metadataLookupState === 'loading' ? 'Recherche de la fiche en ligne' : 'Informations bibliographiques' }}</p>
+                  <h2 *ngIf="metadata?.title || activeBook?.title" id="book-title">{{ activeTitle }}</h2>
+                  <div
+                    *ngIf="metadataLookupState === 'loading'"
+                    class="book-metadata-skeleton"
+                    data-testid="book-metadata-skeleton"
+                    role="status"
+                    aria-live="polite"
+                    aria-label="Chargement des informations bibliographiques">
+                    <span *ngIf="!metadata?.title && !activeBook?.title" class="book-skeleton-line book-skeleton-title" aria-hidden="true"></span>
+                    <span *ngIf="!activeAuthors" class="book-skeleton-line book-skeleton-author" aria-hidden="true"></span>
+                    <span *ngIf="!activePublisher && !activePublicationYear" class="book-skeleton-line book-skeleton-edition" aria-hidden="true"></span>
+                  </div>
                   <p *ngIf="activeAuthors" class="book-author">{{ activeAuthors }}</p>
                   <p *ngIf="activePublisher || activePublicationYear" class="book-edition">
                     {{ activePublisher || 'Édition inconnue' }}<span *ngIf="activePublicationYear"> · {{ activePublicationYear }}</span>
                   </p>
+                  <div
+                    *ngIf="metadataLookupState === 'not-found' || metadataLookupState === 'unavailable'"
+                    class="book-metadata-missing"
+                    data-testid="book-metadata-missing"
+                    role="status"
+                    aria-live="polite">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 5.5c2.8-.7 5.4-.2 8 1.5v12c-2.6-1.7-5.2-2.2-8-1.5z"></path>
+                      <path d="M20 5.5c-2.8-.7-5.4-.2-8 1.5v12c2.6-1.7 5.2-2.2 8-1.5z"></path>
+                      <circle cx="18" cy="17.5" r="4"></circle>
+                      <path d="M18 15.6v2.1m0 1.5v.1"></path>
+                    </svg>
+                    <div>
+                      <strong>{{ metadataLookupState === 'not-found' ? 'Fiche introuvable sur Internet' : 'Recherche en ligne indisponible' }}</strong>
+                      <p>Les informations pourront être renseignées à la main plus tard.</p>
+                    </div>
+                  </div>
                   <p class="book-isbn">ISBN {{ activeIsbn }}</p>
                 </div>
               </article>
@@ -352,8 +383,6 @@
                 <div><span>Déjà vendus</span><strong>{{ salesQuantity }}</strong></div>
                 <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
               </div>
-              <p *ngIf="!metadata" class="result-note">Le verdict est disponible immédiatement ; la notice arrivera en arrière-plan.</p>
-              <p *ngIf="errorMessage" class="result-note message-error" role="alert">{{ errorMessage }}</p>
             </section>
           </ng-template>
         </div>
@@ -387,9 +416,8 @@
         </footer>
 
         <footer *ngIf="localScan" class="action-dock decision-dock">
-          <p>{{ activeVerdictKey === 'ManualRequest' ? 'Scanner le suivant vaut « mettre de côté »' : 'Scanner le suivant vaut « garder »' }}</p>
           <div class="decision-buttons" *ngIf="localScan.entry.status === 'Pending'; else savedDecision">
-            <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Écarter</button>
+            <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Jeter</button>
             <button type="button" class="decision-keep" [class.decision-keep-manual-request]="activeVerdictKey === 'ManualRequest'" (click)="keepCurrentScan()">{{ activeVerdictKey === 'ManualRequest' ? 'Mettre de côté' : 'Garder' }}</button>
           </div>
           <ng-template #savedDecision>
@@ -622,7 +650,21 @@
           <ng-container *ngFor="let item of cashItems">
             <article *ngIf="!item.isRare" class="cash-item">
               <div class="cash-item-copy">
-                <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+                <h2 *ngIf="item.title; else cashMissingBookTitle">{{ item.title }}</h2>
+                <ng-template #cashMissingBookTitle>
+                  <div class="cash-book-metadata-missing" data-testid="cash-book-metadata-missing" role="status" aria-live="polite">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 5.5c2.8-.7 5.4-.2 8 1.5v12c-2.6-1.7-5.2-2.2-8-1.5z"></path>
+                      <path d="M20 5.5c-2.8-.7-5.4-.2-8 1.5v12c2.6-1.7 5.2-2.2 8-1.5z"></path>
+                      <circle cx="18" cy="17.5" r="4"></circle>
+                      <path d="M18 15.6v2.1m0 1.5v.1"></path>
+                    </svg>
+                    <div>
+                      <strong>Fiche introuvable sur Internet</strong>
+                      <p>Les informations pourront être renseignées à la main plus tard.</p>
+                    </div>
+                  </div>
+                </ng-template>
                 <p>{{ item.publisher || 'Édition inconnue' }}<span *ngIf="item.publicationYear"> · {{ item.publicationYear }}</span></p>
               </div>
               <button type="button" class="cash-remove" [attr.aria-label]="'Retirer ' + (item.title || 'ce livre')" (click)="removeCashItem(item.id)">
@@ -649,7 +691,21 @@
               <div class="cash-rare-body">
                 <img *ngIf="item.thumbnail" class="cash-rare-thumbnail" [src]="item.thumbnail" alt="">
                 <div>
-                  <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+                  <h2 *ngIf="item.title; else cashRareMissingBookTitle">{{ item.title }}</h2>
+                  <ng-template #cashRareMissingBookTitle>
+                    <div class="cash-book-metadata-missing" role="status" aria-live="polite">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 5.5c2.8-.7 5.4-.2 8 1.5v12c-2.6-1.7-5.2-2.2-8-1.5z"></path>
+                        <path d="M20 5.5c-2.8-.7-5.4-.2-8 1.5v12c2.6-1.7 5.2-2.2 8-1.5z"></path>
+                        <circle cx="18" cy="17.5" r="4"></circle>
+                        <path d="M18 15.6v2.1m0 1.5v.1"></path>
+                      </svg>
+                      <div>
+                        <strong>Fiche introuvable sur Internet</strong>
+                        <p>Les informations pourront être renseignées à la main plus tard.</p>
+                      </div>
+                    </div>
+                  </ng-template>
                   <p class="cash-rare-price" *ngIf="item.price !== null && item.price !== undefined">
                     Prix ferme — lecture sur place · {{ item.price | number:'1.0-2' }} €
                   </p>

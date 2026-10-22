@@ -136,6 +136,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   manualIsbn = '';
   manualError: string | null = null;
   metadata: BookMetadata | null = null;
+  metadataLookupState: 'idle' | 'loading' | 'found' | 'not-found' | 'unavailable' = 'idle';
   coverUrl: string | null = null;
   errorMessage: string | null = null;
   cameraError: string | null = null;
@@ -593,7 +594,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   get activeTitle(): string {
     return this.metadata?.title
       ?? this.activeBook?.title
-      ?? (this.isLoading ? 'Notice en attente…' : 'Titre non renseigné');
+      ?? (this.isLoading || this.metadataLookupState === 'loading' ? 'Notice en attente…' : '');
   }
 
   get activeAuthors(): string | null {
@@ -779,7 +780,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     const normalizedIsbn = normalizeIsbn(rawInput);
     const lookupVersion = ++this.lookupVersion;
-    this.resetLookupState();
+    this.resetLookupState(false);
 
     if (!normalizedIsbn) {
       this.isLoading = false;
@@ -801,6 +802,40 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       : (destination === 'cash' || destination === 'consultation') && this.scanWorkflow
         ? this.scanWorkflow.lookupCatalog(normalizedIsbn)
         : Promise.resolve(null);
+
+    if (destination === 'tri') {
+      this.metadataLookupState = 'loading';
+      void this.resolveTriageMetadata(metadataPromise, lookupVersion);
+
+      const [localOutcome] = await Promise.allSettled([localPromise]);
+      if (lookupVersion !== this.lookupVersion) {
+        return;
+      }
+
+      if (localOutcome.status === 'fulfilled') {
+        this.localScan = localOutcome.value as LocalScanResult | null;
+        this.isLoading = false;
+        this.refreshView();
+        if (this.localScan) {
+          await this.refreshLocalState();
+          if (lookupVersion !== this.lookupVersion) {
+            return;
+          }
+          this.trySync();
+        }
+      } else {
+        this.setStorageError('critical', this.isSessionClosePendingError(localOutcome.reason)
+          ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
+          : this.describeStorageError(
+            localOutcome.reason,
+            'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
+          ));
+        this.isLoading = false;
+        this.refreshView();
+      }
+      return;
+    }
+
     const rarePromise = destination === 'cash' && this.scanRareCash
       ? this.scanRareCash.findByIsbn(normalizedIsbn)
       : Promise.resolve<ScanRareBook | null>(null);
@@ -815,25 +850,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    let localResult: LocalScanResult | null = null;
     if (localOutcome.status === 'fulfilled') {
-      if (destination === 'tri') {
-        localResult = localOutcome.value as LocalScanResult | null;
-        this.localScan = localResult;
-        if (localResult) {
-          await this.refreshLocalState();
-          this.trySync();
-        }
-      } else if (destination === 'cash' || destination === 'consultation') {
-        this.consultationResult = localOutcome.value as LocalCatalogResult | null;
-      }
-    } else if (destination === 'tri') {
-      this.setStorageError('critical', this.isSessionClosePendingError(localOutcome.reason)
-        ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
-        : this.describeStorageError(
-          localOutcome.reason,
-          'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
-        ));
+      this.consultationResult = localOutcome.value as LocalCatalogResult | null;
     } else {
       this.setStorageError('critical', this.describeStorageError(
         localOutcome.reason,
@@ -1438,7 +1456,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     if (this.localScan?.entry.status === 'Pending' || this.pendingDecisionCount > 0) {
-      this.setSyncError('critical', 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.');
+      this.setSyncError('critical', 'Choisissez « Garder » ou « Jeter » pour le dernier livre avant de terminer.');
       this.screen = 'tri';
       this.refreshView();
       return;
@@ -2406,9 +2424,13 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.screen === 'tri' || this.screen === 'cash' || this.screen === 'consultation';
   }
 
-  private resetLookupState(): void {
+  private resetLookupState(invalidatePendingLookup = true): void {
+    if (invalidatePendingLookup) {
+      this.lookupVersion++;
+    }
     this.storageAlert = null;
     this.metadata = null;
+    this.metadataLookupState = 'idle';
     this.coverUrl = null;
     this.localScan = null;
     this.consultationResult = null;
@@ -2416,6 +2438,43 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.errorMessage = null;
     this.cameraError = null;
     this.isLoading = false;
+  }
+
+  private async resolveTriageMetadata(
+    metadataPromise: Promise<BookMetadata>,
+    lookupVersion: number,
+  ): Promise<void> {
+    const [metadataOutcome] = await Promise.allSettled([metadataPromise]);
+    if (lookupVersion !== this.lookupVersion) {
+      return;
+    }
+
+    if (metadataOutcome.status === 'fulfilled') {
+      const metadata = metadataOutcome.value;
+      this.metadata = metadata;
+      this.coverUrl = metadata.coverUrl;
+      this.metadataLookupState = 'found';
+      this.errorMessage = null;
+      this.refreshView();
+
+      if (this.scanWorkflow) {
+        try {
+          await this.scanWorkflow.cacheMetadata(metadata);
+        } catch {
+          // Bibliographic metadata is best-effort; the durable scan remains in the outbox.
+        }
+      }
+      return;
+    }
+
+    const error = metadataOutcome.reason;
+    this.metadataLookupState = error instanceof HttpErrorResponse && error.status === 404
+      ? 'not-found'
+      : 'unavailable';
+    this.errorMessage = this.metadataLookupState === 'not-found'
+      ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
+      : 'La notice ne peut pas être chargée pour le moment.';
+    this.refreshView();
   }
 
   private startManualRequestLookup(isbn13: string, lookupVersion: number): void {

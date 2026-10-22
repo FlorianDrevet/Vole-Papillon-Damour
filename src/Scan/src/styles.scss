@@ -1044,6 +1044,100 @@ input:focus-visible {
   object-fit: cover;
 }
 
+.book-cover-skeleton,
+.book-skeleton-line {
+  background: linear-gradient(105deg, #e5eef4 22%, #f8fbfd 48%, #e5eef4 72%);
+  background-size: 220% 100%;
+  animation: book-metadata-shimmer 1.4s ease-in-out infinite;
+}
+
+.book-cover-skeleton {
+  width: 100%;
+  height: 100%;
+}
+
+.book-metadata-skeleton {
+  display: grid;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.book-skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.book-skeleton-title {
+  width: 90%;
+  height: 21px;
+  border-radius: 4px;
+}
+
+.book-skeleton-author {
+  width: 72%;
+}
+
+.book-skeleton-edition {
+  width: 54%;
+  height: 8px;
+}
+
+.book-metadata-missing {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 9px;
+  padding: 9px 10px;
+  border: 1px solid #e7b8ba;
+  border-left: 3px solid var(--scan-red);
+  background: #fff4f4;
+  color: #702b31;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.book-metadata-missing > div,
+.cash-book-metadata-missing > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.book-metadata-missing svg {
+  width: 23px;
+  height: 23px;
+  flex: none;
+  color: var(--scan-red);
+}
+
+.book-metadata-missing strong {
+  display: block;
+  color: #8b262f;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.book-metadata-missing p {
+  margin: 3px 0 0;
+}
+
+@keyframes book-metadata-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-cover-skeleton,
+  .book-skeleton-line {
+    animation: none;
+  }
+}
+
 .book-copy {
   min-width: 0;
 }
@@ -1562,6 +1656,41 @@ input:focus-visible {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: .04em;
+}
+
+.cash-book-metadata-missing {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 7px 8px;
+  border: 1px solid #e7b8ba;
+  border-left: 3px solid var(--scan-red);
+  background: #fff4f4;
+  color: #702b31;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.cash-book-metadata-missing svg {
+  width: 21px;
+  height: 21px;
+  flex: none;
+  color: var(--scan-red);
+}
+
+.cash-book-metadata-missing strong {
+  display: block;
+  color: #8b262f;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.cash-book-metadata-missing p {
+  margin: 2px 0 0;
+  color: #80484b;
+  font-family: "Libre Franklin", Arial, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0;
 }
 
 .cash-rare-item {

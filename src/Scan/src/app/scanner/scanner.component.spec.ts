@@ -178,7 +178,8 @@ describe('ScannerComponent', () => {
 
     expect(manualFixture.nativeElement.textContent).toContain('Coordonnées dans l’administration');
     expect(manualFixture.nativeElement.textContent).toContain('Administration → Demandes manuelles');
-    expect(manualFixture.nativeElement.textContent).toContain('Scanner le suivant vaut « mettre de côté »');
+    expect(manualFixture.nativeElement.querySelector('.decision-reject')?.textContent).toContain('Jeter');
+    expect(manualFixture.nativeElement.textContent).not.toContain('Scanner le suivant vaut');
     expect(manualFixture.nativeElement.querySelector('.decision-keep')?.textContent).toContain('Mettre de côté');
     manualFixture.destroy();
   });
@@ -395,6 +396,89 @@ describe('ScannerComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
+  });
+
+  it('shows the local keep-or-discard verdict and bibliographic skeleton before online metadata arrives', async () => {
+    const metadataResponse = new Subject<BookMetadata>();
+    const localScan = createLocalScanResult();
+    const workflow = createLocalScanWorkflow(localScan);
+    metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
+    (component as unknown as {scanWorkflow: ScanWorkflowService | null}).scanWorkflow = workflow;
+
+    await component.lookup('9782070363735', 'tri');
+    fixture.detectChanges();
+
+    expect(component.localScan).toEqual(localScan);
+    expect(component.isLoading).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.decision-dock')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.decision-reject')?.textContent).toContain('Jeter');
+    expect(fixture.nativeElement.querySelector('.decision-keep')?.textContent).toContain('Garder');
+    expect(fixture.nativeElement.querySelector('[data-testid="book-metadata-skeleton"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Scanner le suivant vaut');
+    expect(fixture.nativeElement.textContent).not.toContain('Le verdict est disponible immédiatement');
+
+    metadataResponse.next(createMetadata('Le Petit Prince'));
+    metadataResponse.complete();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain('Le Petit Prince');
+    expect(fixture.nativeElement.querySelector('[data-testid="book-metadata-skeleton"]')).toBeNull();
+    expect(workflow.cacheMetadata).toHaveBeenCalled();
+  });
+
+  it('shows an error-toned manual-entry notice when no online bibliographic record exists', async () => {
+    const localScan = createLocalScanResult();
+    const workflow = createLocalScanWorkflow(localScan);
+    metadataService.getMetadata.and.returnValue(throwError(
+      () => new HttpErrorResponse({status: 404}),
+    ));
+    (component as unknown as {scanWorkflow: ScanWorkflowService | null}).scanWorkflow = workflow;
+
+    await component.lookup('9782070363735', 'tri');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const missingNotice = fixture.nativeElement.querySelector('[data-testid="book-metadata-missing"]') as HTMLElement | null;
+    expect(missingNotice).not.toBeNull();
+    expect(missingNotice?.getAttribute('role')).toBe('status');
+    expect(missingNotice?.querySelector('svg')).not.toBeNull();
+    expect(missingNotice?.textContent).toContain('Fiche introuvable sur Internet');
+    expect(missingNotice?.textContent).toContain('renseignées à la main plus tard');
+    expect(fixture.nativeElement.textContent).not.toContain('Titre non renseigné');
+    expect(fixture.nativeElement.querySelector('.decision-dock')).not.toBeNull();
+  });
+
+  it('shows a friendly missing-record notice for a cash line without a title', () => {
+    const cashFixture = TestBed.createComponent(ScannerComponent);
+    const cashComponent = cashFixture.componentInstance;
+    cashComponent.screen = 'cash';
+    cashComponent.cashItems = [{...createCashItem('cash-missing', ''), title: null}];
+    cashFixture.detectChanges();
+
+    const missingNotice = cashFixture.nativeElement.querySelector('[data-testid="cash-book-metadata-missing"]') as HTMLElement | null;
+    expect(missingNotice).not.toBeNull();
+    expect(missingNotice?.querySelector('svg')).not.toBeNull();
+    expect(missingNotice?.textContent).toContain('Fiche introuvable sur Internet');
+    expect(missingNotice?.textContent).toContain('renseignées à la main plus tard');
+    expect(cashFixture.nativeElement.textContent).not.toContain('Titre non renseigné');
+    cashFixture.destroy();
+  });
+
+  it('uses the new tri decision label without the removed scan-next guidance', () => {
+    const decisionFixture = TestBed.createComponent(ScannerComponent);
+    const decisionComponent = decisionFixture.componentInstance;
+    decisionComponent.screen = 'tri';
+    decisionComponent.localScan = createLocalScanResult();
+    decisionFixture.detectChanges();
+
+    const text = decisionFixture.nativeElement.textContent as string;
+    expect(decisionFixture.nativeElement.querySelector('.decision-reject')?.textContent).toContain('Jeter');
+    expect(text).not.toContain('Écarter');
+    expect(text).not.toContain('Scanner le suivant vaut');
+    expect(text).not.toContain('Le verdict est disponible immédiatement');
+    decisionFixture.destroy();
   });
 
   it('notifies Angular when a manual lookup completes outside a template event', async () => {
@@ -2413,6 +2497,19 @@ describe('ScannerComponent', () => {
       syncStatus: 'Synced',
       lastError: null,
     };
+  }
+
+  function createLocalScanWorkflow(localScan: LocalScanResult) {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordScan', 'cacheMetadata', 'getSession', 'getSettings', 'getCatalogSyncState'],
+    );
+    workflow.recordScan.and.resolveTo(localScan);
+    workflow.cacheMetadata.and.resolveTo();
+    workflow.getSession.and.resolveTo(null);
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    return workflow;
   }
 
   function createSession(overrides: Partial<ScanSessionSnapshot> = {}): ScanSessionSnapshot {
