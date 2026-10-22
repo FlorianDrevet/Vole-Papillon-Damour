@@ -60,6 +60,7 @@ public static class BookController
                         string? sort,
                         int? page,
                         int? pageSize,
+                        bool? includeTotalCount,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
@@ -88,7 +89,8 @@ public static class BookController
                                 sortOrder,
                                 page ?? 1,
                                 pageSize ?? 24,
-                                IncludeExhausted: includeExhausted == true),
+                                IncludeExhausted: includeExhausted == true,
+                                IncludeTotalCount: includeTotalCount == true),
                             cancellationToken);
 
                         return result.Match(

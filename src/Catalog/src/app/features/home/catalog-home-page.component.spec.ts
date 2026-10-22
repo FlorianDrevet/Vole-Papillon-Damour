@@ -149,7 +149,7 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent)
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
-    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8});
+    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: true});
     expect(api.getPublicRareBooks).toHaveBeenCalledWith({includeSold: false, sort: 'recent', pageSize: 4});
   });
 

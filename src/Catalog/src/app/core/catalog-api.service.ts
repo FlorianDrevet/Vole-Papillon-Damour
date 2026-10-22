@@ -40,6 +40,9 @@ export class CatalogApiService {
     if (params.includeExhausted) {
       httpParams = httpParams.set('includeExhausted', 'true');
     }
+    if (params.includeTotalCount) {
+      httpParams = httpParams.set('includeTotalCount', 'true');
+    }
     if (params.sort && params.sort !== 'relevance') {
       httpParams = httpParams.set('sort', params.sort);
     }

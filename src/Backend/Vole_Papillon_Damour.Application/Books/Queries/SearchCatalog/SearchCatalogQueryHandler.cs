@@ -169,9 +169,17 @@ public sealed class SearchCatalogQueryHandler(
         }
 
         var pageBooks = pageBooksWithLookahead;
-        int? totalCount = !hasMore && (pageBooks.Count > 0 || query.Page == 1)
-            ? checked(pageOffset + pageBooks.Count)
-            : null;
+        int? totalCount;
+        if (query.IncludeTotalCount)
+        {
+            totalCount = await filteredBooksQuery.CountAsync(cancellationToken);
+        }
+        else
+        {
+            totalCount = !hasMore && (pageBooks.Count > 0 || query.Page == 1)
+                ? checked(pageOffset + pageBooks.Count)
+                : null;
+        }
 
         var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
         var publishedAvailableRareIsbns = pageIsbns.Length == 0
