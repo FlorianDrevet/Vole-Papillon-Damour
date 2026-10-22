@@ -738,6 +738,16 @@ timing without a placeholder title, and links to manual correction, immediate re
 removal. Removing a ledger-backed candidate uses the API's audited discard/withdrawal path;
 it does not delete its movement history.
 
+The queue has server-side `Toutes`, `En cours` (`Pending`), `Échecs` (`Failed`), and
+`Notices non trouvées` (`NotFound`) filters; the status is applied before count and
+pagination. `NotFound` is distinct from provider/application failures.
+
+When enrichment records `Les métadonnées de la notice ne peuvent pas être enregistrées.`,
+`EnrichPendingBooksCommandHandler` has caught an `ArgumentException` while applying provider
+metadata. That catch persists only the generic reason, so the failed queue row cannot identify
+the invalid field. `RecordMetadataProviderFailure` defaults to `countAttempt: false`, which
+explains why a last-attempt timestamp can coexist with zero resolve attempts.
+
 The ordinary catalogue fiche detail also offers « Supprimer définitivement ». It uses a
 separate administration API route from the ISBN-queue discard action, confirms that stock
 movements and member tracking will be erased, and is disabled for sales, announcements,
