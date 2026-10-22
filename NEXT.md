@@ -952,6 +952,12 @@ git pull
 
 ## En cours
 
+### Compteur de l’accueil Catalog — 2026-10-22
+
+Dans le worktree `VPD-catalog-home-book-count-20261022`, le compteur sous la recherche compte tous les titres publics du catalogue, y compris ceux sans stock disponible. Le chargement des huit nouveautés disponibles reste séparé. Les réponses incohérentes entre `totalCount` et `hasMore` ne sont pas présentées comme un total exact.
+
+Le build Catalog réussit ; aucun test automatisé n’a été lancé. L’API de production répond HTTP 503, donc le compteur réel et son rendu avec les données ne peuvent pas être contrôlés. `graphify update .` a réextrait l’AST mais le rendu HTML dépasse la limite de 8 546 nœuds. Aucun déploiement ni accès aux données n’a eu lieu. Branche `fix/catalog-home-book-count`, [PR #330](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/330) ouverte, non fusionnée.
+
 ### Scan — verdict immédiat et notice progressive — 2026-10-22
 
 Dans le worktree `Vole-Papillon-Damour-scan-progressive-metadata-20261022`, l’écran affiche le verdict local « Jeter » ou « Garder » dès que l’enregistrement est prêt. Les métadonnées et la couverture arrivent ensuite sur des squelettes. Une fiche absente affiche une icône rouge et indique que les informations pourront être renseignées manuellement. La [PR #321](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/321) est ouverte, non fusionnée.
@@ -2433,6 +2439,8 @@ dans Azure sans être déductible du dépôt.
 
 Au 2026-10-22, l’investigation App Insights de la latence des notices Scan est restée en lecture seule. Échantillon des dernières 24 h : p95 endpoint 3,50 s; SQL p95 ~5,8 ms sans échec; BnF 25 timeouts; Open Library p95 ~954 ms; Google Books 103 HTTP 400 (p95 ~670 ms). Les traces ne montrent pas le corps des 400. La valeur de la clé Google Books n’a pas été lue et aucun secret, ressource, configuration ni déploiement Azure n’a été modifié. Vérifier dans Google Cloud que Books API est activée et que les restrictions de la clé référencée par Container Apps lui permettent cet appel; l’hypothèse de clé invalide ou restreinte n’est pas confirmée.
 
+Au 2026-10-22, l’API de production du Catalog répond HTTP 503 à la recherche publique. Le compteur de l’accueil ne peut pas être vérifié avec les données réelles ; aucun déploiement, accès aux données ou changement de service n’a eu lieu.
+
 Au 2026-10-20, la finition de la fiche Catalog reste limitée au dépôt et à la
 [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295). Aucun déploiement,
 changement Azure/SQL ou accès aux données de catalogue n’a eu lieu. L’API de production a
@@ -2657,6 +2665,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-22 | Windows | **Catalog — compteur d’accueil.** Le compteur de la recherche couvre tous les titres publics, y compris sans stock ; le chargement des huit nouveautés disponibles est séparé et un couple `totalCount` / `hasMore` incohérent ne s’affiche pas comme valeur exacte. Build Catalog réussi ; tests non lancés. API de production HTTP 503, donc contrôle live impossible. Graphify a réextrait l’AST, mais le rendu HTML dépasse la limite de 8 546 nœuds. Aucun déploiement ni accès aux données. [PR #330](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/330) ouverte, non fusionnée. |
 | 2026-10-22 | Windows | **Scan — verdict immédiat et notice progressive.** Dans le worktree `Vole-Papillon-Damour-scan-progressive-metadata-20261022`, la décision locale « Jeter »/« Garder » arrive avec l’enregistrement; la notice et sa couverture se chargent sur squelettes, avec une icône rouge et une consigne de saisie manuelle si aucune fiche Internet n’existe. Enquête App Insights en lecture seule : endpoint metadata p95 3,50 s, SQL p95 ~5,8 ms sans échec, BnF 25 timeouts, Open Library p95 ~954 ms, Google Books 103 HTTP 400 (p95 ~670 ms); cause des 400 non confirmée faute de corps de réponse. Tests Scan 304/304, build, diff check et Graphify réussis; fixture responsive 320/390/1440 sans débordement. Smoke authentifié MSAL reste à faire. Aucune modification Azure ni aucun déploiement. [PR #321](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/321) ouverte, non fusionnée. |
 | 2026-10-20 | Windows | **Catalog — finition de la fiche livre.** Depuis `origin/main` dans le worktree `VPD-catalog-book-detail-polish`, conservation du lien vers les éditions sous la couverture, suppression du doublon et de la mention sur les données personnelles ; le carrousel masque la barre de défilement et place les flèches à ses deux extrémités. Build Catalog réussi ; contrôle Chrome desktop et 390 × 844 avec API fictive, aucun débordement ; tests automatisés non lancés. L’API réelle était suspendue. Graphify a réextrait l’AST, sans visualisation HTML au-delà de 8 272 nœuds. Aucun déploiement ni accès aux données réelles. [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295) ouverte, non fusionnée. |
 | 2026-10-20 | Windows | **Catalog — recherche et navigation simplifiées.** Depuis `origin/main` dans le worktree `VPD-catalog-search-filters-20261020`, tous les genres renvoyés apparaissent dans `/recherche`, le contrôle des livres épuisés disparaît de l’interface et la barre est centrée. « Catalogue par genre » est retiré des menus et du pied de page ; la navigation cesse aussi de charger la liste de genres. Tests ciblés 58/58 et build Catalog réussis ; suite complète 499/502 avec les trois échecs `AccountCardComponent` hors périmètre. Contrôle visuel desktop et 390 × 844 px ; API locale indisponible. Graphify a relu l’AST mais l’export HTML dépasse la limite de 8 239 nœuds. Aucun déploiement ; [PR #283](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/283) fusionnée le 20 octobre 2026. |
