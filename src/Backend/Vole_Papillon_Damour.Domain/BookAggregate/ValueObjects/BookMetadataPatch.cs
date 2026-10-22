@@ -11,4 +11,5 @@ public sealed record BookMetadataPatch(
     string? CoverUrl,
     IReadOnlyCollection<BookMetadataField> Fields,
     string? WorkId = null,
-    IReadOnlyCollection<string>? Genres = null);
+    IReadOnlyCollection<string>? Genres = null,
+    string? Summary = null);

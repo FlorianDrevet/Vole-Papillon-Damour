@@ -8,5 +8,6 @@ public sealed record EnrichPendingBooksCommand(
     int BatchSize = 50,
     Isbn13? Isbn13 = null,
     bool IncludeMissingGenres = false,
-    bool RefreshAllGenres = false)
+    bool RefreshAllGenres = false,
+    bool RefreshMissingBibliographicDetails = false)
     : IRequest<EnrichPendingBooksResult>;

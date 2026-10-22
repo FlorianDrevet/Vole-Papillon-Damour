@@ -64,16 +64,19 @@ public sealed class GetPublicBookQueryHandler(
         var rareIsbns = rareBook is null || rareBook.IsSold
             ? new HashSet<string>(StringComparer.Ordinal)
             : new HashSet<string>([rareBook.Isbn13], StringComparer.Ordinal);
-        var noticeJson = await dbContext.BookSimilarityProfiles
-            .AsNoTracking()
-            .Where(profile => profile.Isbn13 == isbn13.Value && profile.NoticeFound)
-            .Select(profile => profile.NoticeJson)
-            .SingleOrDefaultAsync(cancellationToken);
-        var summary = ReadSummary(noticeJson, book.Title);
-
         var result = PublicCatalogProjector
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
             .Single();
+        var summary = book.Summary;
+        if (summary is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))
+        {
+            var legacyNotice = await dbContext.BookSimilarityProfiles
+                .AsNoTracking()
+                .Where(profile => profile.Isbn13 == isbn13.Value)
+                .Select(profile => profile.NoticeJson)
+                .SingleOrDefaultAsync(cancellationToken);
+            summary = ReadLegacySummary(legacyNotice);
+        }
 
         return result with
         {
@@ -83,7 +86,7 @@ public sealed class GetPublicBookQueryHandler(
         };
     }
 
-    private static string? ReadSummary(string? noticeJson, string? title)
+    private static string? ReadLegacySummary(string? noticeJson)
     {
         if (string.IsNullOrWhiteSpace(noticeJson))
         {
@@ -93,8 +96,10 @@ public sealed class GetPublicBookQueryHandler(
         try
         {
             var edition = JsonSerializer.Deserialize<SimilarityEdition>(noticeJson);
-            return SimilarityText.CleanSummary(edition?.EditionSummary, title)
-                   ?? SimilarityText.CleanSummary(edition?.OpenLibraryDescription, title);
+            return edition is null
+                ? null
+                : BookSummaryText.Clean(edition.EditionSummary, edition.Title)
+                  ?? BookSummaryText.Clean(edition.OpenLibraryDescription, edition.Title);
         }
         catch (JsonException)
         {

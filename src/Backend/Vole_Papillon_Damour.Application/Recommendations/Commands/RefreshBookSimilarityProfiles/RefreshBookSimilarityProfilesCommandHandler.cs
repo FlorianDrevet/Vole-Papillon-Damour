@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 
 namespace Vole_Papillon_Damour.Application.Recommendations.Commands.RefreshBookSimilarityProfiles;
@@ -89,7 +91,43 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
             }
             else
             {
-                profile.RecordNotice(JsonSerializer.Serialize(edition), true, now);
+                var book = await dbContext.Books
+                    .SingleOrDefaultAsync(candidateBook => candidateBook.Id == candidate.Isbn13, cancellationToken);
+                var editionSummary = BookSummaryText.Clean(edition.EditionSummary, edition.Title);
+                var openLibrarySummary = BookSummaryText.Clean(edition.OpenLibraryDescription, edition.Title);
+                var summary = editionSummary ?? openLibrarySummary;
+                if (book is not null &&
+                    summary is not null &&
+                    book.Summary is null &&
+                    (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                    !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))
+                {
+                    var summarySource = editionSummary is not null
+                        ? BookMetadataSource.Bnf
+                        : BookMetadataSource.OpenLibrary;
+                    book.ApplyAutomaticMetadata(
+                        new BookMetadataPatch(
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            [BookMetadataField.Summary],
+                            Summary: summary),
+                        summarySource,
+                        now,
+                        rawPayload: null);
+                }
+
+                var persistedEdition = edition with
+                {
+                    EditionSummary = null,
+                    OpenLibraryDescription = null,
+                };
+                profile.RecordNotice(JsonSerializer.Serialize(persistedEdition), true, now);
                 found++;
             }
         }

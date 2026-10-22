@@ -20,17 +20,20 @@ public sealed class BookEnrichmentFunction(
         var result = await sender.Send(
             new EnrichPendingBooksCommand(
                 IncludeMissingGenres: true,
-                RefreshAllGenres: true),
+                RefreshAllGenres: true,
+                RefreshMissingBibliographicDetails: true),
             cancellationToken);
 
         logger.LogInformation(
             "Worker enrichment completed. Processed: {Processed}, Resolved: {Resolved}, " +
             "CoversUpdated: {CoversUpdated}, GenresUpdated: {GenresUpdated}, " +
+            "BibliographicDetailsUpdated: {BibliographicDetailsUpdated}, " +
             "NotFound: {NotFound}, Failed: {Failed}",
             result.ProcessedCount,
             result.ResolvedCount,
             result.CoverUpdatedCount,
             result.GenreUpdatedCount,
+            result.BibliographicDetailsUpdatedCount,
             result.NotFoundCount,
             result.FailedCount);
     }

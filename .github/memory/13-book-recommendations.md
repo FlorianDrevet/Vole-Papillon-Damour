@@ -18,3 +18,4 @@
 - The current behavior is specified in `docs/recommandations-livres/07-specification.md`.
   Component regressions live in `similar-books.component.spec.ts`; backend defaults and query
   behavior are covered by the Infrastructure and Application recommendation test projects.
+- `Book.Summary` is ISBN-level bibliographic data and the public book detail reads it directly. `WorkGrouping` receives summaries keyed by ISBN and prefers that value, with a legacy-profile fallback. `RefreshBookSimilarityProfilesCommandHandler` copies a fetched legacy summary into an empty `Book.Summary` and clears summary fields before persisting refreshed `NoticeJson`; profile refresh remains gated by `Recommendations:Enabled`.

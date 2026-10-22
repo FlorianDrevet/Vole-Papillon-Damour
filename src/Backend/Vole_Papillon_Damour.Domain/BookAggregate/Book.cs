@@ -20,6 +20,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public int? PublicationYear { get; private set; }
     public string? PhysicalFormat { get; private set; }
     public string? Language { get; private set; }
+    public string? Summary { get; private set; }
     public string? Genre { get; private set; }
     public IReadOnlyCollection<BookGenre> Genres => _genres;
 
@@ -36,6 +37,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public BookMetadataSource? MetadataSource { get; private set; }
     public DateTime? MetadataFetchedAt { get; private set; }
     public DateTime? GenresRefreshedAt { get; private set; }
+    public DateTime? BibliographicDetailsRefreshedAt { get; private set; }
     public int ResolveAttempts { get; private set; }
     public DateTime? LastAttemptAt { get; private set; }
     public string? MetadataFailureReason { get; private set; }
@@ -276,13 +278,14 @@ public sealed class Book : AggregateRoot<Isbn13>
             ResolveAttempts++;
             changed = true;
         }
+        var genreRefreshAt = fields.Contains(BookMetadataField.Genre) ? utcFetchedAt : GenresRefreshedAt;
         changed |= LastAttemptAt != utcFetchedAt ||
                    MetadataFetchedAt != utcFetchedAt ||
-                   GenresRefreshedAt != utcFetchedAt ||
+                   GenresRefreshedAt != genreRefreshAt ||
                    RawPayload != rawPayload;
         LastAttemptAt = utcFetchedAt;
         MetadataFetchedAt = utcFetchedAt;
-        GenresRefreshedAt = utcFetchedAt;
+        GenresRefreshedAt = genreRefreshAt;
         RawPayload = rawPayload;
 
         var nextStatus = manuallyEditedFields.Count == 0
@@ -333,6 +336,20 @@ public sealed class Book : AggregateRoot<Isbn13>
 
         var changed = GenresRefreshedAt != utcAttemptedAt;
         GenresRefreshedAt = utcAttemptedAt;
+        UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
+    public bool RecordBibliographicDetailsRefreshAttempt(DateTime attemptedAt)
+    {
+        var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        if (MetadataStatus is not (BookMetadataStatus.Resolved or BookMetadataStatus.Manual))
+        {
+            return false;
+        }
+
+        var changed = BibliographicDetailsRefreshedAt != utcAttemptedAt;
+        BibliographicDetailsRefreshedAt = utcAttemptedAt;
         UpdatedAt = utcAttemptedAt;
         return changed;
     }
@@ -502,6 +519,9 @@ public sealed class Book : AggregateRoot<Isbn13>
                 case BookMetadataField.Language:
                     ValidateLength(patch.Language, 10, nameof(patch.Language));
                     break;
+                case BookMetadataField.Summary:
+                    ValidateLength(patch.Summary, 20_000, nameof(patch.Summary));
+                    break;
                 case BookMetadataField.Genre:
                     ValidateLength(patch.Genre, 100, nameof(patch.Genre));
                     if (patch.Genres is not null)
@@ -563,6 +583,8 @@ public sealed class Book : AggregateRoot<Isbn13>
                 return SetValue(PhysicalFormat, patch.PhysicalFormat, value => PhysicalFormat = value);
             case BookMetadataField.Language:
                 return SetValue(Language, patch.Language, value => Language = value);
+            case BookMetadataField.Summary:
+                return SetValue(Summary, patch.Summary, value => Summary = value);
             case BookMetadataField.Genre:
                 var primaryGenreChanged = SetValue(Genre, patch.Genre, value => Genre = value);
                 var genreNames = patch.Genres ?? (patch.Genre is null ? [] : [patch.Genre]);

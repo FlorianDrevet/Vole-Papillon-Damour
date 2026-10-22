@@ -21,7 +21,8 @@ public sealed class BibliographicMetadataResolver(
 
     public async Task<BookMetadataResult?> ResolveAsync(
         Isbn13 isbn13,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails = false)
     {
         using var activity = BookScanTelemetry.StartActivity(
             BookScanTelemetry.MetadataResolutionActivityName);
@@ -33,7 +34,7 @@ public sealed class BibliographicMetadataResolver(
 
         try
         {
-            metadata = await ResolveCoreAsync(isbn13, cancellationToken);
+            metadata = await ResolveCoreAsync(isbn13, cancellationToken, includeBibliographicDetails);
             outcome = metadata is null
                 ? BookScanTelemetry.NotFoundOutcome
                 : BookScanTelemetry.FoundOutcome;
@@ -67,7 +68,8 @@ public sealed class BibliographicMetadataResolver(
 
     private async Task<BookMetadataResult?> ResolveCoreAsync(
         Isbn13 isbn13,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails)
     {
         var bnfResult = await TryFindAsync(
             BnfProvider,
@@ -76,32 +78,22 @@ public sealed class BibliographicMetadataResolver(
             cancellationToken);
         if (bnfResult.Metadata is not null)
         {
-            var openLibraryResult = ProviderResult.Empty;
-            if (bnfResult.Metadata.CoverUrl is null ||
-                string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId) ||
-                string.IsNullOrWhiteSpace(bnfResult.Metadata.Genre))
+            var merged = bnfResult.Metadata;
+            if (NeedsOpenLibrary(merged, includeBibliographicDetails))
             {
-                openLibraryResult = await TryFindAsync(
+                var openLibraryResult = await TryFindAsync(
                     OpenLibraryProvider,
                     () => openLibraryClient.FindAsync(isbn13, cancellationToken),
                     isbn13,
                     cancellationToken);
+                merged = Merge(merged, openLibraryResult.Metadata);
             }
 
-            var merged = Merge(bnfResult.Metadata, openLibraryResult.Metadata);
-            if (HasCompleteMetadata(merged))
-            {
-                return merged;
-            }
-
-            var googleBooksResult = await TryFindAsync(
-                GoogleBooksProvider,
-                () => googleBooksClient.FindAsync(isbn13, cancellationToken),
+            return await FillFromGoogleBooksIfNeededAsync(
+                merged,
                 isbn13,
-                cancellationToken);
-            return googleBooksResult.Metadata is null
-                ? merged
-                : Merge(merged, googleBooksResult.Metadata);
+                cancellationToken,
+                includeBibliographicDetails);
         }
 
         var openLibraryFallbackResult = await TryFindAsync(
@@ -111,19 +103,11 @@ public sealed class BibliographicMetadataResolver(
             cancellationToken);
         if (openLibraryFallbackResult.Metadata is not null)
         {
-            if (HasCompleteMetadata(openLibraryFallbackResult.Metadata))
-            {
-                return openLibraryFallbackResult.Metadata;
-            }
-
-            var googleBooksFallbackResult = await TryFindAsync(
-                GoogleBooksProvider,
-                () => googleBooksClient.FindAsync(isbn13, cancellationToken),
+            return await FillFromGoogleBooksIfNeededAsync(
+                openLibraryFallbackResult.Metadata,
                 isbn13,
-                cancellationToken);
-            return googleBooksFallbackResult.Metadata is null
-                ? openLibraryFallbackResult.Metadata
-                : Merge(openLibraryFallbackResult.Metadata, googleBooksFallbackResult.Metadata);
+                cancellationToken,
+                includeBibliographicDetails);
         }
 
         var googleBooksOnlyResult = await TryFindAsync(
@@ -251,6 +235,9 @@ public sealed class BibliographicMetadataResolver(
             CoverSource = coverSource,
             Genre = genres.FirstOrDefault(),
             Genres = genres,
+            Summary = primary.Summary ?? enrichment.Summary,
+            PhysicalFormat = primary.PhysicalFormat ?? enrichment.PhysicalFormat,
+            Language = primary.Language ?? enrichment.Language,
         };
     }
 
@@ -268,10 +255,49 @@ public sealed class BibliographicMetadataResolver(
             .ToArray();
     }
 
-    private static bool HasCompleteMetadata(BookMetadataResult metadata)
+    private static bool HasCompleteMetadata(
+        BookMetadataResult metadata,
+        bool includeBibliographicDetails)
     {
         return metadata.CoverUrl is not null &&
-               (metadata.Genres?.Count > 0 || !string.IsNullOrWhiteSpace(metadata.Genre));
+               (metadata.Genres?.Count > 0 || !string.IsNullOrWhiteSpace(metadata.Genre)) &&
+               (!includeBibliographicDetails ||
+                (!string.IsNullOrWhiteSpace(metadata.Summary) &&
+                 !string.IsNullOrWhiteSpace(metadata.Language)));
+    }
+
+    private static bool NeedsOpenLibrary(
+        BookMetadataResult metadata,
+        bool includeBibliographicDetails)
+    {
+        return metadata.CoverUrl is null ||
+               string.IsNullOrWhiteSpace(metadata.WorkId) ||
+               (metadata.Genres is not { Count: > 0 } && string.IsNullOrWhiteSpace(metadata.Genre)) ||
+               (includeBibliographicDetails &&
+                (string.IsNullOrWhiteSpace(metadata.Summary) ||
+                 string.IsNullOrWhiteSpace(metadata.PhysicalFormat) ||
+                 string.IsNullOrWhiteSpace(metadata.Language)));
+    }
+
+    private async Task<BookMetadataResult> FillFromGoogleBooksIfNeededAsync(
+        BookMetadataResult metadata,
+        Isbn13 isbn13,
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails)
+    {
+        if (HasCompleteMetadata(metadata, includeBibliographicDetails))
+        {
+            return metadata;
+        }
+
+        var googleBooksResult = await TryFindAsync(
+            GoogleBooksProvider,
+            () => googleBooksClient.FindAsync(isbn13, cancellationToken),
+            isbn13,
+            cancellationToken);
+        return googleBooksResult.Metadata is null
+            ? metadata
+            : Merge(metadata, googleBooksResult.Metadata);
     }
 
     private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed)

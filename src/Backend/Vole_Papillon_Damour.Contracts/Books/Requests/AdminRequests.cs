@@ -20,7 +20,8 @@ public sealed record AddAdminBookRequest(
     string? Genre = null,
     string? CoverUrl = null,
     string? WorkId = null,
-    IReadOnlyCollection<string>? Fields = null);
+    IReadOnlyCollection<string>? Fields = null,
+    string? Summary = null);
 
 public sealed record UpdateAdminBookMetadataRequest(
     string? Title,
@@ -32,7 +33,8 @@ public sealed record UpdateAdminBookMetadataRequest(
     string? Genre,
     string? CoverUrl,
     string? WorkId,
-    IReadOnlyCollection<string> Fields);
+    IReadOnlyCollection<string> Fields,
+    string? Summary = null);
 
 public sealed record CorrectBookQuantityRequest(int QuantityAvailable, string Note);
 

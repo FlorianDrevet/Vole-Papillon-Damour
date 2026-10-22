@@ -71,7 +71,10 @@ public sealed class GetBookMetadataQueryHandler(
             book.WorkId,
             new DateTimeOffset(book.MetadataFetchedAt ?? book.UpdatedAt, TimeSpan.Zero),
             book.CoverSource is null ? null : MapCoverSource(book.CoverSource.Value),
-            book.Genre);
+            book.Genre,
+            Summary: book.Summary,
+            PhysicalFormat: book.PhysicalFormat,
+            Language: book.Language);
     }
 
     private static string MapSource(BookMetadataSource? source) => source switch
