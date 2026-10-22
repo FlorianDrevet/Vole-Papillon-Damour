@@ -50,7 +50,7 @@ describe('CatalogHomePageComponent', () => {
     totalCount: 412,
     hasMore: true,
     page: 1,
-    pageSize: 3,
+    pageSize: 8,
     genres: ['Jeunesse', 'Romans', 'Policier'],
   };
 
@@ -149,7 +149,7 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent)
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
-    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
+    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8});
     expect(api.getPublicRareBooks).toHaveBeenCalledWith({includeSold: false, sort: 'recent', pageSize: 4});
   });
 
