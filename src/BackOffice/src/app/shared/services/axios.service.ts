@@ -1,11 +1,11 @@
 import {inject, Injectable} from '@angular/core';
-import axios from 'axios'
-import {Router} from "@angular/router";
+import {Router} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {MsalService} from '@azure/msal-angular';
+import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 
-import {environment} from "../../../environments/environment";
-import {MethodEnum} from "../enums/method.enum";
+import {environment} from '../../../environments/environment';
+import {MethodEnum} from '../enums/method.enum';
 import {LOGIN_ROUTE} from '../auth/msal-config';
 import {ApiAccessTokenService} from './api-access-token.service';
 
@@ -18,10 +18,14 @@ export class AxiosService {
   private readonly router = inject(Router);
 
   constructor() {
-    axios.defaults.baseURL = environment.api_url
+    axios.defaults.baseURL = environment.api_url;
 
     axios.interceptors.request.use(
       async config => {
+        if ((config as AuthRetriedRequestConfig).__vpdAuthRetried) {
+          return config;
+        }
+
         const token = await firstValueFrom(this.apiAccessTokenService.getApiAccessToken$())
           .catch(error => {
             // Renvoyer systématiquement vers l'écran de connexion faisait boucler
@@ -30,7 +34,7 @@ export class AxiosService {
             // ainsi de suite. On n'y renvoie donc que si plus aucun compte n'est
             // connu ; sinon la reprise de session est déjà lancée ailleurs
             // (ApiAccessTokenService) et l'erreur remonte à l'appelant.
-            this.redirectToLoginIfSignedOut();
+            this.redirectIfAccountUnavailable();
             throw error;
           });
 
@@ -42,11 +46,28 @@ export class AxiosService {
 
     axios.interceptors.response.use(
       response => response,
-      error => {
-        if (error.response?.status === 401) {
-          void this.router.navigate([LOGIN_ROUTE], {queryParams: {raison: 'session'}});
+      async (error: AxiosError) => {
+        if (error.response?.status !== 401) {
+          return Promise.reject(error);
         }
-        return Promise.reject(error);
+
+        const originalRequest = error.config as AuthRetriedRequestConfig | undefined;
+        if (!originalRequest || originalRequest.__vpdAuthRetried) {
+          void this.router.navigate([LOGIN_ROUTE], {queryParams: {raison: 'session'}});
+          return Promise.reject(error);
+        }
+
+        originalRequest.__vpdAuthRetried = true;
+        let token: string;
+        try {
+          token = await firstValueFrom(this.apiAccessTokenService.getApiAccessToken$(true));
+        } catch (refreshError) {
+          this.redirectIfAccountUnavailable();
+          return Promise.reject(refreshError);
+        }
+
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return axios(originalRequest);
       },
     );
   }
@@ -70,9 +91,21 @@ export class AxiosService {
     return response.data;
   }
 
-  private redirectToLoginIfSignedOut(): void {
-    if (this.msalService.instance.getAllAccounts().length === 0) {
+  private redirectIfAccountUnavailable(): void {
+    const instance = this.msalService.instance;
+    if (instance.getActiveAccount()) {
+      return;
+    }
+
+    const accounts = instance.getAllAccounts();
+    if (accounts.length === 0) {
       void this.router.navigate([LOGIN_ROUTE]);
+    } else if (accounts.length > 1) {
+      void this.router.navigate([LOGIN_ROUTE], {queryParams: {raison: 'compte'}});
     }
   }
+}
+
+interface AuthRetriedRequestConfig extends InternalAxiosRequestConfig {
+  __vpdAuthRetried?: boolean;
 }

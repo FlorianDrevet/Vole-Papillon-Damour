@@ -57,6 +57,17 @@ describe('ApiAccessTokenService', () => {
     });
   });
 
+  it('forces a silent token refresh when the API rejects the cached token', async () => {
+    const token = await firstValueFrom(service.getApiAccessToken$(true));
+
+    expect(token).toBe('api-access-token');
+    expect(msalService.acquireTokenSilent).toHaveBeenCalledWith({
+      account,
+      scopes: ['api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user'],
+      forceRefresh: true,
+    });
+  });
+
   it('waits for MSAL to finish its interaction before acquiring the API token', async () => {
     const instance = msalService.instance as unknown as {
       getActiveAccount: jasmine.Spy;
@@ -76,7 +87,7 @@ describe('ApiAccessTokenService', () => {
     expect(msalService.acquireTokenSilent).toHaveBeenCalled();
   });
 
-  it('selects and activates the first cached account when no active account exists', async () => {
+  it('selects and activates the sole cached account when no active account exists', async () => {
     const instance = msalService.instance as unknown as {
       getActiveAccount: jasmine.Spy;
       getAllAccounts: jasmine.Spy;
@@ -87,6 +98,25 @@ describe('ApiAccessTokenService', () => {
     await firstValueFrom(service.getApiAccessToken$());
 
     expect(instance.setActiveAccount).toHaveBeenCalledWith(account);
+  });
+
+  it('requires explicit account selection when multiple cached accounts have no active account', async () => {
+    const instance = msalService.instance as unknown as {
+      getActiveAccount: jasmine.Spy;
+      getAllAccounts: jasmine.Spy;
+      setActiveAccount: jasmine.Spy;
+    };
+    instance.getActiveAccount.and.returnValue(null);
+    instance.getAllAccounts.and.returnValue([
+      account,
+      {...account, homeAccountId: 'second-account-id', username: 'second@example.test'} as AccountInfo,
+    ]);
+
+    await expectAsync(firstValueFrom(service.getApiAccessToken$()))
+      .toBeRejectedWithError('No active Entra account is available.');
+
+    expect(instance.setActiveAccount).not.toHaveBeenCalled();
+    expect(msalService.acquireTokenSilent).not.toHaveBeenCalled();
   });
 
   it('fails when no Entra account is available', async () => {

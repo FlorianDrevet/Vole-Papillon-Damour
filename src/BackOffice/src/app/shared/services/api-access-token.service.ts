@@ -44,7 +44,7 @@ export class ApiAccessTokenService {
     private readonly msalBroadcastService: MsalBroadcastService,
   ) {}
 
-  public getApiAccessToken$(): Observable<string> {
+  public getApiAccessToken$(forceRefresh = false): Observable<string> {
     return this.msalBroadcastService.inProgress$.pipe(
       filter(status => status === InteractionStatus.None),
       take(1),
@@ -58,6 +58,7 @@ export class ApiAccessTokenService {
         return this.msalService.acquireTokenSilent({
           account,
           scopes: [environment.entra.apiScope],
+          ...(forceRefresh ? {forceRefresh: true} : {}),
         }).pipe(
           map(result => result.accessToken),
           catchError((error: unknown) => {
@@ -96,12 +97,14 @@ export class ApiAccessTokenService {
       return activeAccount;
     }
 
-    const firstAccount = this.msalService.instance.getAllAccounts()[0] ?? null;
-    if (firstAccount) {
-      this.msalService.instance.setActiveAccount(firstAccount);
+    const cachedAccounts = this.msalService.instance.getAllAccounts();
+    if (cachedAccounts.length !== 1) {
+      return null;
     }
 
-    return firstAccount;
+    const onlyAccount = cachedAccounts[0];
+    this.msalService.instance.setActiveAccount(onlyAccount);
+    return onlyAccount;
   }
 }
 

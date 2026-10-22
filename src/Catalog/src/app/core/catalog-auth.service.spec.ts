@@ -77,6 +77,67 @@ describe('CatalogAuthService', () => {
     expect(service.isAuthenticated()).toBeTrue();
   });
 
+  it('requires an explicit choice instead of using the first of multiple cached accounts', async () => {
+    const secondAccount = {
+      ...account,
+      homeAccountId: 'second-home-account-id',
+      username: 'second@example.test',
+    } as AccountInfo;
+    client.getActiveAccount.and.returnValue(null);
+    client.getAllAccounts.and.returnValue([account, secondAccount]);
+
+    await service.initialize();
+
+    expect(service.account()).toBeNull();
+    expect(service.state()).toBe('signed-out');
+    expect(client.setActiveAccount).not.toHaveBeenCalled();
+    expect(client.acquireTokenSilent).not.toHaveBeenCalled();
+  });
+
+  it('asks Entra to select an account when several are cached without an active account', async () => {
+    const secondAccount = {
+      ...account,
+      homeAccountId: 'second-home-account-id',
+      username: 'second@example.test',
+    } as AccountInfo;
+    client.getActiveAccount.and.returnValue(null);
+    client.getAllAccounts.and.returnValue([account, secondAccount]);
+    await service.initialize();
+
+    await service.login('/compte');
+
+    expect(client.loginRedirect).toHaveBeenCalledWith({
+      ...catalogLoginRequest,
+      prompt: 'select_account',
+      redirectStartPage: new URL('/compte', window.location.origin).href,
+    });
+  });
+
+  it('does not pin a recognized account when explicit account selection is required', async () => {
+    const secondAccount = {
+      ...account,
+      homeAccountId: 'second-home-account-id',
+      username: 'second@example.test',
+    } as AccountInfo;
+    client.getAllAccounts.and.returnValue([account, secondAccount]);
+    client.acquireTokenSilent.and.rejectWith(new msalModule.InteractionRequiredAuthError(
+      'interaction_required',
+      'correlation-id',
+    ));
+
+    await service.initialize();
+    expect(service.recognizedAccount()).toBe(account);
+
+    client.getActiveAccount.and.returnValue(null);
+    await service.login('/compte');
+
+    expect(client.loginRedirect).toHaveBeenCalledOnceWith({
+      ...catalogLoginRequest,
+      prompt: 'select_account',
+      redirectStartPage: new URL('/compte', window.location.origin).href,
+    });
+  });
+
   it('signs a cached account out on load when its session needs interaction', async () => {
     const interactionRequiredError = new msalModule.InteractionRequiredAuthError(
       'interaction_required',
