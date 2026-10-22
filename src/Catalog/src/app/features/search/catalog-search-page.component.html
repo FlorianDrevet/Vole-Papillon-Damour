@@ -215,7 +215,7 @@
             <span>Uniquement les livres rares</span>
           </label>
 
-          @if (query || genre || rareOnly || includeExhausted || availability !== defaultAvailability() || sort !== 'relevance') {
+          @if (query || genre || rareOnly || includeExhausted || availability !== defaultAvailability() || sort !== (rareOnly ? 'price-desc' : 'recent')) {
             <button type="button" class="reset-filters" (click)="clearFilters(mobileFiltersTrigger)">Réinitialiser les filtres</button>
           }
 

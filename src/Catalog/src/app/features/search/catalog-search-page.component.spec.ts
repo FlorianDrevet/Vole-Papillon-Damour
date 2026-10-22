@@ -1248,8 +1248,46 @@ describe('CatalogSearchPageComponent', () => {
     const panel = element.querySelector('.sort-select-panel') as HTMLElement;
     expect(panel.getAttribute('role')).toBe('menu');
     expect(panel.querySelectorAll('.sort-option')).toHaveSize(2);
-    expect(panel.querySelector('.sort-option--selected')?.textContent).toContain('Pertinence');
+    expect(panel.querySelector('.sort-option--selected')?.textContent).toContain('Arrivée récente');
     expect(fixture.nativeElement.querySelector('.sort-select-chevron')).not.toBeNull();
+  });
+
+  it('uses recent arrivals by default and keeps that default out of the search URL', async () => {
+    routeParams.next(convertToParamMap({}));
+    api.search.and.returnValue(of(response));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sort).toBe('recent');
+    expect(fixture.componentInstance.sortLabel()).toBe('Arrivée récente');
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({sort: 'recent'}));
+
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.applyFilters();
+
+    const queryParams = navigate.calls.mostRecent().args[1]?.queryParams as Record<string, string>;
+    expect(queryParams['sort']).toBeUndefined();
+  });
+
+  it('preserves an explicit relevance sort in the search URL', async () => {
+    routeParams.next(convertToParamMap({sort: 'relevance'}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sort).toBe('relevance');
+    expect(fixture.componentInstance.sortLabel()).toBe('Pertinence');
+
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.applyFilters();
+
+    const queryParams = navigate.calls.mostRecent().args[1]?.queryParams as Record<string, string>;
+    expect(queryParams['sort']).toBe('relevance');
   });
 
   it('updates the sort and closes the branded menu when an option is chosen', async () => {
@@ -1311,7 +1349,7 @@ describe('CatalogSearchPageComponent', () => {
     const availableRule = fixture.nativeElement.querySelector('.available-rule') as HTMLElement;
     const externalRule = fixture.nativeElement.querySelector('.external-rule') as HTMLElement;
 
-    expect(getComputedStyle(availabilityLegend).marginBottom).toBe('6px');
+    expect(getComputedStyle(availabilityLegend).marginBottom).toBe('2px');
     expect(getComputedStyle(availableRule).backgroundImage).toBe(getComputedStyle(externalRule).backgroundImage);
     expect(getComputedStyle(availableRule).backgroundImage).toContain('linear-gradient');
   });

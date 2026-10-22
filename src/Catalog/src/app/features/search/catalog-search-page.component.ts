@@ -68,7 +68,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   availability: CatalogAvailability = 'available';
   rareOnly = false;
   includeExhausted = false;
-  sort: CatalogSort = 'relevance';
+  sort: CatalogSort = 'recent';
   sortMenuOpen = false;
   sortMenuActiveIndex = 0;
   mobileFiltersOpen = false;
@@ -322,7 +322,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.availability = this.defaultAvailability();
     this.rareOnly = false;
     this.includeExhausted = false;
-    this.sort = 'relevance';
+    this.sort = 'recent';
     this.mobileFiltersOpen = false;
     if (wasOpen) {
       mobileFiltersTrigger?.focus();
@@ -992,7 +992,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
     if (this.rareOnly) params['rare'] = true;
     if (this.includeExhausted) params['includeExhausted'] = true;
-    if (this.sort !== (this.rareOnly ? 'price-desc' : 'relevance')) params['sort'] = this.sort;
+    if (this.sort !== (this.rareOnly ? 'price-desc' : 'recent')) params['sort'] = this.sort;
     if (!this.rareOnly && this.view === 'list') params['view'] = this.view;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
@@ -1070,7 +1070,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         ? rawSort === 'price-asc' || rawSort === 'price-desc' || rawSort === 'recent'
           ? rawSort
           : 'price-desc'
-        : rawSort === 'recent' ? 'recent' : 'relevance',
+        : rawSort === 'recent' || rawSort === 'relevance' ? rawSort : 'recent',
       page: this.readPositivePage(params.get('page')),
       referencePage: this.readPositivePage(params.get('referencePage')),
     };
