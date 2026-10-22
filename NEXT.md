@@ -82,6 +82,12 @@ La [PR #298](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/298) est
 
 Validation : `npm ci` et build Catalog réussis. npm signale 33 vulnérabilités dans les dépendances installées ; le build conserve les avertissements existants de budget et CommonJS. Aucun test automatisé n’a été lancé. L’API du catalogue répond HTTP 503, donc le contrôle visuel responsive avec des fiches peuplées reste à faire. Graphify a extrait l’AST, mais échoue au rendu HTML sur la limite de 8 312 nœuds après le rebase. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
 
+### Densité de la grille de recherche du Catalogue — 2026-10-22
+
+La branche feat/catalog-search-grid-density ajoute le choix de 3, 4 ou 5 cartes par rangée dans la grille; quatre cartes deviennent la valeur par défaut à partir de 980 px. Sous ce seuil, la grille garde trois colonnes puis passe à deux sur mobile, et le contrôle est masqué. Le choix non standard est conservé dans le paramètre URL columns et ne relance pas la recherche API. La liste et les livres rares ne changent pas.
+
+Validation après rebase sur origin/main : 55/55 specs Catalog ciblées et build Catalog réussis. Le contrôle responsive a été vérifié à 1024, 980, 979 et 700 px; les données API locales étaient indisponibles, donc la taille de cartes avec fiches réelles reste à vérifier. Aucun changement API, base de données ou déploiement.
+
 ### Page publique Livres rares du Catalogue — 2026-10-20
 
 La [PR #287](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/287) est ouverte,
