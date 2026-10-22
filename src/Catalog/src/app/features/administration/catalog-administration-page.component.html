@@ -177,11 +177,7 @@
                   <span class="admin-kicker">Administration</span>
                   <h1 id="admin-title" data-testid="admin-title">Tableau de bord.</h1>
                 </div>
-                <div class="period-chips" aria-label="Période du tableau de bord">
-                  <button class="period-chip" [class.active]="overviewPeriod === '30-days'" [attr.aria-pressed]="overviewPeriod === '30-days'" type="button" (click)="setOverviewPeriod('30-days')">30 derniers jours</button>
-                  <button class="period-chip" [class.active]="overviewPeriod === '3-months'" [attr.aria-pressed]="overviewPeriod === '3-months'" type="button" (click)="setOverviewPeriod('3-months')">3 derniers mois</button>
-                  <button class="period-chip" [class.active]="overviewPeriod === 'year'" [attr.aria-pressed]="overviewPeriod === 'year'" type="button" (click)="setOverviewPeriod('year')">Année</button>
-                </div>
+                <span class="inline-flex min-h-9 items-center rounded-full border border-line px-[15px] text-[12.5px] text-slate-2" data-testid="dashboard-period-scope">Tout l’historique</span>
               </div>
 
               @if (loading() && !overview()) {
@@ -203,8 +199,8 @@
                   <article class="stat-card" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.currentPeriod.soldQuantity) }}</strong>
                     <span class="stat-label">Livres vendus</span>
-                    <span class="stat-sub">{{ current.lastFair?.name || 'Sur la période sélectionnée' }}</span>
-                    <span class="stat-foot">Recette saisie : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
+                    <span class="stat-sub">Toutes bourses confondues</span>
+                    <span class="stat-foot">Recette de la dernière bourse : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
                   </article>
                   <article class="stat-card stat-card-dark" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.deadStockCount) }}</strong>
@@ -905,13 +901,13 @@
                     <ng-container *ngTemplateOutlet="statisticsPeriodPicker"></ng-container>
                   </div>
                   @if (catalogueFlowStats(); as flow) {
-                    <article class="chart-card"><div class="section-heading"><div><h2>Du carton au lecteur</h2><p>Scannés, gardés, vendus — sur la période choisie</p></div></div><div class="bar-chart"><div class="bar-row bar-row-active"><span>Scannés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.scannedCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.scannedCount) }}</strong></div><div class="bar-row"><span>Gardés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.keptCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.keptCount) }} · {{ formatPercent(flow.funnel.keptRatePercent) }}</strong></div><div class="bar-row"><span>Vendus</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.soldCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.soldCount) }} · {{ formatPercent(flow.funnel.soldRatePercent) }}</strong></div></div></article>
+                    <article class="chart-card"><div class="section-heading"><div><h2>Du carton au lecteur</h2><p>Scannés, gardés, vendus — sur la période choisie</p></div></div><div class="bar-chart book-flow-chart"><div class="bar-row bar-row-active"><span>Scannés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.scannedCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.scannedCount) }}</strong></div><div class="bar-row"><span>Gardés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.keptCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.keptCount) }} · {{ formatPercent(flow.funnel.keptRatePercent) }}</strong></div><div class="bar-row"><span>Vendus</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.soldCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.soldCount) }} · {{ formatPercent(flow.funnel.soldRatePercent) }}</strong></div></div></article>
 
                     <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p><strong>{{ formatNumber(flow.funnel.dormantCount) }} dormants</strong> — gardés mais pas encore vendus, dont {{ formatNumber(flow.funnel.dormantOverYearCount) }} depuis plus d’un an. <button class="text-link" type="button" (click)="selectSection('dead-stock')">Ouvrir le désengorgement →</button></p></div>
 
                     <div class="charts-grid">
-                      <article class="chart-card"><div class="section-heading"><div><h2>Combien de temps un livre attend</h2><p>Entre son entrée au catalogue et sa vente (approximation par ISBN)</p></div></div><div class="bar-chart">@for (bucket of flow.timeToSellDistribution; track bucket.bucket) {<div class="bar-row"><span>{{ bucket.bucket }}</span><div class="bar-track"><i [style.width]="barWidth(bucket.quantity, maxTimeToSellQuantity())"></i></div><strong>{{ formatNumber(bucket.quantity) }} · {{ formatPercent(bucket.sharePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune vente sur cette période.</p>}</div></article>
-                      <article class="chart-card"><div class="section-heading"><div><h2>Taux d’écoulement par genre</h2><p>Part des exemplaires gardés qui ont été vendus</p></div></div><div class="bar-chart genre-chart">@for (item of flow.flowRateByGenre; track item.genre) {<div class="bar-row"><span>{{ item.genre }}</span><div class="bar-track"><i [style.width]="barWidth(item.keptQuantity, maxGenreFlowQuantity())"></i></div><strong>{{ formatPercent(item.flowRatePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de genre.</p>}</div></article>
+                      <article class="chart-card"><div class="section-heading"><div><h2>Combien de temps un livre attend</h2><p>Entre son entrée au catalogue et sa vente (approximation par ISBN)</p></div></div><div class="bar-chart book-flow-chart">@for (bucket of flow.timeToSellDistribution; track bucket.bucket) {<div class="bar-row"><span>{{ bucket.bucket }}</span><div class="bar-track"><i [style.width]="barWidth(bucket.quantity, maxTimeToSellQuantity())"></i></div><strong>{{ formatNumber(bucket.quantity) }} · {{ formatPercent(bucket.sharePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune vente sur cette période.</p>}</div></article>
+                      <article class="chart-card"><div class="section-heading"><div><h2>Taux d’écoulement par genre</h2><p>Exemplaires vendus · part des exemplaires gardés</p></div></div><div class="bar-chart book-flow-chart genre-chart">@for (item of flow.flowRateByGenre; track item.genre) {<div class="bar-row"><span>{{ item.genre }}</span><div class="bar-track"><i [style.width]="barWidth(item.keptQuantity, maxGenreFlowQuantity())"></i></div><strong [attr.aria-label]="formatNumber(item.soldQuantity) + ' exemplaires vendus sur ' + formatNumber(item.keptQuantity) + ' gardés, soit ' + formatGenreFlowPercent(item.soldQuantity, item.flowRatePercent)">{{ formatNumber(item.soldQuantity) }} · {{ formatGenreFlowPercent(item.soldQuantity, item.flowRatePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de genre.</p>}</div></article>
                     </div>
                   } @else if (loading()) {<p class="admin-status" role="status">Chargement des statistiques du fonds…</p>} @else {<div class="empty-panel"><h2>Aucune donnée sur cette période</h2><p>Élargissez la période pour voir apparaître des données.</p></div>}
                 }

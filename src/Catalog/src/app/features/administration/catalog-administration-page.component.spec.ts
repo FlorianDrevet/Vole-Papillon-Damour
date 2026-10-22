@@ -921,53 +921,16 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
   });
 
-  it('reloads the dashboard when a period is selected', async () => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date('2026-09-11T10:00:00Z'));
-    try {
-      auth.account.set(account('Administrator'));
-      auth.isAuthenticated.set(true);
-      fixture.detectChanges();
-      await fixture.componentInstance.initialize();
-      api.getOverview.calls.reset();
+  it('loads all-time dashboard metrics without period controls', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
 
-      const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
-        '.period-chips:not(.session-chips) .period-chip',
-      );
-      expect(Array.from(buttons).map(button => button.textContent?.trim())).toEqual([
-        '30 derniers jours',
-        '3 derniers mois',
-        'Année',
-      ]);
-      expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
-
-      buttons[1].click();
-      await fixture.whenStable();
-      fixture.detectChanges();
-
-      expect((fixture.componentInstance as unknown as {overviewPeriod: string}).overviewPeriod).toBe('3-months');
-      expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
-      expect(api.getOverview).toHaveBeenCalledTimes(1);
-      expect(api.getOverview).toHaveBeenCalledWith(
-        'access-token',
-        '2026-06-11T10:00:00.000Z',
-        '2026-09-11T10:00:00.000Z',
-      );
-
-      api.getOverview.calls.reset();
-      buttons[2].click();
-      await fixture.whenStable();
-      fixture.detectChanges();
-
-      expect(buttons[2].getAttribute('aria-pressed')).toBe('true');
-      expect(api.getOverview).toHaveBeenCalledWith(
-        'access-token',
-        '2025-09-11T10:00:00.000Z',
-        '2026-09-11T10:00:00.000Z',
-      );
-    } finally {
-      jasmine.clock().uninstall();
-    }
+    expect(api.getOverview).toHaveBeenCalledWith('access-token', undefined, undefined, true);
+    expect(fixture.nativeElement.querySelector('[data-testid="dashboard-period-scope"]')?.textContent).toContain('Tout l’historique');
+    expect(fixture.nativeElement.querySelector('.admin-heading-split .period-chips')).toBeNull();
   });
 
   it('places all sessions and active sessions before the specialized filters', () => {

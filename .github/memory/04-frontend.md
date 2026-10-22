@@ -156,6 +156,11 @@ calibration, waiting-stock, monthly heatmap, renewal and genre views with period
 filters. The quality-data mockup subtab and its 4C screen are intentionally not implemented.
 The UI keeps roles activity-derived (Tri/Caisse) and does not pretend to mirror Entra roles.
 
+As of 2026-10-22, Catalog `Statistiques` → `Livres` shows the number of books sold beside
+each genre's flow rate. Rates retain two decimal places, and positive rates below that
+precision display as `< 0,01 %`; the book-flow bars reserve space for their right-side values
+and place those values below the tracks on narrow screens.
+
 Historique de la permutation — 2026-09-16 : Catalog `/administration` exposed `Catalogue` first at
 `/administration/catalogue`, using the catalogue/book icon while rendering the fiche and
 stock workspace formerly served by the inventory section. `Inventaire` follows at

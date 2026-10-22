@@ -339,7 +339,7 @@
     }
   </section>
 
-  @if (availableGenres().length) {
+  @if (homeGenres.length) {
     <section class="genres-section" aria-labelledby="home-genres-title">
       <div class="page-width section-heading">
         <span class="heading-rule" aria-hidden="true"></span>
@@ -347,7 +347,7 @@
         <h2 id="home-genres-title">Par genres</h2>
       </div>
       <div class="page-width genre-grid">
-        @for (genre of availableGenres(); track genre) {
+        @for (genre of homeGenres; track genre) {
           <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre}">
             <span class="genre-card-copy">
               <strong>{{ genre }}</strong>
@@ -356,10 +356,10 @@
             <span class="genre-card-arrow" aria-hidden="true">›</span>
           </a>
         }
-        <a class="genre-card genre-card--all" routerLink="/catalogue">
+        <a class="genre-card genre-card--all" routerLink="/recherche">
           <span class="genre-card-copy">
-            <strong>Les {{ availableGenres().length }} genres</strong>
-            <span>Tout le catalogue</span>
+            <strong>Voir plus</strong>
+            <span>Explorer la recherche</span>
           </span>
           <span class="genre-card-arrow" aria-hidden="true">→</span>
         </a>

@@ -150,7 +150,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
                 item.Key,
                 item.Value,
                 soldByGenre.GetValueOrDefault(item.Key),
-                Percent(soldByGenre.GetValueOrDefault(item.Key), item.Value)))
+                GenreFlowPercent(soldByGenre.GetValueOrDefault(item.Key), item.Value)))
             .OrderByDescending(item => item.KeptQuantity)
             .ThenBy(item => item.Genre, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -231,6 +231,11 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
 
     private static decimal? Percent(int numerator, int denominator) =>
         denominator == 0 ? null : decimal.Round(numerator * 100m / denominator, 1, MidpointRounding.AwayFromZero);
+
+    private static decimal? GenreFlowPercent(int soldQuantity, int keptQuantity) =>
+        keptQuantity == 0
+            ? null
+            : decimal.Round(soldQuantity * 100m / keptQuantity, 2, MidpointRounding.AwayFromZero);
 
     private sealed record EffectiveSale(BookMovement Movement, int Quantity);
 }
