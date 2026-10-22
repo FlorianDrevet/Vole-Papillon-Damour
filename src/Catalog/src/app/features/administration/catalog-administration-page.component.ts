@@ -575,6 +575,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.loadSection(section);
   }
 
+  selectMobileSection(section: string): void {
+    if (isCatalogAdminSection(section)) {
+      void this.selectSection(section);
+    }
+  }
+
   adminSectionUrl(section: CatalogAdminSection): string {
     return catalogAdminSectionPath(section);
   }
