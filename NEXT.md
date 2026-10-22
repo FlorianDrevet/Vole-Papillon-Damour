@@ -52,9 +52,9 @@ Validation : `npm ci`, build Catalog et `git diff --check` réussis. Les avertis
 
 ### Badges de navigation de l'administration — 2026-10-22
 
-La branche `fix/admin-navigation-badges-initial-load` précharge les totaux Catalogue, ISBN en cours d’analyse et Livres rares à l’arrivée sur `/administration`. Chaque requête de compteur ne demande qu’une fiche ; le sélecteur mobile reprend les mêmes valeurs. La PR reste à ouvrir ; aucun déploiement ni changement API/base n’est inclus.
+La PR #327 a fusionné le préchargement des totaux Catalogue, ISBN en cours d’analyse et Livres rares à l’arrivée sur `/administration`. Chaque requête de compteur ne demande qu’une fiche ; le sélecteur mobile reprend les mêmes valeurs. Aucun déploiement ni changement API/base n’est inclus.
 
-Validation : les 74 tests de `CatalogAdministrationPageComponent` et le build Catalog passent. Le build conserve les avertissements Angular préexistants de budget et CommonJS. Le contrôle visuel authentifié avec données réelles reste à faire. Graphify a extrait 1 784 fichiers ; le rendu échoue sur la limite du graphe à 8 546 nœuds, y compris avec `--no-viz`.
+Validation : les 74 tests de `CatalogAdministrationPageComponent` et le build Catalog passent. Trois attentes obsolètes ont été alignées sur le comportement courant : les deux tailles de page à cinq fiches et l’appel `getOverview` en toutes périodes. Le build conserve les avertissements Angular préexistants de budget et CommonJS. Le contrôle visuel authentifié avec données réelles reste à faire. Graphify a extrait 1 784 fichiers ; le rendu échoue sur la limite du graphe à 8 546 nœuds, y compris avec `--no-viz`.
 
 ### Téléversement manuel des couvertures — 2026-10-20
 
