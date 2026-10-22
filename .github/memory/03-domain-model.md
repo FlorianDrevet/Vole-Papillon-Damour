@@ -196,6 +196,14 @@ per-volunteer contribution, inferred `Tri`/`Caisse` activity roles, monthly sess
 contributor-level waiting-stock signal are reconstructed estimates, not a replacement for
 the inventory ledger or Entra role assignment.
 
+## Administration catalogue flow statistics (2026-10-22)
+
+The read-only `GetAdminCatalogueFlowStatsQueryHandler` backs Catalog
+`Statistiques` → `Livres`. Genre flow is sold quantity divided by kept quantity; its
+percentage keeps two decimal places so small non-zero rates are not rounded to `0 %`.
+The UI shows sold quantity beside the rate and labels a positive rate below the display
+precision as `< 0,01 %`. The funnel and time-to-sell percentages keep their existing precision.
+
 ## Private volunteer statistics
 
 The private contribution projection is a read-only CQRS query at

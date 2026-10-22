@@ -2469,6 +2469,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return value === null || value === undefined ? '—' : `${this.formatNumber(value)} %`;
   }
 
+  formatGenreFlowPercent(soldQuantity: number, value: number | null): string {
+    return soldQuantity > 0 && value === 0 ? '< 0,01 %' : this.formatPercent(value);
+  }
+
   formatRoundedHours(value: number | null | undefined): string {
     return formatRoundedHours(value);
   }
