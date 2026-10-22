@@ -162,6 +162,8 @@ interface CatalogAdminNavGroup {
   items: CatalogAdminNavItem[];
 }
 
+const IN_PROGRESS_SESSION_STATUS = 'InProgress';
+
 const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
   {
     label: 'Pendant la bourse',
@@ -288,7 +290,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     const totalCount = section === 'sessions'
-      ? this.sessionsPage() ? this.correctableSessionCount() : undefined
+      ? this.sessionsPage() ? this.openSessionCount() : undefined
       : section === 'catalogue'
         ? this.catalogueBooksPage()?.totalCount
         : section === 'isbn-queue'
@@ -396,7 +398,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly sessionPageSize = 25;
   sessionMode = 'AvailableNow';
   sessionFairId = '';
-  sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'correctable';
+  sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'all';
   overviewPeriod: CatalogAdminOverviewPeriod = '30-days';
   statisticsPeriod: CatalogAdminStatisticsPeriod = '30-days';
   statisticsFairId = '';
@@ -1786,7 +1788,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'correctable':
         return sessions.filter(session => this.sessionNeedsCorrection(session));
       case 'open':
-        return sessions.filter(session => session.status === 'Open');
+        return sessions.filter(session => session.status === IN_PROGRESS_SESSION_STATUS);
       case 'alerts':
         return sessions.filter(session => {
           const state = this.sessionAlertState(session);
@@ -1799,6 +1801,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   correctableSessionCount(): number {
     return (this.sessionsPage()?.sessions ?? []).filter(session => this.sessionNeedsCorrection(session)).length;
+  }
+
+  openSessionCount(): number {
+    return (this.sessionsPage()?.sessions ?? [])
+      .filter(session => session.status === IN_PROGRESS_SESSION_STATUS).length;
   }
 
   alertSessionCount(): number {
@@ -2836,6 +2843,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     const labels: Record<string, string> = {
       Active: 'Active',
       Open: 'En cours',
+      [IN_PROGRESS_SESSION_STATUS]: 'En cours',
       Closed: 'Terminée',
       Inactive: 'Inactive',
       Pending: 'En attente',

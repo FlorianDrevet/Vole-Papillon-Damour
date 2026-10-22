@@ -945,10 +945,51 @@ describe('CatalogAdministrationPageComponent', () => {
     }
   });
 
-  it('shows the number of correctable sessions in the sidebar badge', () => {
+  it('places all sessions and active sessions before the specialized filters', () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    fixture.componentInstance.activeSection.set('sessions');
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.session-chips button'),
+    );
+    const labels = buttons.map(button => button.textContent?.trim());
+
+    expect(labels.slice(0, 2)).toEqual(['Toutes', 'En cours']);
+    expect(fixture.componentInstance.sessionPreset).toBe('all');
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+
+    buttons[1].click();
+    fixture.detectChanges();
+
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('filters active sessions by the InProgress status', () => {
+    const active = scanSession('active', 0, {status: 'InProgress', endedAt: null});
+    const closed = scanSession('closed', 0, {status: 'Closed'});
     fixture.componentInstance.sessionsPage.set({
       generatedAt: '2026-09-11T10:00:00Z',
-      sessions: [scanSession('correctable', 2), scanSession('already-sent', 0)],
+      sessions: [active, closed],
+      totalCount: 2,
+      page: 1,
+      pageSize: 25,
+    });
+    fixture.componentInstance.setSessionPreset('open');
+
+    expect(fixture.componentInstance.visibleSessions().map(session => session.id)).toEqual(['active']);
+    expect(fixture.componentInstance.statusLabel(active.status)).toBe('En cours');
+  });
+
+  it('shows the number of active sessions in the sidebar badge', () => {
+    fixture.componentInstance.sessionsPage.set({
+      generatedAt: '2026-09-11T10:00:00Z',
+      sessions: [
+        scanSession('active-1', 0, {status: 'InProgress', endedAt: null}),
+        scanSession('active-2', 0, {status: 'InProgress', endedAt: null}),
+        scanSession('correctable', 2),
+      ],
       totalCount: 12,
       page: 1,
       pageSize: 25,
@@ -960,7 +1001,7 @@ describe('CatalogAdministrationPageComponent', () => {
     ).find(button => button.textContent?.includes('Sessions de scan'));
 
     expect(sessionButton).toBeDefined();
-    expect(sessionButton?.querySelector('.admin-nav-badge')?.textContent?.trim()).toBe('1');
+    expect(sessionButton?.querySelector('.admin-nav-badge')?.textContent?.trim()).toBe('2');
   });
 
   it('confirms session alert actions in the front modal and moves a forced session out of correctable', async () => {
