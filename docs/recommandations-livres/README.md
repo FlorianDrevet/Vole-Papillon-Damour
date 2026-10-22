@@ -3,8 +3,9 @@
 Ce dossier trace la conception et l'implémentation de la capacité **proposer à un membre
 des livres susceptibles de lui plaire**, à partir de ses achats associés. La conception et
 l'implémentation sont livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239).
-La fonctionnalité reste désactivée par défaut ; le runbook d'activation et de lancement
-manuel est dans [`10-runbook-activation-et-lancement.md`](10-runbook-activation-et-lancement.md).
+La fonctionnalité reste désactivée par défaut ; le runbook d'activation, de rattrapage
+complet et de suivi dans le Back Office est dans
+[`10-runbook-activation-et-lancement.md`](10-runbook-activation-et-lancement.md).
 
 ## Par où commencer
 

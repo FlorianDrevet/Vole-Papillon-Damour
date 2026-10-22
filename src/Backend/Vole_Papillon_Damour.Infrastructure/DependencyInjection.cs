@@ -1,6 +1,7 @@
 using System.Text;
 using Azure.AI.OpenAI;
 using Azure.Identity;
+using Azure.Storage.Queues;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -49,6 +50,7 @@ public static class DependencyInjection
     private const string KeycloakAudienceConfigurationKey = "Authentication:Keycloak:Audience";
     private const string BearerPrefix = "Bearer ";
     private const string AzureBlobStorageConnectionStringName = "AzureBlobStorageConnectionString";
+    private const string BookRecommendationQueueName = "book-recommendations";
     private const string ProjectDatabaseConnectionStringName = "ProjectDatabase";
 
     public static IServiceCollection AddInfrastructure(
@@ -115,6 +117,11 @@ public static class DependencyInjection
         services.Configure<RecommendationOptions>(
             builderConfiguration.GetSection(RecommendationOptions.SectionName));
         services.AddSingleton<IRecommendationSettings, RecommendationSettings>();
+        services.AddSingleton(provider => new QueueClient(
+            builderConfiguration.GetConnectionString(AzureBlobStorageConnectionStringName),
+            BookRecommendationQueueName,
+            new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 }));
+        services.AddSingleton<IBookRecommendationWorkQueue, AzureBookRecommendationWorkQueue>();
         services.AddScoped<IBookNeighborWriter, SqlBookNeighborWriter>();
         AddBookEmbeddings(services, builderConfiguration);
         services.AddHttpClient<IBnfSruClient, BnfSruClient>((serviceProvider, client) =>

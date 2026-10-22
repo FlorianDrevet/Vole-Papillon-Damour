@@ -188,7 +188,7 @@ jobs:
             echo "| BackOffice | $(jq -r .backOfficeUrl.value outputs.json) |"
             echo "| Scan | $(jq -r .scanUrl.value outputs.json) |"
             echo "| Catalog | $(jq -r .catalogUrl.value outputs.json) |"
-            echo "| Worker | \`$(jq -r .workerContainerAppName.value outputs.json)\` (Functions timer) |"
+            echo "| Worker | \`$(jq -r .workerContainerAppName.value outputs.json)\` (Functions queue and timers) |"
             echo "| Recommendations | \`${{ inputs.recommendations_enabled }}\` (API and Worker) |"
             echo "| SQL server | \`$(jq -r .sqlServerFqdn.value outputs.json)\` |"
             echo "| Storage account | \`$(jq -r .storageAccountName.value outputs.json)\` |"

@@ -12,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 public sealed class EnrichPendingBooksCommandHandler(
     IProjectDbContext dbContext,
     IBibliographicMetadataResolver metadataResolver,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookRecommendationWorkQueue? recommendationWorkQueue = null)
     : IRequestHandler<EnrichPendingBooksCommand, EnrichPendingBooksResult>
 {
     private static readonly TimeSpan InterIsbnDelay = TimeSpan.FromSeconds(1);
@@ -354,6 +355,23 @@ public sealed class EnrichPendingBooksCommandHandler(
             else if (!existingBookRefresh && !coverOnly && !wasResolved)
             {
                 resolvedCount++;
+            }
+
+            var recommendationInputChanged = previousSummary != book.Summary ||
+                                             (!wasResolved &&
+                                              book.MetadataStatus is (BookMetadataStatus.Resolved or BookMetadataStatus.Manual));
+            var recommendationJob = recommendationInputChanged && recommendationWorkQueue is not null
+                ? await dbContext.BookRecommendationJobs
+                    .SingleOrDefaultAsync(job => job.Isbn13 == isbn13.Value, cancellationToken)
+                : null;
+            if (recommendationJob is not null &&
+                recommendationJob.Request(now, force: true))
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await recommendationWorkQueue!.EnqueueBooksAsync(
+                    [new BookRecommendationQueueItem(recommendationJob.Isbn13, recommendationJob.RequestVersion)],
+                    cancellationToken);
+                continue;
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);

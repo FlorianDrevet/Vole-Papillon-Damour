@@ -10,6 +10,8 @@ public sealed class RecommendationOptions
     public int Dimensions { get; set; } = 512;
     public int NeighborsPerBook { get; set; } = 30;
     public int ProfileBatchSize { get; set; } = 200;
+    /// <summary>Change this value when the deployed embedding model version changes.</summary>
+    public string EmbeddingModelVersion { get; set; } = "text-embedding-3-small-v1";
     public float SimilarMinScore { get; set; } = 0.50f;
     public int SimilarMaxCount { get; set; } = 20;
     public int SimilarMinCount { get; set; } = 1;

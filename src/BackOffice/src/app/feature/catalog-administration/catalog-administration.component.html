@@ -11,6 +11,7 @@
   <div class="flex flex-wrap gap-2 border-b border-line pb-3" role="tablist" aria-label="Sections d’administration">
     @for (tab of [
       {id: 'overview', label: 'Vue d’ensemble'}, {id: 'books', label: 'Fiches et stock'},
+      {id: 'recommendations', label: 'Recommandations'},
       {id: 'fairs', label: 'Bourses'}, {id: 'sessions', label: 'Sessions de tri'},
       {id: 'alerts', label: 'Alertes'}, {id: 'members', label: 'Membres'},
       {id: 'accounts', label: 'Comptes et rôles'}, {id: 'settings', label: 'Paramètres'}
@@ -91,6 +92,60 @@
           <form class="admin-subpanel grid gap-3 sm:grid-cols-3" [formGroup]="mergeForm" (ngSubmit)="mergeBook()"><h3 class="sm:col-span-3">Fusionner vers la fiche canonique</h3><label class="admin-field"><span>ISBN cible</span><input formControlName="targetIsbn13" inputmode="numeric"></label><label class="admin-field sm:col-span-2"><span>Note</span><input formControlName="note"></label><div class="sm:col-span-3"><app-pill-button type="submit" variant="danger" [small]="true">Fusionner</app-pill-button></div></form>
         </section>
       }
+    </section>
+  }
+
+  @if (activeTab() === 'recommendations') {
+    <section class="flex flex-col gap-5">
+      <div class="admin-panel flex flex-col gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2>État des recommandations</h2>
+            <p class="mt-2 max-w-[76ch] text-sm text-slate-2">
+              Le traitement démarre à la clôture d’une session de scan. Les embeddings déjà calculés sont conservés tant que les données du livre et le modèle ne changent pas.
+            </p>
+          </div>
+          <app-pill-button (click)="startRecommendationsBackfill()" type="button" [disabled]="isSaving()" [small]="true">
+            Rattraper le catalogue
+          </app-pill-button>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="admin-field min-w-0 flex-1"><span>Recherche</span><input [(ngModel)]="recommendationSearch" placeholder="ISBN, titre ou auteur" (keyup.enter)="loadRecommendations()"></label>
+          <label class="admin-field"><span>Statut</span><select [(ngModel)]="recommendationStatus">
+            <option value="">Tous</option><option value="Pending">En attente</option><option value="InProgress">En cours</option>
+            <option value="Failed">Échoués</option><option value="Ready">Terminés</option><option value="NoNotice">Notice indisponible</option>
+          </select></label>
+          <app-pill-button (click)="loadRecommendations()" type="button" [small]="true">Filtrer</app-pill-button>
+          <app-pill-button (click)="loadRecommendations(recommendationPage())" type="button" variant="secondary" [small]="true">Actualiser</app-pill-button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-sm border border-line bg-white">
+        <table class="admin-table"><thead><tr><th>Livre</th><th>Statut</th><th>Étape</th><th>Tentatives</th><th>Dernière demande</th><th>Erreur</th><th></th></tr></thead>
+          <tbody>
+            @for (item of recommendationJobs(); track item.isbn13) {
+              <tr>
+                <td><strong>{{ item.title || 'Titre inconnu' }}</strong><span class="block font-mono text-xs text-slate-3">{{ item.isbn13 }}</span><small>{{ item.authors || 'Auteur inconnu' }}</small></td>
+                <td>{{ recommendationStatusLabel(item.status) }}</td>
+                <td>{{ recommendationStageLabel(item.stage) }}</td>
+                <td>{{ item.attemptCount }}</td>
+                <td>{{ formatDate(item.requestedAt) }}</td>
+                <td class="max-w-xs whitespace-normal text-xs text-danger">{{ item.lastError || '—' }}</td>
+                <td><button type="button" class="admin-link" [disabled]="!canRetryRecommendation(item) || isSaving()" (click)="retryBookRecommendation(item)">{{ item.status === 'InProgress' && !canRetryRecommendation(item) ? 'En cours' : 'Relancer' }}</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="py-10 text-center text-slate-2">Aucun livre ne correspond à ces filtres.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between gap-3 text-sm text-slate-2">
+        <span>{{ formatNumber(recommendationTotal()) }} livre(s) · page {{ recommendationPage() }}</span>
+        <div class="flex gap-2">
+          <app-pill-button (click)="loadRecommendations(recommendationPage() - 1)" type="button" variant="secondary" [small]="true" [disabled]="recommendationPage() <= 1">Précédent</app-pill-button>
+          <app-pill-button (click)="loadRecommendations(recommendationPage() + 1)" type="button" variant="secondary" [small]="true" [disabled]="isLastRecommendationPage()">Suivant</app-pill-button>
+        </div>
+      </div>
     </section>
   }
 

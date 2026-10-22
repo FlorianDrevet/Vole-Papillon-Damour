@@ -29,9 +29,15 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
 
         var now = dateTimeProvider.UtcNow;
         var refreshBefore = now - NoticeRefreshInterval;
-        var books = await dbContext.Books
+        var bookQuery = dbContext.Books
             .AsNoTracking()
-            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null)
+            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
+        if (request.Isbn13 is { } requestedIsbn13)
+        {
+            bookQuery = bookQuery.Where(book => book.Id.Value == requestedIsbn13);
+        }
+
+        var books = await bookQuery
             .Select(book => new { Isbn13 = book.Id, book.UpdatedAt })
             .ToListAsync(cancellationToken);
         var profileStatuses = await dbContext.BookSimilarityProfiles

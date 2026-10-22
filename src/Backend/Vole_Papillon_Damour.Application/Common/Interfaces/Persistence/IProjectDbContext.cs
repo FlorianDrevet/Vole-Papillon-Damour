@@ -51,6 +51,7 @@ public interface IProjectDbContext
     DbSet<CheckoutPassageLine> CheckoutPassageLines => throw new NotSupportedException();
     DbSet<BookNotFoundReport> BookNotFoundReports => throw new NotSupportedException();
     DbSet<BookSimilarityProfile> BookSimilarityProfiles => throw new NotSupportedException();
+    DbSet<BookRecommendationJob> BookRecommendationJobs => throw new NotSupportedException();
     DbSet<BookNeighbor> BookNeighbors => throw new NotSupportedException();
     DbSet<RecommendationGeneration> RecommendationGenerations => throw new NotSupportedException();
     DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => throw new NotSupportedException();

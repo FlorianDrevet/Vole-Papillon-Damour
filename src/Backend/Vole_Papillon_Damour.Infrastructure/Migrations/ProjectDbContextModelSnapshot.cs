@@ -1231,6 +1231,48 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("BookNeighbors", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookRecommendationJob", b =>
+                {
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("RequestVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Stage")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Isbn13");
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.ToTable("BookRecommendationJobs", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookSimilarityProfile", b =>
                 {
                     b.Property<string>("Isbn13")

@@ -10,6 +10,8 @@ public sealed class RecommendationSettings(IOptions<RecommendationOptions> optio
     public bool Enabled => Values.Enabled;
     public int NeighborsPerBook => Values.NeighborsPerBook;
     public int ProfileBatchSize => Values.ProfileBatchSize;
+    public string EmbeddingModelVersion =>
+        $"{Values.EmbeddingDeploymentName ?? "unspecified"}:{Values.EmbeddingModelVersion}";
     public float SimilarMinScore => Values.SimilarMinScore;
     public int SimilarMaxCount => Values.SimilarMaxCount;
     public int SimilarMinCount => Values.SimilarMinCount;

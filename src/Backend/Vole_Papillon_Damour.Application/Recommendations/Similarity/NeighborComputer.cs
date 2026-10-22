@@ -19,15 +19,115 @@ public static class NeighborComputer
         IReadOnlyList<float[]> vectors,
         int neighborsPerBook)
     {
+        return ComputeForBooks(features, vectors, features.Select(feature => feature.Isbn13), neighborsPerBook);
+    }
+
+    public static IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> ComputeIncremental(
+        IReadOnlyList<SimilarityFeatures> features,
+        IReadOnlyList<float[]> vectors,
+        IReadOnlyCollection<string> changedIsbns,
+        IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> currentNeighbors,
+        int neighborsPerBook)
+    {
         if (features.Count != vectors.Count)
         {
             throw new ArgumentException("One vector per book is required.", nameof(vectors));
         }
 
-        var results = new IReadOnlyList<NeighborCandidate>[features.Count];
-        Parallel.For(0, features.Count, i =>
+        ArgumentNullException.ThrowIfNull(changedIsbns);
+        ArgumentNullException.ThrowIfNull(currentNeighbors);
+
+        var changed = changedIsbns.ToHashSet(StringComparer.Ordinal);
+        var featuresByIsbn = features.ToDictionary(feature => feature.Isbn13, StringComparer.Ordinal);
+        var affected = new HashSet<string>(changed, StringComparer.Ordinal);
+        foreach (var (isbn13, neighbors) in currentNeighbors)
         {
-            var heap = new PriorityQueue<NeighborCandidate, float>(neighborsPerBook + 1);
+            if (neighbors.Any(neighbor => changed.Contains(neighbor.NeighborIsbn13)))
+            {
+                affected.Add(isbn13);
+            }
+        }
+
+        var vectorByIsbn = features
+            .Select((feature, index) => (feature.Isbn13, Vector: vectors[index]))
+            .ToDictionary(item => item.Isbn13, item => item.Vector, StringComparer.Ordinal);
+        foreach (var changedIsbn in changed)
+        {
+            if (!featuresByIsbn.TryGetValue(changedIsbn, out var candidate))
+            {
+                continue;
+            }
+
+            foreach (var query in features)
+            {
+                if (changed.Contains(query.Isbn13) || SimilarityFeatureBuilder.SameWork(query, candidate))
+                {
+                    continue;
+                }
+
+                currentNeighbors.TryGetValue(query.Isbn13, out var existing);
+                existing ??= Array.Empty<NeighborCandidate>();
+                if (existing.Any(neighbor => neighbor.NeighborIsbn13 == changedIsbn) ||
+                    IsWithinTopNeighbors(
+                        query,
+                        vectorByIsbn[query.Isbn13],
+                        candidate,
+                        vectorByIsbn[changedIsbn],
+                        existing,
+                        neighborsPerBook))
+                {
+                    affected.Add(query.Isbn13);
+                }
+            }
+        }
+
+        var recomputed = ComputeForBooks(
+            features,
+            vectors,
+            affected.Where(featuresByIsbn.ContainsKey),
+            neighborsPerBook);
+        var result = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(StringComparer.Ordinal);
+        foreach (var isbn13 in affected)
+        {
+            result[isbn13] = recomputed.TryGetValue(isbn13, out var neighbors)
+                ? neighbors
+                : Array.Empty<NeighborCandidate>();
+        }
+
+        return result;
+    }
+
+    public static IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> ComputeForBooks(
+        IReadOnlyList<SimilarityFeatures> features,
+        IReadOnlyList<float[]> vectors,
+        IEnumerable<string> queryIsbns,
+        int neighborsPerBook)
+    {
+        if (features.Count != vectors.Count)
+        {
+            throw new ArgumentException("One vector per book is required.", nameof(vectors));
+        }
+
+        if (neighborsPerBook < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(neighborsPerBook));
+        }
+
+        var querySet = queryIsbns.ToHashSet(StringComparer.Ordinal);
+        var results = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(StringComparer.Ordinal);
+        var indexByIsbn = features.Select((feature, index) => (feature.Isbn13, index))
+            .ToDictionary(item => item.Isbn13, item => item.index, StringComparer.Ordinal);
+        foreach (var queryIsbn in querySet)
+        {
+            if (!indexByIsbn.TryGetValue(queryIsbn, out var i))
+            {
+                results[queryIsbn] = Array.Empty<NeighborCandidate>();
+                continue;
+            }
+
+            var heap = new PriorityQueue<NeighborCandidate, NeighborPriority>(
+                Math.Max(1, neighborsPerBook + 1),
+                NeighborPriorityComparer.Instance);
             for (var j = 0; j < features.Count; j++)
             {
                 if (i == j || SimilarityFeatureBuilder.SameWork(features[i], features[j]))
@@ -37,7 +137,8 @@ public static class NeighborComputer
 
                 var (bonus, reason) = Adjust(features[i], features[j]);
                 var score = TensorPrimitives.Dot<float>(vectors[i], vectors[j]) + bonus;
-                heap.Enqueue(new NeighborCandidate(features[j].Isbn13, score, reason), score);
+                var candidate = new NeighborCandidate(features[j].Isbn13, score, reason);
+                heap.Enqueue(candidate, new NeighborPriority(score, candidate.NeighborIsbn13));
                 if (heap.Count > neighborsPerBook)
                 {
                     heap.Dequeue(); // retire le plus faible
@@ -50,12 +151,11 @@ public static class NeighborComputer
                 ordered.Add(heap.Dequeue());
             }
 
-            ordered.Reverse();
-            results[i] = ordered;
-        });
+            ordered.Sort(BestFirstComparer.Instance);
+            results[queryIsbn] = ordered;
+        }
 
-        return features.Select((f, i) => (f.Isbn13, results[i]))
-            .ToDictionary(x => x.Isbn13, x => x.Item2, StringComparer.Ordinal);
+        return results;
     }
 
     public static (float Bonus, NeighborReason Reason) Adjust(SimilarityFeatures query, SimilarityFeatures candidate)
@@ -91,5 +191,53 @@ public static class NeighborComputer
         }
 
         return (bonus, reason ?? NeighborReason.Theme);
+    }
+
+    private static bool IsWithinTopNeighbors(
+        SimilarityFeatures query,
+        float[] queryVector,
+        SimilarityFeatures candidate,
+        float[] candidateVector,
+        IReadOnlyList<NeighborCandidate> current,
+        int neighborsPerBook)
+    {
+        if (neighborsPerBook == 0 || current.Count < neighborsPerBook)
+        {
+            return neighborsPerBook > 0;
+        }
+
+        var candidateScore = TensorPrimitives.Dot<float>(queryVector, candidateVector) +
+                             Adjust(query, candidate).Bonus;
+        var worst = current[^1];
+        return candidateScore > worst.Score ||
+               (candidateScore == worst.Score &&
+                string.CompareOrdinal(candidate.Isbn13, worst.NeighborIsbn13) < 0);
+    }
+
+    private readonly record struct NeighborPriority(float Score, string Isbn13);
+
+    private sealed class NeighborPriorityComparer : IComparer<NeighborPriority>
+    {
+        public static NeighborPriorityComparer Instance { get; } = new();
+
+        public int Compare(NeighborPriority left, NeighborPriority right)
+        {
+            var byScore = left.Score.CompareTo(right.Score);
+            return byScore != 0 ? byScore : string.CompareOrdinal(right.Isbn13, left.Isbn13);
+        }
+    }
+
+    private sealed class BestFirstComparer : IComparer<NeighborCandidate>
+    {
+        public static BestFirstComparer Instance { get; } = new();
+
+        public int Compare(NeighborCandidate? left, NeighborCandidate? right)
+        {
+            if (ReferenceEquals(left, right)) return 0;
+            if (left is null) return 1;
+            if (right is null) return -1;
+            var byScore = right.Score.CompareTo(left.Score);
+            return byScore != 0 ? byScore : string.CompareOrdinal(left.NeighborIsbn13, right.NeighborIsbn13);
+        }
     }
 }

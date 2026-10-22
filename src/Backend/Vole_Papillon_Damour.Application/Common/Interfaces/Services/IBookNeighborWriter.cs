@@ -18,4 +18,14 @@ public interface IBookNeighborWriter
         int bookCount,
         DateTime computedAt,
         CancellationToken cancellationToken);
+
+    /// <summary>Writes changed neighbor lists while copying untouched rows from the current generation.</summary>
+    Task WriteIncrementalGenerationAsync(
+        Guid generationId,
+        IReadOnlyCollection<string> replacedIsbns,
+        IReadOnlyCollection<BookNeighborRow> replacementRows,
+        int bookCount,
+        DateTime computedAt,
+        CancellationToken cancellationToken) =>
+        WriteGenerationAsync(generationId, replacementRows, bookCount, computedAt, cancellationToken);
 }

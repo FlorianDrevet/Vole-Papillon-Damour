@@ -5,6 +5,7 @@ public interface IRecommendationSettings
     bool Enabled { get; }
     int NeighborsPerBook { get; }
     int ProfileBatchSize { get; }
+    string EmbeddingModelVersion { get; }
     float SimilarMinScore { get; }
     int SimilarMaxCount { get; }
     int SimilarMinCount { get; }

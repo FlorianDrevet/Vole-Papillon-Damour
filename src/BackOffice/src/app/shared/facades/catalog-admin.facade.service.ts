@@ -13,6 +13,8 @@ import {
   CreateAdminAccountRequest,
   AdminBook,
   AdminBookFilters,
+  AdminBookRecommendationFilters,
+  AdminBookRecommendationPage,
   AdminBookOperation,
   AdminBookPage,
   AdminFairPage,
@@ -63,6 +65,18 @@ export class CatalogAdminFacadeService {
 
   getBooks(filters: AdminBookFilters = {}): Promise<AdminBookPage> {
     return this.get('/books/admin/books', filters);
+  }
+
+  getBookRecommendations(filters: AdminBookRecommendationFilters = {}): Promise<AdminBookRecommendationPage> {
+    return this.get('/books/admin/recommendations', filters);
+  }
+
+  startBookRecommendationsBackfill(): Promise<{backfillId: string; status: string}> {
+    return this.request(MethodEnum.POST, '/books/admin/recommendations/backfill');
+  }
+
+  retryBookRecommendation(isbn13: string): Promise<{isbn13: string; status: string; requestVersion: number}> {
+    return this.request(MethodEnum.POST, `/books/admin/recommendations/${encodeURIComponent(isbn13)}/retry`);
   }
 
   getBook(isbn13: string): Promise<AdminBook> {
