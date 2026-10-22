@@ -726,7 +726,7 @@
               @if (isbnMetadataQueue(); as page) {
                 <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
                   <div class="section-heading">
-                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
+                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : metadataQueueFilter === 'not-found' ? 'sans notice trouvée' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
                     <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
                   </div>
                   <div class="isbn-queue-toolbar">
@@ -735,6 +735,7 @@
                       <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
                       <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
                       <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'not-found'" [attr.aria-pressed]="metadataQueueFilter === 'not-found'" data-testid="isbn-queue-filter-not-found" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('not-found')">Notices non trouvées</button>
                     </div>
                   </div>
                   <div class="session-list" role="list">
@@ -756,6 +757,8 @@
                         <div class="empty-panel"><h2>Aucun échec</h2><p>Les ISBN dont l’analyse échoue apparaîtront ici avec leur motif.</p></div>
                       } @else if (metadataQueueFilter === 'pending') {
                         <div class="empty-panel"><h2>Aucun ISBN en cours</h2><p>Les ISBN en attente d’analyse apparaîtront ici.</p></div>
+                      } @else if (metadataQueueFilter === 'not-found') {
+                        <div class="empty-panel"><h2>Aucun ISBN sans notice</h2><p>Les ISBN pour lesquels aucune notice bibliographique n’a été trouvée apparaîtront ici.</p></div>
                       } @else {
                         <div class="empty-panel"><h2>Aucun ISBN à vérifier</h2><p>Les nouveaux ISBN importés apparaîtront ici si leur notice n’est pas encore complète.</p></div>
                       }
