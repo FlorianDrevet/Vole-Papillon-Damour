@@ -135,6 +135,10 @@
   text-transform: uppercase;
 }
 
+.admin-mobile-navigation {
+  display: none;
+}
+
 .admin-nav-group + .admin-nav-group {
   margin-top: 28px;
 }
@@ -3574,26 +3578,18 @@ input:disabled {
     margin-bottom: 10px;
   }
 
-  .admin-nav-group,
-  .admin-nav-group + .admin-nav-group {
-    margin-top: 12px;
+  .admin-sidebar > .admin-nav-group {
+    display: none;
   }
 
-  .admin-nav-group nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
+  .admin-mobile-navigation {
+    display: block;
+    margin: 8px 4px 0;
   }
 
-  .admin-nav-item {
-    gap: 5px;
-    padding: 6px 5px;
-    font-size: 12px;
-    white-space: normal;
-  }
-
-  .admin-nav-item-label {
-    white-space: normal;
+  .admin-mobile-navigation select {
+    width: 100%;
+    min-height: 48px;
   }
 
   .admin-content button,

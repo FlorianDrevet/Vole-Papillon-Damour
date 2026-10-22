@@ -66,6 +66,25 @@
         </div>
       }
 
+      @if (hasAdministrationAccess()) {
+        <label class="admin-mobile-navigation">
+          <span class="admin-nav-label">Aller à une rubrique</span>
+          <select
+            data-testid="admin-mobile-navigation"
+            aria-label="Aller à une rubrique de l’administration"
+            [ngModel]="activeSection()"
+            (ngModelChange)="selectMobileSection($event)">
+            @for (group of navGroups(); track group.label) {
+              <optgroup [label]="group.label">
+                @for (item of group.items; track item.id) {
+                  <option [value]="item.id">{{ item.label }}{{ navBadge(item.id) ? ' (' + navBadge(item.id) + ')' : '' }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </label>
+      }
+
       @if (isAuthenticated()) {
         <div class="admin-role-card">
           <span class="admin-role-kicker">Votre rôle</span>
