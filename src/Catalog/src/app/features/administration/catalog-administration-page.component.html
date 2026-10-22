@@ -304,11 +304,11 @@
                 <h1 id="admin-title">Sessions de scan.</h1>
                 <p class="admin-intro">Le mode d’une session détermine l’effet public des scans, et sa clôture déclenche les e-mails. C’est le seul endroit d’où l’on voit ce qui s’est réellement passé.</p>
               </div>
-              <div class="period-chips session-chips" aria-label="Filtrer les sessions">
-                <button class="period-chip" [class.active]="sessionPreset === 'correctable'" type="button" (click)="setSessionPreset('correctable')">Encore corrigeables ({{ correctableSessionCount() }})</button>
-                <button class="period-chip" [class.active]="sessionPreset === 'all'" type="button" (click)="setSessionPreset('all')">Toutes</button>
-                <button class="period-chip" [class.active]="sessionPreset === 'open'" type="button" (click)="setSessionPreset('open')">En cours</button>
-                <button class="period-chip" [class.active]="sessionPreset === 'alerts'" type="button" (click)="setSessionPreset('alerts')">Alertes envoyées ({{ alertSessionCount() }})</button>
+              <div class="period-chips session-chips" role="group" aria-label="Filtrer les sessions">
+                <button class="period-chip" [class.active]="sessionPreset === 'all'" [attr.aria-pressed]="sessionPreset === 'all'" type="button" (click)="setSessionPreset('all')">Toutes</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'open'" [attr.aria-pressed]="sessionPreset === 'open'" type="button" (click)="setSessionPreset('open')">En cours</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'correctable'" [attr.aria-pressed]="sessionPreset === 'correctable'" type="button" (click)="setSessionPreset('correctable')">Encore corrigeables ({{ correctableSessionCount() }})</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'alerts'" [attr.aria-pressed]="sessionPreset === 'alerts'" type="button" (click)="setSessionPreset('alerts')">Alertes envoyées ({{ alertSessionCount() }})</button>
               </div>
               @if (sessionsPage(); as page) {
                 <div class="list-meta"><span>{{ formatNumber(visibleSessions().length) }} session{{ visibleSessions().length > 1 ? 's' : '' }}</span><button class="text-link" type="button" (click)="loadSessions()">Actualiser</button></div>

@@ -786,3 +786,10 @@ also fails. Book cards, details, search/reference results, account, recommendati
 administration cover slots use this directive; non-production and other hosts stay direct.
 The Cloudflare Images Free plan has a 5,000 unique transformation monthly cap; after that,
 new variants fail without overage billing, so the source fallback is part of the feature.
+
+## Catalog admin scan session filters (2026-10-22)
+
+`src/Catalog/src/app/features/administration/catalog-administration-page.component.ts`
+loads scan sessions from the typed admin API page. The default view is `Toutes`; the
+`En cours` preset and sidebar badge use the API status `InProgress`. The rendered status
+label is `En cours`, and the specialized correction/alert filters follow those two presets.
