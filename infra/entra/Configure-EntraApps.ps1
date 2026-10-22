@@ -15,8 +15,8 @@
       - les claims `given_name` et `family_name` dans les jetons du Catalog et de l'API ;
       - l'enregistrement applicatif de gestion des comptes avec les permissions
         applicatives Microsoft Graph `User.ReadWrite.All`,
-        `User.EnableDisableAccount.All`, `Application.Read.All` et
-        `AppRoleAssignment.ReadWrite.All` ;
+        `User.EnableDisableAccount.All`, `User-PasswordProfile.ReadWrite.All`,
+        `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ;
       - le consentement administrateur du client vers la portee de l'API.
 
     Le script est rejouable : il retrouve les objets par `displayName`, ne recree rien
@@ -155,6 +155,10 @@ $GraphApplicationPermissions = @(
     @{
         Name      = 'User.EnableDisableAccount.All'
         AppRoleId = '3011c876-62b7-4ada-afa2-506cbbecc68c'
+    }
+    @{
+        Name      = 'User-PasswordProfile.ReadWrite.All'
+        AppRoleId = 'cc117bb9-00cf-4eb8-b580-ea2a878fe8f7'
     }
     @{
         Name      = 'Application.Read.All'

@@ -174,7 +174,9 @@ client-only/private.
 
 - `GET /accounts/admin` - Administration-policy paged Entra account list with optional
   `search`, `page`, and `pageSize` filters. The response includes the current `Tri`,
-  `Caisse`, `LivresRares`, and `Administration` app-role assignments. Graph transport or malformed-payload
+  `Caisse`, `LivresRares`, and `Administration` app-role assignments, plus
+  `canResetPassword`, true only for local email/password identities with at least one
+  volunteer role (`Tri`, `Caisse`, or `LivresRares`). Graph transport or malformed-payload
   failures are returned as a typed `Account.DirectoryUnavailable` `503` rather than an
   unhandled `500`; omitted Graph collections are treated as empty.
 - `POST /accounts/admin` - Administration-policy account creation with `email`, `firstName`,
@@ -183,14 +185,20 @@ client-only/private.
   External ID local identity and assigns the requested API roles.
 - `PUT /accounts/admin/{externalId}/roles` - Administration-policy replacement of the
   selected API roles. An administrator cannot remove their own `Administration` role.
+- `POST /accounts/admin/{externalId}/password-reset` - Administration-policy password reset
+  with no request body. The API rechecks the target's local identity and volunteer role,
+  writes a cryptographically generated temporary password through Graph with forced change
+  at next sign-in, and returns `{ temporaryPassword }` only to the administrator; ineligible
+  targets return a typed `Account.PasswordResetNotAllowed` `409`.
 
 The Graph runtime configuration uses `EntraGraph__TenantDomain` and
 `EntraGraph__ApiClientId` alongside the existing app-only client credentials. The
 provisioning script must grant `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
-`Application.Read.All`, and `AppRoleAssignment.ReadWrite.All` to that app-only
-registration. `accountEnabled` is a sensitive Graph operation; if the app-only PATCH
-remains denied after consent, the service principal also needs an Entra directory role
-authorized for the action.
+`User-PasswordProfile.ReadWrite.All`, `Application.Read.All`, and `AppRoleAssignment.ReadWrite.All`
+to that app-only registration. Sensitive `accountEnabled` updates and app-only password resets
+also require an Entra directory role authorized for each action. Password resets require the
+service principal's manual `User Administrator` role assignment; the provisioning script does
+not grant it.
 
 All `/books/admin/*` routes require the `Administration` policy (`Administration` or `Admin`
 app role). All admin mutation responses expose an explicit `changed` flag where an operation

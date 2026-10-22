@@ -5,6 +5,7 @@ public sealed class EntraAccountDirectoryException(
     int? statusCode = null) : Exception(failureCode)
 {
     public const string TemporaryPasswordRejected = "graph-temporary-password-rejected";
+    public const string PasswordResetNotAllowed = "graph-password-reset-not-allowed";
 
     public string FailureCode { get; } = failureCode;
 

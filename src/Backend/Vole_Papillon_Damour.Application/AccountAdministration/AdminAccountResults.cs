@@ -6,7 +6,8 @@ public sealed record AdminAccountResult(
     string? DisplayName,
     bool AccountEnabled,
     DateTime? CreatedAt,
-    IReadOnlyCollection<string> Roles);
+    IReadOnlyCollection<string> Roles,
+    bool CanResetPassword);
 
 public sealed record AdminAccountPageResult(
     DateTimeOffset GeneratedAt,
@@ -23,5 +24,6 @@ internal static class AdminAccountResultMapping
         account.DisplayName,
         account.AccountEnabled,
         account.CreatedAt,
-        account.Roles);
+        account.Roles,
+        account.IsLocalEmailPassword && account.Roles.Any(AccountRoles.IsVolunteerRole));
 }

@@ -1,10 +1,9 @@
 #Requires -Version 7.0
 #Requires -Modules Pester
 
-$scriptPath = Join-Path $PSScriptRoot 'Configure-EntraApps.ps1'
-
 Describe 'Merge-OptionalNameClaims' {
     BeforeAll {
+        $scriptPath = Join-Path $PSScriptRoot 'Configure-EntraApps.ps1'
         $parseErrors = $null
         $scriptAst = [System.Management.Automation.Language.Parser]::ParseFile(
             $scriptPath,
@@ -47,8 +46,8 @@ Describe 'Merge-OptionalNameClaims' {
 
         $result = Merge-OptionalNameClaims -Application $application -TokenType 'AccessToken'
 
-        @($result['AccessToken'] | Where-Object { $_.Name -eq 'given_name' }).Count | Should Be 1
-        @($result['AccessToken'] | Where-Object { $_.Name -eq 'family_name' }).Count | Should Be 1
+        @($result['AccessToken'] | Where-Object { $_.Name -eq 'given_name' }).Count | Should -Be 1
+        @($result['AccessToken'] | Where-Object { $_.Name -eq 'family_name' }).Count | Should -Be 1
     }
 
     It 'keeps a single existing redirect URI separate from the new URI' {
@@ -63,21 +62,34 @@ Describe 'Merge-OptionalNameClaims' {
             -Kind 'Spa' `
             -Uri 'https://new.example'
 
-        @($result).Count | Should Be 2
-        @($result | Where-Object { $_ -eq 'https://existing.example' }).Count | Should Be 1
-        @($result | Where-Object { $_ -eq 'https://new.example' }).Count | Should Be 1
+        @($result).Count | Should -Be 2
+        @($result | Where-Object { $_ -eq 'https://existing.example' }).Count | Should -Be 1
+        @($result | Where-Object { $_ -eq 'https://new.example' }).Count | Should -Be 1
     }
 }
 
 Describe 'Permissions Graph de gestion des comptes' {
+    BeforeAll {
+        $scriptPath = Join-Path $PSScriptRoot 'Configure-EntraApps.ps1'
+    }
+
     It 'déclare et prépare User.EnableDisableAccount.All pour le changement de statut' {
         $script = Get-Content -LiteralPath $scriptPath -Raw
 
-        $script | Should Match '\$GraphApplicationPermissions\s*=\s*@\('
-        $script | Should Match "AppRoleId\s*=\s*'3011c876-62b7-4ada-afa2-506cbbecc68c'"
-        $script | Should Match "Name\s*=\s*'User.EnableDisableAccount.All'"
-        $script | Should Match 'ResourceAccess\s*=\s*@\(\s*\$GraphApplicationPermissions'
-        $script | Should Match 'RequiredResourceAccess\s*=\s*\$graphRequiredResourceAccess'
-        $script | Should Match 'Grant-GraphApplicationPermission[\s\S]*\$permission\.AppRoleId'
+        $script | Should -Match '\$GraphApplicationPermissions\s*=\s*@\('
+        $script | Should -Match "AppRoleId\s*=\s*'3011c876-62b7-4ada-afa2-506cbbecc68c'"
+        $script | Should -Match "Name\s*=\s*'User.EnableDisableAccount.All'"
+        $script | Should -Match 'ResourceAccess\s*=\s*@\(\s*\$GraphApplicationPermissions'
+        $script | Should -Match 'RequiredResourceAccess\s*=\s*\$graphRequiredResourceAccess'
+        $script | Should -Match 'Grant-GraphApplicationPermission[\s\S]*\$permission\.AppRoleId'
+    }
+
+    It 'déclare User-PasswordProfile.ReadWrite.All pour réinitialiser les mots de passe bénévoles' {
+        $script = Get-Content -LiteralPath $scriptPath -Raw
+
+        $script | Should -Match "AppRoleId\s*=\s*'cc117bb9-00cf-4eb8-b580-ea2a878fe8f7'"
+        $script | Should -Match "Name\s*=\s*'User-PasswordProfile.ReadWrite.All'"
+        $script | Should -Match 'ResourceAccess\s*=\s*@\(\s*\$GraphApplicationPermissions'
+        $script | Should -Match 'Grant-GraphApplicationPermission[\s\S]*\$permission\.AppRoleId'
     }
 }

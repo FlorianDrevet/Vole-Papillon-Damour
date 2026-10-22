@@ -14,6 +14,7 @@ import {
   AdminAccount,
   AdminAccountFilters,
   AdminAccountRole,
+  AdminPasswordResetResponse,
   AdminBook,
   AdminBookFilters,
   AdminFair,
@@ -60,6 +61,7 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly selectedMember = signal<AdminMemberDetail | null>(null);
   protected readonly memberTotal = signal(0);
   protected readonly accounts = signal<AdminAccount[]>([]);
+  protected readonly passwordResetDisclosure = signal<{email: string | null; temporaryPassword: string} | null>(null);
   protected readonly accountTotal = signal(0);
   protected readonly accountPage = signal(1);
   protected readonly editingAccountId = signal<string | null>(null);
@@ -518,6 +520,27 @@ export class CatalogAdministrationComponent implements OnInit {
     );
   }
 
+  protected resetAccountPassword(account: AdminAccount): void {
+    if (!account.canResetPassword) { return; }
+
+    const email = account.email;
+    const accountLabel = email || account.displayName || account.externalId;
+    if (!window.confirm(`Réinitialiser le mot de passe de ${accountLabel} ? Un nouveau mot de passe temporaire sera créé et affiché une seule fois.`)) {
+      return;
+    }
+
+    this.passwordResetDisclosure.set(null);
+    this.save(
+      () => this.facade.resetAccountPassword(account.externalId),
+      'Le mot de passe temporaire s’affiche ci-dessous. Transmettez-le au bénévole de façon sécurisée.',
+      (result: AdminPasswordResetResponse) => this.passwordResetDisclosure.set({email, temporaryPassword: result.temporaryPassword}),
+    );
+  }
+
+  protected closePasswordResetDisclosure(): void {
+    this.passwordResetDisclosure.set(null);
+  }
+
   protected roleLabel(role: AdminAccountRole): string {
     return this.accountRoleOptions.find(option => option.value === role)?.label ?? role;
   }
@@ -563,14 +586,14 @@ export class CatalogAdministrationComponent implements OnInit {
   private save<T>(
     request: () => Promise<T>,
     message: string,
-    after: () => void,
+    after: (value: T) => void,
     describeError: (error: unknown) => string = error => this.readError(error),
   ): void {
     this.isSaving.set(true);
     this.clearMessages();
     request()
-      .then(() => {
-        after();
+        .then(value => {
+          after(value);
         this.successMessage.set(message);
       })
       .catch(error => this.errorMessage.set(describeError(error)))

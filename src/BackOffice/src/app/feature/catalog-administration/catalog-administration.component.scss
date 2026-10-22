@@ -36,6 +36,7 @@
 .admin-row strong { display: block; color: #072b45; }
 .admin-link { color: #0c6ea6; font-size: .85rem; }
 .admin-link:hover { text-decoration: underline; }
+.admin-link:focus-visible, .admin-danger:focus-visible { border-radius: 2px; outline: 3px solid rgba(20, 151, 214, .32); outline-offset: 2px; }
 .admin-link:disabled { cursor: not-allowed; opacity: .4; }
 .admin-danger { color: #c0392b; font-size: .82rem; }
 .admin-danger:hover { text-decoration: underline; }

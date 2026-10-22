@@ -33,6 +33,28 @@ public sealed class AccountAdministrationHandlerTests
     }
 
     [Fact]
+    public async Task GetAdminAccountsQuery_MarksOnlyLocalVolunteerAccountsAsResettable()
+    {
+        var directory = Substitute.For<IEntraAccountDirectory>();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        directory.ListAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<IReadOnlyList<EntraAccount>>([
+            new("local-tri", "tri@example.test", "Tri", true, Now, [AccountRoles.Tri], IsLocalEmailPassword: true),
+            new("external-tri", "external@example.test", "External", true, Now, [AccountRoles.Tri]),
+            new("local-admin", "admin@example.test", "Admin", true, Now, [AccountRoles.Administration], IsLocalEmailPassword: true),
+        ]));
+
+        var handler = new GetAdminAccountsQueryHandler(directory, clock);
+
+        var result = await handler.Handle(new GetAdminAccountsQuery(null), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Accounts.Should().ContainSingle(account => account.ExternalId == "local-tri" && account.CanResetPassword);
+        result.Value.Accounts.Should().OnlyContain(account =>
+            account.CanResetPassword == (account.ExternalId == "local-tri"));
+    }
+
+    [Fact]
     public async Task GetAdminAccountsQuery_WhenDirectoryTransportFails_ReturnsDirectoryUnavailable()
     {
         var directory = Substitute.For<IEntraAccountDirectory>();

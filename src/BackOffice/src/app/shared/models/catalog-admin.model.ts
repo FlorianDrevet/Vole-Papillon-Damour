@@ -283,8 +283,13 @@ export interface AdminAccount {
   email: string | null;
   displayName: string | null;
   accountEnabled: boolean;
+  canResetPassword: boolean;
   createdAt: string | null;
   roles: AdminAccountRole[];
+}
+
+export interface AdminPasswordResetResponse {
+  temporaryPassword: string;
 }
 
 export interface AdminAccountPage {

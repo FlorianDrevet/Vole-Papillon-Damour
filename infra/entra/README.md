@@ -10,7 +10,8 @@ restent manuels.
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
 Microsoft Graph `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
-`Application.Read.All` et `AppRoleAssignment.ReadWrite.All`. L'API l'utilise pour creer
+`User-PasswordProfile.ReadWrite.All`, `Application.Read.All` et
+`AppRoleAssignment.ReadWrite.All`. L'API l'utilise pour creer
 les comptes internes, lister les roles et gerer les attributions ; l'API et le worker
 l'utilisent aussi pour
 supprimer un objet utilisateur apres une demande d'effacement. Son secret est cree une seule fois,
@@ -65,6 +66,14 @@ ne renouvelle pas le secret existant. Si Graph répond encore
 `Authorization_RequestDenied` après cette exécution, contrôler dans Entra que le principal
 de service possède également un rôle d'annuaire autorisé à effectuer cette action sensible
 (par exemple `User Administrator`).
+
+La réinitialisation app-only d'un mot de passe est une opération sensible Graph. La
+permission applicative `User-PasswordProfile.ReadWrite.All` est déclarée et consentie par
+le script ; le principal de service `vpd-account-deletion-<environment>` doit aussi recevoir
+manuellement le rôle d'annuaire Entra `User Administrator`. Le script ne lui attribue pas ce
+rôle. Après configuration, `POST /accounts/admin/{externalId}/password-reset` renvoie le mot
+de passe temporaire uniquement à l'administrateur authentifié ; celui-ci doit le transmettre
+au bénévole par un canal sécurisé.
 
 ## Ce qui reste manuel
 
