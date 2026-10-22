@@ -106,82 +106,119 @@
     </div>
 
     <div class="search-layout">
-      <aside class="filters-panel" aria-label="Filtres du catalogue">
-        <p class="filter-kicker">Affiner</p>
+      <aside class="filters-panel" [class.filters-panel--mobile-open]="mobileFiltersOpen" aria-label="Filtres du catalogue">
+        <button
+          #mobileFiltersTrigger
+          type="button"
+          class="mobile-filter-trigger"
+          [attr.aria-expanded]="mobileFiltersOpen"
+          aria-controls="catalog-mobile-filters"
+          (click)="toggleMobileFilters(mobileFiltersTrigger)">
+          <span class="mobile-filter-trigger-main">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8m-5 5h2"></path></svg>
+            <span>Filtres</span>
+            @if (activeMobileFilterCount() > 0) {
+              <span class="mobile-filter-count">{{ activeMobileFilterCount() }}</span>
+            }
+          </span>
+          <span class="mobile-filter-trigger-summary">{{ mobileFilterSummary() }}</span>
+          <svg class="mobile-filter-chevron" viewBox="0 0 12 8" aria-hidden="true"><path d="m1 1 5 5 5-5"></path></svg>
+        </button>
 
-        <fieldset class="filter-group">
-          <legend>Disponibilité</legend>
-          <label class="filter-option">
-            <input type="radio" name="availability" value="available" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
-            <span class="filter-control radio-control" aria-hidden="true"></span>
-            <span>Disponible maintenant</span>
-          </label>
-          <label class="filter-option">
-            <input type="radio" name="availability" value="next" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
-            <span class="filter-control radio-control" aria-hidden="true"></span>
-            <span>À la prochaine bourse</span>
-          </label>
-          <label class="filter-option">
-            <input type="radio" name="availability" value="all" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
-            <span class="filter-control radio-control" aria-hidden="true"></span>
-            <span>Toutes les disponibilités</span>
-          </label>
-        </fieldset>
+        <div id="catalog-mobile-filters" class="filters-content">
+          <div class="mobile-filter-heading">
+            <span>Affiner la recherche</span>
+            <button type="button" (click)="toggleMobileFilters(mobileFiltersTrigger)">Fermer</button>
+          </div>
+          <p class="filter-kicker">Affiner</p>
 
-        <div class="filter-divider" aria-hidden="true"></div>
+          <fieldset class="filter-group filter-group--availability">
+            <legend>Disponibilité</legend>
+            <label class="filter-option filter-option--availability">
+              <input type="radio" name="availability" value="available" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+              <span class="filter-control radio-control" aria-hidden="true"></span>
+              <span class="availability-option-label availability-option-label--desktop">Disponible maintenant</span>
+              <span class="availability-option-label availability-option-label--mobile">Maintenant</span>
+            </label>
+            <label class="filter-option filter-option--availability">
+              <input type="radio" name="availability" value="next" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+              <span class="filter-control radio-control" aria-hidden="true"></span>
+              <span class="availability-option-label availability-option-label--desktop">À la prochaine bourse</span>
+              <span class="availability-option-label availability-option-label--mobile">Prochaine bourse</span>
+            </label>
+            <label class="filter-option filter-option--availability">
+              <input type="radio" name="availability" value="all" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+              <span class="filter-control radio-control" aria-hidden="true"></span>
+              <span class="availability-option-label availability-option-label--desktop">Toutes les disponibilités</span>
+              <span class="availability-option-label availability-option-label--mobile">Toutes</span>
+            </label>
+          </fieldset>
 
-        <fieldset class="filter-group">
-          <legend>Genre</legend>
-          <label class="filter-option filter-option--checkbox">
-            <input type="radio" name="genre" value="" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
-            <span class="filter-control checkbox-control" aria-hidden="true"></span>
-            <span>Tous les genres</span>
-          </label>
-          @for (availableGenre of availableGenres(); track availableGenre) {
-            <div class="genre-filter-row">
+          <div class="filter-divider" aria-hidden="true"></div>
+
+          <fieldset class="filter-group filter-group--genre">
+            <legend>Genre</legend>
+            <button
+              type="button"
+              class="mobile-genre-trigger"
+              [attr.aria-label]="'Choisir un genre, sélection actuelle : ' + (genre || 'Tous les genres')"
+              (click)="openGenreDialog()">
+              <span>{{ genre || 'Tous les genres' }}</span>
+              <svg viewBox="0 0 12 8" aria-hidden="true"><path d="m1 1 5 5 5-5"></path></svg>
+            </button>
+            <div class="genre-filter-options">
               <label class="filter-option filter-option--checkbox">
-                <input type="radio" name="genre" [value]="availableGenre" [attr.value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+                <input type="radio" name="genre" value="" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
                 <span class="filter-control checkbox-control" aria-hidden="true"></span>
-                <span>{{ availableGenre }}</span>
+                <span>Tous les genres</span>
               </label>
-              <button
-                type="button"
-                class="genre-pin-trigger"
-                [attr.aria-label]="(isGenreFavorite(availableGenre) ? 'Retirer ' : 'Épingler ') + availableGenre + (isGenreFavorite(availableGenre) ? ' des genres favoris' : ' dans mes genres favoris')"
-                [attr.aria-pressed]="isGenreFavorite(availableGenre)"
-                [disabled]="genreFavoritePending === availableGenre"
-                (click)="toggleGenreFavorite(availableGenre)">
-                <span aria-hidden="true">{{ isGenreFavorite(availableGenre) ? '★' : '☆' }}</span>
+              @for (availableGenre of availableGenres(); track availableGenre) {
+                <div class="genre-filter-row">
+                  <label class="filter-option filter-option--checkbox">
+                    <input type="radio" name="genre" [value]="availableGenre" [attr.value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+                    <span class="filter-control checkbox-control" aria-hidden="true"></span>
+                    <span>{{ availableGenre }}</span>
+                  </label>
+                  <button
+                    type="button"
+                    class="genre-pin-trigger"
+                    [attr.aria-label]="(isGenreFavorite(availableGenre) ? 'Retirer ' : 'Épingler ') + availableGenre + (isGenreFavorite(availableGenre) ? ' des genres favoris' : ' dans mes genres favoris')"
+                    [attr.aria-pressed]="isGenreFavorite(availableGenre)"
+                    [disabled]="genreFavoritePending === availableGenre"
+                    (click)="toggleGenreFavorite(availableGenre)">
+                    <span aria-hidden="true">{{ isGenreFavorite(availableGenre) ? '★' : '☆' }}</span>
+                  </button>
+                </div>
+              }
+              <button type="button" class="all-genres-link" (click)="openGenreDialog()">
+                Parcourir tous les genres
+                <span aria-hidden="true">→</span>
               </button>
             </div>
+            @if (genreFavoriteMessage) {
+              <p class="genre-favorite-message" role="status">{{ genreFavoriteMessage }}</p>
+            }
+            @if (genreFavoriteError) {
+              <p class="genre-favorite-error" role="alert">{{ genreFavoriteError }}</p>
+            }
+          </fieldset>
+
+          <div class="filter-divider" aria-hidden="true"></div>
+
+          <label class="filter-option filter-option--checkbox rare-option">
+            <input type="checkbox" name="rare" [(ngModel)]="rareOnly" (ngModelChange)="applyFilters()">
+            <span class="filter-control checkbox-control" aria-hidden="true"></span>
+            <span>Uniquement les livres rares</span>
+          </label>
+
+          @if (query || genre || rareOnly || includeExhausted || availability !== defaultAvailability() || sort !== 'relevance') {
+            <button type="button" class="reset-filters" (click)="clearFilters(mobileFiltersTrigger)">Réinitialiser les filtres</button>
           }
-          <button type="button" class="all-genres-link" (click)="openGenreDialog()">
-            Parcourir tous les genres
-            <span aria-hidden="true">→</span>
-          </button>
-          @if (genreFavoriteMessage) {
-            <p class="genre-favorite-message" role="status">{{ genreFavoriteMessage }}</p>
-          }
-          @if (genreFavoriteError) {
-            <p class="genre-favorite-error" role="alert">{{ genreFavoriteError }}</p>
-          }
-        </fieldset>
 
-        <div class="filter-divider" aria-hidden="true"></div>
-
-        <label class="filter-option filter-option--checkbox rare-option">
-          <input type="checkbox" name="rare" [(ngModel)]="rareOnly" (ngModelChange)="applyFilters()">
-          <span class="filter-control checkbox-control" aria-hidden="true"></span>
-          <span>Uniquement les livres rares</span>
-        </label>
-
-        @if (query || genre || rareOnly || includeExhausted || availability !== defaultAvailability() || sort !== 'relevance') {
-          <button type="button" class="reset-filters" (click)="clearFilters()">Réinitialiser les filtres</button>
-        }
-
-        <div class="filter-note">
-          <span aria-hidden="true">i</span>
-          <p>Les disponibilités sont indicatives : elles peuvent évoluer entre deux mises à jour.</p>
+          <div class="filter-note">
+            <span aria-hidden="true">i</span>
+            <p>Les disponibilités sont indicatives : elles peuvent évoluer entre deux mises à jour.</p>
+          </div>
         </div>
       </aside>
 
