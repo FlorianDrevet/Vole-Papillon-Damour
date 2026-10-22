@@ -363,6 +363,21 @@ filled navy treatment when connected, while anonymous visitors keep an outlined 
 with a person icon. The Catalog account component owns the tab state locally and continues
 to use the existing bearer-protected member API and endpoint lifecycle.
 
+As of 2026-10-22, `/compte` shows the shared animated papillon loader and a responsive
+skeleton for the heading, tabs, and three watchlist rows while MSAL initializes or resumes
+a recognized session. The loading shell has a screen-reader title and busy/status labels;
+its shimmer stops for reduced-motion preferences. `Livres recherchés` is first and selected
+by default. An empty `Mes achats` history keeps the `Pour prolonger vos lectures` band and
+does not render a second empty-purchase card. The account and purchase component specs pass
+41/41 and the Catalog production build succeeds with existing bundle, admin-style, and
+CommonJS warnings. The full Catalog run is 544/549; its five failures are outside the
+changed files: one book-detail follow-copy assertion, two AccountCard recovery-code spacing
+assertions, one search spacing assertion, and one admin overview-call expectation. The
+signed-out local `/compte` page had no horizontal overflow at
+390×844 or 1440×900; the authenticated reconnect panel could not be visually checked without
+a local Entra session. `graphify update .` extracted 1,784 files but could not render the
+8,545-node graph within the HTML visualization limit. No deployment was made.
+
 As of 2026-09-12, Catalog watchlist follow requests preserve the bibliographic title,
 authors, publisher, publication year and external cover URL returned by search and book
 detail. The API stores that snapshot on `WatchlistItem` and returns it alongside the live

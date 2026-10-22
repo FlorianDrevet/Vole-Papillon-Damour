@@ -67,7 +67,8 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlistRecoveryAction = signal<WatchlistRecoveryAction>(null);
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
-  readonly activeTab = signal<CatalogAccountTab>('selection');
+  readonly activeTab = signal<CatalogAccountTab>('watchlist');
+  readonly loadingSkeletonItems = [0, 1, 2] as const;
   readonly contributionSlots = ['morning', 'afternoon', 'evening'] as const;
   readonly contributionDays = [
     {label: 'Lun', value: 1},

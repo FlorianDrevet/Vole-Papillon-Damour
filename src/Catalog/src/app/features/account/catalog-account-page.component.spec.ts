@@ -19,6 +19,7 @@ import {AccountPurchasesComponent} from './purchases/account-purchases.component
 import {RecommendationsBandComponent} from './recommendations-band/recommendations-band.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
+import {VpdLoaderComponent} from '@vpd/ui';
 
 describe('CatalogAccountPageComponent', () => {
   let fixture: ComponentFixture<CatalogAccountPageComponent>;
@@ -220,6 +221,7 @@ describe('CatalogAccountPageComponent', () => {
         AccountCardComponent,
         AccountPurchasesComponent,
         RecommendationsBandComponent,
+        VpdLoaderComponent,
       ],
       imports: [RouterModule.forRoot([])],
       providers: [
@@ -278,6 +280,17 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.componentInstance.activeTab()).toBe('card');
   });
 
+  it('opens Livres recherchés first when a member enters their account', async () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const firstTab = fixture.nativeElement.querySelector('[role="tab"]') as HTMLButtonElement;
+    expect(firstTab.id).toBe('account-watchlist-tab');
+    expect(firstTab.getAttribute('aria-selected')).toBe('true');
+  });
+
   it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
@@ -333,6 +346,9 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(auth.resumeRecognizedSession).toHaveBeenCalledWith('/compte');
     expect(fixture.nativeElement.textContent).toContain('Reconnexion à votre espace');
+    expect(fixture.nativeElement.querySelector('#account-title')?.textContent?.trim()).toBe('Mon compte');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-resume-loader"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-resume-skeleton"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Session à renouveler');
     expect(api.getWatchlist).not.toHaveBeenCalled();
   });
@@ -426,7 +442,7 @@ describe('CatalogAccountPageComponent', () => {
       .toBe('Camille Dupont');
   });
 
-  it('makes Ma sélection the default tab and keeps the other spaces in the specified order', async () => {
+  it('opens Livres recherchés by default and keeps the other spaces in order', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
@@ -436,9 +452,9 @@ describe('CatalogAccountPageComponent', () => {
     const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
 
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
+      'Livres recherchés',
       'Ma sélection',
       'Mes achats',
-      'Livres recherchés',
       'Ma carte',
       'Compte et données',
     ]);
@@ -446,9 +462,9 @@ describe('CatalogAccountPageComponent', () => {
     expect(tabs[1]?.disabled).toBeFalse();
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
     expect(tabs[3]?.disabled).toBeFalse();
-    expect(fixture.nativeElement.querySelector('.account-heading-title')?.textContent?.trim()).toBe('Ma sélection.');
-    expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.account-heading-title')?.textContent?.trim()).toBe('Mes livres recherchés.');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).toBeNull();
 
     tabs[4]?.click();
     fixture.detectChanges();
@@ -467,6 +483,8 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('#account-selection-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Ma sélection n’a pas pu être synchronisée');
@@ -488,9 +506,9 @@ describe('CatalogAccountPageComponent', () => {
 
     const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
+      'Livres recherchés',
       'Ma sélection',
       'Mes achats',
-      'Livres recherchés',
       'Ma carte',
       'Compte et données',
       'Ma contribution',

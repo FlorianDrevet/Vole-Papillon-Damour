@@ -1,8 +1,44 @@
 <section class="account-page page-width" aria-labelledby="account-title">
-  @if (!initialized()) {
-    <div class="account-state" role="status">Préparation de votre espace…</div>
-  } @else if (resumingSession()) {
-    <div class="account-state" role="status">Reconnexion à votre espace…</div>
+  @if (!initialized() || resumingSession()) {
+    <div class="account-loading" aria-busy="true">
+      <h1 id="account-title" class="account-loading-title-sr">Mon compte</h1>
+      <div class="account-loading-status">
+        <vpd-loader
+          data-testid="account-resume-loader"
+          variant="compact"
+          logoSrc="images/papillon_without_back.png"
+          [label]="resumingSession() ? 'Reconnexion à votre espace…' : 'Préparation de votre espace…'"
+          detail="Nous retrouvons vos livres et vos achats"></vpd-loader>
+      </div>
+
+      <div class="account-loading-skeleton" data-testid="account-resume-skeleton" aria-hidden="true">
+        <div class="account-loading-heading">
+          <span class="account-loading-line account-loading-eyebrow"></span>
+          <span class="account-loading-line account-loading-title"></span>
+          <span class="account-loading-line account-loading-lead"></span>
+        </div>
+
+        <div class="account-loading-tabs">
+          <span class="account-loading-line account-loading-tab is-active"></span>
+          <span class="account-loading-line account-loading-tab"></span>
+          <span class="account-loading-line account-loading-tab"></span>
+          <span class="account-loading-line account-loading-tab"></span>
+        </div>
+
+        <div class="account-loading-items">
+          @for (item of loadingSkeletonItems; track item) {
+            <div class="account-loading-item">
+              <span class="account-loading-line account-loading-cover"></span>
+              <div class="account-loading-copy">
+                <span class="account-loading-line account-loading-copy-title"></span>
+                <span class="account-loading-line account-loading-copy-author"></span>
+                <span class="account-loading-line account-loading-copy-meta"></span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
   } @else if (authError()) {
     <div class="account-state" role="alert">
       <p class="eyebrow">Connexion indisponible</p>
@@ -133,6 +169,17 @@
       <button
         type="button"
         role="tab"
+        id="account-watchlist-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'watchlist'"
+        [attr.aria-selected]="activeTab() === 'watchlist'"
+        aria-controls="account-watchlist-panel"
+        (click)="selectTab('watchlist')">
+        Livres recherchés
+      </button>
+      <button
+        type="button"
+        role="tab"
         id="account-selection-tab"
         class="account-tab"
         [class.active]="activeTab() === 'selection'"
@@ -151,17 +198,6 @@
         aria-controls="account-purchases-panel"
         (click)="selectTab('purchases')">
         Mes achats
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="account-watchlist-tab"
-        class="account-tab"
-        [class.active]="activeTab() === 'watchlist'"
-        [attr.aria-selected]="activeTab() === 'watchlist'"
-        aria-controls="account-watchlist-panel"
-        (click)="selectTab('watchlist')">
-        Livres recherchés
       </button>
       <button
         type="button"
