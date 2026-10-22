@@ -113,4 +113,17 @@ describe('CatalogAdminFacadeService', () => {
       null,
     );
   });
+
+  it('posts a password reset without a request body and returns the temporary password', async () => {
+    axiosService.request$.and.resolveTo({temporaryPassword: 'TempPass9!'});
+
+    const result = await service.resetAccountPassword('entra/identifier');
+
+    expect(axiosService.request$).toHaveBeenCalledOnceWith(
+      MethodEnum.POST,
+      '/accounts/admin/entra%2Fidentifier/password-reset',
+      undefined,
+    );
+    expect(result).toEqual({temporaryPassword: 'TempPass9!'});
+  });
 });

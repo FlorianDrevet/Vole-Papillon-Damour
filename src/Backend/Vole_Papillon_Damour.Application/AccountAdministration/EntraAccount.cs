@@ -6,4 +6,5 @@ public sealed record EntraAccount(
     string? DisplayName,
     bool AccountEnabled,
     DateTime? CreatedAt,
-    IReadOnlyCollection<string> Roles);
+    IReadOnlyCollection<string> Roles,
+    bool IsLocalEmailPassword = false);

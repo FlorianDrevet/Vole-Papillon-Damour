@@ -9,6 +9,7 @@ import {
   AdminAccountFilters,
   AdminAccountPage,
   AdminAccountRole,
+  AdminPasswordResetResponse,
   CreateAdminAccountRequest,
   AdminBook,
   AdminBookFilters,
@@ -50,6 +51,14 @@ export class CatalogAdminFacadeService {
       `/accounts/admin/${encodeURIComponent(externalId)}/roles`,
       {roles},
     );
+  }
+
+  resetAccountPassword(externalId: string): Promise<AdminPasswordResetResponse> {
+    return this.axiosService.request$(
+      MethodEnum.POST,
+      `/accounts/admin/${encodeURIComponent(externalId)}/password-reset`,
+      undefined,
+    ) as Promise<AdminPasswordResetResponse>;
   }
 
   getBooks(filters: AdminBookFilters = {}): Promise<AdminBookPage> {

@@ -7,6 +7,11 @@ public static class AccountRoles
     public const string Administration = "Administration";
     public const string LivresRares = "LivresRares";
 
+    public static bool IsVolunteerRole(string? role) =>
+        string.Equals(role, Tri, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(role, Caisse, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(role, LivresRares, StringComparison.OrdinalIgnoreCase);
+
     public static IReadOnlyList<string> Normalize(IEnumerable<string>? roles)
     {
         var normalized = new List<string>();

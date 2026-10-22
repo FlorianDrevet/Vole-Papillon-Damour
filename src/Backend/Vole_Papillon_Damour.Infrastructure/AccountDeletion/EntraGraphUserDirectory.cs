@@ -13,7 +13,10 @@ namespace Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 
 public sealed class EntraGraphUserDirectory(
     HttpClient httpClient,
-    IOptions<EntraGraphOptions> options) : IEntraUserDirectory, IEntraAccountDirectory
+    IOptions<EntraGraphOptions> options) :
+    IEntraUserDirectory,
+    IEntraAccountDirectory,
+    IEntraAccountPasswordResetDirectory
 {
     private const string GraphRoot = "https://graph.microsoft.com/v1.0/";
     private static readonly Uri GraphUsersUri = new($"{GraphRoot}users/");
@@ -177,6 +180,45 @@ public sealed class EntraGraphUserDirectory(
         var roles = await GetAccountRolesAsync(user.Id, accessToken, cancellationToken);
         return ToAccount(user with {AccountEnabled = accountEnabled}, roles);
     }
+
+    public async Task ResetPasswordAsync(
+        string externalId,
+        string temporaryPassword,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(temporaryPassword);
+        externalId = externalId.Trim();
+        EnsureAccountManagementConfigured();
+        var accessToken = await GetAccessTokenAsync(cancellationToken, accountManagement: true);
+        var user = await SendJsonAsync<GraphUser>(
+            HttpMethod.Get,
+            new Uri($"{GraphRoot}users/{Uri.EscapeDataString(externalId)}?$select=id,identities"),
+            accessToken,
+            payload: null,
+            cancellationToken);
+
+        if (!IsLocalEmailPasswordIdentity(user.Identities))
+        {
+            throw PasswordResetNotAllowed();
+        }
+
+        var roles = await GetAccountRolesAsync(user.Id, accessToken, cancellationToken);
+        if (!roles.Any(AccountRoles.IsVolunteerRole))
+        {
+            throw PasswordResetNotAllowed();
+        }
+
+        await SendAsync(
+            HttpMethod.Patch,
+            new Uri($"{GraphRoot}users/{Uri.EscapeDataString(user.Id)}"),
+            accessToken,
+            new GraphUpdatePasswordRequest(new GraphPasswordProfile(temporaryPassword, true)),
+            cancellationToken);
+    }
+
+    private static EntraAccountDirectoryException PasswordResetNotAllowed() =>
+        new(EntraAccountDirectoryException.PasswordResetNotAllowed, (int)HttpStatusCode.Conflict);
 
     private async Task<EntraAccount> ApplyRolesAsync(
         GraphUser user,
@@ -474,14 +516,26 @@ public sealed class EntraGraphUserDirectory(
             .ToDictionary(role => Guid.Parse(role.Id), role => AccountRoles.Normalize([role.Value!])[0]);
     }
 
-    private static EntraAccount ToAccount(GraphUser user, IReadOnlyCollection<string> roles)
+    private EntraAccount ToAccount(GraphUser user, IReadOnlyCollection<string> roles)
     {
         var email = user.Mail
             ?? user.Identities?.FirstOrDefault(identity =>
                 string.Equals(identity.SignInType, "emailAddress", StringComparison.OrdinalIgnoreCase))?.IssuerAssignedId
             ?? user.UserPrincipalName;
-        return new EntraAccount(user.Id, email, user.DisplayName, user.AccountEnabled, user.CreatedDateTime, roles);
+        return new EntraAccount(
+            user.Id,
+            email,
+            user.DisplayName,
+            user.AccountEnabled,
+            user.CreatedDateTime,
+            roles,
+            IsLocalEmailPasswordIdentity(user.Identities));
     }
+
+    private bool IsLocalEmailPasswordIdentity(IReadOnlyCollection<GraphIdentity>? identities) =>
+        identities?.Any(identity =>
+            string.Equals(identity.SignInType, "emailAddress", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(identity.Issuer, _options.TenantDomain, StringComparison.OrdinalIgnoreCase)) == true;
 
     private sealed record AccessTokenResponse(
         [property: JsonPropertyName("access_token")] string? AccessToken);
@@ -534,6 +588,9 @@ public sealed class EntraGraphUserDirectory(
 
     private sealed record GraphUpdateAccountEnabledRequest(
         [property: JsonPropertyName("accountEnabled")] bool AccountEnabled);
+
+    private sealed record GraphUpdatePasswordRequest(
+        [property: JsonPropertyName("passwordProfile")] GraphPasswordProfile PasswordProfile);
 
     private sealed record GraphPasswordProfile(
         [property: JsonPropertyName("password")] string Password,
