@@ -73,16 +73,10 @@ public sealed class GetSimilarBooksQueryHandler(
             return Array.Empty<SimilarBookResult>();
         }
 
-        var books = await dbContext.Books
-            .AsNoTracking()
-            .Where(book =>
-                candidateIsbns.Contains(book.Id) &&
-                !book.IsHiddenFromCatalog &&
-                book.RedirectedToIsbn13 == null &&
-                (book.MetadataStatus == BookMetadataStatus.Resolved ||
-                 book.MetadataStatus == BookMetadataStatus.Manual) &&
-                book.Title != null &&
-                book.Title.Trim() != string.Empty)
+        var books = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
+                dbContext.Books.AsNoTracking(),
+                dbContext)
+            .Where(book => candidateIsbns.Contains(book.Id))
             .ToListAsync(cancellationToken);
         var announcements = await dbContext.BookAnnouncements
             .AsNoTracking()

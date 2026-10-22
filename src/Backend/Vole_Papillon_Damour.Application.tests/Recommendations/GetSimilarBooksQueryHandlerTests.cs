@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Recommendations.Queries.GetSimilarBooks;
 using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Recommendations;
 
@@ -13,6 +14,7 @@ public sealed class GetSimilarBooksQueryHandlerTests
     private const string SourceIsbn = "9782070408504";
     private const string FirstNeighborIsbn = "9782070363735";
     private const string SecondNeighborIsbn = "9782253006329";
+    private const string NeighborWithoutSessionIsbn = "9782266233200";
     private static readonly DateTime Now = PublicCatalogQueryHandlerTests.Now;
     private static readonly Guid CurrentGeneration = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
@@ -54,6 +56,63 @@ public sealed class GetSimilarBooksQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Should().ContainSingle().Which.Book.Isbn13.Should().Be(SecondNeighborIsbn);
         result.Value[0].Book.QuantityAnnounced.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Handle_HidesNeighborInProgressScanSessionUntilItIsCompleted()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook(SourceIsbn, "Livre source", "Auteur");
+        var activeNeighbor = fixture.AddBook(
+            FirstNeighborIsbn,
+            "Voisin en cours de scan",
+            "Auteur",
+            quantityAvailable: 1);
+        var activeSession = fixture.AddSessionMovement(
+            activeNeighbor,
+            Guid.Parse("00000000-0000-0000-0000-000000000020"),
+            Guid.Parse("00000000-0000-0000-0000-000000000021"));
+
+        var completedNeighbor = fixture.AddBook(
+            SecondNeighborIsbn,
+            "Voisin de session terminée",
+            "Auteur",
+            quantityAvailable: 1);
+        var completedSession = fixture.AddSessionMovement(
+            completedNeighbor,
+            Guid.Parse("00000000-0000-0000-0000-000000000022"),
+            Guid.Parse("00000000-0000-0000-0000-000000000023"));
+        completedSession.Close(ScanCloseReason.Manual, Now.AddMinutes(-1)).Should().BeTrue();
+
+        fixture.AddBook(
+            NeighborWithoutSessionIsbn,
+            "Voisin sans session",
+            "Auteur",
+            quantityAvailable: 1);
+        await fixture.SetCurrentGenerationAsync(CurrentGeneration, 4);
+        fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 1, FirstNeighborIsbn, 0.9f, NeighborReason.Theme);
+        fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 2, SecondNeighborIsbn, 0.8f, NeighborReason.Theme);
+        fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 3, NeighborWithoutSessionIsbn, 0.7f, NeighborReason.Theme);
+        await fixture.SaveAsync();
+
+        var result = await CreateHandler(fixture)
+            .Handle(new GetSimilarBooksQuery(SourceIsbn), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Select(item => item.Book.Isbn13)
+            .Should()
+            .Equal(SecondNeighborIsbn, NeighborWithoutSessionIsbn);
+
+        activeSession.Close(ScanCloseReason.Manual, Now).Should().BeTrue();
+        await fixture.SaveAsync();
+
+        var resultAfterCompletion = await CreateHandler(fixture)
+            .Handle(new GetSimilarBooksQuery(SourceIsbn), CancellationToken.None);
+
+        resultAfterCompletion.IsError.Should().BeFalse();
+        resultAfterCompletion.Value.Select(item => item.Book.Isbn13)
+            .Should()
+            .Equal(FirstNeighborIsbn, SecondNeighborIsbn, NeighborWithoutSessionIsbn);
     }
 
     [Fact]

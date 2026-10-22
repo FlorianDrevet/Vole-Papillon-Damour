@@ -25,9 +25,9 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
-        var books = await dbContext.Books
-            .AsNoTracking()
-            .Where(PublicCatalogBookVisibility.Predicate)
+        var books = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
+                dbContext.Books.AsNoTracking(),
+                dbContext)
             .OrderBy(book => book.Id)
             .ToListAsync(cancellationToken);
 
