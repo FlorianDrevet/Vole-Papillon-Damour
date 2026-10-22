@@ -26,6 +26,18 @@
 | **Catalogue admin — pagination et recherche ISBN** | PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ouverte sur `fix/catalog-admin-list-lookup`; cinq fiches par page et résultat ISBN désormais visible. Aucun déploiement. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
+### Administration bénévoles — réinitialisation du mot de passe — 2026-10-22
+
+La [PR #316](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/316) ajoute
+une action de reset dans `/administration`, pour les comptes locaux ayant un rôle bénévole.
+La branche est poussée et la PR reste ouverte, non fusionnée. Aucun appel Entra réel ni
+déploiement n’a été fait. Avant l’usage dans le tenant, consentir `User-PasswordProfile.ReadWrite.All`
+et attribuer manuellement le rôle d’annuaire `User Administrator` au principal de service.
+Les tests ciblés Application (15), Infrastructure (8), Pester (4), BackOffice (14) et les
+builds API/BackOffice passent. La vérification visuelle authentifiée reste à faire; le navigateur
+de test a été redirigé vers la connexion Entra. Graphify a extrait 2 015 fichiers puis a stagné,
+sans fichier généré suivi.
+
 ### Administration Catalog — pagination et recherche ISBN — 2026-10-20
 
 La PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) réduit à cinq le nombre de fiches ordinaires chargées par page dans `/administration/catalogue` ; la pagination API existante est conservée. La recherche ISBN interroge le référentiel externe BnF/Open Library. Le résultat exact est maintenant transmis à la liste qui héberge le formulaire de vérification et d’ajout, ce qui rend la fiche proposée visible. L’en-tête « Le fonds de livres / Toutes les fiches » reprend l’espacement déjà utilisé ailleurs dans l’administration.
