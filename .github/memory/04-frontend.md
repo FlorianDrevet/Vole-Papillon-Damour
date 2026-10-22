@@ -801,6 +801,10 @@ Responsive visual review covered 320×568, 390×844, and 1440×900 with no horiz
 
 In the public Catalog search grid, each card places « Suivre » beside its availability indicator with no extra footer strip. The click writes the book or its editions to the existing member watchlist, which the member interface calls « Livres suivis » to distinguish it from a new catalogue search. The touch target remains at least 44 px, keyboard focus stays visible, the followed state is compact, and list view styling is unchanged. The scoped styles live in `src/Catalog/src/app/features/search/catalog-search-page.component.scss`. The change is in open PR #298.
 
+## Catalog search grid density (2026-10-22)
+
+src/Catalog/src/app/features/search/catalog-search-page.component.* offers 3, 4, or 5 cards per row in the normal grid view. The default is 4 at viewport widths of at least 980 px; below that, the existing 3-column layout and 2-column mobile layout remain, and the control is hidden. A non-default selection is carried by the columns query parameter and does not reload catalog results. List and rare-book views are unchanged. Validation after rebasing on origin/main: the focused component suite passes 55/55 and the Catalog build succeeds. Responsive review covered 1024, 980, 979, and 700 px; the local API was unavailable for populated-card review.
+
 ## Catalog remote cover optimization — 2026-10-20
 
 `src/Catalog/src/app/shared/catalog-cover-url.ts` sends production covers from the exact

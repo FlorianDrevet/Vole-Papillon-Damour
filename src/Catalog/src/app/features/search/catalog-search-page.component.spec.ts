@@ -183,18 +183,99 @@ describe('CatalogSearchPageComponent', () => {
     const viewGroup = fixture.nativeElement.querySelector(
       '[role="group"][aria-label="Affichage des livres"]',
     ) as HTMLElement;
+    const columnsGroup = fixture.nativeElement.querySelector(
+      '[role="group"][aria-label="Nombre de cartes par rangée"]',
+    ) as HTMLElement;
     const listButton = viewGroup?.querySelector('[data-view="list"]') as HTMLButtonElement;
     const gridButton = viewGroup?.querySelector('[data-view="grid"]') as HTMLButtonElement;
+    const columnButtons = Array.from(
+      columnsGroup?.querySelectorAll<HTMLButtonElement>('[data-columns]') ?? [],
+    );
 
     expect(viewGroup).not.toBeNull();
     expect(listButton.getAttribute('aria-pressed')).toBe('false');
     expect(gridButton.getAttribute('aria-pressed')).toBe('true');
-    expect(fixture.nativeElement.querySelector('.book-list.book-grid')).not.toBeNull();
+    expect(columnsGroup).not.toBeNull();
+    expect(columnButtons.map(button => button.dataset['columns'])).toEqual(['3', '4', '5']);
+    expect(columnButtons.map(button => button.getAttribute('aria-label'))).toEqual([
+      '3 cartes par rangée',
+      '4 cartes par rangée',
+      '5 cartes par rangée',
+    ]);
+    expect(columnsGroup.querySelector('[data-columns="4"]')?.getAttribute('aria-pressed')).toBe('true');
+    const grid = fixture.nativeElement.querySelector('.book-list.book-grid') as HTMLElement;
+    expect(grid).not.toBeNull();
+    expect(grid.style.getPropertyValue('--catalog-grid-columns')).toBe('4');
     expect(fixture.nativeElement.querySelector('.book-card--square')).not.toBeNull();
   });
 
+  it('changes grid columns while preserving the search URL and avoiding a catalogue reload', async () => {
+    routeParams.next(convertToParamMap({
+      q: 'saint-exupéry',
+      genre: 'Jeunesse',
+      availability: 'all',
+      includeExhausted: 'true',
+      sort: 'recent',
+      page: '2',
+      referencePage: '2',
+      columns: '3',
+    }));
+    api.search.and.returnValue(of({...response, page: 2}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+    const searchCount = api.search.calls.count();
+    expect(fixture.nativeElement.querySelector('[data-columns="3"]')?.getAttribute('aria-pressed')).toBe('true');
+    const button = fixture.nativeElement.querySelector('[data-columns="5"]') as HTMLButtonElement;
+
+    button.click();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledOnceWith(['/recherche'], {
+      queryParams: jasmine.objectContaining({
+        q: 'saint-exupéry',
+        genre: 'Jeunesse',
+        availability: 'all',
+        includeExhausted: true,
+        sort: 'recent',
+        page: 2,
+        referencePage: 2,
+        columns: 5,
+      }),
+    });
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    const grid = fixture.nativeElement.querySelector('.book-list.book-grid') as HTMLElement;
+    expect(grid.style.getPropertyValue('--catalog-grid-columns')).toBe('5');
+    expect(api.search).toHaveBeenCalledTimes(searchCount);
+  });
+
+  it('restores the selected grid columns from the URL', async () => {
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', columns: '5'}));
+    api.search.and.returnValue(of(response));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-columns="5"]')?.getAttribute('aria-pressed')).toBe('true');
+    const grid = fixture.nativeElement.querySelector('.book-list.book-grid') as HTMLElement;
+    expect(grid.style.getPropertyValue('--catalog-grid-columns')).toBe('5');
+  });
+
+  it('falls back to four grid columns when the URL value is invalid', () => {
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', columns: '6'}));
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-columns="4"]')?.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('switches to list cards while preserving the search URL and avoiding a catalogue reload', async () => {
-    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2'}));
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2', columns: '5'}));
     api.search.and.returnValue(of({...response, page: 2}));
 
     fixture.detectChanges();
@@ -213,16 +294,18 @@ describe('CatalogSearchPageComponent', () => {
         q: 'saint-exupéry',
         genre: 'Jeunesse',
         page: 2,
+        columns: 5,
         view: 'list',
       }),
     });
     expect(fixture.componentInstance.view).toBe('list');
     expect(fixture.componentInstance.response?.books).toHaveSize(1);
+    expect(fixture.nativeElement.querySelector('[data-columns]')).toBeNull();
     expect(fixture.nativeElement.querySelector('.book-list.book-grid')).toBeNull();
     expect(fixture.nativeElement.querySelector('.book-card--square')).toBeNull();
     expect(fixture.nativeElement.querySelector('.book-list')).not.toBeNull();
 
-    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2', view: 'list'}));
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2', columns: '5', view: 'list'}));
     fixture.detectChanges();
 
     expect(fixture.componentInstance.view).toBe('list');
@@ -380,6 +463,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.rare-book-card')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.book-card')).toBeNull();
     expect(fixture.nativeElement.querySelector('.view-switch')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Nombre de cartes par rangée"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Atlas des jardins');
   });
 
