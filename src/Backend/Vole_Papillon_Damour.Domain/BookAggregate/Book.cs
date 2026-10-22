@@ -598,20 +598,39 @@ public sealed class Book : AggregateRoot<Isbn13>
 
     private bool ReplaceGenres(IEnumerable<string> genreNames)
     {
-        var normalized = genreNames
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => string.Join(' ', name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)))
-            .Where(name => name.Length <= 100)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+        var normalized = new List<string>();
+        foreach (var name in genreNames)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            var normalizedName = string.Join(' ', name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            if (normalizedName.Length <= 100 &&
+                !normalized.Any(existing => BookGenre.NamesAreEquivalent(existing, normalizedName)))
+            {
+                normalized.Add(normalizedName);
+            }
+        }
+
+        var removedGenres = _genres
+            .Where(existing => !normalized.Any(name => BookGenre.NamesAreEquivalent(existing.Name, name)))
             .ToArray();
-        var existing = _genres.Select(genre => genre.Name).ToArray();
-        if (existing.SequenceEqual(normalized, StringComparer.OrdinalIgnoreCase))
+        var addedNames = normalized
+            .Where(name => !_genres.Any(existing => BookGenre.NamesAreEquivalent(existing.Name, name)))
+            .ToArray();
+        if (removedGenres.Length == 0 && addedNames.Length == 0)
         {
             return false;
         }
 
-        _genres.Clear();
-        _genres.AddRange(normalized.Select(name => BookGenre.Create(Id, name)));
+        foreach (var removedGenre in removedGenres)
+        {
+            _genres.Remove(removedGenre);
+        }
+
+        _genres.AddRange(addedNames.Select(name => BookGenre.Create(Id, name)));
         return true;
     }
 

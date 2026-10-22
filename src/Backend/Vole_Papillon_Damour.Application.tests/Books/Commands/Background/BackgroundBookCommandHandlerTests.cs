@@ -602,6 +602,66 @@ public sealed class BackgroundBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task EnrichPending_WhenProviderReturnsGenreNamesEquivalentUnderDatabaseCollation_DeduplicatesThem()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Prédestination",
+                null,
+                [BookMetadataField.Title, BookMetadataField.Genre],
+                Genres: ["Prédestination"]),
+            BookMetadataSource.Bnf,
+            WorkerNow.AddDays(-31),
+            rawPayload: null);
+        fixture.Context.Entry(book)
+            .Property(nameof(Book.GenresRefreshedAt))
+            .CurrentValue = null;
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                book.Isbn13.Value,
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(WorkerNow),
+                Genre: "Predestination",
+                Genres: ["Predestination", "Prédestination", "Fiction"]));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(RefreshAllGenres: true),
+            CancellationToken.None);
+
+        result.ProcessedCount.Should().Be(1);
+        var persisted = await fixture.Context.Books.SingleAsync();
+        persisted.Genres.Select(genre => genre.Name)
+            .Should().BeEquivalentTo("Prédestination", "Fiction");
+        (await fixture.Context.Set<BookGenre>()
+            .AsNoTracking()
+            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Select(genre => genre.Name)
+            .ToArrayAsync())
+            .Should().BeEquivalentTo("Prédestination", "Fiction");
+    }
+
+    [Fact]
     public async Task EnrichPending_WhenGenreRefreshFails_PreservesResolvedBookAndCooldown()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
