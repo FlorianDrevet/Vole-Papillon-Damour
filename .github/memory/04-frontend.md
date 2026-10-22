@@ -804,3 +804,13 @@ new variants fail without overage billing, so the source fallback is part of the
 loads scan sessions from the typed admin API page. The default view is `Toutes`; the
 `En cours` preset and sidebar badge use the API status `InProgress`. The rendered status
 label is `En cours`, and the specialized correction/alert filters follow those two presets.
+
+## Catalog administration navigation badges (2026-10-22)
+
+The admin sidebar count badges for `catalogue`, `isbn-queue`, and `rare-books` are
+prefetched during the initial `/administration` load by requesting one API page row and
+reading `totalCount`. `navigationBadgeCounts` supplies the badges until each workspace
+loads its full page; the rare-book count uses `status: Published`. Administrators load all
+three counts, while the rare-book manager role loads only its permitted rare-book count.
+The mobile workspace selector uses the same formatted counts. A failed count request is
+non-blocking and opening that workspace still performs its normal data request.

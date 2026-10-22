@@ -50,6 +50,12 @@ La PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ré
 
 Validation : `npm ci`, build Catalog et `git diff --check` réussis. Les avertissements de budget Angular et CommonJS préexistants restent présents. Aucun test automatisé n’a été lancé ; les règles responsive ont été relues, mais le contrôle visuel authentifié avec des données réelles reste à faire. Graphify a extrait 1 739 fichiers, sans rendre le rapport HTML au-delà de 8 312 nœuds. Aucun changement API/base, déploiement ou import n’a été effectué. Après merge, déployer Catalog puis vérifier la pagination et une recherche ISBN dans le portail admin connecté.
 
+### Badges de navigation de l'administration — 2026-10-22
+
+La branche `fix/admin-navigation-badges-initial-load` précharge les totaux Catalogue, ISBN en cours d’analyse et Livres rares à l’arrivée sur `/administration`. Chaque requête de compteur ne demande qu’une fiche ; le sélecteur mobile reprend les mêmes valeurs. La PR reste à ouvrir ; aucun déploiement ni changement API/base n’est inclus.
+
+Validation : les 74 tests de `CatalogAdministrationPageComponent` et le build Catalog passent. Le build conserve les avertissements Angular préexistants de budget et CommonJS. Le contrôle visuel authentifié avec données réelles reste à faire. Graphify a extrait 1 784 fichiers ; le rendu échoue sur la limite du graphe à 8 546 nœuds, y compris avec `--no-viz`.
+
 ### Téléversement manuel des couvertures — 2026-10-20
 
 La branche `feat/admin-book-cover-upload` ajoute le remplacement de couverture dans la

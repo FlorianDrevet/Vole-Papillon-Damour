@@ -150,6 +150,9 @@ type CatalogAdminNavIcon =
   | 'accounts'
   | 'settings';
 
+type CatalogAdminNavigationBadgeSection = 'catalogue' | 'isbn-queue' | 'rare-books';
+type CatalogAdminNavigationBadgeCounts = Partial<Record<CatalogAdminNavigationBadgeSection, number>>;
+
 interface CatalogAdminNavItem {
   id: CatalogAdminSection;
   label: string;
@@ -273,6 +276,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
     return this.isRareBookManager() ? RARE_ONLY_NAV_GROUPS : [];
   });
+  readonly navigationBadgeCounts = signal<CatalogAdminNavigationBadgeCounts>({});
 
   get navItems(): CatalogAdminNavItem[] {
     return this.navGroups().flatMap(group => group.items);
@@ -291,11 +295,13 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.openSessionCount() : undefined
       : section === 'catalogue'
-        ? this.catalogueBooksPage()?.totalCount
+        ? this.catalogueBooksPage()?.totalCount ?? this.navigationBadgeCounts().catalogue
         : section === 'isbn-queue'
-          ? this.isbnMetadataQueue()?.totalCount
+          ? this.isbnMetadataQueue()?.totalCount ?? this.navigationBadgeCounts()['isbn-queue']
         : section === 'rare-books'
-          ? this.rareBooksFacade.page() ? this.rareBooksFacade.publishedCount() : undefined
+          ? this.rareBooksFacade.page()
+            ? this.rareBooksFacade.publishedCount()
+            : this.navigationBadgeCounts()['rare-books']
         : undefined;
 
     return totalCount === undefined ? null : this.formatNumber(totalCount);
@@ -510,7 +516,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async initialize(): Promise<void> {
     await this.auth.initialize();
+    let navigationBadgeCountsTask: Promise<void> | undefined;
     if (this.auth.isAuthenticated() && this.hasAdministrationAccess()) {
+      navigationBadgeCountsTask = this.loadNavigationBadgeCounts();
       if (!this.isAdministrator() && this.isRareBookManager()) {
         if (!(['rare-books', 'not-found'] as CatalogAdminSection[]).includes(this.activeSection())) {
           this.activeSection.set('rare-books');
@@ -533,6 +541,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }
     }
     this.administrationInitialized = true;
+    await navigationBadgeCountsTask;
   }
 
   async login(): Promise<void> {
@@ -3047,6 +3056,47 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     } finally {
       this.loading.set(false);
       this.actionPending.set(null);
+    }
+  }
+
+  private async loadNavigationBadgeCounts(): Promise<void> {
+    let token: string;
+    try {
+      token = await this.auth.getApiAccessToken();
+    } catch {
+      return;
+    }
+
+    const requests: Promise<void>[] = [];
+    if (this.isAdministrator()) {
+      requests.push(this.captureNavigationBadgeCount(
+        'catalogue',
+        () => firstValueFrom(this.api.getBooks(token, {page: 1, pageSize: 1})),
+      ));
+      requests.push(this.captureNavigationBadgeCount(
+        'isbn-queue',
+        () => firstValueFrom(this.api.getBookMetadataQueue(token, {page: 1, pageSize: 1})),
+      ));
+    }
+    if (this.hasAdministrationAccess()) {
+      requests.push(this.captureNavigationBadgeCount(
+        'rare-books',
+        () => firstValueFrom(this.api.getRareBooks(token, {status: 'Published', page: 1, pageSize: 1})),
+      ));
+    }
+
+    await Promise.all(requests);
+  }
+
+  private async captureNavigationBadgeCount(
+    section: CatalogAdminNavigationBadgeSection,
+    load: () => Promise<{totalCount: number}>,
+  ): Promise<void> {
+    try {
+      const page = await load();
+      this.navigationBadgeCounts.update(counts => ({...counts, [section]: page.totalCount}));
+    } catch {
+      // The counts are supplemental; opening a workspace still loads its full data.
     }
   }
 
