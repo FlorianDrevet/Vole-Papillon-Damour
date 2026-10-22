@@ -177,11 +177,7 @@
                   <span class="admin-kicker">Administration</span>
                   <h1 id="admin-title" data-testid="admin-title">Tableau de bord.</h1>
                 </div>
-                <div class="period-chips" aria-label="Période du tableau de bord">
-                  <button class="period-chip" [class.active]="overviewPeriod === '30-days'" [attr.aria-pressed]="overviewPeriod === '30-days'" type="button" (click)="setOverviewPeriod('30-days')">30 derniers jours</button>
-                  <button class="period-chip" [class.active]="overviewPeriod === '3-months'" [attr.aria-pressed]="overviewPeriod === '3-months'" type="button" (click)="setOverviewPeriod('3-months')">3 derniers mois</button>
-                  <button class="period-chip" [class.active]="overviewPeriod === 'year'" [attr.aria-pressed]="overviewPeriod === 'year'" type="button" (click)="setOverviewPeriod('year')">Année</button>
-                </div>
+                <span class="inline-flex min-h-9 items-center rounded-full border border-line px-[15px] text-[12.5px] text-slate-2" data-testid="dashboard-period-scope">Tout l’historique</span>
               </div>
 
               @if (loading() && !overview()) {
@@ -203,8 +199,8 @@
                   <article class="stat-card" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.currentPeriod.soldQuantity) }}</strong>
                     <span class="stat-label">Livres vendus</span>
-                    <span class="stat-sub">{{ current.lastFair?.name || 'Sur la période sélectionnée' }}</span>
-                    <span class="stat-foot">Recette saisie : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
+                    <span class="stat-sub">Toutes bourses confondues</span>
+                    <span class="stat-foot">Recette de la dernière bourse : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
                   </article>
                   <article class="stat-card stat-card-dark" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.deadStockCount) }}</strong>

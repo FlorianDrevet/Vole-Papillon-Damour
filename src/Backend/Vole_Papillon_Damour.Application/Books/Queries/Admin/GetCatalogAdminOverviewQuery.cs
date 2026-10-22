@@ -6,4 +6,5 @@ namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
 public sealed record GetCatalogAdminOverviewQuery(
     DateTimeOffset? From = null,
-    DateTimeOffset? To = null) : IRequest<ErrorOr<CatalogAdminOverviewResult>>;
+    DateTimeOffset? To = null,
+    bool AllTime = false) : IRequest<ErrorOr<CatalogAdminOverviewResult>>;

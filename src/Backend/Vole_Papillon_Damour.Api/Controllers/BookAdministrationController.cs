@@ -38,11 +38,12 @@ public static class BookAdministrationController
                     async (
                         DateTimeOffset? from,
                         DateTimeOffset? to,
+                        bool? allTime,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetCatalogAdminOverviewQuery(from, to),
+                            new GetCatalogAdminOverviewQuery(from, to, allTime ?? false),
                             cancellationToken);
                         return result.Match(
                             overview => Results.Ok(ToResponse(overview)),
