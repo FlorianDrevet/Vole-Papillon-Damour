@@ -25,6 +25,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
@@ -115,6 +116,109 @@ public sealed class PublicCatalogQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.TotalCount.Should().Be(1);
         result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070408504");
+    }
+
+    [Fact]
+    public async Task PublicCatalogQueries_HideBooksFromInProgressScanSessionsUntilTheyAreCompleted()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var activeBook = fixture.AddBook(
+            "9782070408504",
+            "Livre en cours de scan",
+            "Auteur",
+            workId: "work-active-session",
+            quantityAvailable: 1);
+        var activeSession = fixture.AddSessionMovement(
+            activeBook,
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            Guid.Parse("00000000-0000-0000-0000-000000000011"));
+
+        var completedBook = fixture.AddBook(
+            "9782070363735",
+            "Livre de session terminée",
+            "Auteur",
+            workId: "work-completed-session");
+        var completedSession = fixture.AddSessionMovement(
+            completedBook,
+            Guid.Parse("00000000-0000-0000-0000-000000000012"),
+            Guid.Parse("00000000-0000-0000-0000-000000000013"));
+        completedSession.Close(ScanCloseReason.Manual, Now.AddMinutes(-1)).Should().BeTrue();
+
+        var unattachedMovementBook = fixture.AddBook(
+            "9782253006329",
+            "Livre sans session",
+            "Auteur",
+            workId: "work-without-session");
+        fixture.AddBookMovement(
+            unattachedMovementBook,
+            scanSessionId: null,
+            Guid.Parse("00000000-0000-0000-0000-000000000014"));
+        await fixture.SaveAsync();
+
+        var searchQuery = new SearchCatalogQuery(
+            null,
+            null,
+            PublicCatalogAvailabilityFilter.All,
+            RareOnly: false,
+            PublicCatalogSortOrder.Relevance,
+            Page: 1,
+            PageSize: 20,
+            IncludeExhausted: true,
+            IncludeTotalCount: true);
+        var search = await fixture.CreateSearchHandler().Handle(searchQuery, CancellationToken.None);
+
+        search.IsError.Should().BeFalse();
+        search.Value.TotalCount.Should().Be(2);
+        search.Value.Books.Select(book => book.Isbn13)
+            .Should()
+            .BeEquivalentTo("9782070363735", "9782253006329");
+
+        var activeBookResult = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery(activeBook.Id.Value),
+            CancellationToken.None);
+        activeBookResult.IsError.Should().BeTrue();
+        activeBookResult.FirstError.Code.Should().Be("Book.NotFound");
+
+        var activeWorkResult = await fixture.CreatePublicWorkHandler().Handle(
+            new GetPublicWorkQuery("work-active-session"),
+            CancellationToken.None);
+        activeWorkResult.IsError.Should().BeTrue();
+        activeWorkResult.FirstError.Code.Should().Be("Catalog.WorkNotFound");
+
+        var sitemap = await fixture.CreateSitemapHandler().Handle(
+            new GetPublicCatalogSitemapQuery(),
+            CancellationToken.None);
+        sitemap.IsError.Should().BeFalse();
+        sitemap.Value.Entries.Should().NotContain(entry => entry.UrlPath.Contains(activeBook.Id.Value));
+        sitemap.Value.Entries.Should().Contain(entry => entry.UrlPath.Contains(completedBook.Id.Value));
+        sitemap.Value.Entries.Should().Contain(entry => entry.UrlPath.Contains(unattachedMovementBook.Id.Value));
+
+        activeSession.Close(ScanCloseReason.Manual, Now).Should().BeTrue();
+        await fixture.SaveAsync();
+
+        var searchAfterCompletion = await fixture.CreateSearchHandler().Handle(searchQuery, CancellationToken.None);
+        searchAfterCompletion.IsError.Should().BeFalse();
+        searchAfterCompletion.Value.TotalCount.Should().Be(3);
+        searchAfterCompletion.Value.Books.Should().Contain(book => book.Isbn13 == activeBook.Id.Value);
+
+        var activeBookAfterCompletion = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery(activeBook.Id.Value),
+            CancellationToken.None);
+        activeBookAfterCompletion.IsError.Should().BeFalse();
+        activeBookAfterCompletion.Value.Isbn13.Should().Be(activeBook.Id.Value);
+
+        var activeWorkAfterCompletion = await fixture.CreatePublicWorkHandler().Handle(
+            new GetPublicWorkQuery("work-active-session"),
+            CancellationToken.None);
+        activeWorkAfterCompletion.IsError.Should().BeFalse();
+        activeWorkAfterCompletion.Value.Editions.Should().ContainSingle()
+            .Which.Isbn13.Should().Be(activeBook.Id.Value);
+
+        var sitemapAfterCompletion = await fixture.CreateSitemapHandler().Handle(
+            new GetPublicCatalogSitemapQuery(),
+            CancellationToken.None);
+        sitemapAfterCompletion.IsError.Should().BeFalse();
+        sitemapAfterCompletion.Value.Entries.Should().Contain(entry => entry.UrlPath.Contains(activeBook.Id.Value));
     }
 
     [Fact]
@@ -967,6 +1071,36 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
         return book;
     }
 
+    public ScanSession AddSessionMovement(Book book, Guid sessionId, Guid movementId)
+    {
+        var session = ScanSession.Create(
+            ScanSessionId.Create(sessionId),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            ScanMode.AvailableNow,
+            targetAssoEventsId: null,
+            now.AddMinutes(-2));
+        Context.ScanSessions.Add(session);
+        AddBookMovement(book, session.Id, movementId);
+        return session;
+    }
+
+    public void AddBookMovement(Book book, ScanSessionId? scanSessionId, Guid movementId)
+    {
+        Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.Create(movementId),
+            book.Id,
+            BookMovementType.DirectEntry,
+            quantity: 1,
+            occurredAt: now.AddMinutes(-1),
+            receivedAt: now.AddMinutes(-1),
+            clockSuspect: false,
+            scanSessionId,
+            volunteerId: null,
+            assoEventsId: null,
+            note: null,
+            clientGestureId: null));
+    }
+
     public void AddAnnouncement(Book book, int quantity, AssoEventsId? assoEventsId = null)
     {
         Context.BookAnnouncements.Add(
@@ -1096,12 +1230,14 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
+    public DbSet<BookMovement> BookMovements => Set<BookMovement>();
+    public DbSet<ScanSession> ScanSessions => Set<ScanSession>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
-    DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
-    DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
+    DbSet<BookMovement> IProjectDbContext.BookMovements => BookMovements;
+    DbSet<ScanSession> IProjectDbContext.ScanSessions => ScanSessions;
     DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
     DbSet<WatchlistItem> IProjectDbContext.WatchlistItems => throw new NotSupportedException();
@@ -1188,11 +1324,57 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
             builder.Property(profile => profile.ProfileText).HasColumnType("TEXT");
         });
 
+        modelBuilder.Entity<BookMovement>(builder =>
+        {
+            builder.ToTable("BookMovements");
+            builder.HasKey(movement => movement.Id);
+            builder.Property(movement => movement.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => BookMovementId.Create(value));
+            builder.Property(movement => movement.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.Property(movement => movement.ScanSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Ignore(movement => movement.Type);
+            builder.Ignore(movement => movement.Quantity);
+            builder.Ignore(movement => movement.OccurredAt);
+            builder.Ignore(movement => movement.ReceivedAt);
+            builder.Ignore(movement => movement.ClockSuspect);
+            builder.Ignore(movement => movement.VolunteerId);
+            builder.Ignore(movement => movement.AssoEventsId);
+            builder.Ignore(movement => movement.Note);
+            builder.Ignore(movement => movement.ClientGestureId);
+            builder.Ignore(movement => movement.ReversalOfMovementId);
+            builder.Ignore(movement => movement.CheckoutPassageId);
+        });
+
+        modelBuilder.Entity<ScanSession>(builder =>
+        {
+            builder.ToTable("ScanSessions");
+            builder.HasKey(session => session.Id);
+            builder.Property(session => session.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => ScanSessionId.Create(value));
+            builder.Property(session => session.Status).HasConversion<byte>();
+            builder.Ignore(session => session.VolunteerId);
+            builder.Ignore(session => session.Mode);
+            builder.Ignore(session => session.TargetAssoEventsId);
+            builder.Ignore(session => session.StartedAt);
+            builder.Ignore(session => session.LastScanAt);
+            builder.Ignore(session => session.LastSyncAt);
+            builder.Ignore(session => session.LateArrivals);
+            builder.Ignore(session => session.EndedAt);
+            builder.Ignore(session => session.CloseReason);
+            builder.Ignore(session => session.ScannedCount);
+            builder.Ignore(session => session.KeptCount);
+            builder.Ignore(session => session.RejectedCount);
+        });
+
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<User>();
         modelBuilder.Ignore<Order>();
-        modelBuilder.Ignore<BookMovement>();
-        modelBuilder.Ignore<ScanSession>();
         modelBuilder.Ignore<AssociationSettings>();
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<WatchlistItem>();

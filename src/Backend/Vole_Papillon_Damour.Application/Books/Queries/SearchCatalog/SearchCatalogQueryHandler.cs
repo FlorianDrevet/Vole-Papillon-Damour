@@ -40,9 +40,9 @@ public sealed class SearchCatalogQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
-        var catalogBooksQuery = dbContext.Books
-            .AsNoTracking()
-            .Where(PublicCatalogBookVisibility.Predicate);
+        var catalogBooksQuery = PublicCatalogBookVisibility.FilterPublicCatalogBooks(
+            dbContext.Books.AsNoTracking(),
+            dbContext);
         var normalizedSearch = Normalize(query.Search);
         var searchTerms = query.Search?
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
