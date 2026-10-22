@@ -412,21 +412,39 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.componentInstance.formatTime('2027-03-14T09:30:00Z')).toBe('9 h 30');
   });
 
-  it('renders only API genres as cards that open a filtered search', () => {
+  it('renders the search-page genres and a card to view more results', () => {
     const element = fixture.nativeElement as HTMLElement;
     const cards = Array.from(
       element.querySelectorAll<HTMLAnchorElement>('.genre-card'),
     );
 
-    expect(cards.length).toBe(4);
-    expect(cards.slice(0, 3).map(card => card.querySelector('strong')?.textContent?.trim()))
-      .toEqual(['Jeunesse', 'Romans', 'Policier']);
-    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Jeunesse');
-    expect(cards[3].classList).toContain('genre-card--all');
-    expect(cards[3].querySelector('strong')?.textContent?.trim()).toBe('Les 3 genres');
+    expect(cards.length).toBe(17);
+    expect(cards.slice(0, -1).map(card => card.querySelector('strong')?.textContent?.trim()))
+      .toEqual([
+        'Roman',
+        'Jeunesse',
+        'Bande dessinée',
+        'Manga',
+        'Policier',
+        'Thriller',
+        'Science-fiction',
+        'Fantasy',
+        'Romance',
+        'Histoire',
+        'Biographie',
+        'Documentaire',
+        'Essai',
+        'Théâtre',
+        'Poésie',
+        'Cuisine',
+      ]);
+    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Roman');
+    expect(cards[16].classList).toContain('genre-card--all');
+    expect(cards[16].querySelector('strong')?.textContent?.trim()).toBe('Voir plus');
+    expect(cards[16].getAttribute('href')).toBe('/recherche');
   });
 
-  it('does not invent genre options or a genre section when the API has no genres', () => {
+  it('keeps the search-page genre list when the API has no genres', () => {
     fixture.componentInstance.genres.set([]);
     fixture.detectChanges();
 
@@ -438,6 +456,6 @@ describe('CatalogHomePageComponent', () => {
     ).map(option => option.dataset['genre'] ?? '');
 
     expect(options).toEqual(['']);
-    expect(element.querySelector('.genres-section')).toBeNull();
+    expect(element.querySelectorAll('.genre-card')).toHaveSize(17);
   });
 });

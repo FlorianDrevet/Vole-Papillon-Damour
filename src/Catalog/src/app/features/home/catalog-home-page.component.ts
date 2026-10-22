@@ -12,7 +12,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
-import {mergeCatalogGenres} from '../../core/catalog-genres';
+import {catalogSearchSidebarGenres, mergeCatalogGenres} from '../../core/catalog-genres';
 import {CatalogBook, CatalogFair, CatalogRareBook, CatalogRareBookPage, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
@@ -61,6 +61,7 @@ export class CatalogHomePageComponent implements OnInit {
   recentHasMore = signal(false);
   rare = signal<CatalogRareBook[]>([]);
   genres = signal<string[]>([]);
+  readonly homeGenres = catalogSearchSidebarGenres();
   nextFair = signal<CatalogFair | null>(null);
   upcomingFairs = signal<CatalogFair[]>([]);
   private readonly mapsEmbedUrls = new Map<string, SafeResourceUrl>();
