@@ -17,13 +17,15 @@ import {CatalogBook, CatalogFair, CatalogRareBook, CatalogRareBookPage, CatalogS
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
+const HOME_BOOK_PAGE_SIZE = 8;
+
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
   books: [],
-  totalCount: 0,
+  totalCount: null,
   hasMore: false,
   page: 1,
-  pageSize: 8,
+  pageSize: HOME_BOOK_PAGE_SIZE,
   genres: [],
 };
 
@@ -59,6 +61,9 @@ export class CatalogHomePageComponent implements OnInit {
   recent = signal<CatalogBook[]>([]);
   recentTotal = signal<number | null>(null);
   recentHasMore = signal(false);
+  catalogTotal = signal<number | null>(null);
+  catalogHasMore = signal(false);
+  catalogCountLoaded = signal(0);
   rare = signal<CatalogRareBook[]>([]);
   genres = signal<string[]>([]);
   readonly homeGenres = catalogSearchSidebarGenres();
@@ -84,7 +89,22 @@ export class CatalogHomePageComponent implements OnInit {
     }
 
     forkJoin({
-      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: true}).pipe(catchError(() => {
+      recent: this.api.search({
+        availability: 'available',
+        sort: 'recent',
+        pageSize: HOME_BOOK_PAGE_SIZE,
+        includeTotalCount: true,
+      }).pipe(catchError(() => {
+        this.hasLoadError.set(true);
+        return of(EMPTY_SEARCH);
+      })),
+      catalog: this.api.search({
+        availability: 'all',
+        includeExhausted: true,
+        sort: 'recent',
+        pageSize: HOME_BOOK_PAGE_SIZE,
+        includeTotalCount: true,
+      }).pipe(catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
@@ -96,10 +116,13 @@ export class CatalogHomePageComponent implements OnInit {
         this.hasLoadError.set(true);
         return of([] as CatalogFair[]);
       })),
-    }).subscribe(({recent, rare, fairs}) => {
+    }).subscribe(({recent, catalog, rare, fairs}) => {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
       this.recentHasMore.set(recent.hasMore);
+      this.catalogTotal.set(catalog.totalCount);
+      this.catalogHasMore.set(catalog.hasMore);
+      this.catalogCountLoaded.set(catalog.books.length);
       this.rare.set(rare.books);
       this.genres.set(recent.genres ?? []);
       this.setFairs(fairs);
@@ -267,6 +290,16 @@ export class CatalogHomePageComponent implements OnInit {
 
   showAll(): void {
     void this.router.navigate(['/catalogue'], {queryParams: {availability: 'available'}});
+  }
+
+  hasReliableRecentCount(): boolean {
+    const total = this.recentTotal();
+    return total !== null && (!this.recentHasMore() || total > this.recent().length);
+  }
+
+  hasReliableCatalogCount(): boolean {
+    const total = this.catalogTotal();
+    return total !== null && (!this.catalogHasMore() || total > this.catalogCountLoaded());
   }
 
   showRare(): void {
