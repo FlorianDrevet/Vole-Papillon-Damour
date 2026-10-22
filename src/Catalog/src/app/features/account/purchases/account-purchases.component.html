@@ -6,12 +6,7 @@
   @if (loading() && !purchases()) {
     <p class="purchases-state" role="status">Chargement de Mes achats…</p>
   } @else if (purchases(); as history) {
-    @if (history.passages.length === 0) {
-      <div class="purchases-empty">
-        <span class="purchases-empty-mark" aria-hidden="true">···</span>
-        <h2>Aucun achat n'est encore associé à ce compte.</h2>
-      </div>
-    } @else {
+    @if (history.passages.length > 0) {
       <div class="purchase-passages">
         @for (passage of history.passages; track passage.id) {
           <article class="purchase-passage" [attr.data-passage-id]="passage.id">

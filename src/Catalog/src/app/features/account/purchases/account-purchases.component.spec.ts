@@ -65,8 +65,9 @@ describe('AccountPurchasesComponent', () => {
       getApiAccessToken: jasmine.createSpy('getApiAccessToken').and.resolveTo('member-token'),
       isAuthenticated: signal(false),
     };
-    api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['getPurchases']);
+    api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['getPurchases', 'getRecommendations']);
     api.getPurchases.and.returnValue(of(response([passage()])));
+    api.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
 
     await TestBed.configureTestingModule({
       declarations: [AccountPurchasesComponent, CatalogCoverDirective, RecommendationsBandComponent],
@@ -162,12 +163,16 @@ describe('AccountPurchasesComponent', () => {
     expect(page.nativeElement.textContent).not.toContain('€');
   });
 
-  it('shows the empty state wording', async () => {
+  it('keeps the recommendation card and omits the second empty purchase card', async () => {
+    auth.isAuthenticated.set(true);
     api.getPurchases.and.returnValue(of(response([])));
     const page = render();
     await settle(page);
 
-    expect(page.nativeElement.textContent).toContain("Aucun achat n'est encore associé à ce compte.");
+    expect(page.nativeElement.querySelector('.recommendations-band-empty')).not.toBeNull();
+    expect(page.nativeElement.textContent).toContain('Pour prolonger vos lectures');
+    expect(page.nativeElement.querySelector('.purchases-empty')).toBeNull();
+    expect(page.nativeElement.textContent).not.toContain("Aucun achat n'est encore associé à ce compte.");
     expect(page.nativeElement.textContent).toContain('Seuls les passages associés à ce compte sont visibles ici.');
   });
 
