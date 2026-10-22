@@ -29,14 +29,16 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
         }
 
         var to = query.To?.UtcDateTime ?? generatedAt;
-        var from = query.From?.UtcDateTime ?? to.AddDays(-30);
+        var from = query.AllTime
+            ? DateTimeOffset.MinValue.UtcDateTime
+            : query.From?.UtcDateTime ?? to.AddDays(-30);
         if (from.Kind != DateTimeKind.Utc || to.Kind != DateTimeKind.Utc || from >= to)
         {
             return Error.Validation("Book.InvalidPeriod", "The period must be expressed in UTC and have a positive duration.");
         }
 
         var duration = to - from;
-        if (duration > TimeSpan.FromDays(366))
+        if (!query.AllTime && duration > TimeSpan.FromDays(366))
         {
             return Error.Validation("Book.InvalidPeriod", "The administration period cannot exceed one year.");
         }
@@ -99,7 +101,16 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 cancellationToken);
 
         var currentPeriod = await BuildPeriodMetricsAsync(from, to, cancellationToken);
-        var previousPeriod = await BuildPeriodMetricsAsync(from - duration, from, cancellationToken);
+        var previousPeriod = query.AllTime
+            ? new AdminPeriodMetricsResult(
+                new DateTimeOffset(from, TimeSpan.Zero),
+                new DateTimeOffset(from, TimeSpan.Zero),
+                0,
+                0,
+                0,
+                0,
+                0)
+            : await BuildPeriodMetricsAsync(from - duration, from, cancellationToken);
         var lastFair = await BuildLastFairSummaryAsync(bookFairs, to, cancellationToken);
 
         var deadStockCutoff = to.AddDays(-(settings?.DeadStockMinAgeDays ?? 180));

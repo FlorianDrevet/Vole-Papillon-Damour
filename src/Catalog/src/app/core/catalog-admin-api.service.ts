@@ -79,10 +79,10 @@ export class CatalogAdminApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getOverview(accessToken: string, from?: string, to?: string): Observable<CatalogAdminOverview> {
+  getOverview(accessToken: string, from?: string, to?: string, allTime = false): Observable<CatalogAdminOverview> {
     return this.http.get<CatalogAdminOverview>(
       `${this.apiUrl}/books/admin/overview`,
-      this.options(accessToken, this.params({from, to})),
+      this.options(accessToken, this.params({from, to, allTime: allTime ? true : undefined})),
     );
   }
 

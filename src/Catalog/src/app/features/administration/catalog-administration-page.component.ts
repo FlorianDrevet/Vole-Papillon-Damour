@@ -134,7 +134,6 @@ interface IsbnApplicationCombinedPreview extends Omit<IsbnApplicationCsvPreview,
   invalidExamples: IsbnApplicationInvalidExample[];
 }
 
-export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 export type CatalogAdminAccountsTab = 'volunteers' | 'members';
 
@@ -399,7 +398,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   sessionMode = 'AvailableNow';
   sessionFairId = '';
   sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'all';
-  overviewPeriod: CatalogAdminOverviewPeriod = '30-days';
   statisticsPeriod: CatalogAdminStatisticsPeriod = '30-days';
   statisticsFairId = '';
 
@@ -664,22 +662,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async loadOverview(): Promise<void> {
     await this.run('overview', async token => {
-      const overview = this.overviewPeriod === '30-days'
-        ? this.api.getOverview(token)
-        : this.api.getOverview(token, ...this.overviewPeriodBounds(this.overviewPeriod));
+      const overview = this.api.getOverview(token, undefined, undefined, true);
       this.overview.set(await firstValueFrom(overview));
     });
-  }
-
-  setOverviewPeriod(period: CatalogAdminOverviewPeriod): void {
-    if (this.overviewPeriod === period) {
-      return;
-    }
-
-    this.overviewPeriod = period;
-    if (this.auth.isAuthenticated()) {
-      void this.loadOverview();
-    }
   }
 
   async loadCatalogue(): Promise<void> {
@@ -1734,20 +1719,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.sessionPreset = preset;
   }
 
-  private overviewPeriodBounds(period: CatalogAdminOverviewPeriod): [string, string] {
-    const to = new Date();
-    const from = new Date(to);
-    if (period === '30-days') {
-      from.setUTCDate(from.getUTCDate() - 30);
-    } else if (period === '3-months') {
-      this.subtractCalendarMonths(from, 3);
-    } else {
-      this.subtractCalendarYears(from, 1);
-    }
-
-    return [from.toISOString(), to.toISOString()];
-  }
-
   private statisticsPeriodBounds(period: CatalogAdminStatisticsPeriod): [string | undefined, string | undefined] {
     if (period === 'all' || period === 'fair') {
       return [undefined, undefined];
@@ -1762,13 +1733,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     return [from.toISOString(), to.toISOString()];
-  }
-
-  private subtractCalendarMonths(date: Date, months: number): void {
-    const day = date.getUTCDate();
-    date.setUTCDate(1);
-    date.setUTCMonth(date.getUTCMonth() - months);
-    date.setUTCDate(Math.min(day, this.daysInUtcMonth(date)));
   }
 
   private subtractCalendarYears(date: Date, years: number): void {
