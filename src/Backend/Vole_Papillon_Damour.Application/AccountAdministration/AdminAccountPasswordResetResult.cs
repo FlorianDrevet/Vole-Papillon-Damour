@@ -1,0 +1,3 @@
+namespace Vole_Papillon_Damour.Application.AccountAdministration;
+
+public sealed record AdminAccountPasswordResetResult(string TemporaryPassword);

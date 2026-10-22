@@ -103,6 +103,7 @@ public static class DependencyInjection
         services.AddHttpClient<EntraGraphUserDirectory>();
         services.AddScoped<IEntraUserDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.AddScoped<IEntraAccountDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
+        services.AddScoped<IEntraAccountPasswordResetDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.Configure<BibliographicOptions>(
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
         services.Configure<SocialImportOptions>(

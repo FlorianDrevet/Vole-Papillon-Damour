@@ -12,7 +12,7 @@ describe('CatalogAdministrationComponent account creation password', () => {
   beforeEach(async () => {
     facade = jasmine.createSpyObj<CatalogAdminFacadeService>(
       'CatalogAdminFacadeService',
-      ['getOverview', 'getAccounts', 'createAccount'],
+      ['getOverview', 'getAccounts', 'createAccount', 'resetAccountPassword'],
     );
     facade.getOverview.and.resolveTo({} as Awaited<ReturnType<CatalogAdminFacadeService['getOverview']>>);
     facade.getAccounts.and.resolveTo({
@@ -23,6 +23,7 @@ describe('CatalogAdministrationComponent account creation password', () => {
       pageSize: 25,
     });
     facade.createAccount.and.resolveTo({} as Awaited<ReturnType<CatalogAdminFacadeService['createAccount']>>);
+    (facade as any).resetAccountPassword.and.resolveTo({temporaryPassword: 'TempPass9!'});
 
     await TestBed.configureTestingModule({
       declarations: [CatalogAdministrationComponent],
@@ -38,6 +39,14 @@ describe('CatalogAdministrationComponent account creation password', () => {
     const component = fixture.componentInstance as any;
     component.activeTab.set('accounts');
     component.showCreateAccount.set(true);
+    fixture.detectChanges();
+    return component;
+  }
+
+  function openAccounts(accounts: any[]): any {
+    const component = fixture.componentInstance as any;
+    component.activeTab.set('accounts');
+    component.accounts.set(accounts);
     fixture.detectChanges();
     return component;
   }
@@ -85,5 +94,52 @@ describe('CatalogAdministrationComponent account creation password', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(detail);
+  });
+
+  it('shows password reset only for accounts that support it', () => {
+    openAccounts([
+      {externalId: 'entra-1', email: 'marie@example.test', displayName: 'Marie Tri', accountEnabled: true, roles: ['Tri'], canResetPassword: true},
+      {externalId: 'entra-2', email: 'paul@example.test', displayName: 'Paul Caisse', accountEnabled: true, roles: ['Caisse'], canResetPassword: false},
+    ]);
+
+    const buttons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .filter(button => button.textContent?.includes('Réinitialiser le mot de passe'));
+
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].closest('tr')?.textContent).toContain('marie@example.test');
+  });
+
+  it('does not reset the password when the administrator cancels confirmation', () => {
+    const account = {externalId: 'entra-1', email: 'marie@example.test', canResetPassword: true};
+    const component = openAccounts([account]);
+    spyOn(window, 'confirm').and.returnValue(false);
+
+    component.resetAccountPassword(account);
+
+    expect((facade as any).resetAccountPassword).not.toHaveBeenCalled();
+  });
+
+  it('shows the temporary password once and erases it when closed', async () => {
+    const account = {externalId: 'entra-1', email: 'marie@example.test', canResetPassword: true};
+    const component = openAccounts([account]);
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    component.resetAccountPassword(account);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect((facade as any).resetAccountPassword).toHaveBeenCalledOnceWith('entra-1');
+    expect(page.textContent).toContain('marie@example.test');
+    expect(page.textContent).toContain('TempPass9!');
+    expect(page.textContent).toContain('devra le changer à sa prochaine connexion');
+
+    const closeButton = Array.from(page.querySelectorAll('button'))
+      .find(button => button.textContent?.includes('Fermer et effacer'));
+    expect(closeButton).toBeDefined();
+    closeButton?.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('TempPass9!');
   });
 });

@@ -169,6 +169,23 @@
         <app-pill-button (click)="showCreateAccount.set(!showCreateAccount())" type="button" [small]="true">{{ showCreateAccount() ? 'Fermer' : 'Créer un compte' }}</app-pill-button>
       </div>
 
+      @if (passwordResetDisclosure(); as reset) {
+        <section class="admin-panel password-reset-disclosure" role="region" aria-live="polite" aria-labelledby="password-reset-title">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0 flex-1">
+              <h2 id="password-reset-title">Mot de passe temporaire</h2>
+              <p class="mt-2">Adresse du bénévole : <strong>{{ reset.email || 'Adresse e-mail indisponible' }}</strong></p>
+              <p class="mt-2">Transmettez ce mot de passe au bénévole de façon sécurisée. Il devra le changer à sa prochaine connexion.</p>
+              <p class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-ink-2">Mot de passe temporaire</span>
+                <code class="inline-block max-w-full break-all border border-line bg-paper-2 px-3 py-2 font-mono text-sm font-semibold text-ink-2" aria-label="Mot de passe temporaire généré">{{ reset.temporaryPassword }}</code>
+              </p>
+            </div>
+            <button type="button" class="admin-link min-h-10 px-1 py-2" (click)="closePasswordResetDisclosure()">Fermer et effacer</button>
+          </div>
+        </section>
+      }
+
       @if (showCreateAccount()) {
         <form class="admin-panel grid gap-4 sm:grid-cols-2 lg:grid-cols-4" [formGroup]="createAccountForm" (ngSubmit)="createAccount()">
           <div class="sm:col-span-2 lg:col-span-4"><h2>Nouveau compte</h2><p class="mt-2 text-sm text-slate-2">Le mot de passe temporaire sera demandé à la première connexion.</p></div>
@@ -223,7 +240,12 @@
                   @if (editingAccountId() === account.externalId) {
                     <div class="flex flex-wrap gap-2"><button type="button" class="admin-link" [disabled]="isSaving()" (click)="saveAccountRoles(account)">Enregistrer</button><button type="button" class="admin-link" (click)="cancelAccountRoleEdit()">Annuler</button></div>
                   } @else {
-                    <button type="button" class="admin-link" (click)="startAccountRoleEdit(account)">Modifier les rôles</button>
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" class="admin-link" (click)="startAccountRoleEdit(account)">Modifier les rôles</button>
+                      @if (account.canResetPassword) {
+                        <button type="button" class="admin-link" [disabled]="isSaving()" (click)="resetAccountPassword(account)" [attr.aria-label]="'Réinitialiser le mot de passe de ' + (account.email || account.displayName || 'ce bénévole')">Réinitialiser le mot de passe</button>
+                      }
+                    </div>
                   }
                 </td>
               </tr>

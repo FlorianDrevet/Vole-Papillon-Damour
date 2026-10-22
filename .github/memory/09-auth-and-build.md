@@ -48,8 +48,12 @@
   creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`
   and synchronizes `Tri`, `Caisse`, `Administration`, and `LivresRares` assignments. The app-only Graph
   registration needs `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
-  `Application.Read.All`, and `AppRoleAssignment.ReadWrite.All`; the dedicated
-  `User.EnableDisableAccount.All` grant is used by the sensitive `accountEnabled` toggle.
+  `User-PasswordProfile.ReadWrite.All`, `Application.Read.All`, and
+  `AppRoleAssignment.ReadWrite.All`; the dedicated grants support sensitive account
+  enable/disable and password reset operations. App-only password resets also require the
+  Entra directory role `User Administrator` on the service principal, assigned manually;
+  the provisioning script does not assign it. The admin reset endpoint returns its generated
+  temporary password only to the authenticated administrator for secure handoff.
   The API receives its tenant domain and API client ID through `EntraGraph__TenantDomain`
   and `EntraGraph__ApiClientId`, plus the app-only credential through
   `EntraGraph__ClientId` and `EntraGraph__ClientSecret`. If the Graph

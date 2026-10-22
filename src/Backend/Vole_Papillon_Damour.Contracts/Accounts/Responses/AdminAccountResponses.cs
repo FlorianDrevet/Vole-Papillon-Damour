@@ -6,7 +6,8 @@ public sealed record AdminAccountResponse(
     string? DisplayName,
     bool AccountEnabled,
     DateTimeOffset? CreatedAt,
-    IReadOnlyCollection<string> Roles);
+    IReadOnlyCollection<string> Roles,
+    bool CanResetPassword);
 
 public sealed record AdminAccountPageResponse(
     DateTimeOffset GeneratedAt,

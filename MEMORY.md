@@ -32,6 +32,7 @@
 | `.github/memory/13-book-recommendations.md` | Similar-book recommendation defaults, API filtering, and Catalog carousel behavior |
 | `.github/memory/changelog.md` | Memory changelog |
 | `.github/memory/dream-state.md` | Dream gate state and code graph choice |
+| `.github/memory/14-scan-metadata-latency.md` | Dated Azure Monitor findings and unresolved Google Books metadata 400s |
 
 ## Quick Reference
 
@@ -49,6 +50,8 @@
 12. A completed loto sets `CurrentPartieIndex` to the party count; `RemoveLastNumeroCommandHandler` rewinds to the last party before undoing the final draw. See `.github/memory/03-domain-model.md`.
 13. Use `.agents/skills/vpd-prod-backup/SKILL.md` for an explicitly requested local backup. The Azure resources named `rg-vpd-dev`, `vpd-sql-dev`, and `vpdstdevfc` are the user's production environment; do not treat them as disposable development resources.
 14. Open Library reference search can aggregate publishers across editions; values over the 200-character watchlist limit are omitted before follow. See `.github/memory/10-api-endpoints.md`.
+
+15. For the Scan metadata latency sample and unresolved Google Books 400 cause, see .github/memory/14-scan-metadata-latency.md.
 
 ## Commands To Remember
 

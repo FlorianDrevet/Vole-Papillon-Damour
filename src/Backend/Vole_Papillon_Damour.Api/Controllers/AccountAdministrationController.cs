@@ -115,6 +115,23 @@ public static class AccountAdministrationController
                     })
                 .WithName("UpdateAdminAccountStatus")
                 .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/accounts/admin/{externalId}/password-reset",
+                    async (
+                        string externalId,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new ResetAdminAccountPasswordCommand(externalId),
+                            cancellationToken);
+                        return result.Match(
+                            password => Results.Ok(new AdminAccountPasswordResetResponse(password.TemporaryPassword)),
+                            error => error.Result());
+                    })
+                .WithName("ResetAdminAccountPassword")
+                .RequireAuthorization("Administration");
         });
     }
 
@@ -135,7 +152,8 @@ public static class AccountAdministrationController
             result.CreatedAt is null
                 ? null
                 : new DateTimeOffset(DateTime.SpecifyKind(result.CreatedAt.Value, DateTimeKind.Utc)),
-            result.Roles);
+            result.Roles,
+            result.CanResetPassword);
 
     private static bool TryGetExternalId(ClaimsPrincipal principal, out string externalId)
     {
