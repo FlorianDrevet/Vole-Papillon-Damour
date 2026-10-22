@@ -17,6 +17,7 @@ import {
   AdminPasswordResetResponse,
   AdminBook,
   AdminBookFilters,
+  AdminBookRecommendation,
   AdminFair,
   AdminMemberDetail,
   AdminScanSession,
@@ -26,7 +27,7 @@ import {
 } from '../../shared/models/catalog-admin.model';
 import {CatalogAdminFacadeService} from '../../shared/facades/catalog-admin.facade.service';
 
-type AdminTab = 'overview' | 'books' | 'fairs' | 'sessions' | 'alerts' | 'members' | 'accounts' | 'settings';
+type AdminTab = 'overview' | 'books' | 'recommendations' | 'fairs' | 'sessions' | 'alerts' | 'members' | 'accounts' | 'settings';
 
 @Component({
   selector: 'app-catalog-administration',
@@ -46,6 +47,9 @@ export class CatalogAdministrationComponent implements OnInit {
 
   protected readonly overview = signal<CatalogAdminOverview | null>(null);
   protected readonly books = signal<AdminBook[]>([]);
+  protected readonly recommendationJobs = signal<AdminBookRecommendation[]>([]);
+  protected readonly recommendationTotal = signal(0);
+  protected readonly recommendationPage = signal(1);
   protected readonly selectedBook = signal<AdminBook | null>(null);
   protected readonly bookTotal = signal(0);
   protected readonly bookPage = signal(1);
@@ -70,6 +74,8 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly temporaryPasswordGuidance = TEMPORARY_PASSWORD_GUIDANCE;
 
   protected bookSearch = '';
+  protected recommendationSearch = '';
+  protected recommendationStatus = '';
   protected metadataStatus = '';
   protected rareFilter = '';
   protected hiddenFilter = '';
@@ -172,6 +178,7 @@ export class CatalogAdministrationComponent implements OnInit {
     switch (tab) {
       case 'overview': this.loadOverview(); break;
       case 'books': this.loadBooks(); break;
+      case 'recommendations': this.loadRecommendations(); break;
       case 'fairs': this.loadFairs(); break;
       case 'sessions': this.loadSessions(); break;
       case 'alerts': this.loadAlerts(); break;
@@ -200,6 +207,68 @@ export class CatalogAdministrationComponent implements OnInit {
       this.bookTotal.set(value.totalCount);
       this.bookPage.set(value.page);
     });
+  }
+
+  protected loadRecommendations(page = 1): void {
+    this.load(() => this.facade.getBookRecommendations({
+      search: this.recommendationSearch.trim() || undefined,
+      status: this.recommendationStatus || undefined,
+      page,
+      pageSize: 25,
+    }), value => {
+      this.recommendationJobs.set(value.items);
+      this.recommendationTotal.set(value.totalCount);
+      this.recommendationPage.set(value.page);
+    });
+  }
+
+  protected startRecommendationsBackfill(): void {
+    if (!window.confirm(
+      'Mettre en file le calcul des recommandations pour tout le catalogue visible ? Les livres déjà terminés seront ignorés. Le traitement peut prendre du temps et entraîner des appels au service d’embedding.',
+    )) { return; }
+    this.save(
+      () => this.facade.startBookRecommendationsBackfill(),
+      'Le rattrapage du catalogue a été mis en file. Actualisez cette liste pour suivre son avancement.',
+      () => this.loadRecommendations(),
+    );
+  }
+
+  protected retryBookRecommendation(item: AdminBookRecommendation): void {
+    if (!this.canRetryRecommendation(item)) { return; }
+    this.save(
+      () => this.facade.retryBookRecommendation(item.isbn13),
+      `Le calcul de ${item.isbn13} a été remis en file.`,
+      () => this.loadRecommendations(this.recommendationPage()),
+    );
+  }
+
+  protected canRetryRecommendation(item: AdminBookRecommendation): boolean {
+    if (item.status !== 'InProgress') { return true; }
+    return !item.startedAt || Date.now() - new Date(item.startedAt).getTime() >= 3_600_000;
+  }
+
+  protected recommendationStatusLabel(status: string): string {
+    switch (status) {
+      case 'Pending': return 'En attente';
+      case 'InProgress': return 'En cours';
+      case 'Ready': return 'Terminé';
+      case 'Failed': return 'Échoué';
+      case 'NoNotice': return 'Notice indisponible';
+      default: return status;
+    }
+  }
+
+  protected recommendationStageLabel(stage: string): string {
+    switch (stage) {
+      case 'Notice': return 'Notice';
+      case 'Embedding': return 'Embedding';
+      case 'Neighbors': return 'Liens similaires';
+      default: return stage;
+    }
+  }
+
+  protected isLastRecommendationPage(): boolean {
+    return this.recommendationPage() * 25 >= this.recommendationTotal();
   }
 
   protected selectBook(isbn13: string): void {

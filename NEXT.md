@@ -290,12 +290,29 @@ les œuvres déjà achetées. La page « Vos données et le RGPD » décrit le t
 l'intérêt légitime comme base proposée ; l'association doit valider cette base avant
 l'ouverture publique.
 
-Avant activation, relire une cinquantaine de fiches réelles et calibrer
-`SimilarMinScore`, puis confirmer qu'un calcul nocturne a réussi. Le déploiement Azure
-`text-embedding-3-small` avait été créé manuellement le 24 septembre avec le même nom ;
-le Bicep reprend son nom, `GlobalStandard` et la capacité 50. Pour cette livraison, le
-Bicep a uniquement été compilé localement : aucun déploiement Azure n'a été exécuté.
+Avant ouverture publique, relire une cinquantaine de fiches réelles et calibrer
+`SimilarMinScore`. Le déploiement Azure `text-embedding-3-small` avait été créé
+manuellement le 24 septembre avec le même nom ; le Bicep reprend son nom,
+`GlobalStandard` et la capacité 50. Aucun déploiement Azure n'a été exécuté pour cette
+livraison.
 
+
+### Recommandations de livres — 2026-10-22
+
+Une nouvelle livraison remplace le calcul nocturne par une queue Azure traitée à la
+clôture des sessions de scan. Elle ajoute un statut persistant par livre, la réutilisation
+des embeddings, un rattrapage global et les relances depuis le Back Office. Le
+`Recommendations TimerTrigger` est supprimé ; la queue `book-recommendations` est
+provisionnée dans le compte Storage.
+
+Le déclencheur HTTP manuel d’Enrich reste dans la PR indépendante #317. Cette livraison
+réémet une demande de recommandations lorsqu’Enrich termine les métadonnées d’un livre
+qui attendait encore sa notice.
+
+La PR reste à valider et aucune ressource Azure n'a été déployée dans cette livraison.
+Après fusion, suivre [`docs/recommandations-livres/10-runbook-activation-et-lancement.md`](docs/recommandations-livres/10-runbook-activation-et-lancement.md)
+pour activer le service puis lancer le premier rattrapage depuis le Back Office. La
+fonctionnalité reste désactivée par défaut.
 
 ### Correctif livres rares Catalog — 2026-09-24
 

@@ -300,6 +300,7 @@ param titleGenerationEnabled = readEnvironmentVariable('TITLE_GENERATION_ENABLED
 param titleGenerationAccountName = readEnvironmentVariable('TITLE_GENERATION_ACCOUNT_NAME', '')
 param titleGenerationDeploymentName = readEnvironmentVariable('TITLE_GENERATION_DEPLOYMENT_NAME', 'actuality-title')
 param recommendationsEnabled = readEnvironmentVariable('RECOMMENDATIONS_ENABLED', 'false') == 'true'
+param recommendationsEmbeddingModelVersion = readEnvironmentVariable('RECOMMENDATIONS_EMBEDDING_MODEL_VERSION', 'text-embedding-3-small-v1')
 param embeddingCostUsdPerMillionTokens = '0.02'
 
 param apiImage = readEnvironmentVariable('API_IMAGE', '')

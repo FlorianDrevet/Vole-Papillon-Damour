@@ -20,6 +20,9 @@ param sku SkuName = 'Standard_LRS'
 @description('Blob containers to create')
 param containers BlobContainerConfig[] = []
 
+@description('Storage queues to create')
+param queues string[] = []
+
 @description('Resource tags')
 param tags object = {}
 
@@ -60,6 +63,17 @@ resource blobContainers 'Microsoft.Storage/storageAccounts/blobServices/containe
   properties: {
     publicAccess: container.publicAccess
   }
+}]
+
+resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource storageQueues 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-05-01' = [for queue in queues: {
+  parent: queueService
+  name: queue
+  properties: {}
 }]
 
 @description('Name of the Storage Account')

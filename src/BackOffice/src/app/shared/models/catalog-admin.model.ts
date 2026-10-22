@@ -107,6 +107,34 @@ export interface AdminBookPage {
   pageSize: number;
 }
 
+export interface AdminBookRecommendation {
+  isbn13: string;
+  title: string | null;
+  authors: string | null;
+  status: string;
+  stage: string;
+  attemptCount: number;
+  requestedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  lastError: string | null;
+}
+
+export interface AdminBookRecommendationPage {
+  generatedAt: string;
+  items: AdminBookRecommendation[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminBookRecommendationFilters {
+  search?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface AdminBookOperation {
   isbn13: string;
   quantityAvailable: number;

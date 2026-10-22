@@ -54,6 +54,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
     public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
+    public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
     public DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => Set<MemberRecommendationPreference>();

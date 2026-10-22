@@ -328,6 +328,9 @@ param recommendationsEnabled bool = false
 @description('Name of the Azure OpenAI embedding deployment used for recommendations')
 param recommendationsEmbeddingDeploymentName string = 'text-embedding-3-small'
 
+@description('Cache version for the embedding model; change it to invalidate saved vectors when the underlying model version changes')
+param recommendationsEmbeddingModelVersion string = 'text-embedding-3-small-v1'
+
 @description('Estimated Azure OpenAI embedding input price in USD per million tokens, shown in the monitoring workbook')
 param embeddingCostUsdPerMillionTokens string = '0.02'
 
@@ -961,6 +964,7 @@ module storageAccountModule './modules/StorageAccount/storageAccount.module.bice
         publicAccess: 'Blob'
       }
     ]
+    queues: ['book-recommendations']
   }
 }
 
@@ -1822,6 +1826,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'Recommendations__EmbeddingDeploymentName'
         value: recommendationsEmbeddingDeploymentName
+      }
+      {
+        name: 'Recommendations__EmbeddingModelVersion'
+        value: recommendationsEmbeddingModelVersion
       }
     ] : [])
   }

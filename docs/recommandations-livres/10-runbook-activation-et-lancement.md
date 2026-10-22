@@ -1,125 +1,78 @@
 # Activer et lancer les recommandations
 
-Ce runbook concerne l'environnement DEV et la fonction Azure `Recommendations` du
-Worker. La fonctionnalité est désactivée par défaut dans Bicep. Le workflow manuel
-`Infra - deploy` permet de l'activer ; il ne lance pas le calcul lui-même.
+Ce runbook couvre l’activation, le premier calcul complet du catalogue et le suivi
+quotidien. Les recommandations ne sont plus recalculées par un timer : une clôture de
+session de scan met les livres concernés dans une queue Azure durable.
 
 ## Activer la fonctionnalité
 
-Après fusion de la PR qui ajoute cette option :
+Après fusion et déploiement de la PR :
 
-1. Dans GitHub Actions, lancer **Infra - deploy** en mode `what-if` et laisser
+1. Dans GitHub Actions, lancer **Infra - deploy** en mode `what-if` avec
    `recommendations_enabled` à `true`.
-2. Vérifier le plan : `Recommendations__Enabled` passe à `true` dans l'API et le Worker,
-   le Worker reçoit l'endpoint Azure OpenAI, et son identité reçoit le rôle
-   `Cognitive Services OpenAI User` sur le compte existant.
-3. Relancer le workflow en mode `deploy`, avec `recommendations_enabled` à `true`.
+2. Vérifier que `Recommendations__Enabled` passe à `true` dans l’API et le Worker, que le
+   Worker reçoit l’endpoint Azure OpenAI et que son identité reçoit le rôle
+   `Cognitive Services OpenAI User`.
+3. Vérifier que le plan crée la queue `book-recommendations` dans le compte Storage.
+4. Relancer le workflow en mode `deploy` avec `recommendations_enabled` à `true`.
 
-Le workflow exige le secret GitHub `TITLE_GENERATION_ACCOUNT_NAME` pour trouver le compte
-Azure OpenAI partagé. La génération de titres reste indépendante : il n'est pas nécessaire
-d'activer `TITLE_GENERATION_ENABLED`. Le déploiement d'infrastructure redémarre les apps
-concernées avec leurs nouveaux paramètres ; il ne reconstruit pas leurs images. Il réutilise
-le déploiement d'embeddings existant `text-embedding-3-small` : il ne crée ni le compte
-Azure OpenAI ni ce modèle.
+Le workflow exige le secret GitHub `TITLE_GENERATION_ACCOUNT_NAME` pour retrouver le
+compte Azure OpenAI partagé. La génération de titres reste indépendante : il n’est pas
+nécessaire d’activer `TITLE_GENERATION_ENABLED`. Le déploiement réutilise le déploiement
+d’embeddings `text-embedding-3-small` déjà présent ; il ne crée ni le compte Azure OpenAI
+ni le modèle.
 
-Pour désactiver ultérieurement les recommandations, relancer le même workflow en mode
-`deploy` avec `recommendations_enabled` à `false`.
+Pour désactiver ultérieurement les recommandations, relancer le workflow en mode `deploy`
+avec `recommendations_enabled` à `false`.
+
+## Calculer le catalogue existant
+
+Dans le Back Office, ouvrir **Catalogue et alertes → Recommandations**, puis sélectionner
+**Rattraper le catalogue** et confirmer. L’API répond `202 Accepted` après avoir mis le
+travail en file ; aucun paramètre ni clé Azure Functions n’est nécessaire.
+
+Le Worker parcourt les livres visibles par pages de 250 ISBN et met les livres à traiter
+dans la queue par groupes d’au plus 50. Il ignore les recommandations déjà terminées. Le
+calcul continue en arrière-plan même si le portail est fermé. La liste permet de filtrer
+par ISBN, titre, auteur et statut, de voir l’étape et la dernière erreur, et de relancer
+un livre en échec. Un traitement affiché « En cours » depuis plus d’une heure peut aussi
+être relancé si un message a fini dans la file poison.
+
+Les statuts sont :
+
+- `En attente` : le livre attend la queue ; les métadonnées bibliographiques peuvent
+  encore être complétées ;
+- `En cours` : lecture de la notice, préparation de l’embedding ou calcul des liens ;
+- `Terminé` : embedding et liens de livres similaires enregistrés ;
+- `Notice indisponible` : aucune notice exploitable n’a été trouvée ;
+- `Échoué` : le portail affiche l’étape et l’erreur, puis permet la relance.
+
+Si Enrich complète ensuite le résumé d’un livre qui attendait ses métadonnées, ce livre
+est automatiquement remis en file. Une modification manuelle du titre, des auteurs, du
+genre, de l’œuvre ou du résumé fait de même.
+
+## Traitement des nouvelles sessions
+
+À la clôture d’une session, chaque ISBN concerné reçoit un état persistant. Les livres
+déjà terminés ne sont pas remis en file. Les autres sont traités par la même queue, sans
+timer de recommandations. Si les métadonnées d’un ISBN sont encore en attente, le job
+reste consultable dans le portail et repart quand Enrich termine.
+
+Un embedding est réutilisé tant que le texte de profil ou la version du modèle n’ont pas
+changé. Le service d’embedding est appelé quand le texte change ou lorsqu’un essai
+précédent n’a pas produit de vecteur enregistré. Le calcul des liens peut s’exécuter à
+nouveau sans recalculer les vecteurs. Si la version du modèle change sans changer le nom
+du déploiement Azure OpenAI, ajuster `recommendationsEmbeddingModelVersion` au déploiement
+suivant pour invalider explicitement le cache.
+
+Les suggestions personnalisées restent calculées à partir des achats du membre, comme
+auparavant. Elles ne dépendent pas d’un timer de recommandations ni de sa liste « Ma
+sélection ».
 
 ## Sorties réseau du Worker
 
-L'environnement Container Apps utilise le réseau Azure géré par défaut, sans VNet
+L’environnement Container Apps utilise le réseau Azure géré par défaut, sans VNet
 personnalisé, avec `internal` à `false`. Ce mode donne au Worker les sorties Internet
-standard dont il a besoin pour appeler l'endpoint public Azure OpenAI. Aucun NAT Gateway,
-pare-feu ou IP de sortie fixe n'est configuré. Un réseau privé ou une route sortante
-personnalisée nécessiterait une architecture et des ressources Azure supplémentaires.
-
-## Lancer une passe manuellement
-
-Attendre d'abord que les livres soient importés et que le Worker ait au moins un réplica
-prêt. La fonction est un timer Azure Functions nommé `Recommendations`; elle n'a pas de
-route HTTP publique. Le lancement manuel passe par son endpoint d'administration local au
-Worker.
-
-Dans Azure CLI, lister les clés master du Container App :
-
-```powershell
-az containerapp function keys list `
-  --name vpd-worker-ca-dev-fc `
-  --resource-group rg-vpd-dev `
-  --key-type masterKey
-```
-
-Copier la valeur `_master` depuis la sortie sans l'enregistrer dans un fichier ni la partager.
-Ouvrir ensuite un shell dans le réplica du Worker :
-
-```powershell
-az containerapp exec `
-  --name vpd-worker-ca-dev-fc `
-  --resource-group rg-vpd-dev `
-  --command bash
-```
-
-Dans ce shell, saisir la clé de façon masquée puis envoyer le POST local. Azure Functions
-écoute par défaut sur le port `80` dans un conteneur. La déclaration `EXPOSE 8080` du
-Dockerfile ne configure pas le port d'écoute du host.
-
-```bash
-read -r -s -p 'Master key: ' key; echo
-curl --fail-with-body -i -X POST \
-  'http://127.0.0.1:80/admin/functions/Recommendations' \
-  -H "x-functions-key: $key" \
-  -H 'Content-Type: application/json' \
-  --data '{}'
-unset key
-```
-
-La réponse attendue est `202 Accepted`. L'endpoint `/admin/` exige la clé master, qui donne
-des droits d'administration sur le runtime Functions ; la garder secrète. La commande de
-gestion des clés Container Apps est en préversion et nécessite au moins un réplica actif.
-Voir la documentation Microsoft sur [l'exécution manuelle d'une fonction non HTTP](https://learn.microsoft.com/fr-fr/azure/azure-functions/functions-manually-run-non-http),
-les [clés des fonctions sur Container Apps](https://learn.microsoft.com/en-us/cli/azure/containerapp/function/keys?view=azure-cli-latest)
-et [l'administration des fonctions dans Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/functions-cli).
-
-Si la connexion locale au port `80` est refusée, le host Functions n'écoute pas dans ce
-réplica. Depuis PowerShell, consulter ses journaux console et système avant de relancer :
-
-```powershell
-az containerapp logs show `
-  --name vpd-worker-ca-dev-fc `
-  --resource-group rg-vpd-dev `
-  --type console `
-  --tail 100
-
-az containerapp logs show `
-  --name vpd-worker-ca-dev-fc `
-  --resource-group rg-vpd-dev `
-  --type system `
-  --tail 50
-```
-
-## Suivre le calcul
-
-Dans un autre terminal, consulter le résumé de l'invocation :
-
-```powershell
-az containerapp function invocations summary `
-  --name vpd-worker-ca-dev-fc `
-  --resource-group rg-vpd-dev `
-  --function-name Recommendations `
-  --timespan 2h
-```
-
-Le journal de fin indique les candidats traités (`Candidates`), les recherches trouvées ou
-absentes (`Found`, `NotFound`), puis les livres, embeddings et voisins calculés (`Books`,
-`Embedded`, `Neighbors`). Le lancement retourne `202` avant la fin du calcul : attendre la
-fin de l'invocation dans les journaux avant d'en démarrer une autre.
-
-Un appel rafraîchit au plus 200 profils (`ProfileBatchSize`) puis recalcule les voisins. Si
-7 748 livres n'ont encore aucun profil, il faudra environ 39 invocations séquentielles pour
-les couvrir. Une première passe seule ne traite donc qu'une partie du catalogue. L'API
-commencera à afficher les recommandations lorsqu'une génération exploitable existe et que
-les livres candidats ont des profils suffisants.
-
-Azure OpenAI facture l'utilisation du déploiement d'embeddings. Sur DEV, `NEXT.md` indique
-que le reset catalogue est terminé mais que les lots ISBN restent à importer ; lancer la
-fonction avant l'import ne produira donc pas de calcul représentatif.
+standard dont il a besoin pour appeler l’endpoint public Azure OpenAI. Aucun NAT Gateway,
+pare-feu ou IP de sortie fixe n’est configuré. Un réseau privé ou une route sortante
+personnalisée nécessiterait des ressources Azure supplémentaires.

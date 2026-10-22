@@ -12,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
 
 public sealed class UpdateBookMetadataCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookRecommendationWorkQueue? recommendationWorkQueue = null)
     : IRequestHandler<UpdateBookMetadataCommand, ErrorOr<UpdateBookMetadataResult>>
 {
     public async Task<ErrorOr<UpdateBookMetadataResult>> Handle(
@@ -78,8 +79,30 @@ public sealed class UpdateBookMetadataCommandHandler(
                 Summary: command.Summary),
             updatedAt);
 
+        var recommendationInputChanged = changed && fields.Any(field => field is
+            BookMetadataField.Title or
+            BookMetadataField.Authors or
+            BookMetadataField.Genre or
+            BookMetadataField.WorkId or
+            BookMetadataField.Summary);
+        var recommendationJob = recommendationInputChanged && recommendationWorkQueue is not null
+            ? await dbContext.BookRecommendationJobs
+                .SingleOrDefaultAsync(job => job.Isbn13 == isbn13.Value, cancellationToken)
+            : null;
+        if (recommendationJob is not null)
+        {
+            recommendationJob.Request(updatedAt, force: true);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        if (recommendationJob is not null)
+        {
+            await recommendationWorkQueue!.EnqueueBooksAsync(
+                [new BookRecommendationQueueItem(recommendationJob.Isbn13, recommendationJob.RequestVersion)],
+                cancellationToken);
+        }
 
         return new UpdateBookMetadataResult(
             book.Isbn13.Value,

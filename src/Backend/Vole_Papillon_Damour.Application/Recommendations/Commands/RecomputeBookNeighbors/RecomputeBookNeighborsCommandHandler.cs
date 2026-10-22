@@ -18,6 +18,8 @@ public sealed class RecomputeBookNeighborsCommandHandler(
     IDateTimeProvider dateTimeProvider)
     : IRequestHandler<RecomputeBookNeighborsCommand, RecomputeBookNeighborsResult>
 {
+    private const string FeatureTextVersion = "similarity-features-v1";
+
     public async Task<RecomputeBookNeighborsResult> Handle(
         RecomputeBookNeighborsCommand request,
         CancellationToken cancellationToken)
@@ -66,20 +68,36 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         }).ToArray();
 
         var groupedEditions = WorkGrouping.Group(editions, summariesByIsbn);
+        var requestedIsbns = request.Isbn13s?.ToHashSet(StringComparer.Ordinal);
+        var requestedFeatures = requestedIsbns is null
+            ? Array.Empty<SimilarityFeatures>()
+            : groupedEditions
+                .Where(grouped => requestedIsbns.Contains(grouped.Edition.Isbn13))
+                .Select(grouped => grouped.Features)
+                .ToArray();
         var profilesNeedingEmbedding = new List<(BookSimilarityProfile Profile, string TextHash)>();
         var embeddingTexts = new List<string>();
+        var changedIsbns = new HashSet<string>(StringComparer.Ordinal);
         foreach (var grouped in groupedEditions)
         {
             var text = SimilarityFeatureBuilder.ComposeText(grouped.Edition, grouped.WorkSummary);
             var textHash = Convert.ToHexString(
-                    SHA256.HashData(Encoding.UTF8.GetBytes(text)))
+                    SHA256.HashData(Encoding.UTF8.GetBytes(
+                        $"{FeatureTextVersion}\n{settings.EmbeddingModelVersion ?? "unspecified"}\n{text}")))
                 .ToLowerInvariant();
             var profile = profileByIsbn[grouped.Edition.Isbn13];
-            profile.SetProfileText(text, textHash);
-            if (profile.NeedsEmbedding)
+            var requestedBook = requestedIsbns is null || requestedIsbns.Contains(profile.Isbn13);
+            var sharesRequestedWork = requestedFeatures.Any(target =>
+                SimilarityFeatureBuilder.SameWork(grouped.Features, target));
+            if (requestedBook || sharesRequestedWork)
             {
-                profilesNeedingEmbedding.Add((profile, textHash));
-                embeddingTexts.Add(text);
+                profile.SetProfileText(text, textHash);
+                if (profile.NeedsEmbedding)
+                {
+                    profilesNeedingEmbedding.Add((profile, textHash));
+                    embeddingTexts.Add(text);
+                    changedIsbns.Add(profile.Isbn13);
+                }
             }
         }
 
@@ -87,9 +105,10 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         if (embeddingTexts.Count > 0)
         {
             var vectors = await embeddings.EmbedAsync(embeddingTexts, cancellationToken);
-            if (vectors.Count > embeddingTexts.Count)
+            if (vectors.Count != embeddingTexts.Count)
             {
-                throw new InvalidOperationException("The embedding provider returned more vectors than requested.");
+                throw new InvalidOperationException(
+                    $"The embedding provider returned {vectors.Count} vectors for {embeddingTexts.Count} texts.");
             }
 
             for (var index = 0; index < vectors.Count; index++)
@@ -116,17 +135,55 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         var vectorsForBooks = computedEditions
             .Select(grouped => EmbeddingBytes.ToFloats(profileByIsbn[grouped.Edition.Isbn13].Embedding!))
             .ToArray();
-        var neighborsByIsbn = NeighborComputer.Compute(features, vectorsForBooks, settings.NeighborsPerBook);
+        Dictionary<string, IReadOnlyList<NeighborCandidate>> neighborsByIsbn;
+        if (requestedIsbns is null)
+        {
+            neighborsByIsbn = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(
+                NeighborComputer.Compute(features, vectorsForBooks, settings.NeighborsPerBook),
+                StringComparer.Ordinal);
+        }
+        else
+        {
+            var generation = await dbContext.RecommendationGenerations
+                .AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == 1, cancellationToken);
+            var existingRows = generation?.CurrentGenerationId is { } currentGenerationId
+                ? await dbContext.BookNeighbors
+                    .AsNoTracking()
+                    .Where(row => row.GenerationId == currentGenerationId)
+                    .OrderBy(row => row.Isbn13)
+                    .ThenBy(row => row.Rank)
+                    .ToListAsync(cancellationToken)
+                : [];
+            var currentNeighbors = existingRows
+                .GroupBy(row => row.Isbn13, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<NeighborCandidate>)group
+                        .Select(row => new NeighborCandidate(row.NeighborIsbn13, row.Score, row.Reason))
+                        .ToArray(),
+                    StringComparer.Ordinal);
+            var changedTargets = requestedIsbns.Concat(changedIsbns)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            neighborsByIsbn = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(
+                NeighborComputer.ComputeIncremental(
+                    features,
+                    vectorsForBooks,
+                    changedTargets,
+                    currentNeighbors,
+                    settings.NeighborsPerBook),
+                StringComparer.Ordinal);
+        }
 
         var rows = new List<BookNeighborRow>();
-        foreach (var feature in features)
+        foreach (var (isbn13, neighbors) in neighborsByIsbn)
         {
-            var neighbors = neighborsByIsbn[feature.Isbn13];
             for (var index = 0; index < neighbors.Count; index++)
             {
                 var neighbor = neighbors[index];
                 rows.Add(new BookNeighborRow(
-                    feature.Isbn13,
+                    isbn13,
                     checked((byte)(index + 1)),
                     neighbor.NeighborIsbn13,
                     neighbor.Score,
@@ -135,13 +192,30 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         }
 
         var generationId = Guid.NewGuid();
-        await neighborWriter.WriteGenerationAsync(
-            generationId,
-            rows,
-            features.Length,
-            now,
-            cancellationToken);
+        if (requestedIsbns is null)
+        {
+            await neighborWriter.WriteGenerationAsync(
+                generationId,
+                rows,
+                features.Length,
+                now,
+                cancellationToken);
+        }
+        else
+        {
+            await neighborWriter.WriteIncrementalGenerationAsync(
+                generationId,
+                neighborsByIsbn.Keys.ToArray(),
+                rows,
+                features.Length,
+                now,
+                cancellationToken);
+        }
 
-        return new RecomputeBookNeighborsResult(features.Length, embeddedCount, rows.Count, generationId);
+        return new RecomputeBookNeighborsResult(
+            requestedIsbns is null ? features.Length : requestedIsbns.Count,
+            embeddedCount,
+            rows.Count,
+            generationId);
     }
 }

@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -97,6 +98,76 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("GetAdminBookMetadataQueue")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/recommendations",
+                    async (
+                        string? search,
+                        string? status,
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        BookRecommendationJobStatus? parsedStatus = null;
+                        if (!string.IsNullOrWhiteSpace(status))
+                        {
+                            if (!Enum.TryParse<BookRecommendationJobStatus>(status, true, out var value) ||
+                                !Enum.IsDefined(value))
+                            {
+                                return Results.BadRequest(new { error = "The recommendation status is invalid." });
+                            }
+
+                            parsedStatus = value;
+                        }
+
+                        var result = await mediator.Send(
+                            new GetAdminBookRecommendationsQuery(search, parsedStatus, page ?? 1, pageSize ?? 50),
+                            cancellationToken);
+                        return result.Match(
+                            recommendations => Results.Ok(ToResponse(recommendations)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminBookRecommendations")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/recommendations/backfill",
+                    async (IMediator mediator, CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new StartBookRecommendationsBackfillCommand(),
+                            cancellationToken);
+                        return result.Match(
+                            backfillId => Results.Accepted(
+                                "/books/admin/recommendations",
+                                new AdminBookRecommendationBackfillResponse(backfillId, "Queued")),
+                            error => error.Result());
+                    })
+                .WithName("StartAdminBookRecommendationsBackfill")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/recommendations/{isbn13}/retry",
+                    async (
+                        string isbn13,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new RetryBookRecommendationJobCommand(isbn13),
+                            cancellationToken);
+                        return result.Match(
+                            retry => Results.Accepted(
+                                $"/books/admin/recommendations?search={Uri.EscapeDataString(retry.Isbn13)}",
+                                new AdminBookRecommendationRetryResponse(
+                                    retry.Isbn13,
+                                    retry.Status,
+                                    retry.RequestVersion)),
+                            error => error.Result());
+                    })
+                .WithName("RetryAdminBookRecommendation")
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
@@ -1116,6 +1187,24 @@ public static class BookAdministrationController
         if (request.Summary is not null) fields.Add(nameof(BookMetadataField.Summary));
         return fields;
     }
+
+    private static AdminBookRecommendationPageResponse ToResponse(AdminBookRecommendationPageResult result) =>
+        new(
+            result.GeneratedAt,
+            result.Items.Select(item => new AdminBookRecommendationResponse(
+                item.Isbn13,
+                item.Title,
+                item.Authors,
+                item.Status.ToString(),
+                item.Stage.ToString(),
+                item.AttemptCount,
+                item.RequestedAt,
+                item.StartedAt,
+                item.CompletedAt,
+                item.LastError)).ToArray(),
+            result.TotalCount,
+            result.Page,
+            result.PageSize);
 
     private static CatalogAdminOverviewResponse ToResponse(CatalogAdminOverviewResult result) =>
         new(
