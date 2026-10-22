@@ -33,6 +33,7 @@ interface CatalogSearchRouteState {
   genre: string;
   availability: CatalogAvailability;
   view: CatalogSearchView;
+  columns: CatalogGridColumns;
   rareOnly: boolean;
   includeExhausted: boolean;
   sort: CatalogSort;
@@ -41,6 +42,7 @@ interface CatalogSearchRouteState {
 }
 
 type CatalogSearchView = 'list' | 'grid';
+type CatalogGridColumns = 3 | 4 | 5;
 
 type CatalogReferenceFollowScope = Extract<CatalogWatchlistScope, 'Work' | 'Edition'>;
 
@@ -74,6 +76,8 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   mobileFiltersOpen = false;
   browseMode = false;
   view: CatalogSearchView = 'list';
+  columns: CatalogGridColumns = 4;
+  readonly gridColumnChoices: readonly CatalogGridColumns[] = [3, 4, 5];
   loading = true;
   error = false;
   response: CatalogSearchResponse | null = null;
@@ -166,6 +170,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.genre = nextState.genre;
         this.availability = nextState.availability;
         this.view = nextState.view;
+        this.columns = nextState.columns;
         this.rareOnly = nextState.rareOnly;
         this.includeExhausted = nextState.includeExhausted;
         this.sort = nextState.sort;
@@ -210,6 +215,18 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     }
 
     this.view = view;
+    this.changeDetector.markForCheck();
+    void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
+      queryParams: this.queryParams(true, this.submittedQuery),
+    });
+  }
+
+  selectGridColumns(columns: CatalogGridColumns): void {
+    if (this.rareOnly || this.view !== 'grid' || this.columns === columns) {
+      return;
+    }
+
+    this.columns = columns;
     this.changeDetector.markForCheck();
     void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
       queryParams: this.queryParams(true, this.submittedQuery),
@@ -994,6 +1011,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.includeExhausted) params['includeExhausted'] = true;
     if (this.sort !== (this.rareOnly ? 'price-desc' : 'relevance')) params['sort'] = this.sort;
     if (!this.rareOnly && this.view === 'list') params['view'] = this.view;
+    if (!this.rareOnly && this.columns !== 4) params['columns'] = this.columns;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
       if (this.currentReferencePage > 1) params['referencePage'] = this.currentReferencePage;
@@ -1064,6 +1082,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       genre: params.get('genre') || '',
       availability: this.readAvailability(params.get('availability')),
       view: rareOnly || params.get('view') === 'list' ? 'list' : 'grid',
+      columns: rareOnly ? 4 : this.readGridColumns(params.get('columns')),
       rareOnly,
       includeExhausted: params.get('includeExhausted') === 'true',
       sort: rareOnly
@@ -1074,6 +1093,17 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       page: this.readPositivePage(params.get('page')),
       referencePage: this.readPositivePage(params.get('referencePage')),
     };
+  }
+
+  private readGridColumns(value: string | null): CatalogGridColumns {
+    if (value === '3') {
+      return 3;
+    }
+    if (value === '5') {
+      return 5;
+    }
+
+    return 4;
   }
 
   private readPositivePage(value: string | null): number {

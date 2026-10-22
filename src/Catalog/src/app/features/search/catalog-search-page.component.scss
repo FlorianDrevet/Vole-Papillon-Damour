@@ -160,6 +160,24 @@
   background: var(--catalog-white);
 }
 
+.grid-columns-control {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.grid-columns-label {
+  color: var(--catalog-slate-2);
+  font-size: .7rem;
+}
+
+.view-option.grid-columns-option {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+}
+
 .view-option {
   display: inline-flex;
   align-items: center;
@@ -1073,6 +1091,16 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   margin-top: 18px;
+}
+
+@media (min-width: 980px) {
+  .grid-columns-control {
+    display: flex;
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(var(--catalog-grid-columns, 4), minmax(0, 1fr));
+  }
 }
 
 .rare-book-search-list {

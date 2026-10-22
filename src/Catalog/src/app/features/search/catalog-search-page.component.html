@@ -55,6 +55,25 @@
               <span>Grille</span>
             </button>
           </div>
+          @if (view === 'grid') {
+            <div class="grid-columns-control">
+              <span class="grid-columns-label">Cartes par rangée</span>
+              <div class="view-switch grid-columns-switch" role="group" aria-label="Nombre de cartes par rangée">
+                @for (columnCount of gridColumnChoices; track columnCount) {
+                  <button
+                    type="button"
+                    class="view-option grid-columns-option"
+                    [class.view-option--active]="columns === columnCount"
+                    [attr.aria-label]="columnCount + ' cartes par rangée'"
+                    [attr.aria-pressed]="columns === columnCount"
+                    [attr.data-columns]="columnCount"
+                    (click)="selectGridColumns(columnCount)">
+                    {{ columnCount }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
         }
         <div class="sort-control">
           <span>Trier par :</span>
@@ -254,7 +273,10 @@
               }
             </div>
           } @else if (!rareOnly && response?.books?.length) {
-            <div class="book-list" [class.book-grid]="view === 'grid'">
+            <div
+              class="book-list"
+              [class.book-grid]="view === 'grid'"
+              [style.--catalog-grid-columns]="view === 'grid' ? columns : null">
               @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
                 <article
                   class="book-search-result"
