@@ -38,6 +38,15 @@ public sealed class EnrichPendingBooksCommandHandler(
             throw new InvalidOperationException("The worker clock must be expressed in UTC.");
         }
 
+        if (command.FullCatalogRefreshStartedAt is { Kind: not DateTimeKind.Utc })
+        {
+            throw new ArgumentException(
+                "A full catalog refresh start time must be expressed in UTC.",
+                nameof(command.FullCatalogRefreshStartedAt));
+        }
+
+        var fullCatalogRefreshStartedAt = command.FullCatalogRefreshStartedAt;
+
         var candidateQuery = dbContext.Books
             .AsNoTracking()
             .Where(book =>
@@ -52,11 +61,18 @@ public sealed class EnrichPendingBooksCommandHandler(
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterFirstAttempt)) ||
                   (book.ResolveAttempts == 2 &&
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterSecondAttempt)))) ||
+                (fullCatalogRefreshStartedAt != null &&
+                 (book.MetadataStatus == BookMetadataStatus.Pending ||
+                  book.MetadataStatus == BookMetadataStatus.Failed ||
+                  book.MetadataStatus == BookMetadataStatus.NotFound) &&
+                 (book.LastAttemptAt == null ||
+                  book.LastAttemptAt < fullCatalogRefreshStartedAt)) ||
                 (book.MetadataStatus == BookMetadataStatus.Resolved &&
                   book.CoverUrl == null &&
                   (book.CoverCheckedAt == null ||
                    book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))) ||
                 (command.IncludeMissingGenres &&
+                 !command.RefreshAllGenres &&
                  book.MetadataStatus == BookMetadataStatus.Resolved &&
                  book.Genre == null &&
                  (book.MetadataFetchedAt == null ||
@@ -64,14 +80,24 @@ public sealed class EnrichPendingBooksCommandHandler(
                  (book.LastAttemptAt == null ||
                   book.LastAttemptAt <= now.Subtract(GenreRetryAfter))) ||
                 (command.RefreshAllGenres &&
-                 book.MetadataStatus == BookMetadataStatus.Resolved &&
-                 book.GenresRefreshedAt == null) ||
+                 ((book.MetadataStatus == BookMetadataStatus.Resolved &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Genre\""))) ||
+                  (book.MetadataStatus == BookMetadataStatus.Manual &&
+                   (book.ManuallyEditedFields == null ||
+                    !book.ManuallyEditedFields.Contains("\"Genre\"")))) &&
+                 (fullCatalogRefreshStartedAt == null ||
+                  book.GenresRefreshedAt == null ||
+                  book.GenresRefreshedAt < fullCatalogRefreshStartedAt)) ||
                 (command.RefreshMissingBibliographicDetails &&
                  (book.MetadataStatus == BookMetadataStatus.Resolved ||
                   book.MetadataStatus == BookMetadataStatus.Manual) &&
                  (book.Summary == null || book.PhysicalFormat == null || book.Language == null) &&
-                 (book.BibliographicDetailsRefreshedAt == null ||
-                  book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter))));
+                 (fullCatalogRefreshStartedAt == null
+                     ? book.BibliographicDetailsRefreshedAt == null ||
+                       book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter)
+                     : book.BibliographicDetailsRefreshedAt == null ||
+                       book.BibliographicDetailsRefreshedAt < fullCatalogRefreshStartedAt)));
 
         if (command.Isbn13 is { } requestedIsbn13)
         {
@@ -139,14 +165,26 @@ public sealed class EnrichPendingBooksCommandHandler(
                 continue;
             }
 
-            var genreOnly = book.MetadataStatus == BookMetadataStatus.Resolved &&
-                            ((command.IncludeMissingGenres && book.Genre is null) ||
-                             (command.RefreshAllGenres && book.GenresRefreshedAt is null));
+            var isFullGenreRefreshCandidate =
+                command.RefreshAllGenres &&
+                (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                !book.IsMetadataFieldManuallyEdited(BookMetadataField.Genre) &&
+                (fullCatalogRefreshStartedAt is null ||
+                 book.GenresRefreshedAt is null ||
+                 book.GenresRefreshedAt < fullCatalogRefreshStartedAt);
+            var genreOnly =
+                (book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 command.IncludeMissingGenres &&
+                 book.Genre is null) ||
+                isFullGenreRefreshCandidate;
             var detailsOnly = command.RefreshMissingBibliographicDetails &&
                               (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
                               HasMissingBibliographicDetails(book) &&
-                              (book.BibliographicDetailsRefreshedAt is null ||
-                               book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter));
+                              (fullCatalogRefreshStartedAt is { } detailsRefreshStartedAt
+                                  ? book.BibliographicDetailsRefreshedAt is null ||
+                                    book.BibliographicDetailsRefreshedAt < detailsRefreshStartedAt
+                                  : book.BibliographicDetailsRefreshedAt is null ||
+                                    book.BibliographicDetailsRefreshedAt <= now.Subtract(BibliographicDetailsRetryAfter));
             var coverOnly = !genreOnly &&
                             !detailsOnly &&
                             book.MetadataStatus == BookMetadataStatus.Resolved &&
@@ -154,7 +192,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                             (!command.IncludeMissingGenres || book.Genre is not null);
             var existingBookRefresh =
                 (book.MetadataStatus == BookMetadataStatus.Resolved && (coverOnly || genreOnly || detailsOnly)) ||
-                (book.MetadataStatus == BookMetadataStatus.Manual && detailsOnly);
+                (book.MetadataStatus == BookMetadataStatus.Manual && (detailsOnly || genreOnly));
             if (!existingBookRefresh &&
                 book.MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
             {
@@ -288,7 +326,13 @@ public sealed class EnrichPendingBooksCommandHandler(
                     coverCheckedAt: patch.Fields.Contains(BookMetadataField.CoverUrl) || !existingBookRefresh
                         ? metadata.RetrievedAt.UtcDateTime
                         : null);
-                if (!patch.Fields.Contains(BookMetadataField.Genre))
+                if (command.RefreshAllGenres &&
+                    (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                    !book.IsMetadataFieldManuallyEdited(BookMetadataField.Genre))
+                {
+                    book.RecordGenreRefreshAttempt(now);
+                }
+                else if (!patch.Fields.Contains(BookMetadataField.Genre))
                 {
                     RecordGenreRefreshAttempt(
                         book,
@@ -297,7 +341,11 @@ public sealed class EnrichPendingBooksCommandHandler(
                         now);
                 }
 
-                if (detailsOnly)
+                if (detailsOnly ||
+                    (fullCatalogRefreshStartedAt is not null &&
+                     command.RefreshMissingBibliographicDetails &&
+                     (book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual) &&
+                     HasMissingBibliographicDetails(book)))
                 {
                     book.RecordBibliographicDetailsRefreshAttempt(now);
                 }
@@ -549,7 +597,8 @@ public sealed class EnrichPendingBooksCommandHandler(
         bool refreshAllGenres,
         DateTime attemptedAt)
     {
-        if (refreshAllGenres && book.MetadataStatus == BookMetadataStatus.Resolved)
+        if (refreshAllGenres &&
+            book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual)
         {
             return book.RecordGenreRefreshAttempt(attemptedAt);
         }

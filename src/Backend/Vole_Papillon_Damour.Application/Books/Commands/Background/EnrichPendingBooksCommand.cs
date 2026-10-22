@@ -9,5 +9,6 @@ public sealed record EnrichPendingBooksCommand(
     Isbn13? Isbn13 = null,
     bool IncludeMissingGenres = false,
     bool RefreshAllGenres = false,
-    bool RefreshMissingBibliographicDetails = false)
+    bool RefreshMissingBibliographicDetails = false,
+    DateTime? FullCatalogRefreshStartedAt = null)
     : IRequest<EnrichPendingBooksResult>;

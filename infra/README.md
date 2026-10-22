@@ -327,3 +327,41 @@ Le worker est une Azure Function native sur Container Apps (`kind=functionapp`).
 utilise l'outbox SQL, le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault
 et l'identité managée dédiée. Pendant `P1-1`, sa cible est `minReplicas: 0`,
 `maxReplicas: 1` pendant la mesure du timer sur deux heures.
+
+### Lancer le rattrapage complet `Enrich`
+
+`Enrich` est une fonction HTTP `POST` protégée par une clé Functions, sans bouton dans le
+BackOffice. Elle démarre une orchestration Durable et répond `202 Accepted` avec les URL
+permettant de suivre son état. L'orchestration parcourt le catalogue par lots de 50 et
+attend une seconde entre les livres. Elle rafraîchit tous les genres non corrigés à la
+main et recherche les résumés et autres détails bibliographiques manquants.
+
+Pour l'appeler dans l'environnement DEV, récupérer la clé de fonction puis ouvrir un shell
+dans la révision active du Worker :
+
+```powershell
+az containerapp function keys list `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --key-type functionKey `
+  --function-name Enrich
+
+az containerapp exec `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --command bash
+```
+
+Dans le shell du conteneur, envoyer le POST sur le host Functions local avec la clé copiée
+de façon masquée :
+
+```bash
+read -r -s -p 'Enrich function key: ' key; echo
+curl --fail-with-body -i -X POST \
+  'http://127.0.0.1:80/api/Enrich' \
+  -H "x-functions-key: $key"
+unset key
+```
+
+La réponse contient les URI de suivi Durable. Conserver la réponse pour consulter l'état
+et le résultat final ; éviter de relancer `Enrich` tant qu'une orchestration est en cours.

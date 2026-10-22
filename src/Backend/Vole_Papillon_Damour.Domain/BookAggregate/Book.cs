@@ -328,7 +328,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public bool RecordGenreRefreshAttempt(DateTime attemptedAt)
     {
         var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
-        if (MetadataStatus != BookMetadataStatus.Resolved ||
+        if (MetadataStatus is not (BookMetadataStatus.Resolved or BookMetadataStatus.Manual) ||
             IsMetadataFieldManuallyEdited(BookMetadataField.Genre))
         {
             return false;

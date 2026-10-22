@@ -237,6 +237,32 @@ public sealed class BookMetadataTests
     }
 
     [Fact]
+    public void RecordGenreRefreshAttempt_AllowsUneditedGenresOnManualBooks()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                "Titre corrigé",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title]),
+            FirstSeenAt.AddMinutes(1));
+        var attemptedAt = FirstSeenAt.AddMinutes(2);
+
+        var changed = book.RecordGenreRefreshAttempt(attemptedAt);
+
+        changed.Should().BeTrue();
+        book.GenresRefreshedAt.Should().Be(attemptedAt);
+        book.Title.Should().Be("Titre corrigé");
+        book.MetadataStatus.Should().Be(BookMetadataStatus.Manual);
+    }
+
+    [Fact]
     public void RecordMetadataNotFound_StoresNegativeCacheAndCountsTheAttempt()
     {
         var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
