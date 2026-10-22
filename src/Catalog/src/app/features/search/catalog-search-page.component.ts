@@ -17,7 +17,6 @@ import {
   CatalogAvailability,
   CatalogBook,
   CatalogBookReference,
-  CatalogGenreFacet,
   CatalogSearchParams,
   CatalogSearchResponse,
   CatalogSort,
@@ -48,6 +47,11 @@ type CatalogReferenceFollowScope = Extract<CatalogWatchlistScope, 'Work' | 'Edit
 interface CatalogReferenceFollowTarget {
   item: CatalogBookReference;
   scope: CatalogReferenceFollowScope;
+}
+
+interface CatalogGenreFilterOption {
+  name: string;
+  bookCount: number | null;
 }
 
 @Component({
@@ -808,19 +812,19 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.changeDetector.markForCheck();
   }
 
-  filteredGenreOptions(): CatalogGenreFacet[] {
-    const options = this.response?.genreFacets?.length
+  filteredGenreOptions(): CatalogGenreFilterOption[] {
+    const options: CatalogGenreFilterOption[] = this.response?.genreFacets?.length
       ? this.response.genreFacets.map(facet => ({name: facet.name, bookCount: facet.bookCount}))
-      : (this.response?.genres ?? []).map(name => ({name, bookCount: 0}));
+      : (this.response?.genres ?? []).map(name => ({name, bookCount: null}));
     if (this.genre && !options.some(option => this.sameGenre(option.name, this.genre))) {
-      options.push({name: this.genre, bookCount: 0});
+      options.push({name: this.genre, bookCount: null});
     }
 
     const query = this.normalizeGenreSearch(this.genreSearchTerm);
     return options
       .filter(option => !query || this.normalizeGenreSearch(option.name).includes(query))
       .sort((left, right) =>
-        right.bookCount - left.bookCount || left.name.localeCompare(right.name, 'fr-FR'));
+        (right.bookCount ?? 0) - (left.bookCount ?? 0) || left.name.localeCompare(right.name, 'fr-FR'));
   }
 
   selectGenreOption(genre: string): void {

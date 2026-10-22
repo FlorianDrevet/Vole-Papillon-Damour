@@ -1,25 +1,29 @@
-<section class="search-toolbar" aria-label="Recherche dans le catalogue">
-  <div class="page-width">
-    <form class="search-form" (ngSubmit)="submitSearch()">
-      <span class="search-icon" aria-hidden="true"></span>
-      <label class="visually-hidden" for="catalog-search">Votre recherche</label>
-      <input
-        id="catalog-search"
-        name="query"
-        [(ngModel)]="query"
-        placeholder="un titre, un auteur, ou le code-barres"
-        autocomplete="off">
-      @if (query) {
-        <button type="button" class="search-clear" aria-label="Effacer la recherche" (click)="clearSearch()">×</button>
+<ng-template #searchForm let-inputId="inputId">
+  <form class="search-form" (ngSubmit)="submitSearch()">
+    <span class="search-icon" aria-hidden="true"></span>
+    <label class="visually-hidden" [attr.for]="inputId">Votre recherche</label>
+    <input
+      [id]="inputId"
+      name="query"
+      [(ngModel)]="query"
+      placeholder="un titre, un auteur, ou le code-barres"
+      autocomplete="off">
+    @if (query) {
+      <button type="button" class="search-clear" aria-label="Effacer la recherche" (click)="clearSearch()">×</button>
+    }
+    <button type="submit" class="search-submit" [disabled]="loading">
+      @if (loading) {
+        <vpd-loader variant="squares" label="Recherche en cours" surface="dark"></vpd-loader>
+      } @else {
+        Rechercher <span aria-hidden="true">↗</span>
       }
-      <button type="submit" class="search-submit" [disabled]="loading">
-        @if (loading) {
-          <vpd-loader variant="squares" label="Recherche en cours" surface="dark"></vpd-loader>
-        } @else {
-          Rechercher <span aria-hidden="true">↗</span>
-        }
-      </button>
-    </form>
+    </button>
+  </form>
+</ng-template>
+
+<section class="search-toolbar search-toolbar--desktop" aria-label="Recherche dans le catalogue">
+  <div class="page-width">
+    <ng-container *ngTemplateOutlet="searchForm; context: { inputId: 'catalog-search-desktop' }"></ng-container>
   </div>
 </section>
 
@@ -221,6 +225,10 @@
           </div>
         </div>
       </aside>
+
+      <section class="search-toolbar search-toolbar--mobile" aria-label="Recherche dans le catalogue">
+        <ng-container *ngTemplateOutlet="searchForm; context: { inputId: 'catalog-search-mobile' }"></ng-container>
+      </section>
 
       <div class="results-column">
         <section class="catalog-block" aria-labelledby="catalog-results-title">
@@ -492,7 +500,11 @@
               (click)="selectGenreOption(option.name)">
               <span class="genre-dialog-radio" aria-hidden="true"></span>
               <span class="genre-dialog-option-name">{{ option.name }}</span>
-              <span class="genre-dialog-count">{{ option.bookCount }} {{ option.bookCount === 1 ? 'livre' : 'livres' }}</span>
+              @if (option.bookCount === null) {
+                <span class="genre-dialog-count" aria-label="Nombre de livres indisponible">—</span>
+              } @else {
+                <span class="genre-dialog-count">{{ option.bookCount }} {{ option.bookCount === 1 ? 'livre' : 'livres' }}</span>
+              }
             </button>
             <button
               type="button"

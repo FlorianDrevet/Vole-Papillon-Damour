@@ -81,6 +81,7 @@ export interface CatalogSearchParams {
   availability?: CatalogAvailability;
   rareOnly?: boolean;
   includeExhausted?: boolean;
+  includeTotalCount?: boolean;
   sort?: CatalogSort;
   page?: number;
   pageSize?: number;

@@ -12,4 +12,5 @@ public sealed record SearchCatalogQuery(
     PublicCatalogSortOrder Sort,
     int Page,
     int PageSize,
-    bool IncludeExhausted = false) : IRequest<ErrorOr<PublicCatalogSearchResult>>;
+    bool IncludeExhausted = false,
+    bool IncludeTotalCount = false) : IRequest<ErrorOr<PublicCatalogSearchResult>>;

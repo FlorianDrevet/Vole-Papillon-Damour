@@ -83,7 +83,7 @@ export class CatalogHomePageComponent implements OnInit {
     }
 
     forkJoin({
-      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 8}).pipe(catchError(() => {
+      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: true}).pipe(catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
