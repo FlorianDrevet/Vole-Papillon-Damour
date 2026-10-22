@@ -255,11 +255,11 @@
         <button type="submit">Rechercher</button>
       </form>
       <p class="hero-count">
-        @if (recentTotal() !== null) {
-          @let total = recentTotal()!;
-          <strong>{{ total }}</strong> {{ total === 1 ? 'titre disponible en ce moment' : 'titres disponibles en ce moment' }}
-        } @else if (recentHasMore()) {
-          <strong>Plus de {{ recent().length }}</strong> titres disponibles en ce moment
+        @if (hasReliableCatalogCount()) {
+          @let total = catalogTotal()!;
+          <strong>{{ total }}</strong> {{ total === 1 ? 'titre dans le catalogue' : 'titres dans le catalogue' }}
+        } @else if (catalogHasMore()) {
+          <strong>Plus de {{ catalogCountLoaded() }}</strong> titres dans le catalogue
         } @else {
           <strong>Le catalogue</strong> est en cours de mise à jour
         }
@@ -292,7 +292,7 @@
         <p class="eyebrow">Sur les tables</p>
         <h2>Arrivés cette semaine.</h2>
       </div>
-      <button type="button" class="text-link" (click)="showAll()">{{ recentTotal() === null ? 'Voir toutes les nouveautés' : 'Voir les ' + recentTotal() + ' titres' }} <span aria-hidden="true">→</span></button>
+      <button type="button" class="text-link" (click)="showAll()">{{ hasReliableRecentCount() ? 'Voir les ' + recentTotal() + ' titres' : 'Voir toutes les nouveautés' }} <span aria-hidden="true">→</span></button>
     </div>
 
     @if (loading()) {

@@ -140,10 +140,10 @@ describe('CatalogHomePageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('puts the genre selector and availability count in the hero search', () => {
+  it('puts the genre selector and catalogue count in the hero search', () => {
     expect(fixture.nativeElement.querySelector('.hero-genre-select-trigger')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
-    expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
+    expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres dans le catalogue');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).toContain('Avec un compte');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent)

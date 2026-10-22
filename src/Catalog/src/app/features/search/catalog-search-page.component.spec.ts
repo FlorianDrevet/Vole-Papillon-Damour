@@ -656,6 +656,38 @@ describe('CatalogSearchPageComponent', () => {
     expect(sessionStorage.getItem('vpd.catalog.pending-genre-favorite')).toBeNull();
   });
 
+  it('uses ISBN wording and omits the decorative arrow in both search forms', () => {
+    fixture.detectChanges();
+
+    const forms = Array.from(fixture.nativeElement.querySelectorAll('.search-form')) as HTMLElement[];
+    expect(forms).toHaveSize(2);
+
+    for (const form of forms) {
+      expect((form.querySelector('input[name="query"]') as HTMLInputElement).placeholder)
+        .toBe('Titre, auteur ou ISBN');
+      const submit = form.querySelector('.search-submit') as HTMLButtonElement;
+      expect(submit.textContent?.trim()).toBe('Rechercher');
+      expect(submit.querySelector('[aria-hidden="true"]')).toBeNull();
+    }
+  });
+
+  it('shows accessible loading feedback on both search buttons', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.loading = true;
+    fixture.detectChanges();
+
+    const forms = Array.from(fixture.nativeElement.querySelectorAll('.search-form')) as HTMLElement[];
+    for (const form of forms) {
+      const submit = form.querySelector('.search-submit') as HTMLButtonElement;
+      const status = submit.querySelector('.search-submit-loading[role="status"]');
+      expect(submit.disabled).toBeTrue();
+      expect(submit.getAttribute('aria-busy')).toBe('true');
+      expect(status?.textContent?.trim()).toBe('Recherche…');
+      expect(status?.querySelector('.search-submit-spinner[aria-hidden="true"]')).not.toBeNull();
+    }
+  });
+
   it('centers the search bar within the content width', () => {
     fixture.detectChanges();
 
@@ -1332,8 +1364,46 @@ describe('CatalogSearchPageComponent', () => {
     const panel = element.querySelector('.sort-select-panel') as HTMLElement;
     expect(panel.getAttribute('role')).toBe('menu');
     expect(panel.querySelectorAll('.sort-option')).toHaveSize(2);
-    expect(panel.querySelector('.sort-option--selected')?.textContent).toContain('Pertinence');
+    expect(panel.querySelector('.sort-option--selected')?.textContent).toContain('Arrivée récente');
     expect(fixture.nativeElement.querySelector('.sort-select-chevron')).not.toBeNull();
+  });
+
+  it('uses recent arrivals by default and keeps that default out of the search URL', async () => {
+    routeParams.next(convertToParamMap({}));
+    api.search.and.returnValue(of(response));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sort).toBe('recent');
+    expect(fixture.componentInstance.sortLabel()).toBe('Arrivée récente');
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({sort: 'recent'}));
+
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.applyFilters();
+
+    const queryParams = navigate.calls.mostRecent().args[1]?.queryParams as Record<string, string>;
+    expect(queryParams['sort']).toBeUndefined();
+  });
+
+  it('preserves an explicit relevance sort in the search URL', async () => {
+    routeParams.next(convertToParamMap({sort: 'relevance'}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sort).toBe('relevance');
+    expect(fixture.componentInstance.sortLabel()).toBe('Pertinence');
+
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.applyFilters();
+
+    const queryParams = navigate.calls.mostRecent().args[1]?.queryParams as Record<string, string>;
+    expect(queryParams['sort']).toBe('relevance');
   });
 
   it('updates the sort and closes the branded menu when an option is chosen', async () => {

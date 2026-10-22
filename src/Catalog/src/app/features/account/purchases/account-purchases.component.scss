@@ -17,7 +17,6 @@
 }
 
 .purchase-passage,
-.purchases-empty,
 .purchases-state {
   border: 1px solid var(--catalog-line);
   background: var(--catalog-white);
@@ -43,7 +42,6 @@
 .purchase-line h3,
 .purchase-line p,
 .purchase-report-details,
-.purchases-empty h2,
 .purchases-state p {
   margin: 0;
 }
@@ -56,8 +54,7 @@
   text-transform: uppercase;
 }
 
-.purchase-passage-heading h2,
-.purchases-empty h2 {
+.purchase-passage-heading h2 {
   color: var(--catalog-ink);
   font: 500 clamp(1.2rem, 3vw, 1.55rem)/1.15 var(--catalog-display);
 }
@@ -213,22 +210,10 @@
   opacity: .65;
 }
 
-.purchases-empty,
 .purchases-state {
   padding: clamp(1.25rem, 4vw, 2.2rem);
   color: var(--catalog-slate-2);
   line-height: 1.5;
-}
-
-.purchases-empty-mark {
-  display: block;
-  margin-bottom: .6rem;
-  color: var(--catalog-blue);
-  font: 2rem/1 var(--catalog-display);
-}
-
-.purchases-empty h2 {
-  max-width: 34rem;
 }
 
 .purchases-error p {
