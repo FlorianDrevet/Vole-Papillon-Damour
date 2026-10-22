@@ -139,9 +139,20 @@ export class CatalogAuthService {
   }
 
   async login(startPage: string = ADMINISTRATION_ROUTE): Promise<void> {
+    await this.initialize();
+    const client = this.requireClient();
     const loginHint = this._recognizedAccount()?.username;
+    const requiresAccountSelection = !client.getActiveAccount()
+      && client.getAllAccounts().length > 1;
+    const request = {
+      ...catalogLoginRequest,
+      ...(requiresAccountSelection
+        ? {prompt: 'select_account' as const}
+        : loginHint ? {loginHint} : {}),
+    };
+
     await this.startInteractiveLogin(
-      loginHint ? {...catalogLoginRequest, loginHint} : catalogLoginRequest,
+      request,
       startPage,
     );
   }
@@ -350,7 +361,8 @@ export class CatalogAuthService {
   private syncFromCache(idTokenClaims?: AccountInfo['idTokenClaims']): void {
     const client = this.requireClient();
     const activeAccount = client.getActiveAccount();
-    const active = activeAccount ?? client.getAllAccounts()[0] ?? null;
+    const cachedAccounts = client.getAllAccounts();
+    const active = activeAccount ?? (cachedAccounts.length === 1 ? cachedAccounts[0] : null);
 
     if (active && !activeAccount) {
       client.setActiveAccount(active);

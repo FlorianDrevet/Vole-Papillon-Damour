@@ -161,8 +161,13 @@ export class ScanAuthService {
         throw new Error('interaction_in_progress');
       }
 
+      const instance = this.msalService.instance;
+      const requiresAccountSelection = !instance.getActiveAccount()
+        && instance.getAllAccounts().length > 1;
+
       return this.msalService.loginRedirect({
         ...loginRequest,
+        ...(requiresAccountSelection ? {prompt: 'select_account'} : {}),
         redirectStartPage: new URL(startPage, window.location.origin).href,
       });
     });
@@ -188,11 +193,15 @@ export class ScanAuthService {
       return;
     }
 
-    const firstAccount = this.msalService.instance.getAllAccounts()[0] ?? null;
-    if (firstAccount) {
-      this.msalService.instance.setActiveAccount(firstAccount);
+    const cachedAccounts = this.msalService.instance.getAllAccounts();
+    if (cachedAccounts.length !== 1) {
+      this.publishAccount(null);
+      return;
     }
-    this.publishAccount(firstAccount);
+
+    const onlyAccount = cachedAccounts[0];
+    this.msalService.instance.setActiveAccount(onlyAccount);
+    this.publishAccount(onlyAccount);
   }
 
   private requestAccountPublication(): void {

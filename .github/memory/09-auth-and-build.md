@@ -91,15 +91,25 @@
 - `ApiAccessTokenService` waits for `MsalBroadcastService.inProgress$` to reach
   `InteractionStatus.None` before resolving the cached account and calling
   `MsalService.acquireTokenSilent` for the API scope. This keeps Axios requests from racing
-  MSAL redirect handling; cached-account fallback and the interaction-required redirect
-  behavior remain in place. `AxiosService` adds the resulting bearer token to every API
-  request. `MsalInterceptor` is intentionally not registered because BackOffice uses Axios
-  rather than Angular `HttpClient`.
+  MSAL redirect handling. It adopts a cached account automatically only when there is exactly
+  one; with several cached accounts and no active account, the login flow asks Entra to show
+  its account picker. The `LOGIN_SUCCESS` event's returned account is made active directly.
+  `AxiosService` adds the resulting bearer token to every API request and, after a `401`, forces
+  one silent token refresh and retries that request once. A second `401` routes to login; `403`
+  responses are not retried. `MsalInterceptor` is intentionally not registered because
+  BackOffice uses Axios rather than Angular `HttpClient`.
   Silent MSAL failures must be classified by their error code as well as by
   `InteractionRequiredAuthError`: iframe timeouts and cross-bundle error objects otherwise
   reject before Axios sends anything. The BackOffice service starts one interactive redirect
   with the current route for interaction-required/iframe-timeout codes, then leaves ordinary
   transport errors to the page retry state.
+- Catalog and Scan follow the same account-selection rule: preserve MSAL's active account, infer
+  the account only when exactly one is cached, and use `prompt: 'select_account'` when the cache
+  is ambiguous. Catalog omits `loginHint` when requesting that picker because the hint can bypass
+  account selection. Catalog already refreshes silently when requesting API tokens and forces
+  refresh after a protected request returns `401`; Scan checks the API token silently when
+  publishing a cached session. `acquireTokenSilent` uses a valid cached token and handles silent
+  renewal when needed; it is request-driven rather than a background timer.
 - `src/main.ts` must not bootstrap Angular inside any iframe: the BackOffice root is also the
   MSAL silent-renewal `redirectUri`, and starting the router in that hidden frame can launch
   a second MSAL flow and make every Axios request fail before reaching the API. The top-level

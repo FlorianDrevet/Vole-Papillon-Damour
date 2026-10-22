@@ -58,6 +58,26 @@ describe('ScanAuthService', () => {
     expect(msal.logoutRedirect).toHaveBeenCalledOnceWith();
   });
 
+  it('asks Entra to select an account when several are cached and none is active', () => {
+    const firstAccount = createAccount('first@example.org', 'Premier bénévole', ['Tri']);
+    const secondAccount = createAccount('second@example.org', 'Second bénévole', ['Caisse']);
+    const instance = createMsalInstance([firstAccount, secondAccount]);
+    const msal = createMsalService(instance, createAccessToken(['Tri']));
+    const service = new ScanAuthService(msal, createBroadcastService().service);
+
+    expect(service.authState.status).toBe('unauthenticated');
+    expect(instance.setActiveAccount).not.toHaveBeenCalled();
+    expect(msal.acquireTokenSilent).not.toHaveBeenCalled();
+
+    service.login().subscribe();
+
+    expect(msal.loginRedirect).toHaveBeenCalledOnceWith({
+      ...loginRequest,
+      prompt: 'select_account',
+      redirectStartPage: `${window.location.origin}/`,
+    });
+  });
+
   it('updates the account when MSAL broadcasts login and logout', () => {
     const initialAccount = createAccount('initial@example.org', 'Initial', ['Tri']);
     const loggedInAccount = createAccount('tri@example.org', 'Tri', ['Tri']);

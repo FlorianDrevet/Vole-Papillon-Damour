@@ -1,6 +1,6 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
-import {AccountInfo, EventType, InteractionStatus} from '@azure/msal-browser';
+import {AccountInfo, AuthenticationResult, EventType, InteractionStatus} from '@azure/msal-browser';
 import {Observable} from 'rxjs';
 
 import {HOME_ROUTE, loginRequest} from './msal-config';
@@ -59,8 +59,13 @@ export class AuthSessionService {
     // on suit à la fois les évènements et le retour à l'état « aucune interaction
     // en cours », qui suit systématiquement le traitement de la redirection.
     this.msalBroadcastService.msalSubject$.subscribe(message => {
-      if (message.eventType === EventType.LOGIN_SUCCESS ||
-        message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
+      if (message.eventType === EventType.LOGIN_SUCCESS) {
+        const account = (message.payload as AuthenticationResult | null)?.account ?? null;
+        if (account) {
+          this.msalService.instance.setActiveAccount(account);
+        }
+        this.syncFromCache(account ?? undefined);
+      } else if (message.eventType === EventType.ACQUIRE_TOKEN_SUCCESS ||
         message.eventType === EventType.LOGOUT_SUCCESS) {
         this.syncFromCache();
       }
@@ -82,8 +87,13 @@ export class AuthSessionService {
    * l'application.
    */
   login(startPage: string = HOME_ROUTE): Observable<void> {
+    const instance = this.msalService.instance;
+    const requiresAccountSelection = !instance.getActiveAccount()
+      && instance.getAllAccounts().length > 1;
+
     return this.msalService.loginRedirect({
       ...loginRequest,
+      ...(requiresAccountSelection ? {prompt: 'select_account'} : {}),
       redirectStartPage: new URL(startPage, window.location.origin).href,
     });
   }
@@ -108,11 +118,15 @@ export class AuthSessionService {
     });
   }
 
-  private syncFromCache(): void {
+  private syncFromCache(preferredAccount?: AccountInfo): void {
     const instance = this.msalService.instance;
-    const active = instance.getActiveAccount() ?? instance.getAllAccounts()[0] ?? null;
+    const activeAccount = instance.getActiveAccount();
+    const cachedAccounts = instance.getAllAccounts();
+    const active = activeAccount
+      ?? preferredAccount
+      ?? (cachedAccounts.length === 1 ? cachedAccounts[0] : null);
 
-    if (active && !instance.getActiveAccount()) {
+    if (active && !activeAccount) {
       instance.setActiveAccount(active);
     }
 
