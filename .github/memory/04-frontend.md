@@ -32,6 +32,12 @@ where Angular component-style budgets require it. Responsive browser checks cove
 and 1280×900 with a development-only mocked authorized session; real MSAL/API validation and
 physical-device checks remain pending.
 
+As of 2026-10-22, Scan triage renders the local keep/discard verdict as soon as the local
+scan record is ready; bibliographic metadata resolves independently and is cached best-effort.
+While it loads, title/author/edition fields use skeletons. A metadata 404 gets a distinct
+manual-entry notice from a temporary lookup failure, and `lookupVersion` prevents an older
+scan's metadata from replacing the current book.
+
 On 2026-10-21, the anonymous-customer state in cash mode puts a compact « Scanner » card
 action beside its status from 19rem upward and stacks it below that width. The button keeps
 a descriptive accessible name and a 44px touch target; its presentation rules live in the
