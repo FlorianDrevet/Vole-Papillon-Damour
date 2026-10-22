@@ -803,7 +803,7 @@ In the public Catalog search grid, each card places « Suivre » beside its avai
 
 ## Catalog search grid density (2026-10-22)
 
-src/Catalog/src/app/features/search/catalog-search-page.component.* offers 3, 4, or 5 cards per row in the normal grid view. The default is 4 at viewport widths of at least 980 px; below that, the existing 3-column layout and 2-column mobile layout remain, and the control is hidden. A non-default selection is carried by the columns query parameter and does not reload catalog results. List and rare-book views are unchanged. Validation after rebasing on origin/main: the focused component suite passes 55/55 and the Catalog build succeeds. Responsive review covered 1024, 980, 979, and 700 px; the local API was unavailable for populated-card review.
+src/Catalog/src/app/features/search/catalog-search-page.component.* offers 3, 4, or 5 cards per row in the normal grid view. The default is 4 at viewport widths of at least 980 px; the selector is hidden below that breakpoint, where the grid uses 3 columns from 701–979 px and 2 columns at 700 px and below. A non-default selection is carried by the `columns` query parameter and does not reload catalog results. List and rare-book views are unchanged. Validation after rebasing on origin/main: the `CatalogSearchPageComponent` spec passes 59/59 tests and the Catalog build succeeds. Responsive review covered 1024, 980, 979, and 700 px; the local API was unavailable for populated-card review. Open PR #334.
 
 ## Catalog remote cover optimization — 2026-10-20
 
