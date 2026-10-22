@@ -32,9 +32,9 @@ public sealed class GetPublicWorkQueryHandler(
         }
 
         var workId = query.WorkId.Trim();
-        var books = await dbContext.Books
-            .AsNoTracking()
-            .Where(PublicCatalogBookVisibility.Predicate)
+        var books = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
+                dbContext.Books.AsNoTracking(),
+                dbContext)
             .Where(book => book.WorkId == workId)
             .ToListAsync(cancellationToken);
 
