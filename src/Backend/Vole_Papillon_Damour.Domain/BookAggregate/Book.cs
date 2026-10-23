@@ -116,6 +116,23 @@ public sealed class Book : AggregateRoot<Isbn13>
         UpdatedAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
     }
 
+    public bool ComputeWorkKeyIfMissing()
+    {
+        if (WorkKey is not null)
+        {
+            return false;
+        }
+
+        var workKey = WorkKeyValue.Compute(Title, Authors);
+        if (workKey is null)
+        {
+            return false;
+        }
+
+        WorkKey = workKey;
+        return true;
+    }
+
     public void RecordSale(DateTime occurredAt, int quantity = 1)
     {
         if (quantity <= 0)

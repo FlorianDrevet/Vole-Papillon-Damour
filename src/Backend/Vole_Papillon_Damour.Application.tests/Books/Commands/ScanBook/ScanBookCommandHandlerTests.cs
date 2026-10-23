@@ -40,6 +40,7 @@ using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
@@ -751,6 +752,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 {
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<IsbndbCatchUpRun> IsbndbCatchUpRuns => Set<IsbndbCatchUpRun>();
     public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
@@ -789,7 +791,6 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
-        modelBuilder.Ignore<Watchlist>();
 
         modelBuilder.Entity<AssoEvents>(builder =>
         {
@@ -859,6 +860,13 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .WithOne()
                 .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IsbndbCatchUpRun>(builder =>
+        {
+            builder.HasKey(run => run.Id);
+            builder.Property(run => run.Id).ValueGeneratedOnAdd();
+            builder.Property(run => run.StopReason).HasConversion<byte>();
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>
@@ -947,6 +955,14 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
                     value => value == null ? null : RareBookId.Create(value.Value)));
+        });
+
+        modelBuilder.Entity<Watchlist>(builder =>
+        {
+            builder.HasKey(watchlist => watchlist.Id);
+            builder.Property(watchlist => watchlist.Id)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(watchlist => watchlist.AlertStatus).HasConversion<byte>();
         });
 
         modelBuilder.Entity<UserAlertHistory>(builder =>
