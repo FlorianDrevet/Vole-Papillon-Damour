@@ -5,5 +5,6 @@ public enum BookMetadataSource : byte
     Bnf,
     OpenLibrary,
     Manual,
-    GoogleBooks
+    GoogleBooks,
+    Isbndb
 }

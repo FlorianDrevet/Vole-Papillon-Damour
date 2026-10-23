@@ -11,5 +11,7 @@ public enum BookMetadataField : byte
     Genre,
     CoverUrl,
     WorkId,
-    Summary
+    Summary,
+    Pages,
+    Edition
 }
