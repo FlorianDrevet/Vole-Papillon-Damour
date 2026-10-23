@@ -676,6 +676,10 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

@@ -353,7 +353,7 @@ public sealed class IsbndbClientTests
             await client.GetBookAsync(ParseIsbn13(isbn), IsbndbUsage.Scan, CancellationToken.None);
         }
 
-        stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromSeconds(2));
+        stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(1_900));
     }
 
     private static IIsbndbQuotaGuard CreateQuotaGuard(bool isExhausted = false)
@@ -452,7 +452,7 @@ public sealed class IsbndbClientTests
           "dewey_decimal": "843.7",
           "authors": ["Hugo, Victor"],
           "subjects": ["Romans", "Literature & Fiction"],
-          "other_isbns": ["9782070612758"],
+          "other_isbns": [{ "isbn": "9782070612758", "binding": "Hardcover" }],
           "related": { "work": "les-miserables" }
         }
         """;

@@ -25,6 +25,23 @@ public sealed class BookMetadataEnrichmentQueueTests
         await dequeue.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact]
+    public async Task DequeueBatchAsync_ReturnsQueuedUniqueIsbnsUpToTheMaximum()
+    {
+        var queue = new BookMetadataEnrichmentQueue();
+        var first = ParseIsbn("9791036377426");
+        var second = ParseIsbn("9783140464079");
+        var third = ParseIsbn("9782070409228");
+        queue.Enqueue(first);
+        queue.Enqueue(first);
+        queue.Enqueue(second);
+        queue.Enqueue(third);
+
+        var batch = await queue.DequeueBatchAsync(2, CancellationToken.None);
+
+        batch.Should().Equal(first, second);
+    }
+
     private static Isbn13 ParseIsbn(string value)
     {
         return Isbn13.TryCreate(value, out var isbn)

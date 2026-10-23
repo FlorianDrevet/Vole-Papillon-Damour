@@ -750,6 +750,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
@@ -783,6 +785,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
@@ -832,6 +835,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte>();
             builder.HasMany(book => book.Genres)
@@ -840,6 +847,18 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Navigation(book => book.Genres)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<BookIsbndbRecord>(builder =>
+        {
+            builder.HasKey(record => record.Isbn13);
+            builder.Property(record => record.Isbn13)
+                .ValueGeneratedNever()
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.HasOne<Book>()
+                .WithOne()
+                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

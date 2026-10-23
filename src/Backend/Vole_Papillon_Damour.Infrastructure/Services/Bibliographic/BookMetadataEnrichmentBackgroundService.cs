@@ -2,27 +2,31 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Vole_Papillon_Damour.Application.Books.Commands.Background;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Infrastructure.Services.Isbndb;
 
 namespace Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
 public sealed class BookMetadataEnrichmentBackgroundService(
     IBookMetadataEnrichmentQueue queue,
     IServiceScopeFactory scopeFactory,
-    ILogger<BookMetadataEnrichmentBackgroundService> logger) : BackgroundService
+    ILogger<BookMetadataEnrichmentBackgroundService> logger,
+    IOptions<IsbndbOptions>? isbndbOptions = null) : BackgroundService
 {
-    private static readonly TimeSpan InterIsbnDelay = TimeSpan.FromSeconds(1);
+    private const int DefaultBulkSize = 100;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            Isbn13 isbn13;
+            IReadOnlyList<Isbn13> isbn13s;
             try
             {
-                isbn13 = await queue.DequeueAsync(stoppingToken);
+                var max = Math.Clamp(isbndbOptions?.Value.BulkSize ?? DefaultBulkSize, 1, DefaultBulkSize);
+                isbn13s = await queue.DequeueBatchAsync(max, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -34,13 +38,13 @@ public sealed class BookMetadataEnrichmentBackgroundService(
                 using var scope = scopeFactory.CreateScope();
                 var sender = scope.ServiceProvider.GetRequiredService<ISender>();
                 var result = await sender.Send(
-                    new EnrichPendingBooksCommand(Isbn13: isbn13),
+                    new EnrichPendingBooksCommand(BatchSize: isbn13s.Count, Isbn13s: isbn13s),
                     stoppingToken);
 
                 logger.LogInformation(
-                    "Immediate book metadata enrichment completed for ISBN {Isbn13}. " +
+                    "Immediate book metadata enrichment completed for {IsbnCount} ISBNs. " +
                     "Processed: {Processed}, Resolved: {Resolved}, NotFound: {NotFound}, Failed: {Failed}",
-                    isbn13.Value,
+                    isbn13s.Count,
                     result.ProcessedCount,
                     result.ResolvedCount,
                     result.NotFoundCount,
@@ -54,17 +58,8 @@ public sealed class BookMetadataEnrichmentBackgroundService(
             {
                 logger.LogError(
                     exception,
-                    "Immediate book metadata enrichment failed for ISBN {Isbn13}; the scheduled worker will retry it.",
-                    isbn13.Value);
-            }
-
-            try
-            {
-                await Task.Delay(InterIsbnDelay, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                return;
+                    "Immediate book metadata enrichment failed for {IsbnCount} ISBNs; the scheduled worker will retry them.",
+                    isbn13s.Count);
             }
         }
     }

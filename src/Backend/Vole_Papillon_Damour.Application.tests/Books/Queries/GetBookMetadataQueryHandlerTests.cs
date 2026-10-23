@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries;
@@ -224,6 +225,10 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte?>();
             builder.Property(book => book.CoverSource).HasConversion<byte?>();

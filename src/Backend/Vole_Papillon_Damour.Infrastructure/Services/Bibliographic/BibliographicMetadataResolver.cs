@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Observability;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
@@ -13,7 +15,8 @@ public sealed class BibliographicMetadataResolver(
     IBnfSruClient bnfClient,
     IOpenLibraryClient openLibraryClient,
     IGoogleBooksClient googleBooksClient,
-    ILogger<BibliographicMetadataResolver> logger) : IBibliographicMetadataResolver
+    ILogger<BibliographicMetadataResolver> logger,
+    IIsbndbLookupService? isbndbLookupService = null) : IBibliographicMetadataResolver
 {
     private const string BnfProvider = "BnF";
     private const string OpenLibraryProvider = "OpenLibrary";
@@ -22,7 +25,9 @@ public sealed class BibliographicMetadataResolver(
     public async Task<BookMetadataResult?> ResolveAsync(
         Isbn13 isbn13,
         CancellationToken cancellationToken,
-        bool includeBibliographicDetails = false)
+        bool includeBibliographicDetails = false,
+        IsbndbUsage usage = IsbndbUsage.Scan,
+        IsbndbLookup? prefetchedIsbndbLookup = null)
     {
         using var activity = BookScanTelemetry.StartActivity(
             BookScanTelemetry.MetadataResolutionActivityName);
@@ -34,7 +39,12 @@ public sealed class BibliographicMetadataResolver(
 
         try
         {
-            metadata = await ResolveCoreAsync(isbn13, cancellationToken, includeBibliographicDetails);
+            metadata = await ResolveCoreAsync(
+                isbn13,
+                cancellationToken,
+                includeBibliographicDetails,
+                usage,
+                prefetchedIsbndbLookup);
             outcome = metadata is null
                 ? BookScanTelemetry.NotFoundOutcome
                 : BookScanTelemetry.FoundOutcome;
@@ -66,7 +76,59 @@ public sealed class BibliographicMetadataResolver(
         }
     }
 
+    public async Task<string?> ResolveWorkIdAsync(Isbn13 isbn13, CancellationToken cancellationToken)
+    {
+        var bnfResult = await TryFindAsync(
+            BnfProvider,
+            () => bnfClient.FindAsync(isbn13, cancellationToken),
+            isbn13,
+            cancellationToken);
+        if (!string.IsNullOrWhiteSpace(bnfResult.Metadata?.WorkId))
+        {
+            return bnfResult.Metadata.WorkId.Trim();
+        }
+
+        var openLibraryResult = await TryFindAsync(
+            OpenLibraryProvider,
+            () => openLibraryClient.FindAsync(isbn13, cancellationToken),
+            isbn13,
+            cancellationToken);
+        return string.IsNullOrWhiteSpace(openLibraryResult.Metadata?.WorkId)
+            ? null
+            : openLibraryResult.Metadata.WorkId.Trim();
+    }
+
     private async Task<BookMetadataResult?> ResolveCoreAsync(
+        Isbn13 isbn13,
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails,
+        IsbndbUsage usage,
+        IsbndbLookup? prefetchedIsbndbLookup)
+    {
+        var isbndbLookup = prefetchedIsbndbLookup;
+        if (isbndbLookup is null && isbndbLookupService is not null)
+        {
+            isbndbLookup = await isbndbLookupService.LookupAsync(isbn13, usage, cancellationToken);
+        }
+
+        if (isbndbLookup is IsbndbLookup.Found found)
+        {
+            return MapIsbndbNotice(isbn13, found.Book);
+        }
+
+        var isbndbOutcome = isbndbLookup switch
+        {
+            IsbndbLookup.NotFound => IsbndbOutcome.NotFound,
+            IsbndbLookup.QuotaExhausted or IsbndbLookup.Unavailable => IsbndbOutcome.Deferred,
+            _ => (IsbndbOutcome?)null
+        };
+        var fallback = await ResolveFallbackAsync(isbn13, cancellationToken, includeBibliographicDetails);
+        return isbndbOutcome is null || fallback is null
+            ? fallback
+            : fallback with { IsbndbOutcome = isbndbOutcome };
+    }
+
+    private async Task<BookMetadataResult?> ResolveFallbackAsync(
         Isbn13 isbn13,
         CancellationToken cancellationToken,
         bool includeBibliographicDetails)
@@ -129,6 +191,35 @@ public sealed class BibliographicMetadataResolver(
         }
 
         return null;
+    }
+
+    private static BookMetadataResult MapIsbndbNotice(Isbn13 isbn13, IsbndbBook book)
+    {
+        var patch = IsbndbNoticeMapper.ToPatch(book);
+        var coverUrl = Uri.TryCreate(patch.CoverUrl, UriKind.Absolute, out var cover)
+            ? cover
+            : null;
+        return new BookMetadataResult(
+            isbn13.Value,
+            patch.Title,
+            patch.Authors,
+            patch.Publisher,
+            patch.PublicationYear,
+            coverUrl,
+            "ISBNdb",
+            WorkId: null,
+            RetrievedAt: DateTimeOffset.UtcNow,
+            CoverSource: coverUrl is null ? null : "ISBNdb",
+            Genre: patch.Genre,
+            Genres: patch.Genres?.ToArray(),
+            Summary: patch.Summary,
+            PhysicalFormat: patch.PhysicalFormat,
+            Language: patch.Language,
+            IsbndbOutcome: IsbndbOutcome.Found,
+            IsbndbNotice: book,
+            Pages: patch.Pages,
+            Edition: patch.Edition,
+            WorkKey: WorkKey.Compute(patch.Title, patch.Authors));
     }
 
     private async Task<ProviderResult> TryFindAsync(

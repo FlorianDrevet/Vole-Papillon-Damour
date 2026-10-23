@@ -1,18 +1,16 @@
 using Microsoft.Extensions.Caching.Hybrid;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
 /// <summary>
-/// Shields BnF, Open Library and Google Books from repeated lookups of the same
-/// ISBN within a short window: a burst of scans of the same not-yet-catalogued
-/// book (several volunteers, a duplicate copy, a flaky connection retry) only
-/// reaches the providers once. This is deliberately short-lived — the durable
-/// cache for a book that does resolve is the `Books` table itself, written by
-/// the enrichment worker and read directly by <see cref="Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata.GetBookMetadataQueryHandler"/>
-/// before it ever reaches this resolver.
+/// Caches the resolved notice by ISBN. A complete ISBNdb notice also satisfies later
+/// requests for bibliographic details; a less complete fallback entry is upgraded
+/// when a details refresh is requested.
 /// </summary>
 public sealed class CachedBibliographicMetadataResolver(
     IBibliographicMetadataResolver inner,
@@ -27,27 +25,65 @@ public sealed class CachedBibliographicMetadataResolver(
     public async Task<BookMetadataResult?> ResolveAsync(
         Isbn13 isbn13,
         CancellationToken cancellationToken,
-        bool includeBibliographicDetails = false)
+        bool includeBibliographicDetails = false,
+        IsbndbUsage usage = IsbndbUsage.Scan,
+        IsbndbLookup? prefetchedIsbndbLookup = null)
     {
-        var entry = await cache.GetOrCreateAsync(
-            BuildCacheKey(isbn13, includeBibliographicDetails),
-            (Inner: inner, Isbn13: isbn13, IncludeBibliographicDetails: includeBibliographicDetails),
-            static async (state, ct) => new CacheEntry(await state.Inner.ResolveAsync(
-                state.Isbn13,
-                ct,
-                state.IncludeBibliographicDetails)),
-            EntryOptions,
-            cancellationToken: cancellationToken);
+        var key = BuildCacheKey(isbn13);
+        if (prefetchedIsbndbLookup is not null)
+        {
+            await cache.RemoveAsync(key, cancellationToken);
+        }
+
+        var state = new ResolveState(
+            inner,
+            isbn13,
+            includeBibliographicDetails,
+            usage,
+            prefetchedIsbndbLookup);
+        var entry = await GetOrCreateAsync(key, state, cancellationToken);
+        if (includeBibliographicDetails && !entry.IncludesBibliographicDetails)
+        {
+            await cache.RemoveAsync(key, cancellationToken);
+            entry = await GetOrCreateAsync(key, state with { PrefetchedIsbndbLookup = null }, cancellationToken);
+        }
 
         return entry.Metadata;
     }
 
-    private static string BuildCacheKey(Isbn13 isbn13, bool includeBibliographicDetails) =>
-        $"book-metadata:{(includeBibliographicDetails ? "details" : "core")}:{isbn13.Value}";
+    public Task<string?> ResolveWorkIdAsync(Isbn13 isbn13, CancellationToken cancellationToken) =>
+        inner.ResolveWorkIdAsync(isbn13, cancellationToken);
 
-    // HybridCache requires a non-null value; a "not found" result is wrapped so
-    // it can still be cached (avoiding repeated provider calls for a genuinely
-    // absent ISBN), while a thrown exception from the inner resolver is never
-    // cached — a provider outage must not be remembered as a negative result.
-    private sealed record CacheEntry(BookMetadataResult? Metadata);
+    private ValueTask<CacheEntry> GetOrCreateAsync(
+        string key,
+        ResolveState state,
+        CancellationToken cancellationToken) =>
+        cache.GetOrCreateAsync(
+            key,
+            state,
+            static async (current, ct) =>
+            {
+                var metadata = await current.Inner.ResolveAsync(
+                    current.Isbn13,
+                    ct,
+                    current.IncludeBibliographicDetails,
+                    current.Usage,
+                    current.PrefetchedIsbndbLookup);
+                var includesDetails = current.IncludeBibliographicDetails ||
+                                      metadata?.IsbndbOutcome == IsbndbOutcome.Found;
+                return new CacheEntry(metadata, includesDetails);
+            },
+            EntryOptions,
+            cancellationToken: cancellationToken);
+
+    private static string BuildCacheKey(Isbn13 isbn13) => $"book-metadata:{isbn13.Value}";
+
+    private sealed record ResolveState(
+        IBibliographicMetadataResolver Inner,
+        Isbn13 Isbn13,
+        bool IncludeBibliographicDetails,
+        IsbndbUsage Usage,
+        IsbndbLookup? PrefetchedIsbndbLookup);
+
+    private sealed record CacheEntry(BookMetadataResult? Metadata, bool IncludesBibliographicDetails);
 }
