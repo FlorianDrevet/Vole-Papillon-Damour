@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using WorkKeyValue = Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.WorkKey;
 
 namespace Vole_Papillon_Damour.Domain.BookAggregate;
 
@@ -26,6 +27,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public IReadOnlyCollection<BookGenre> Genres => _genres;
     public int? Pages { get; private set; }
     public string? Edition { get; private set; }
+    public string? WorkKey { get; private set; }
 
     public int QuantityAvailable { get; private set; }
     public int SalesCount { get; private set; }
@@ -741,9 +743,21 @@ public sealed class Book : AggregateRoot<Isbn13>
         switch (field)
         {
             case BookMetadataField.Title:
-                return SetValue(Title, patch.Title, value => Title = value);
+                var titleChanged = SetValue(Title, patch.Title, value => Title = value);
+                if (titleChanged)
+                {
+                    WorkKey = WorkKeyValue.Compute(Title, Authors);
+                }
+
+                return titleChanged;
             case BookMetadataField.Authors:
-                return SetValue(Authors, patch.Authors, value => Authors = value);
+                var authorsChanged = SetValue(Authors, patch.Authors, value => Authors = value);
+                if (authorsChanged)
+                {
+                    WorkKey = WorkKeyValue.Compute(Title, Authors);
+                }
+
+                return authorsChanged;
             case BookMetadataField.WorkId:
                 return SetValue(WorkId, patch.WorkId, value => WorkId = value);
             case BookMetadataField.Publisher:
