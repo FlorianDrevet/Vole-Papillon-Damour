@@ -246,12 +246,14 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
 {
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
+    public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => Books;
+    DbSet<BookIsbndbRecord> IProjectDbContext.BookIsbndbRecords => BookIsbndbRecords;
     DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
@@ -298,6 +300,16 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
         modelBuilder.ApplyConfiguration(new BookSimilarityProfileConfiguration());
         modelBuilder.Entity<BookSimilarityProfile>().Property(profile => profile.NoticeJson).HasColumnType("TEXT");
         modelBuilder.Entity<BookSimilarityProfile>().Property(profile => profile.ProfileText).HasColumnType("TEXT");
+        modelBuilder.Entity<BookIsbndbRecord>(builder =>
+        {
+            builder.HasKey(record => record.Isbn13);
+            builder.Property(record => record.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.HasOne<Book>()
+                .WithOne()
+                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
