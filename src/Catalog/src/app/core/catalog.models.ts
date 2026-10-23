@@ -723,6 +723,69 @@ export interface CatalogAdminOverview {
   };
 }
 
+export interface CatalogAdminIsbndbStatus {
+  dailyLimit: number;
+  dailyRemaining: number;
+  observedAt: string | null;
+  resetsAt: string | null;
+  status: string;
+  exhaustedUntil: string | null;
+  usageToday: Array<{usage: string; credits: number}>;
+  pendingCatchUp: {total: number; inStock: number; beforeMigration: number};
+  absentToComplete: number;
+  lastRun: {
+    startedAt: string;
+    endedAt: string | null;
+    filled: number;
+    absent: number;
+    remaining: number;
+    stopReason: string | null;
+  } | null;
+  unmatchedSubjects: Array<{subject: string; count: number}>;
+}
+
+export interface CatalogAdminIsbndbAbsentBook {
+  isbn13: string;
+  title: string | null;
+  authors: string | null;
+  coverUrl: string | null;
+  fallbackSource: string | null;
+  quantityAvailable: number;
+  missingFields: string[];
+  summary: string | null;
+  genre: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  pages: number | null;
+  edition: string | null;
+  genres: string[];
+  subjects: string[];
+  firstSeenAt: string;
+  isbndbCheckedAt: string | null;
+  isbndbCompletedAt: string | null;
+}
+
+export interface CatalogAdminIsbndbAbsentBooksPage {
+  items: CatalogAdminIsbndbAbsentBook[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogAdminIsbndbCompletionResponse {
+  isbn13: string;
+  isCompleted: boolean;
+  completedAt: string | null;
+  completedBy: string | null;
+  changed: boolean;
+}
+
+export interface CatalogAdminIsbndbRecheckResponse {
+  isbn13: string;
+  outcome: string;
+  resetsAt: string | null;
+}
+
 export interface CatalogAdminAnnouncement {
   id: string;
   isbn13: string;
@@ -763,6 +826,16 @@ export interface CatalogAdminBook {
   metadataStatus: string;
   metadataSource: string | null;
   manuallyEditedFields: string | null;
+  isIsbndbSourced: boolean;
+  isAbsentFromIsbndb: boolean;
+  isbndbCheckedAt: string | null;
+  isbndbCompletedAt: string | null;
+  pages: number | null;
+  edition: string | null;
+  summary: string | null;
+  genres: string[];
+  subjects: string[];
+  fallbackSource: string | null;
   quantityAvailable: number;
   quantityAnnounced: number;
   salesCount: number;
@@ -776,6 +849,37 @@ export interface CatalogAdminBook {
   updatedAt: string;
   announcements: CatalogAdminAnnouncement[];
   movements: CatalogAdminBookMovement[];
+}
+
+export type CatalogAdminBookMetadataField =
+  | 'Title'
+  | 'Authors'
+  | 'Publisher'
+  | 'PublicationYear'
+  | 'PhysicalFormat'
+  | 'Language'
+  | 'Genre'
+  | 'CoverUrl'
+  | 'WorkId'
+  | 'Summary'
+  | 'Pages'
+  | 'Edition';
+
+export interface CatalogAdminBookMetadataUpdate {
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  physicalFormat: string | null;
+  language: string | null;
+  genre: string | null;
+  coverUrl: string | null;
+  workId: string | null;
+  fields: CatalogAdminBookMetadataField[];
+  summary: string | null;
+  pages: number | null;
+  edition: string | null;
+  genres: string[];
 }
 
 export interface CatalogAdminBookPage {

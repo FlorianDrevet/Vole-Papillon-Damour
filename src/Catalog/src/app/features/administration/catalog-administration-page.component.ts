@@ -26,6 +26,7 @@ import {
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {CURATED_CATALOG_GENRES, mergeCatalogGenres} from '../../core/catalog-genres';
 import {isCatalogAdministrationRoute} from '../../core/catalog-route';
 import {
   catalogAdminSectionFromRoute,
@@ -50,6 +51,8 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminBook,
+  CatalogAdminBookMetadataField,
+  CatalogAdminBookMetadataUpdate,
   CatalogAdminBookMetadataQueue,
   CatalogAdminBookMetadataQueueItem,
   CatalogAdminBookImportResponse,
@@ -65,6 +68,7 @@ import {
   CatalogAdminMemberFilters,
   CatalogAdminMemberPage,
   CatalogAdminOverview,
+  CatalogAdminIsbndbStatus,
   CatalogAdminCreateAccountRequest,
   CatalogAdminScanSession,
   CatalogAdminScanSessionPage,
@@ -150,7 +154,7 @@ type CatalogAdminNavIcon =
   | 'accounts'
   | 'settings';
 
-type CatalogAdminNavigationBadgeSection = 'catalogue' | 'isbn-queue' | 'rare-books';
+type CatalogAdminNavigationBadgeSection = 'catalogue' | 'isbn-queue' | 'isbndb-absent' | 'rare-books';
 type CatalogAdminNavigationBadgeCounts = Partial<Record<CatalogAdminNavigationBadgeSection, number>>;
 
 interface CatalogAdminNavItem {
@@ -182,6 +186,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
     items: [
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
       {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
+      {id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'},
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
       {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
     ],
@@ -291,6 +296,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       const count = this.manualRequestSummary()?.foundCount ?? 0;
       return count > 0 ? this.formatNumber(count) : null;
     }
+    if (section === 'isbndb-absent') {
+      const count = this.navigationBadgeCounts()['isbndb-absent'];
+      return count && count > 0 ? this.formatNumber(count) : null;
+    }
 
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.openSessionCount() : undefined
@@ -308,6 +317,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
+  readonly isbndbStatus = signal<CatalogAdminIsbndbStatus | null>(null);
+  readonly isbndbAccessToken = signal('');
   readonly catalogueBooksPage = signal<CatalogAdminBookPage | null>(null);
   readonly isbnMetadataQueue = signal<CatalogAdminBookMetadataQueue | null>(null);
   readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
@@ -440,11 +451,16 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     authors: '',
     publisher: '',
     publicationYear: null as number | null,
+    pages: null as number | null,
+    edition: '',
     physicalFormat: '',
     language: '',
     genre: '',
+    genres: [] as string[],
+    summary: '',
     workId: '',
   };
+  readonly catalogGenres = CURATED_CATALOG_GENRES;
   quantityCorrection = 0;
   quantityNote = '';
   withdrawalQuantity = 1;
@@ -617,6 +633,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'isbn-queue':
         await this.loadIsbnMetadataQueue();
         break;
+      case 'isbndb-absent':
+        await this.loadIsbndbAbsentWorkspace();
+        break;
       case 'rare-books':
         break;
       case 'statistics':
@@ -673,7 +692,80 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.run('overview', async token => {
       const overview = this.api.getOverview(token, undefined, undefined, true);
       this.overview.set(await firstValueFrom(overview));
+      await this.loadIsbndbStatus(token);
     });
+  }
+
+  private async loadIsbndbStatus(token: string): Promise<void> {
+    try {
+      const status = await firstValueFrom(this.api.getIsbndbStatus(token));
+      this.isbndbStatus.set(status);
+      this.navigationBadgeCounts.update(counts => ({...counts, 'isbndb-absent': status.absentToComplete}));
+    } catch {
+      this.isbndbStatus.set(null);
+    }
+  }
+
+  toggleMetadataGenre(genre: string): void {
+    const current = this.metadataForm.genres;
+    this.metadataForm.genres = current.includes(genre)
+      ? current.filter(item => item !== genre)
+      : [...current, genre];
+    this.metadataForm.genre = this.metadataForm.genres[0] ?? '';
+  }
+
+  metadataPlaceholder(book: CatalogAdminBook, value: string | number | null): string {
+    return book.isAbsentFromIsbndb && (value === null || value === '') ? '· manquant' : '';
+  }
+
+  provenanceSourceLabel(source: string | null): string {
+    const labels: Record<string, string> = {
+      Bnf: 'BnF',
+      OpenLibrary: 'Open Library',
+      GoogleBooks: 'Google Books',
+    };
+    return source ? labels[source] ?? source : 'Aucune';
+  }
+
+  provenanceBadgeLabel(book: CatalogAdminBook): string {
+    if (book.isIsbndbSourced) return 'ISBNdb';
+    if (book.isAbsentFromIsbndb) {
+      return book.isbndbCompletedAt ? 'Hors ISBNdb · complétée' : 'Hors ISBNdb · à compléter';
+    }
+    return 'Secours · en attente du rattrapage';
+  }
+
+  isbndbLookupLabel(book: CatalogAdminBook): string {
+    return book.isIsbndbSourced ? 'Trouvé' : book.isAbsentFromIsbndb ? 'Livre inconnu' : 'Pas encore interrogé';
+  }
+
+  canRecheckIsbndbBook(book: CatalogAdminBook): boolean {
+    return !book.isIsbndbSourced && !book.isbndbCompletedAt && !this.isIsbndbQuotaExhausted();
+  }
+
+  isIsbndbQuotaExhausted(): boolean {
+    return this.isbndbStatus()?.status === 'Exhausted';
+  }
+
+  isbndbExhaustedUntil(): string {
+    const status = this.isbndbStatus();
+    const value = status?.exhaustedUntil ?? status?.resetsAt;
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat('fr-FR', {
+        timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit',
+      }).format(date)
+      : '—';
+  }
+
+  private formatIsbndbParisTime(value: string | null): string {
+    const date = value ? new Date(value) : null;
+    return date && Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat('fr-FR', {
+        timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit',
+      }).format(date)
+      : '—';
   }
 
   async loadCatalogue(): Promise<void> {
@@ -687,6 +779,37 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.run('isbn-metadata-queue', async token => {
       await this.loadIsbnMetadataQueuePage(token);
     });
+  }
+
+  private async loadIsbndbAbsentWorkspace(): Promise<void> {
+    await this.run('isbndb-absent-access', async token => {
+      this.isbndbAccessToken.set(token);
+    });
+  }
+
+  private metadataUpdateRequest(
+    fields: CatalogAdminBookMetadataField[] = [
+      'Title', 'Authors', 'Publisher', 'PublicationYear', 'PhysicalFormat', 'Language',
+      'Genre', 'WorkId', 'Summary', 'Pages', 'Edition',
+    ],
+  ): CatalogAdminBookMetadataUpdate {
+    const genres = [...this.metadataForm.genres];
+    return {
+      title: this.optional(this.metadataForm.title),
+      authors: this.optional(this.metadataForm.authors),
+      publisher: this.optional(this.metadataForm.publisher),
+      publicationYear: this.metadataForm.publicationYear,
+      physicalFormat: this.optional(this.metadataForm.physicalFormat),
+      language: this.optional(this.metadataForm.language),
+      genre: genres[0] ?? null,
+      coverUrl: null,
+      workId: this.optional(this.metadataForm.workId),
+      fields,
+      summary: this.optional(this.metadataForm.summary),
+      pages: this.metadataForm.pages,
+      edition: this.optional(this.metadataForm.edition),
+      genres,
+    };
   }
 
   async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed' | 'not-found'): Promise<void> {
@@ -1129,46 +1252,52 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   ): Promise<void> {
     this.clearPendingBookCover();
     this.bookDetailReturnSection.set(returnSection);
-    if (returnSection === 'isbn-queue' && this.activeSection() !== 'catalogue') {
+    if ((returnSection === 'isbn-queue' || returnSection === 'isbndb-absent') && this.activeSection() !== 'catalogue') {
       await this.router.navigate(['/administration', 'catalogue']);
     }
     this.activeSection.set('catalogue');
-    await this.run('book-detail', async token => {
-      const [book, reportSummary] = await Promise.all([
-        firstValueFrom(this.api.getBook(token, isbn13)),
-        firstValueFrom(this.api.getNotFoundSummary(token, {isbn13})),
-      ]);
-      this.selectedBook.set(book);
-      this.selectedBookNotFoundSummary.set(reportSummary);
-      this.quantityCorrection = book.quantityAvailable;
-      this.quantityNote = '';
-      this.withdrawalQuantity = 1;
-      this.withdrawalNote = '';
-      this.mergeTargetIsbn13 = '';
-      this.mergeNote = '';
-      this.announcementQuantities = Object.fromEntries(
-        book.announcements.map(announcement => [announcement.id, announcement.quantity]),
-      );
-      Object.assign(this.metadataForm, {
-        title: book.title || '',
-        authors: book.authors || '',
-        publisher: book.publisher || '',
-        publicationYear: book.publicationYear,
-        physicalFormat: book.physicalFormat || '',
-        language: book.language || '',
-        genre: book.genre || '',
-        workId: book.workId || '',
-      });
-      await this.rareBooksFacade.resolveCatalogRelation(book.isbn13);
+    await this.run('book-detail', token => this.loadBookDetail(token, isbn13));
+  }
+
+  private async loadBookDetail(token: string, isbn13: string): Promise<void> {
+    const [book, reportSummary] = await Promise.all([
+      firstValueFrom(this.api.getBook(token, isbn13)),
+      firstValueFrom(this.api.getNotFoundSummary(token, {isbn13})),
+    ]);
+    this.selectedBook.set(book);
+    this.selectedBookNotFoundSummary.set(reportSummary);
+    this.quantityCorrection = book.quantityAvailable;
+    this.quantityNote = '';
+    this.withdrawalQuantity = 1;
+    this.withdrawalNote = '';
+    this.mergeTargetIsbn13 = '';
+    this.mergeNote = '';
+    this.announcementQuantities = Object.fromEntries(
+      book.announcements.map(announcement => [announcement.id, announcement.quantity]),
+    );
+    Object.assign(this.metadataForm, {
+      title: book.title || '',
+      authors: book.authors || '',
+      publisher: book.publisher || '',
+      publicationYear: book.publicationYear,
+      pages: book.pages,
+      edition: book.edition || '',
+      physicalFormat: book.physicalFormat || '',
+      language: book.language || '',
+      genre: book.genre || '',
+      genres: mergeCatalogGenres(book.genres, book.genre || ''),
+      summary: book.summary || '',
+      workId: book.workId || '',
     });
+    await this.rareBooksFacade.resolveCatalogRelation(book.isbn13);
   }
 
   closeBookDetail(): void {
     this.selectedBook.set(null);
     const returnSection = this.bookDetailReturnSection();
     this.bookDetailReturnSection.set('catalogue');
-    if (returnSection === 'isbn-queue') {
-      void this.selectSection('isbn-queue');
+    if (returnSection === 'isbn-queue' || returnSection === 'isbndb-absent') {
+      void this.selectSection(returnSection);
     }
   }
 
@@ -1178,6 +1307,57 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.showSuccess(`Un nouvel essai a été lancé pour l’ISBN ${item.isbn13}.`);
       await this.loadIsbnMetadataQueuePage(token);
     });
+  }
+
+  async setIsbndbCompletion(book: CatalogAdminBook, completed: boolean): Promise<void> {
+    if (!book.isAbsentFromIsbndb ||
+        (completed && (!this.metadataForm.title.trim() || !this.metadataForm.authors.trim()))) {
+      return;
+    }
+
+    const returnSection = this.bookDetailReturnSection();
+    await this.run('isbndb-completion', async token => {
+      if (completed && (
+        this.optional(this.metadataForm.title) !== this.optional(book.title || '') ||
+        this.optional(this.metadataForm.authors) !== this.optional(book.authors || '')
+      )) {
+        await firstValueFrom(this.api.updateMetadata(
+          token,
+          book.isbn13,
+          this.metadataUpdateRequest(['Title', 'Authors']),
+        ));
+      }
+      await firstValueFrom(this.api.setIsbndbCompletion(token, book.isbn13, completed));
+      this.showSuccess(completed ? 'La fiche est marquée comme complétée.' : 'La fiche est rouverte.');
+      await this.loadBookDetail(token, book.isbn13);
+      await this.loadIsbndbStatus(token);
+      this.bookDetailReturnSection.set(returnSection);
+    });
+  }
+
+  async recheckIsbndbBook(book: CatalogAdminBook): Promise<void> {
+    if (book.isbndbCompletedAt || this.isIsbndbQuotaExhausted()) return;
+    const returnSection = this.bookDetailReturnSection();
+    await this.run(
+      'isbndb-recheck',
+      async token => {
+        const result = await firstValueFrom(this.api.recheckIsbndbBook(token, book.isbn13));
+        if (result.outcome === 'QuotaExhausted') {
+          this.showError(`Quota épuisé jusqu’à ${this.formatIsbndbParisTime(result.resetsAt)}.`);
+        } else if (result.outcome === 'Unavailable') {
+          this.showError('Le service ISBNdb est momentanément indisponible. Réessayez plus tard.');
+        } else {
+          this.showSuccess(result.outcome === 'Found'
+            ? 'Une notice ISBNdb a été trouvée et la fiche a été actualisée.'
+            : 'ISBNdb ne connaît toujours pas ce livre.');
+          await this.loadBookDetail(token, book.isbn13);
+          this.bookDetailReturnSection.set(returnSection);
+        }
+        await this.loadIsbndbStatus(token);
+      },
+      this.errorMessage,
+      error => this.describeIsbndbRecheckError(error),
+    );
   }
 
   async deleteIsbnMetadataCandidate(item: CatalogAdminBookMetadataQueueItem): Promise<void> {
@@ -1403,23 +1583,13 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   async updateMetadata(book: CatalogAdminBook): Promise<void> {
     const returnSection = this.bookDetailReturnSection();
     await this.run('metadata', async token => {
-      await firstValueFrom(this.api.updateMetadata(token, book.isbn13, {
-        title: this.optional(this.metadataForm.title),
-        authors: this.optional(this.metadataForm.authors),
-        publisher: this.optional(this.metadataForm.publisher),
-        publicationYear: this.metadataForm.publicationYear,
-        physicalFormat: this.optional(this.metadataForm.physicalFormat),
-        language: this.optional(this.metadataForm.language),
-        genre: this.optional(this.metadataForm.genre),
-        coverBlobRef: null,
-        workId: this.optional(this.metadataForm.workId),
-        fields: ['Title', 'Authors', 'Publisher', 'PublicationYear', 'PhysicalFormat', 'Language', 'Genre', 'WorkId'],
-      }));
+      await firstValueFrom(this.api.updateMetadata(token, book.isbn13, this.metadataUpdateRequest()));
       this.showSuccess('Les métadonnées ont été enregistrées.');
-      await this.openBook(book.isbn13, returnSection);
+      await this.loadBookDetail(token, book.isbn13);
+      this.bookDetailReturnSection.set(returnSection);
       if (returnSection === 'isbn-queue') {
         await this.loadIsbnMetadataQueuePage(token);
-      } else {
+      } else if (returnSection !== 'isbndb-absent') {
         await this.loadCataloguePage(token);
       }
     });
@@ -3077,6 +3247,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         'isbn-queue',
         () => firstValueFrom(this.api.getBookMetadataQueue(token, {page: 1, pageSize: 1})),
       ));
+      requests.push(this.captureNavigationBadgeCount(
+        'isbndb-absent',
+        () => firstValueFrom(this.api.getIsbndbAbsentBooks(token, {
+          status: 'to-complete', page: 1, pageSize: 1,
+        })),
+      ));
     }
     if (this.hasAdministrationAccess()) {
       requests.push(this.captureNavigationBadgeCount(
@@ -3147,6 +3323,21 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     return 'L’opération n’a pas pu être effectuée. Réessayez dans un instant.';
+  }
+
+  private describeIsbndbRecheckError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 429) {
+        return 'Le quota ISBNdb est épuisé. Réessayez après son renouvellement.';
+      }
+      if (error.status === 409) {
+        return 'Cette fiche est déjà marquée comme complétée. Rouvrez-la avant de la revérifier.';
+      }
+      if (error.status === 0 || error.status >= 500) {
+        return 'Le service ISBNdb est momentanément indisponible. Réessayez plus tard.';
+      }
+    }
+    return 'La vérification ISBNdb n’a pas pu aboutir. Réessayez dans un instant.';
   }
 
   private describeCreateAccountError(error: unknown): string {
