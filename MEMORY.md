@@ -33,6 +33,7 @@
 | `.github/memory/changelog.md` | Memory changelog |
 | `.github/memory/dream-state.md` | Dream gate state and code graph choice |
 | `.github/memory/14-scan-metadata-latency.md` | Dated provider telemetry, ISBN error triage, and the Google Books key issue |
+| `.github/memory/15-genre-taxonomy-normalization.md` | Deferred canonical genre taxonomy, database migration, and incremental report plan |
 
 ## Quick Reference
 
@@ -52,6 +53,7 @@
 14. Open Library reference search can aggregate publishers across editions; values over the 200-character watchlist limit are omitted before follow. See `.github/memory/10-api-endpoints.md`.
 
 15. The Google Books key currently returns `API_KEY_INVALID`; the Worker-only BnF timeout fix is in PR #338. See .github/memory/14-scan-metadata-latency.md for the provider evidence and current enrichment run.
+16. Wait for the active full-catalog enrichment to finish before taking the genre/subject inventory; then follow `.github/memory/15-genre-taxonomy-normalization.md`.
 
 ## Commands To Remember
 
