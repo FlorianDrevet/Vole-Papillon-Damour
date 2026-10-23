@@ -302,5 +302,6 @@ and Images on Free; do not enable paid products.
   timestamp excludes books already refreshed after the run began.
 - Exact restart input: `FullCatalogRefreshStartedAt = 2026-10-23T07:18:40.030384Z` and
   `LastCompletedBatchNumber = 75`. The code is prepared on a task branch only; no deployment or
-  resumed orchestration has happened. `rg-vpd-dev` is the user's production environment despite
-  its name; deploy only through the reviewed PR workflow and verify the new instance after rollout.
+  resumed orchestration has happened. PR [#337](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/337)
+  is open with six checks pending. `rg-vpd-dev` is the user's production environment despite its
+  name; after merge, run the manual Worker deployment and verify the new instance after rollout.
