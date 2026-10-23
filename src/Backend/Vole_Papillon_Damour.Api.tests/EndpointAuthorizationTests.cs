@@ -82,6 +82,7 @@ public class EndpointAuthorizationTests
             "/catalog/works/{workId}",
             "/catalog/sitemap.xml",
             "/catalog/reference/search",
+            "/catalog/reference/isbndb",
         };
 
         var publicCatalogEndpoints = RegisteredEndpoints()

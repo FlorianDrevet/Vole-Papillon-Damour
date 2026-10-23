@@ -12,6 +12,7 @@ using Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Api.Integrations.AcsEmail;
 using Vole_Papillon_Damour.Application;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Infrastructure;
 using Vole_Papillon_Damour.Infrastructure.Health;
 
@@ -94,7 +95,10 @@ builder.Services
         runMigrations: DatabaseMigrationPolicy.ShouldRunOnStartup(
             builder.Environment.EnvironmentName))
     .AddBookMetadataEnrichmentProcessing()
-    .AddRateLimiting();
+    .AddRateLimiting(builder.Configuration.GetValue<int?>("Isbndb:PublicSearchPerVisitorPerHour") ?? 10);
+
+builder.Services.Configure<IsbndbPublicSearchOptions>(
+    builder.Configuration.GetSection("Isbndb"));
 
 builder.Services.Configure<EmailBounceWebhookOptions>(
     builder.Configuration.GetSection(EmailBounceWebhookOptions.SectionName));

@@ -10,7 +10,9 @@ public static class DependencyInjection
     private const string EntraMappedObjectIdClaimType = "http://schemas.microsoft.com/identity/claims/objectidentifier";
     private const string MissingMemberPartition = "authenticated-unknown";
 
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
+    public static IServiceCollection AddRateLimiting(
+        this IServiceCollection services,
+        int isbndbSearchPermitLimit = 10)
     {
         services.AddRateLimiter(options =>
         {
@@ -57,6 +59,18 @@ public static class DependencyInjection
                         PermitLimit = 20,
                         Window = TimeSpan.FromMinutes(1),
                         SegmentsPerWindow = 4,
+                        QueueLimit = 0,
+                    }));
+
+            options.AddPolicy(RateLimitingPolicies.IsbndbSearch, httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    ClientPartitionKey(httpContext),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = Math.Max(1, isbndbSearchPermitLimit),
+                        Window = TimeSpan.FromHours(1),
+                        SegmentsPerWindow = 6,
+                        AutoReplenishment = true,
                         QueueLimit = 0,
                     }));
 
