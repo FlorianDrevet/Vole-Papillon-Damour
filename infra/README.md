@@ -405,4 +405,3 @@ unset key
 La réponse `202 Accepted` fournit les URL Durable pour suivre la nouvelle instance. Le timestamp
 d'origine conserve les livres déjà actualisés hors de la sélection; les échecs précédents qui
 ont dépassé leur délai normal de retry peuvent être retentés.
-
