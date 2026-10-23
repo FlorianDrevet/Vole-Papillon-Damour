@@ -12,4 +12,8 @@ public sealed record ScanCatalogBookResult(
     bool IsManuallyRequested,
     bool IsRare,
     bool IsHidden,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? WorkKey,
+    string? Publisher,
+    int? PublicationYear,
+    IReadOnlyList<string> OtherIsbns);

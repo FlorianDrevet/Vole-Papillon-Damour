@@ -62,6 +62,46 @@ public sealed class GetCatalogDeltaQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenIsbndbRecordExists_ProjectsWorkDetailsAndOtherEditionIsbns()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        Isbn13.TryCreate("9782070409228", out var isbn13).Should().BeTrue();
+        var book = Book.Create(isbn13, GeneratedAt.AddMinutes(-1));
+        book.ApplyIsbndbNotice(
+            new BookMetadataPatch(
+                "Les Misérables",
+                "Victor Hugo",
+                "Gallimard",
+                1862,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title, BookMetadataField.Authors, BookMetadataField.Publisher,
+                    BookMetadataField.PublicationYear]),
+            GeneratedAt.AddMinutes(-1));
+        fixture.Context.Books.Add(book);
+        fixture.Context.BookIsbndbRecords.Add(BookIsbndbRecord.Create(
+            isbn13,
+            GeneratedAt.AddMinutes(-1),
+            otherIsbns: """[{"isbn":"9782070612758","binding":"Paperback"}]"""));
+        await fixture.Context.SaveChangesAsync();
+        await fixture.AddBookAsync("9780306406157", GeneratedAt.AddMinutes(-1));
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var projectedBook = result.Value.Books.Single(item => item.Isbn13 == isbn13.Value);
+        projectedBook.WorkKey.Should().Be("MISERABLES|HUGO");
+        projectedBook.Publisher.Should().Be("Gallimard");
+        projectedBook.PublicationYear.Should().Be(1862);
+        projectedBook.OtherIsbns.Should().Equal("9782070612758");
+        result.Value.Books.Single(item => item.Isbn13 == "9780306406157").OtherIsbns.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Handle_WhenEditionIsOnAnActiveWatchlist_ProjectsWantedFlag()
     {
         await using var fixture = await CatalogDeltaFixture.CreateAsync();
@@ -633,6 +673,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<Watchlist> Watchlists => Set<Watchlist>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
@@ -649,6 +690,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
+    DbSet<BookIsbndbRecord> IProjectDbContext.BookIsbndbRecords => BookIsbndbRecords;
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
@@ -680,6 +722,16 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(
                     (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
                     (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
+        });
+        modelBuilder.Entity<BookIsbndbRecord>(builder =>
+        {
+            builder.HasKey(record => record.Isbn13);
+            builder.Property(record => record.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.HasOne<Book>()
+                .WithOne()
+                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

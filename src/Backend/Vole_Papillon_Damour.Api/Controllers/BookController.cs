@@ -376,7 +376,10 @@ public static class BookController
                                 metadata.Genre,
                                 metadata.Summary,
                                 metadata.PhysicalFormat,
-                                metadata.Language)),
+                                metadata.Language,
+                                metadata.WorkKey,
+                                metadata.Pages,
+                                metadata.Edition)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
@@ -636,7 +639,11 @@ public static class BookController
                     book.IsManuallyRequested,
                     book.IsRare,
                     book.IsHidden,
-                    book.UpdatedAt))
+                    book.UpdatedAt,
+                    book.WorkKey,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.OtherIsbns))
                 .ToArray(),
             result.RareBooks
                 .Select(book => new ScanCatalogRareBookResponse(
