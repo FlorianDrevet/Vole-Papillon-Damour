@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
@@ -14,6 +15,7 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]"));
         builder.HasKey(book => book.Id);
         builder.Ignore(book => book.Isbn13);
+        builder.Ignore(book => book.IsDefinitiveForRecommendation);
 
         builder.Property(book => book.Id)
             .HasColumnName("Isbn13")
@@ -45,6 +47,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.Language).HasMaxLength(10);
         builder.Property(book => book.Summary).HasMaxLength(20_000);
         builder.Property(book => book.Genre).HasMaxLength(100);
+        builder.Property(book => book.Pages);
+        builder.Property(book => book.Edition).HasMaxLength(100);
+        builder.Property(book => book.WorkKey).HasMaxLength(200);
         builder.Property(book => book.CoverUrl).HasMaxLength(2048);
         builder.Property(book => book.CoverSource)
             .HasConversion<byte>();
@@ -88,6 +93,21 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.MetadataFailureReason).HasMaxLength(500);
         builder.Property(book => book.RawPayload).HasColumnType("nvarchar(max)");
         builder.Property(book => book.ManuallyEditedFields).HasColumnType("nvarchar(max)");
+        builder.Property(book => book.IsIsbndbSourced)
+            .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(book => book.IsAbsentFromIsbndb)
+            .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(book => book.IsbndbCheckedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
+        builder.Property(book => book.IsbndbCompletedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
+        builder.Property(book => book.IsbndbCompletedBy)
+            .HasColumnType("uniqueidentifier")
+            .HasConversion(userId => userId!.Value, value => UserId.Create(value));
 
         builder.Property(book => book.FirstSeenAt)
             .HasColumnType("datetime2")
@@ -106,6 +126,11 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .IsRequired();
 
         builder.HasIndex(book => book.WorkId);
+        builder.HasIndex(book => book.WorkKey)
+            .HasDatabaseName("IX_Books_WorkKey");
+        builder.HasIndex(book => new { book.IsIsbndbSourced, book.IsAbsentFromIsbndb })
+            .HasFilter("[IsIsbndbSourced] = 0")
+            .HasDatabaseName("IX_Books_IsbndbSourceFlags");
         builder.HasIndex(book => new { book.MetadataStatus, book.LastAttemptAt });
         builder.HasIndex(book => new { book.MetadataStatus, book.GenresRefreshedAt })
             .HasDatabaseName("IX_Books_MetadataStatus_GenresRefreshedAt");

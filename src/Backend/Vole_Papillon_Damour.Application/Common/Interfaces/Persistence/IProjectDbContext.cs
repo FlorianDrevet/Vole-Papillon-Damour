@@ -18,6 +18,7 @@ using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -33,6 +34,10 @@ public interface IProjectDbContext
     DbSet<AssoEvents> AssoEvents { get; }
     DbSet<Order> Orders { get; }
     DbSet<Book> Books { get; }
+    DbSet<BookIsbndbRecord> BookIsbndbRecords => throw new NotSupportedException();
+    DbSet<IsbndbQuotaState> IsbndbQuotaStates => throw new NotSupportedException();
+    DbSet<IsbndbDailyUsage> IsbndbDailyUsages => throw new NotSupportedException();
+    DbSet<IsbndbCatchUpRun> IsbndbCatchUpRuns => throw new NotSupportedException();
     DbSet<BookGenre> BookGenres => throw new NotSupportedException();
     DbSet<BookAnnouncement> BookAnnouncements { get; }
     DbSet<BookMovement> BookMovements { get; }
