@@ -419,7 +419,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                     bibliographicDetailsUpdatedCount++;
                 }
             }
-            catch (ArgumentException)
+            catch (ArgumentException exception)
             {
                 failedCount++;
                 if (existingBookRefresh)
@@ -437,7 +437,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                 {
                     book.RecordMetadataProviderFailure(
                         now,
-                        "Les métadonnées de la notice ne peuvent pas être enregistrées.");
+                        DescribeMetadataValidationFailure(exception));
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -555,6 +555,16 @@ public sealed class EnrichPendingBooksCommandHandler(
             ? exception.GetType().Name
             : $"{exception.GetType().Name} : {exception.Message.Trim()}";
         return $"Échec technique de la recherche bibliographique — {detail}";
+    }
+
+    private static string DescribeMetadataValidationFailure(ArgumentException exception)
+    {
+        var message = string.IsNullOrWhiteSpace(exception.Message)
+            ? exception.GetType().Name
+            : exception.Message.Trim();
+        const string reason = "Les métadonnées de la notice ne peuvent pas être enregistrées";
+        var detail = $"{exception.GetType().Name} : {message}";
+        return $"{reason} — {detail}";
     }
 
     private static BookMetadataPatch CreatePatch(
