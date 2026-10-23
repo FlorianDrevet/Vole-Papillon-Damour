@@ -283,3 +283,25 @@ Keep all five website records DNS-only until the certificate is imported and the
 has completed. After that, proxy only those five website records, keep mail/authentication
 DNS-only, deploy Catalog, and smoke-test all five hostnames and image fallback. Keep the zone
 and Images on Free; do not enable paid products.
+
+## Book enrichment SQL collision and resume checkpoint — 2026-10-23
+
+- The Worker revision `vpd-worker-ca-dev-fc--0000021` is healthy with one replica, but there is no
+  running `EnrichCatalogOrchestration` instance. Instance
+  `391b981d91f542f79a54a4360eefcf98` failed at 2026-10-23 10:31:43 UTC after batch 75 completed
+  (3,750 books). Its failure was `PK_BookGenres` inserting the same ISBN/genre twice, with SQL
+  reporting `(9782266214827, Littérature française)`.
+- Open Library returned equivalent spellings including `Littérature française` and
+  `Litterature francʹaise`, plus `Science-fiction`/`Science fiction` variants. The old
+  `CompareInfo` equivalence differed between Windows NLS and Linux ICU, so the worker could retain
+  both genre names before SQL's case/accent-insensitive primary key check.
+- The repair uses deterministic Unicode normalization and deduplicates accents, whitespace,
+  dashes, ordinary apostrophes, and transliteration modifier marks while retaining meaningful
+  symbols and other punctuation. Resume endpoint `POST /api/Enrich/resume` takes the original
+  `FullCatalogRefreshStartedAt` and `LastCompletedBatchNumber`; restarting with the original
+  timestamp excludes books already refreshed after the run began.
+- Exact restart input: `FullCatalogRefreshStartedAt = 2026-10-23T07:18:40.030384Z` and
+  `LastCompletedBatchNumber = 75`. The code is prepared on a task branch only; no deployment or
+  resumed orchestration has happened. PR [#337](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/337)
+  is open with six checks pending. `rg-vpd-dev` is the user's production environment despite its
+  name; after merge, run the manual Worker deployment and verify the new instance after rollout.

@@ -186,6 +186,62 @@ public sealed class BookMetadataTests
     }
 
     [Fact]
+    public void ApplyAutomaticMetadata_DeduplicatesGenresAcrossProviderSpellings()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var patch = new BookMetadataPatch(
+            Title: null,
+            Authors: null,
+            Publisher: null,
+            PublicationYear: null,
+            PhysicalFormat: null,
+            Language: null,
+            Genre: "Science-fiction",
+            CoverUrl: null,
+            Fields: [BookMetadataField.Genre],
+            Genres:
+            [
+                "Science-fiction",
+                "Science fiction",
+                "Littérature française",
+                "Litterature francʹaise"
+            ]);
+
+        book.ApplyAutomaticMetadata(
+            patch,
+            BookMetadataSource.OpenLibrary,
+            FirstSeenAt.AddMinutes(1),
+            rawPayload: null);
+
+        book.Genres.Select(genre => genre.Name).Should().BeEquivalentTo(
+            ["Science-fiction", "Littérature française"]);
+    }
+
+    [Fact]
+    public void ApplyAutomaticMetadata_PreservesGenresWithDifferentSymbols()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "A/B",
+                null,
+                [BookMetadataField.Genre],
+                Genres: ["A/B", "A B"]),
+            BookMetadataSource.OpenLibrary,
+            FirstSeenAt.AddMinutes(1),
+            rawPayload: null);
+
+        book.Genres.Select(genre => genre.Name).Should().BeEquivalentTo(["A/B", "A B"]);
+    }
+
+    [Fact]
     public void ApplyAutomaticMetadata_StoresWorkIdentifierForWorkWatchlists()
     {
         var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);

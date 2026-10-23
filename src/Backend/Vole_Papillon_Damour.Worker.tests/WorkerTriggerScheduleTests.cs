@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Azure.Functions.Worker;
 using Xunit;
@@ -29,6 +30,31 @@ public sealed class WorkerTriggerScheduleTests
         runMethod.GetParameters()
             .SelectMany(parameter => parameter.GetCustomAttributes())
             .Should().NotContain(attribute => attribute.GetType().Name == "TimerTriggerAttribute");
+    }
+
+    [Fact]
+    public void Enrichment_resume_requires_a_function_key_and_uses_a_dedicated_route()
+    {
+        var resumeMethod = typeof(BookEnrichmentFunction).GetMethod(nameof(BookEnrichmentFunction.Resume))
+            ?? throw new InvalidOperationException($"Resume method not found on {nameof(BookEnrichmentFunction)}.");
+        var httpTrigger = resumeMethod.GetParameters()
+            .SelectMany(parameter => parameter.GetCustomAttributes())
+            .Single(attribute => attribute.GetType().Name == "HttpTriggerAttribute");
+
+        httpTrigger.GetType().GetProperty("AuthLevel")!.GetValue(httpTrigger)!.ToString()
+            .Should().Be("Function");
+        httpTrigger.GetType().GetProperty("Route")!.GetValue(httpTrigger)
+            .Should().Be("Enrich/resume");
+        ((IEnumerable<string>)httpTrigger.GetType().GetProperty("Methods")!.GetValue(httpTrigger)!)
+            .Should().ContainSingle("post");
+    }
+
+    [Fact]
+    public void Enrichment_resume_request_requires_the_refresh_timestamp_and_completed_batch()
+    {
+        var deserialize = () => JsonSerializer.Deserialize<EnrichCatalogResumeRequest>("{}");
+
+        deserialize.Should().Throw<JsonException>();
     }
 
     [Fact]

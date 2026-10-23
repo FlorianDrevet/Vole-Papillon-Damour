@@ -13,9 +13,23 @@ public static class EnrichCatalogOrchestrationFunction
     public static async Task<EnrichPendingBooksResult> Run(
         [OrchestrationTrigger] TaskOrchestrationContext context)
     {
+        var resumeRequest = context.GetInput<EnrichCatalogResumeRequest>();
         var startedAt = context.CurrentUtcDateTime;
-        var totals = new EnrichPendingBooksResult(0, 0, 0, 0);
         var batchNumber = 0;
+        if (resumeRequest is not null)
+        {
+            if (resumeRequest.FullCatalogRefreshStartedAt == default ||
+                resumeRequest.FullCatalogRefreshStartedAt.UtcDateTime > startedAt ||
+                resumeRequest.LastCompletedBatchNumber < 0)
+            {
+                throw new ArgumentException("The enrichment resume request is invalid.", nameof(resumeRequest));
+            }
+
+            startedAt = resumeRequest.FullCatalogRefreshStartedAt.UtcDateTime;
+            batchNumber = resumeRequest.LastCompletedBatchNumber;
+        }
+
+        var totals = new EnrichPendingBooksResult(0, 0, 0, 0);
 
         while (true)
         {

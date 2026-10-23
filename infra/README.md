@@ -363,5 +363,45 @@ curl --fail-with-body -i -X POST \
 unset key
 ```
 
-La réponse contient les URI de suivi Durable. Conserver la réponse pour consulter l'état
-et le résultat final ; éviter de relancer `Enrich` tant qu'une orchestration est en cours.
+La réponse contient les URI de suivi Durable. Conserver la réponse pour consulter l'état et le
+résultat final ; éviter de relancer `Enrich` tant qu'une orchestration est en cours.
+
+#### Reprendre un rattrapage échoué
+
+Après déploiement d'une version du Worker qui contient la correction, utiliser la fonction
+`ResumeEnrich` avec l'horodatage UTC de la première exécution de l'orchestration et le dernier
+lot terminé. Pour le run du 2026-10-23, le point de reprise est
+`FullCatalogRefreshStartedAt = 2026-10-23T07:18:40.030384Z` et
+`LastCompletedBatchNumber = 75`. Pour un autre run, reprendre l'horodatage de son premier
+événement `OrchestratorStarted` et son `batchNumber` de `CustomStatus`.
+
+Récupérer la clé de fonction puis ouvrir un shell dans la révision active :
+
+```powershell
+az containerapp function keys list `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --key-type functionKey `
+  --function-name ResumeEnrich
+
+az containerapp exec `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --command bash
+```
+
+Dans le shell du Worker, démarrer l'orchestration de reprise :
+
+```bash
+read -r -s -p 'ResumeEnrich function key: ' key; echo
+curl --fail-with-body -i -X POST \
+  'http://127.0.0.1:80/api/Enrich/resume' \
+  -H "x-functions-key: $key" \
+  -H 'Content-Type: application/json' \
+  --data '{"FullCatalogRefreshStartedAt":"2026-10-23T07:18:40.030384Z","LastCompletedBatchNumber":75}'
+unset key
+```
+
+La réponse `202 Accepted` fournit les URL Durable pour suivre la nouvelle instance. Le timestamp
+d'origine conserve les livres déjà actualisés hors de la sélection; les échecs précédents qui
+ont dépassé leur délai normal de retry peuvent être retentés.
