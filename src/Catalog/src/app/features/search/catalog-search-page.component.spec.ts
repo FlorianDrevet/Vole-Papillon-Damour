@@ -1,9 +1,10 @@
 import {provideZonelessChangeDetection, signal, WritableSignal} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, ParamMap, Router, RouterModule, convertToParamMap} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import type {AccountInfo} from '@azure/msal-browser';
-import {BehaviorSubject, Subject, of} from 'rxjs';
+import {BehaviorSubject, Observable, Subject, of, throwError} from 'rxjs';
 import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
@@ -12,6 +13,7 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {
   CatalogAddedWatchlistItem,
   CatalogBookReference,
+  CatalogIsbndbEditionSearchResponse,
   CatalogReferenceSearchResponse,
   CatalogRareBook,
   CatalogRareBookPage,
@@ -111,7 +113,7 @@ describe('CatalogSearchPageComponent', () => {
     routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
     api = jasmine.createSpyObj<CatalogApiService>(
       'CatalogApiService',
-      ['search', 'getPublicRareBooks', 'searchReferences'],
+      ['search', 'getPublicRareBooks', 'searchReferences', 'searchIsbndbEditions'],
     );
     api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, hasMore: false, page: 1, pageSize: 24, genres: []}));
     api.getPublicRareBooks.and.returnValue(of({
@@ -1478,5 +1480,175 @@ describe('CatalogSearchPageComponent', () => {
 
     expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({genre: 'Romans'}));
     expect(fixture.componentInstance.genre).toBe('Romans');
+  });
+
+  it('offers ISBNdb editions only on the last external-reference page', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: Array.from({length: 20}, () => reference),
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.isbndb-editions-callout')).toBeNull();
+
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference],
+      page: 2,
+      pageSize: 20,
+    }));
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', referencePage: '2'}));
+    fixture.detectChanges();
+
+    const callout = fixture.nativeElement.querySelector('.isbndb-editions-callout') as HTMLElement;
+    expect(callout.textContent).toContain('Vous n\'avez pas trouvé l\'édition que vous cherchez ?');
+    expect(callout.textContent).toContain('D\'autres éditions en français peuvent exister ailleurs.');
+    expect(callout.querySelector('button')?.textContent).toContain('Voir d\'autres éditions');
+  });
+
+  it('offers ISBNdb editions when the external-reference search is empty', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun autre titre ne correspond à cette recherche.');
+    expect(fixture.nativeElement.querySelector('.isbndb-editions-callout')).not.toBeNull();
+  });
+
+  it('loads ISBNdb editions on demand, removes duplicate ISBNs and offers edition-only follow', async () => {
+    const suggestedEdition: CatalogIsbndbEditionSearchResponse['items'][number] = {
+      isbn13: '9782070612761',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 2024,
+      coverUrl: 'https://covers.example.test/new-edition.jpg',
+      binding: 'Paperback',
+    };
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+    api.searchIsbndbEditions.and.returnValue(of({
+      items: [
+        {...suggestedEdition, isbn13: ` ${reference.isbn13} `},
+        suggestedEdition,
+      ],
+      total: 2,
+      truncated: false,
+      unavailable: null,
+    }));
+
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement;
+    expect(button).not.toBeNull();
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.searchIsbndbEditions).toHaveBeenCalledOnceWith('saint-exupéry');
+    expect(fixture.nativeElement.textContent).toContain('Autres éditions proposées');
+    expect(fixture.nativeElement.querySelector('.isbndb-editions-count')?.textContent).toContain('1 édition');
+    const card = fixture.nativeElement.querySelector('.isbndb-editions-results .reference-card') as HTMLElement;
+    expect(card.textContent).toContain('9782070612761');
+    expect(fixture.nativeElement.querySelectorAll('.isbndb-editions-results .reference-card')).toHaveSize(1);
+    expect(card.querySelector('.reference-follow--work')).toBeNull();
+    expect(card.querySelector('.reference-follow--edition')?.textContent).toContain('Suivre cette édition');
+
+    const follow = spyOn(fixture.componentInstance, 'followReference').and.resolveTo();
+    (card.querySelector('.reference-follow--edition') as HTMLButtonElement).click();
+    expect(follow).toHaveBeenCalledWith(jasmine.objectContaining({
+      isbn13: suggestedEdition.isbn13,
+      source: 'ISBNdb',
+      workId: null,
+    }), 'Edition');
+  });
+
+  it('shows the ISBNdb loading, empty and truncated states', async () => {
+    const response$ = new Subject<CatalogIsbndbEditionSearchResponse>();
+    api.searchIsbndbEditions.and.returnValue(response$.asObservable());
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Recherche d\'autres éditions…');
+    expect(fixture.nativeElement.querySelector('.isbndb-editions-results vpd-loader')).not.toBeNull();
+
+    response$.next({items: [], total: 104, truncated: true, unavailable: null});
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Aucune autre édition trouvée pour cette recherche.');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Seules les 100 premières éditions sont affichées. Précisez votre recherche pour affiner.',
+    );
+  });
+
+  it('shows a neutral unavailable message for quota responses and HTTP 429', async () => {
+    api.searchIsbndbEditions.and.returnValue(of({
+      items: [],
+      total: 0,
+      truncated: false,
+      unavailable: 'quota',
+    }));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const unavailableMessage = 'Les propositions supplémentaires sont momentanément indisponibles. Réessayez plus tard.';
+    expect(fixture.nativeElement.textContent).toContain(unavailableMessage);
+    expect(fixture.nativeElement.querySelector('.isbndb-editions-results .error-message')).toBeNull();
+
+    api.searchIsbndbEditions.and.returnValue(throwError(() => new HttpErrorResponse({status: 429})));
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(unavailableMessage);
+  });
+
+  it('cancels a pending ISBNdb request when the reference page changes or the component is destroyed', () => {
+    let unsubscribeCount = 0;
+    api.searchIsbndbEditions.and.returnValue(new Observable(() => () => unsubscribeCount++));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', referencePage: '2'}));
+    fixture.detectChanges();
+    expect(unsubscribeCount).toBe(1);
+
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    fixture.destroy();
+    expect(unsubscribeCount).toBe(2);
+  });
+
+  it('cancels the ISBNdb request and resets the block when the search query changes', () => {
+    let unsubscribeCount = 0;
+    api.searchIsbndbEditions.and.returnValue(new Observable(() => () => unsubscribeCount++));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.isbndb-editions-callout button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({q: 'dune'}));
+    fixture.detectChanges();
+
+    expect(unsubscribeCount).toBe(1);
+    expect(fixture.componentInstance.isbndbEditionResponse).toBeNull();
+    expect(fixture.componentInstance.isbndbEditionRequested).toBeFalse();
   });
 });

@@ -1164,7 +1164,8 @@
   place-items: center;
 }
 
-.external-follow-callout {
+.external-follow-callout,
+.isbndb-editions-callout {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1173,6 +1174,43 @@
   padding: 17px 20px;
   border: 1px solid var(--catalog-blue-soft);
   background: var(--catalog-paper-2);
+}
+
+.isbndb-editions-results {
+  min-width: 0;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--catalog-line);
+}
+
+.isbndb-editions-heading-line {
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.isbndb-editions-heading-line h3 {
+  margin: 0;
+  color: var(--catalog-ink-soft);
+  font: 500 1.45rem/1.2 var(--catalog-display);
+}
+
+.isbndb-editions-count {
+  color: var(--catalog-slate-3);
+  font: .65rem var(--catalog-mono);
+}
+
+.isbndb-editions-unavailable,
+.isbndb-editions-truncated {
+  max-width: 700px;
+  margin: 18px 0 0;
+  color: var(--catalog-slate-2);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.isbndb-editions-truncated {
+  color: var(--catalog-slate-3);
+  font-size: .75rem;
 }
 
 .external-follow-copy {
@@ -1187,6 +1225,13 @@
 }
 
 .external-follow-copy > #external-follow-description {
+  margin: 0;
+  color: var(--catalog-slate-2);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.isbndb-editions-description {
   margin: 0;
   color: var(--catalog-slate-2);
   font-size: .78rem;
@@ -1303,7 +1348,8 @@
   color: var(--catalog-white);
 }
 
-.external-follow-callout .reference-follow {
+.external-follow-callout .reference-follow,
+.isbndb-editions-callout .reference-follow {
   flex: none;
 }
 
@@ -1641,13 +1687,15 @@
     text-align: left;
   }
 
-  .external-follow-callout {
+  .external-follow-callout,
+  .isbndb-editions-callout {
     align-items: flex-start;
     flex-direction: column;
     gap: 15px;
   }
 
-  .external-follow-callout .reference-follow {
+  .external-follow-callout .reference-follow,
+  .isbndb-editions-callout .reference-follow {
     width: 100%;
   }
 

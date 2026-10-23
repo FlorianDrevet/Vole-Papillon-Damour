@@ -660,6 +660,23 @@ export interface CatalogReferenceSearchResponse {
   pageSize: number;
 }
 
+export interface CatalogIsbndbEditionSearchItem {
+  isbn13: string;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  coverUrl: string | null;
+  binding: string | null;
+}
+
+export interface CatalogIsbndbEditionSearchResponse {
+  items: CatalogIsbndbEditionSearchItem[];
+  total: number;
+  truncated: boolean;
+  unavailable: string | null;
+}
+
 export interface CatalogAdminPeriodMetrics {
   from: string;
   to: string;
