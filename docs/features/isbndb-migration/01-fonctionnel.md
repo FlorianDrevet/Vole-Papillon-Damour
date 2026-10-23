@@ -1,6 +1,6 @@
 # ISBNdb, source principale des fiches livres — spécification fonctionnelle
 
-> Statut : proposition, 2026-10-23. Étend le module
+> Statut : **validée**, 2026-10-23. Étend le module
 > [`docs/bourse-aux-livres/`](../../bourse-aux-livres/README.md). Les règles nouvelles
 > prennent la suite de la numérotation existante (`RG-100` à `RG-129`).
 
@@ -150,8 +150,8 @@ complétion :
    démarre.
 2. Il traite, par lots, les fiches de secours et les fiches d'avant la migration,
    dans l'ordre de priorité de `RG-108`.
-3. Il s'arrête **immédiatement** dès que le quota est épuisé ou que la réserve du jour
-   est atteinte (`RG-109`), sans relancer de requête.
+3. Il peut consommer **tout** le quota du jour. Il s'arrête **immédiatement** dès que
+   le quota est épuisé (`RG-109`), sans relancer de requête.
 4. Il produit un compte rendu visible dans l'administration (E1).
 
 ### P6 — Un visiteur ne trouve pas son édition
@@ -215,6 +215,9 @@ Les prix ISBNdb sont stockés pour mémoire et ne sont montrés nulle part (`RG-
 Pour un même ISBN, une seule requête ISBNdb est faite par période de 24 heures, quel que
 soit le nombre d'écrans, de bénévoles ou de traitements qui en ont besoin. Une fiche déjà
 issue d'ISBNdb n'est **jamais** redemandée automatiquement.
+Dès que plusieurs ISBN attendent une fiche en même temps (import CSV de l'administration,
+file d'enrichissement après un scan, rattrapage), ils sont regroupés en **requêtes
+groupées** de 100 ISBN au plus plutôt qu'envoyés un par un.
 
 #### `RG-105` — Débit maîtrisé, nouvelle tentative en cas de refus
 Les appels respectent le débit de l'abonnement (1 par seconde aujourd'hui, réglable
@@ -243,14 +246,16 @@ non écartées (`Discarded`), dans cet ordre :
 2. fiches suivies par un membre ou par une demande manuelle ;
 3. toutes les autres, des plus récemment scannées aux plus anciennes.
 
-Il interroge ISBNdb **par lots** (jusqu'à 100 ISBN par requête groupée) : seuls les
-livres trouvés consomment un crédit.
+Il interroge ISBNdb **par lots** : une requête groupée porte jusqu'à 100 ISBN (taille
+réglable, 1 000 sur les abonnements supérieurs). Le lot réduit le **nombre de requêtes**
+(débit) ; côté **quota**, ISBNdb décompte un crédit par livre trouvé, les absents sont
+gratuits (mesuré, voir §10).
 
-#### `RG-109` — Le rattrapage garde une réserve pour la journée
-Le rattrapage n'utilise que les crédits **au-delà d'une réserve** laissée pour les scans
-et recherches de la journée *(valeur de départ : 1 000 crédits, paramétrable)*. Il
-s'arrête dès que cette réserve est atteinte ou que le quota est épuisé, et reprend la
-nuit suivante là où il s'était arrêté.
+#### `RG-109` — Le rattrapage peut consommer tout le quota
+Le rattrapage n'a **pas de réserve** : il peut utiliser tous les crédits disponibles. Il
+s'arrête dès que le quota est épuisé (`RG-106`), et reprend la nuit suivante là où il
+s'était arrêté. Les scans du jour qui suivent un quota épuisé passent par le secours
+(P2) et sont rattrapés la nuit suivante.
 
 #### `RG-110` — Le rattrapage écrase le secours, pas les corrections
 Quand ISBNdb répond, toutes les données de secours sont remplacées par celles d'ISBNdb,
@@ -384,7 +389,7 @@ recommandation (`RG-113`).
 
 #### `RG-128` — Revérifier dans ISBNdb
 Sur une fiche de secours ou hors ISBNdb, l'action « Revérifier dans ISBNdb » interroge
-ISBNdb pour cet ISBN, hors réserve (`RG-109`) mais dans la limite du quota. Si ISBNdb
+ISBNdb pour cet ISBN, dans la limite du quota. Si ISBNdb
 connaît le livre, la fiche devient une fiche ISBNdb (`RG-110`).
 
 ### Reprise de l'existant
@@ -404,7 +409,7 @@ corrections manuelles et recommandations. Elles reçoivent « issue d'ISBNdb » 
 | CA-03 | Quota épuisé : aucun appel ISBNdb n'est émis avant l'heure de renouvellement ; les fiches sont remplies par le secours et marquées « issue d'ISBNdb » = faux, « absente » = faux. |
 | CA-04 | Un ISBN inconnu d'ISBNdb donne une fiche « absente d'ISBNdb », remplie par le secours, visible dans E2, et sa recommandation est lancée à la clôture de session. |
 | CA-05 | Une fiche de secours n'a pas de recommandation avant le rattrapage ; après le rattrapage, elle est « issue d'ISBNdb » et a une recommandation. |
-| CA-06 | Le rattrapage s'arrête dès que la réserve est atteinte ou que le quota est épuisé, sans requête supplémentaire, et reprend la nuit suivante. |
+| CA-06 | Le rattrapage interroge ISBNdb par lots de 100 ISBN au plus, s'arrête dès que le quota est épuisé sans requête supplémentaire, et reprend la nuit suivante. |
 | CA-07 | Un champ corrigé à la main n'est pas modifié par le rattrapage. |
 | CA-08 | « Marquer comme complétée » retire la fiche de « À compléter » et relance embedding et voisins. |
 | CA-09 | Sur le site public, le bouton « Voir d'autres éditions » n'apparaît que sous la dernière page des références externes ; un clic affiche au plus 100 éditions françaises dédoublonnées ; la même recherche relancée dans l'heure ne consomme pas de crédit. |
@@ -444,12 +449,15 @@ Autres contraintes :
   « même œuvre » se calcule localement dans l'application de scan.
 - La migration de base de données ne doit perdre aucune fiche ni aucun ISBN scanné.
 
-## 11. Questions ouvertes
+## 11. Décisions
 
-| # | Question | Proposition |
+Questions tranchées le 2026-10-23 : les propositions ont été retenues, sauf `Q-02`
+(pas de réserve, `RG-109`).
+
+| # | Question | Décision |
 |---|---|---|
 | `Q-01` | Le seuil « inutile d'en garder » doit-il compter toute l'œuvre (`RG-121`) ou seulement l'ISBN, le signal restant informatif ? | Compter l'œuvre **uniquement** quand le lien vient d'un identifiant d'œuvre BnF/Open Library ou d'`other_isbns` ; quand il ne vient que de la clé titre + auteur, signal informatif seulement (moins de faux positifs). |
-| `Q-02` | Valeur de la réserve du rattrapage (`RG-109`) ? | 1 000 crédits/jour, paramétrable dans « Paramètres ». Un jour de bourse en dessous de ~800 scans d'ISBN nouveaux. |
+| `Q-02` | Faut-il garder une réserve de crédits pour la journée (`RG-109`) ? | **Non** : le rattrapage peut consommer tout le quota. |
 | `Q-03` | Fréquence de revérification des fiches hors ISBNdb (`RG-111`) ? | Mensuelle : gratuite tant que le livre reste absent. |
 | `Q-04` | Une fiche **complétée** à la main doit-elle être remplacée si ISBNdb connaît enfin le livre ? | Non : les champs corrigés sont protégés (`RG-05`) ; seuls les champs vides sont remplis, et la fiche devient « issue d'ISBNdb ». |
 | `Q-05` | La table sujets → genres doit-elle être modifiable dans l'administration ? | Pas en v1 : livrée avec l'application, enrichie au fil des sujets rencontrés (un rapport « sujets sans correspondance » dans E1 aide à la compléter). |
