@@ -165,5 +165,9 @@ public static partial class Errors
         public static Error InvalidAdminPage() => Error.Validation(
             code: "Book.InvalidAdminPage",
             description: "Page must be positive and page size must be between 1 and 200.");
+
+        public static Error IsbndbCompletionIncomplete() => Error.Validation(
+            code: "Book.IsbndbCompletionIncomplete",
+            description: "An ISBNdb-absent book needs a title and at least one author before it can be completed.");
     }
 }

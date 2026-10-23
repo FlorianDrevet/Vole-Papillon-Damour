@@ -34,7 +34,10 @@ public sealed record UpdateAdminBookMetadataRequest(
     string? CoverUrl,
     string? WorkId,
     IReadOnlyCollection<string> Fields,
-    string? Summary = null);
+    string? Summary = null,
+    int? Pages = null,
+    string? Edition = null,
+    IReadOnlyCollection<string>? Genres = null);
 
 public sealed record CorrectBookQuantityRequest(int QuantityAvailable, string Note);
 

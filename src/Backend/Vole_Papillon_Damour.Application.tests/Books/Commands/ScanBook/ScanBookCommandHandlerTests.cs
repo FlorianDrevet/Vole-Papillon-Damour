@@ -752,6 +752,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 {
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<IsbndbQuotaState> IsbndbQuotaStates => Set<IsbndbQuotaState>();
+    public DbSet<IsbndbDailyUsage> IsbndbDailyUsages => Set<IsbndbDailyUsage>();
     public DbSet<IsbndbCatchUpRun> IsbndbCatchUpRuns => Set<IsbndbCatchUpRun>();
     public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
@@ -867,6 +869,18 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.HasKey(run => run.Id);
             builder.Property(run => run.Id).ValueGeneratedOnAdd();
             builder.Property(run => run.StopReason).HasConversion<byte>();
+        });
+
+        modelBuilder.Entity<IsbndbQuotaState>(builder =>
+        {
+            builder.HasKey(state => state.Id);
+            builder.Property(state => state.Id).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<IsbndbDailyUsage>(builder =>
+        {
+            builder.HasKey(usage => new { usage.Day, usage.Usage });
+            builder.Property(usage => usage.Usage).HasConversion<byte>();
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

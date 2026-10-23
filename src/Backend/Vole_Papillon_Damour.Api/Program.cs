@@ -144,6 +144,7 @@ app.UseBibliographicReferenceController();
 app.UseBookAdministrationController();
 app.UseNotFoundReportAdministrationController();
 app.UseManualRequestAdministrationController();
+app.UseIsbndbAdministrationController();
 app.UseActualityController();
 app.UseProductController();
 app.UseOrdersController();

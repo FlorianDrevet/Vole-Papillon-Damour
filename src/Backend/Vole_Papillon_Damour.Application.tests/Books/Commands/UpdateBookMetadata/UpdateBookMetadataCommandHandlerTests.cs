@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Commands.UpdateBookMetadata;
@@ -170,6 +171,73 @@ public sealed class UpdateBookMetadataCommandHandlerTests
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("Book.InvalidMetadataFields");
+    }
+
+    [Fact]
+    public async Task Handle_UpdatesIsbndbEditionFieldsAndRelauchesRecommendationForCompletedAbsentBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var book = Book.Create(isbn13, UpdatedAt.AddDays(-2));
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch("Titre", "Auteur", null, null, null, null, null, null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            BookMetadataSource.Bnf,
+            UpdatedAt.AddDays(-2),
+            null);
+        book.MarkAbsentFromIsbndb(UpdatedAt.AddDays(-1));
+        book.MarkIsbndbCompleted(AdministratorId, UpdatedAt.AddDays(-1));
+        fixture.Context.Books.Add(book);
+        var job = BookRecommendationJob.Create(isbn13.Value);
+        job.Request(UpdatedAt.AddDays(-1));
+        fixture.Context.BookRecommendationJobs.Add(job);
+        await fixture.Context.SaveChangesAsync();
+
+        var queue = Substitute.For<IBookRecommendationWorkQueue>();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(UpdatedAt);
+        var handler = new UpdateBookMetadataCommandHandler(fixture.Context, clock, queue);
+
+        var result = await handler.Handle(new UpdateBookMetadataCommand(
+            isbn13.Value,
+            "Titre revu",
+            "Auteur revu",
+            null,
+            null,
+            null,
+            null,
+            "Biographie",
+            null,
+            [BookMetadataField.Title, BookMetadataField.Authors, BookMetadataField.Genre,
+                BookMetadataField.Summary, BookMetadataField.Pages, BookMetadataField.Edition],
+            AdministratorId,
+            Summary: "Résumé revu",
+            Pages: 224,
+            Edition: "Édition revue",
+            Genres: ["Biographie", "Histoire"]), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var updated = await fixture.Context.Books.Include(candidate => candidate.Genres).SingleAsync();
+        updated.Pages.Should().Be(224);
+        updated.Edition.Should().Be("Édition revue");
+        updated.Genres.Select(genre => genre.Name).Should().BeEquivalentTo("Biographie", "Histoire");
+        (await fixture.Context.BookRecommendationJobs.SingleAsync()).RequestVersion.Should().Be(2);
+        await queue.Received(1).EnqueueBooksAsync(
+            Arg.Is<IReadOnlyCollection<BookRecommendationQueueItem>>(items => items.Single().Isbn13 == isbn13.Value),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_RejectsGenresOutsideTheCatalogList()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var result = await CreateHandler(fixture).Handle(new UpdateBookMetadataCommand(
+            "9782070363735", null, null, null, null, null, null, "Fantasy", null,
+            [BookMetadataField.Genre], AdministratorId, Genres: ["Conte"]), CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.InvalidMetadataValues");
     }
 
     private static UpdateBookMetadataCommandHandler CreateHandler(ScanBookFixture fixture)

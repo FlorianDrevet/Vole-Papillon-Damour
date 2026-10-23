@@ -1,4 +1,5 @@
 using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -12,7 +13,8 @@ internal static class AdminQueryProjection
         IEnumerable<BookAnnouncement> announcements,
         IEnumerable<BookMovement> movements,
         bool isRare,
-        bool includeMovements = true)
+        bool includeMovements = true,
+        BookIsbndbRecord? isbndbRecord = null)
     {
         var announcementRows = announcements
             .Where(announcement => announcement.Isbn13 == book.Id)
@@ -69,8 +71,23 @@ internal static class AdminQueryProjection
                 : null,
             new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero),
             announcementRows,
-            movementRows);
+            movementRows,
+            book.IsIsbndbSourced,
+            book.IsAbsentFromIsbndb,
+            ToOffset(book.IsbndbCheckedAt),
+            ToOffset(book.IsbndbCompletedAt),
+            book.Pages,
+            book.Edition,
+            book.Summary,
+            book.Genres.Select(genre => genre.Name).ToArray(),
+            IsbndbSubjectReader.Read(book, isbndbRecord?.Subjects),
+            book.MetadataSource is { } fallback && fallback != Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.BookMetadataSource.Isbndb
+                ? fallback.ToString()
+                : null);
     }
+
+    private static DateTimeOffset? ToOffset(DateTime? value) =>
+        value is { } instant ? new DateTimeOffset(DateTime.SpecifyKind(instant, DateTimeKind.Utc)) : null;
 
     public static AdminBookMovementResult ToMovementResult(BookMovement movement)
     {

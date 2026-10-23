@@ -19,4 +19,7 @@ public sealed record UpdateBookMetadataCommand(
     IReadOnlyCollection<BookMetadataField> Fields,
     UserId UpdatedBy,
     string? WorkId = null,
-    string? Summary = null) : IRequest<ErrorOr<UpdateBookMetadataResult>>;
+    string? Summary = null,
+    int? Pages = null,
+    string? Edition = null,
+    IReadOnlyCollection<string>? Genres = null) : IRequest<ErrorOr<UpdateBookMetadataResult>>;
