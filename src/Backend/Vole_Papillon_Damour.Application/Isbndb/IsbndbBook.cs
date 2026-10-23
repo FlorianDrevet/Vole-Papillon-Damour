@@ -70,13 +70,13 @@ public sealed record IsbndbBook
     public string? DeweyDecimal { get; init; }
 
     [JsonPropertyName("authors")]
-    public IReadOnlyList<string> Authors { get; init; } = [];
+    public IReadOnlyList<string>? Authors { get; init; }
 
     [JsonPropertyName("subjects")]
-    public IReadOnlyList<string> Subjects { get; init; } = [];
+    public IReadOnlyList<string>? Subjects { get; init; }
 
     [JsonPropertyName("other_isbns")]
-    public IReadOnlyList<string> OtherIsbns { get; init; } = [];
+    public IReadOnlyList<IsbndbOtherIsbn>? OtherIsbns { get; init; }
 
     [JsonPropertyName("related")]
     public JsonElement? Related { get; init; }
@@ -84,8 +84,19 @@ public sealed record IsbndbBook
     [JsonIgnore]
     public string RawJson { get; init; } = "{}";
 
-    public bool TryGetIsbn13(out BookIsbn13 isbn13) =>
-        BookIsbn13.TryCreate(Isbn13 ?? Isbn, out isbn13);
+    public bool TryGetIsbn13(out BookIsbn13 isbn13)
+    {
+        return BookIsbn13.TryCreate(Isbn13, out isbn13) || BookIsbn13.TryCreate(Isbn, out isbn13);
+    }
+}
+
+public sealed record IsbndbOtherIsbn
+{
+    [JsonPropertyName("isbn")]
+    public string? Isbn { get; init; }
+
+    [JsonPropertyName("binding")]
+    public string? Binding { get; init; }
 }
 
 public sealed record IsbndbPrice
