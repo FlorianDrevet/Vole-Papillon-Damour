@@ -179,6 +179,11 @@ complétion :
 
 La fiche publique (`04` §5) n'est pas modifiée en v1 ; voir `Q-06`.
 
+**Pas de maquettes.** Chaque écran reprend la grammaire de l'écran existant le plus proche :
+mêmes composants, mêmes variables CSS et même ton de libellés. E1 suit les tuiles du tableau
+de bord, E2 la section « ISBN en cours d'analyse », E3 la fiche d'administration, E4 la
+section « Pas encore dans la bourse aux livres » et E5 l'écran de résultat de la scanette.
+
 ## 8. Règles métier
 
 ### Données de la fiche

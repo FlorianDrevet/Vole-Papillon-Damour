@@ -6,12 +6,12 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-isbndb-migration`
 - Branche : `feat/isbndb-migration`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : **pas de maquettes**. Une ébauche a été abandonnée le 2026-10-23 à la demande de l'utilisateur, car elle ne correspondait pas aux visuels actuels. Codex dessine les écrans E1 à E5 en reprenant les composants, variables CSS et libellés des écrans existants les plus proches. `check_zones.py` ne s'applique donc pas (aucune zone `data-zone`).
 
 ## Statut
 
 - [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
-- [ ] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
-- [ ] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md)
+- [x] 2. Maquettes — sans objet : Codex s'aligne sur les écrans existants (voir ci-dessus)
+- [ ] 3. Plan validé (`check_zones.py` sans objet) — [`02-plan.md`](02-plan.md)
 - [ ] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
 - [ ] 5. PR ouverte par Codex — <lien>
