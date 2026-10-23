@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Models;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
@@ -183,6 +184,14 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMilliseconds(Math.Max(1, options.TimeoutMilliseconds));
         }).RedactLoggedHeaders(["Authorization"]);
         services.AddHybridCache();
+        services.AddScoped<IIsbndbLookupService>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<IsbndbOptions>>().Value;
+            return new IsbndbLookupService(
+                serviceProvider.GetRequiredService<IIsbndbClient>(),
+                serviceProvider.GetRequiredService<HybridCache>(),
+                TimeSpan.FromHours(Math.Max(1, options.LookupCacheHours)));
+        });
         services.AddScoped<BibliographicMetadataResolver>();
         services.AddScoped<IBibliographicMetadataResolver>(provider =>
             new CachedBibliographicMetadataResolver(
