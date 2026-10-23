@@ -12,6 +12,6 @@
 
 - [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
 - [x] 2. Maquettes — sans objet : Codex s'aligne sur les écrans existants (voir ci-dessus)
-- [ ] 3. Plan validé (`check_zones.py` sans objet) — [`02-plan.md`](02-plan.md)
-- [ ] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
+- [x] 3. Plan validé (`check_zones.py` sans objet) — [`02-plan.md`](02-plan.md)
+- [x] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
 - [ ] 5. PR ouverte par Codex — <lien>
