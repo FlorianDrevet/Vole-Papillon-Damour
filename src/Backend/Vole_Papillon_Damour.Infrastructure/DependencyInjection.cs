@@ -10,11 +10,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Identity.Web;
+using System.Threading.RateLimiting;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -26,6 +28,7 @@ using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
+using Vole_Papillon_Damour.Infrastructure.Services.Isbndb;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
@@ -108,6 +111,8 @@ public static class DependencyInjection
         services.AddScoped<IEntraAccountPasswordResetDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.Configure<BibliographicOptions>(
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
+        services.Configure<IsbndbOptions>(
+            builderConfiguration.GetSection(IsbndbOptions.SectionName));
         services.Configure<SocialImportOptions>(
             builderConfiguration.GetSection(SocialImportOptions.SectionName));
         services.Configure<InstagramOptions>(
@@ -116,6 +121,23 @@ public static class DependencyInjection
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
         services.Configure<RecommendationOptions>(
             builderConfiguration.GetSection(RecommendationOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<RateLimiter>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<IsbndbOptions>>().Value;
+            var requestsPerSecond = Math.Max(1, options.RequestsPerSecond);
+            return new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = requestsPerSecond,
+                TokensPerPeriod = requestsPerSecond,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+                AutoReplenishment = true,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 100
+            });
+        });
+        services.AddScoped<IIsbndbQuotaGuard, IsbndbQuotaGuard>();
         services.AddSingleton<IRecommendationSettings, RecommendationSettings>();
         services.AddSingleton(provider => new QueueClient(
             builderConfiguration.GetConnectionString(AzureBlobStorageConnectionStringName),
@@ -154,6 +176,12 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMilliseconds(options.GoogleBooksTimeoutMilliseconds);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
+        services.AddHttpClient<IIsbndbClient, IsbndbClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<IsbndbOptions>>().Value;
+            client.BaseAddress = new Uri($"{options.BaseUrl.TrimEnd('/')}/");
+            client.Timeout = TimeSpan.FromMilliseconds(Math.Max(1, options.TimeoutMilliseconds));
+        }).RedactLoggedHeaders(["Authorization"]);
         services.AddHybridCache();
         services.AddScoped<BibliographicMetadataResolver>();
         services.AddScoped<IBibliographicMetadataResolver>(provider =>
