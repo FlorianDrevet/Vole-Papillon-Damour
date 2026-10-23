@@ -363,6 +363,9 @@ curl --fail-with-body -i -X POST \
 unset key
 ```
 
+La réponse contient les URI de suivi Durable. Conserver la réponse pour consulter l'état et le
+résultat final ; éviter de relancer `Enrich` tant qu'une orchestration est en cours.
+
 #### Reprendre un rattrapage échoué
 
 Après déploiement d'une version du Worker qui contient la correction, utiliser la fonction
@@ -403,5 +406,3 @@ La réponse `202 Accepted` fournit les URL Durable pour suivre la nouvelle insta
 d'origine conserve les livres déjà actualisés hors de la sélection; les échecs précédents qui
 ont dépassé leur délai normal de retry peuvent être retentés.
 
-La réponse contient les URI de suivi Durable. Conserver la réponse pour consulter l'état
-et le résultat final ; éviter de relancer `Enrich` tant qu'une orchestration est en cours.
