@@ -1,13 +1,11 @@
 using System.Globalization;
+using System.Text;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 
 public sealed class BookGenre
 {
-    private static readonly CompareInfo NameCompareInfo = CultureInfo.GetCultureInfo("en-US").CompareInfo;
-    private const CompareOptions NameCompareOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
-
     public Isbn13 BookIsbn13 { get; private set; }
     public string Name { get; private set; } = null!;
 
@@ -30,7 +28,60 @@ public sealed class BookGenre
             return left is null && right is null;
         }
 
-        return NameCompareInfo.Compare(left, right, NameCompareOptions) == 0;
+        return StringComparer.Ordinal.Equals(CreateNameComparisonKey(left), CreateNameComparisonKey(right));
+    }
+
+    private static string CreateNameComparisonKey(string name)
+    {
+        // CompareInfo results differ between Windows NLS and Linux ICU. Build a stable key
+        // so provider variants are deduplicated consistently before SQL's CI_AI key check.
+        var normalized = name.Normalize(NormalizationForm.FormKD);
+        var key = new StringBuilder(normalized.Length);
+        var appendSeparator = false;
+
+        foreach (var rune in normalized.EnumerateRunes())
+        {
+            var category = Rune.GetUnicodeCategory(rune);
+            if (category is UnicodeCategory.NonSpacingMark or
+                UnicodeCategory.SpacingCombiningMark or
+                UnicodeCategory.EnclosingMark or
+                UnicodeCategory.Format ||
+                IsTransliterationModifier(rune))
+            {
+                continue;
+            }
+
+            if (Rune.IsWhiteSpace(rune) || IsGenreSeparator(category) || IsApostrophe(rune))
+            {
+                appendSeparator = key.Length > 0;
+                continue;
+            }
+
+            if (appendSeparator)
+            {
+                key.Append(' ');
+                appendSeparator = false;
+            }
+
+            key.Append(Rune.ToUpperInvariant(rune).ToString());
+        }
+
+        return key.ToString();
+    }
+
+    private static bool IsGenreSeparator(UnicodeCategory category)
+    {
+        return category == UnicodeCategory.DashPunctuation;
+    }
+
+    private static bool IsTransliterationModifier(Rune rune)
+    {
+        return rune.Value is 0x02B9 or 0x02BB or 0x02BC;
+    }
+
+    private static bool IsApostrophe(Rune rune)
+    {
+        return rune.Value is 0x0027 or 0x2018 or 0x2019 or 0xFF07 or 0x2032;
     }
 
     private static string Normalize(string name)
