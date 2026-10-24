@@ -16,6 +16,12 @@ public sealed class UpdateBookMetadataCommandHandler(
     IBookRecommendationWorkQueue? recommendationWorkQueue = null)
     : IRequestHandler<UpdateBookMetadataCommand, ErrorOr<UpdateBookMetadataResult>>
 {
+    private static readonly HashSet<string> CatalogGenres = new(StringComparer.Ordinal)
+    {
+        "Roman", "Jeunesse", "Bande dessinée", "Manga", "Policier", "Thriller", "Science-fiction",
+        "Fantasy", "Romance", "Histoire", "Biographie", "Documentaire", "Essai", "Théâtre", "Poésie", "Cuisine"
+    };
+
     public async Task<ErrorOr<UpdateBookMetadataResult>> Handle(
         UpdateBookMetadataCommand command,
         CancellationToken cancellationToken)
@@ -76,10 +82,13 @@ public sealed class UpdateBookMetadataCommandHandler(
                 command.CoverUrl,
                 fields,
                 command.WorkId,
-                Summary: command.Summary),
+                Genres: command.Genres,
+                Summary: command.Summary,
+                Pages: command.Pages,
+                Edition: command.Edition),
             updatedAt);
 
-        var recommendationInputChanged = changed && fields.Any(field => field is
+        var recommendationInputChanged = changed && book.IsDefinitiveForRecommendation && fields.Any(field => field is
             BookMetadataField.Title or
             BookMetadataField.Authors or
             BookMetadataField.Genre or
@@ -128,9 +137,12 @@ public sealed class UpdateBookMetadataCommandHandler(
                 BookMetadataField.PublicationYear => command.PublicationYear is null or (>= 1 and <= 9999),
                 BookMetadataField.PhysicalFormat => IsWithinLength(command.PhysicalFormat, 50),
                 BookMetadataField.Language => IsWithinLength(command.Language, 10),
-                BookMetadataField.Genre => IsWithinLength(command.Genre, 100),
+                BookMetadataField.Genre => IsWithinLength(command.Genre, 100) &&
+                    (command.Genres is null || command.Genres.All(genre => CatalogGenres.Contains(genre))),
                 BookMetadataField.CoverUrl => IsValidCoverUrl(command.CoverUrl),
                 BookMetadataField.Summary => IsWithinLength(command.Summary, BookSummaryText.MaximumLength),
+                BookMetadataField.Pages => command.Pages is null or (>= 1 and <= 100_000),
+                BookMetadataField.Edition => IsWithinLength(command.Edition, 100),
                 _ => false
             };
 

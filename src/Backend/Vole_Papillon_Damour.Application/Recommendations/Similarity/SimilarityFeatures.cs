@@ -30,9 +30,21 @@ public static partial class SimilarityFeatureBuilder
 
     private static readonly string[] ComicPublishers =
     [
-        "dargaud", "dupuis", "casterman", "lombard", "delcourt", "soleil", "bamboo", "futuropolis",
+        "dargaud", "dupuis", "casterman", "lombard", "delcourt", "glenat", "soleil", "bamboo", "futuropolis",
         "l association", "rue de sevres", "blake et mortimer", "moulinsart", "fluide glacial", "vents d ouest",
     ];
+
+    public static bool IsMangaPublisher(string? publisher)
+    {
+        var normalizedPublisher = SimilarityText.Normalize(publisher);
+        return MangaPublishers.Any(normalizedPublisher.Contains);
+    }
+
+    public static bool IsComicPublisher(string? publisher)
+    {
+        var normalizedPublisher = SimilarityText.Normalize(publisher);
+        return !IsMangaPublisher(publisher) && ComicPublishers.Any(normalizedPublisher.Contains);
+    }
 
     [GeneratedRegex(@"(\d+)\s*ans")]
     private static partial Regex AgeRegex();
@@ -56,11 +68,10 @@ public static partial class SimilarityFeatureBuilder
     public static SimilarityForm InferForm(SimilarityEdition edition)
     {
         var forms = SimilarityText.Normalize(string.Join(' ', edition.Forms));
-        var publisher = SimilarityText.Normalize(edition.Publisher);
         var collection = SimilarityText.Normalize(edition.Collection);
-        if (collection.Contains("manga") || MangaPublishers.Any(publisher.Contains) ||
+        if (collection.Contains("manga") || IsMangaPublisher(edition.Publisher) ||
             forms.Contains("bandes dessinees") || forms.Contains("romans graphiques") || forms.Contains("manga") ||
-            ComicPublishers.Any(publisher.Contains))
+            IsComicPublisher(edition.Publisher))
         {
             return SimilarityForm.Illustrated;
         }

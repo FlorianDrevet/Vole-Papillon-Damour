@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
 
 namespace Vole_Papillon_Damour.Infrastructure.Persistence;
@@ -36,6 +37,10 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<SocialPostImport> SocialPostImports => Set<SocialPostImport>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<IsbndbQuotaState> IsbndbQuotaStates => Set<IsbndbQuotaState>();
+    public DbSet<IsbndbDailyUsage> IsbndbDailyUsages => Set<IsbndbDailyUsage>();
+    public DbSet<IsbndbCatchUpRun> IsbndbCatchUpRuns => Set<IsbndbCatchUpRun>();
     public DbSet<BookGenre> BookGenres => Set<BookGenre>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
@@ -64,6 +69,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     {
         modelBuilder
             .ApplyConfigurationsFromAssembly(typeof(ProjectDbContext).Assembly);
+        Configurations.IsbndbConfigurations.Apply(modelBuilder);
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }

@@ -1,6 +1,27 @@
-import {migrateLegacyScanOutboxEntry} from './scan-local-store-migration';
+import {forceCatalogResyncForMetadataUpgrade, migrateLegacyScanOutboxEntry} from './scan-local-store-migration';
 
 describe('scan IndexedDB migration', () => {
+  it('forces one complete catalog resynchronization for existing stores after the metadata upgrade', () => {
+    const calls = {catalogClears: 0, deletedKeys: [] as IDBValidKey[]};
+    const catalog = {
+      clear: () => calls.catalogClears++,
+    } as unknown as IDBObjectStore;
+    const session = {
+      delete: (key: IDBValidKey) => calls.deletedKeys.push(key),
+    } as unknown as IDBObjectStore;
+    const transaction = {
+      objectStore: jasmine.createSpy('objectStore').and.callFake((name: string) =>
+        name === 'catalog' ? catalog : session),
+    } as unknown as IDBTransaction;
+
+    forceCatalogResyncForMetadataUpgrade(6, transaction);
+    forceCatalogResyncForMetadataUpgrade(7, transaction);
+
+    expect(calls.catalogClears).toBe(1);
+    expect(calls.deletedKeys.length).toBe(1);
+    expect(String(calls.deletedKeys[0])).toBe('catalog-sync');
+  });
+
   it('preserves every legacy entry while assigning an actionable v3 status and reason', () => {
     const entries = [
       createLegacyEntry('gesture-undecided', 'Orphaned', null),

@@ -1,0 +1,70 @@
+@if (status; as current) {
+  <section class="isbndb-status-card" aria-labelledby="isbndb-status-title" data-testid="isbndb-status-card">
+    <header class="isbndb-card-heading">
+      <div>
+        <span class="section-kicker">Source des fiches</span>
+        <h2 id="isbndb-status-title">ISBNdb</h2>
+      </div>
+      <span class="isbndb-status-pill" [class]="quotaStatusClass()">{{ quotaStatusLabel() }}</span>
+    </header>
+
+    <div class="isbndb-quota">
+      <div class="isbndb-quota-heading">
+        <strong>Crédits restants aujourd’hui</strong>
+        <span>{{ remainingCreditsLabel() }}</span>
+      </div>
+      <div class="isbndb-quota-track" role="progressbar" aria-label="Crédits ISBNdb restants" [attr.aria-valuenow]="current.dailyRemaining" [attr.aria-valuemin]="0" [attr.aria-valuemax]="current.dailyLimit">
+        <span [style.width.%]="creditProgressPercent()"></span>
+      </div>
+      <div class="isbndb-quota-notes">
+        <span>Renouvellement cette nuit à {{ parisTime(current.resetsAt) }} (heure de Paris)</span>
+        <span>Lu sur la réponse ISBNdb de {{ parisTime(current.observedAt) }}</span>
+      </div>
+    </div>
+
+    <div class="isbndb-card-columns">
+      <section class="isbndb-card-section" aria-label="Crédits consommés">
+        <h3>Consommés aujourd’hui · {{ formatNumber(consumedToday()) }}</h3>
+        <dl class="isbndb-usage-list">
+          @for (usage of ['CatchUp', 'Scan', 'PublicSearch', 'Administration']; track usage) {
+            <div><dt>{{ usageLabel(usage) }}</dt><dd>{{ formatNumber(usageCredits(usage)) }}</dd></div>
+          }
+        </dl>
+      </section>
+
+      <section class="isbndb-card-section" aria-label="Rattrapage en attente">
+        <h3>En attente du rattrapage</h3>
+        <strong class="isbndb-pending-total">{{ formatNumber(current.pendingCatchUp.total) }} fiches</strong>
+        <p>dont {{ formatNumber(current.pendingCatchUp.inStock) }} en stock · {{ formatNumber(current.pendingCatchUp.beforeMigration) }} d’avant la migration</p>
+        <a class="isbndb-absent-link" routerLink="/administration/isbndb-absent">
+          {{ formatNumber(current.absentToComplete) }} livres hors ISBNdb à compléter →
+        </a>
+      </section>
+    </div>
+
+    @if (current.lastRun; as run) {
+      <section class="isbndb-last-run" aria-label="Dernier rattrapage">
+        <div class="isbndb-last-run-heading">
+          <h3>Dernier rattrapage · {{ lastRunDate(run.startedAt) }} {{ parisTime(run.startedAt) }} → {{ run.endedAt ? parisTime(run.endedAt) : 'en cours' }}</h3>
+          <span>{{ lastRunStopReason(run.stopReason) }}</span>
+        </div>
+        <div class="isbndb-run-counts">
+          <span><strong>{{ formatNumber(run.filled) }}</strong> remplies</span>
+          <span><strong>{{ formatNumber(run.absent) }}</strong> absentes</span>
+          <span><strong>{{ formatNumber(run.remaining) }}</strong> restantes</span>
+        </div>
+      </section>
+    }
+
+    @if (current.unmatchedSubjects.length) {
+      <section class="isbndb-unmatched-subjects" aria-label="Sujets sans genre correspondant">
+        <h3>Sujets sans genre correspondant</h3>
+        <ul>
+          @for (item of current.unmatchedSubjects.slice(0, 10); track item.subject) {
+            <li><span>{{ item.subject }}</span><strong>{{ formatNumber(item.count) }}</strong></li>
+          }
+        </ul>
+      </section>
+    }
+  </section>
+}

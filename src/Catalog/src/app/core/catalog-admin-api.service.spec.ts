@@ -27,6 +27,8 @@ import {
   CatalogManualBookRequestCreated,
   CatalogManualRequestRelease,
   CatalogManualRequesterDeletion,
+  CatalogAdminIsbndbStatus,
+  CatalogAdminIsbndbAbsentBooksPage,
 } from './catalog.models';
 
 describe('CatalogAdminApiService', () => {
@@ -69,6 +71,61 @@ describe('CatalogAdminApiService', () => {
     expect(() => service.getDeadStock('  ', 6, 3)).toThrowError(
       'An administrator access token is required.',
     );
+  });
+
+  it('loads the ISBNdb status with the administrator bearer token', () => {
+    const response = {
+      dailyLimit: 5000,
+      dailyRemaining: 4812,
+      observedAt: '2026-10-24T09:00:00Z',
+      resetsAt: '2026-10-25T00:00:00Z',
+      status: 'Operational',
+      exhaustedUntil: null,
+      usageToday: [],
+      pendingCatchUp: {total: 12, inStock: 5, beforeMigration: 10},
+      absentToComplete: 3,
+      lastRun: null,
+      unmatchedSubjects: [],
+    } as CatalogAdminIsbndbStatus;
+
+    service.getIsbndbStatus('access-token').subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/isbndb/status`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('loads ISBNdb-absent books with status, search, paging and the administrator token', () => {
+    const response = {items: [], totalCount: 4, page: 2, pageSize: 5} as CatalogAdminIsbndbAbsentBooksPage;
+
+    service.getIsbndbAbsentBooks('access-token', {
+      status: 'completed', search: 'Camus', page: 2, pageSize: 5,
+    }).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/isbndb-absent?status=completed&search=Camus&page=2&pageSize=5`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('posts a completion state to the ISBNdb absent-book endpoint', () => {
+    service.setIsbndbCompletion('access-token', '9782070363735', true).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/9782070363735/isbndb-completion`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({completed: true});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush({isbn13: '9782070363735', isCompleted: true, completedAt: null, completedBy: null, changed: true});
+  });
+
+  it('posts an on-demand ISBNdb recheck to the administrator endpoint', () => {
+    service.recheckIsbndbBook('access-token', '9782070363735').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/9782070363735/isbndb-recheck`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush({isbn13: '9782070363735', outcome: 'NotFound', resetsAt: null});
   });
 
   it('permanently deletes an admin catalogue book through the dedicated endpoint', () => {

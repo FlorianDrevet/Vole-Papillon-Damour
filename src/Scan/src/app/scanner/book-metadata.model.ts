@@ -8,5 +8,6 @@ export interface BookMetadata {
   coverSource?: string | null;
   source: string;
   workId: string | null;
+  workKey?: string | null;
   retrievedAt: string;
 }

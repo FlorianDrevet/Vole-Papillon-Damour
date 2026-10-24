@@ -1,5 +1,6 @@
 @use '../../SharedUi/src/lib/components/vpd-loader/vpd-loader.component';
 @use './app/features/administration/not-found-reports/not-found-admin-shell';
+@use './app/features/administration/isbndb/isbndb-book-detail.global';
 
 @font-face {
   font-family: 'Newsreader';

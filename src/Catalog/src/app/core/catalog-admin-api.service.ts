@@ -16,6 +16,11 @@ import {
   CatalogAdminBookImportResponse,
   CatalogAdminBookCoverUpload,
   CatalogAdminBook,
+  CatalogAdminBookMetadataUpdate,
+  CatalogAdminIsbndbAbsentBooksPage,
+  CatalogAdminIsbndbCompletionResponse,
+  CatalogAdminIsbndbRecheckResponse,
+  CatalogAdminIsbndbStatus,
   CatalogAdminBookMetadataQueue,
   CatalogAdminMetadataRetry,
   CatalogAdminCatalogueFilters,
@@ -160,6 +165,43 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogAdminBookMetadataQueue>(
       `${this.apiUrl}/books/admin/books/metadata-queue`,
       this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  getIsbndbStatus(accessToken: string): Observable<CatalogAdminIsbndbStatus> {
+    return this.http.get<CatalogAdminIsbndbStatus>(
+      `${this.apiUrl}/books/admin/isbndb/status`,
+      this.options(accessToken),
+    );
+  }
+
+  getIsbndbAbsentBooks(
+    accessToken: string,
+    filters: {status?: 'to-complete' | 'completed'; search?: string; page?: number; pageSize?: number} = {},
+  ): Observable<CatalogAdminIsbndbAbsentBooksPage> {
+    return this.http.get<CatalogAdminIsbndbAbsentBooksPage>(
+      `${this.apiUrl}/books/admin/books/isbndb-absent`,
+      this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  setIsbndbCompletion(
+    accessToken: string,
+    isbn13: string,
+    completed: boolean,
+  ): Observable<CatalogAdminIsbndbCompletionResponse> {
+    return this.http.post<CatalogAdminIsbndbCompletionResponse>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/isbndb-completion`,
+      {completed},
+      this.options(accessToken),
+    );
+  }
+
+  recheckIsbndbBook(accessToken: string, isbn13: string): Observable<CatalogAdminIsbndbRecheckResponse> {
+    return this.http.post<CatalogAdminIsbndbRecheckResponse>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/isbndb-recheck`,
+      null,
+      this.options(accessToken),
     );
   }
 
@@ -310,7 +352,7 @@ export class CatalogAdminApiService {
     );
   }
 
-  updateMetadata(accessToken: string, isbn13: string, request: object): Observable<object> {
+  updateMetadata(accessToken: string, isbn13: string, request: CatalogAdminBookMetadataUpdate): Observable<object> {
     return this.http.patch<object>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/metadata`,
       request,

@@ -40,6 +40,7 @@ using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
@@ -750,6 +751,11 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<IsbndbQuotaState> IsbndbQuotaStates => Set<IsbndbQuotaState>();
+    public DbSet<IsbndbDailyUsage> IsbndbDailyUsages => Set<IsbndbDailyUsage>();
+    public DbSet<IsbndbCatchUpRun> IsbndbCatchUpRuns => Set<IsbndbCatchUpRun>();
+    public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
@@ -783,10 +789,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
-        modelBuilder.Ignore<Watchlist>();
 
         modelBuilder.Entity<AssoEvents>(builder =>
         {
@@ -832,6 +838,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte>();
             builder.HasMany(book => book.Genres)
@@ -840,6 +850,37 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .OnDelete(DeleteBehavior.Cascade);
             builder.Navigation(book => book.Genres)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<BookIsbndbRecord>(builder =>
+        {
+            builder.HasKey(record => record.Isbn13);
+            builder.Property(record => record.Isbn13)
+                .ValueGeneratedNever()
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.HasOne<Book>()
+                .WithOne()
+                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IsbndbCatchUpRun>(builder =>
+        {
+            builder.HasKey(run => run.Id);
+            builder.Property(run => run.Id).ValueGeneratedOnAdd();
+            builder.Property(run => run.StopReason).HasConversion<byte>();
+        });
+
+        modelBuilder.Entity<IsbndbQuotaState>(builder =>
+        {
+            builder.HasKey(state => state.Id);
+            builder.Property(state => state.Id).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<IsbndbDailyUsage>(builder =>
+        {
+            builder.HasKey(usage => new { usage.Day, usage.Usage });
+            builder.Property(usage => usage.Usage).HasConversion<byte>();
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>
@@ -928,6 +969,14 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
                     value => value == null ? null : RareBookId.Create(value.Value)));
+        });
+
+        modelBuilder.Entity<Watchlist>(builder =>
+        {
+            builder.HasKey(watchlist => watchlist.Id);
+            builder.Property(watchlist => watchlist.Id)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(watchlist => watchlist.AlertStatus).HasConversion<byte>();
         });
 
         modelBuilder.Entity<UserAlertHistory>(builder =>

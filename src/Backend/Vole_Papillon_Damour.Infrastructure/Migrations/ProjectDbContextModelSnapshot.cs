@@ -284,6 +284,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("nvarchar(2048)");
 
+                    b.Property<string>("Edition")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("FirstSeenAt")
                         .HasColumnType("datetime2");
 
@@ -294,10 +298,29 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<DateTime?>("GenresRefreshedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsAbsentFromIsbndb")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsHiddenFromCatalog")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsIsbndbSourced")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("IsbndbCheckedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("IsbndbCompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("IsbndbCompletedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Language")
                         .HasMaxLength(10)
@@ -324,6 +347,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.Property<byte>("MetadataStatus")
                         .HasColumnType("tinyint");
+
+                    b.Property<int?>("Pages")
+                        .HasColumnType("int");
 
                     b.Property<string>("PhysicalFormat")
                         .HasMaxLength(50)
@@ -386,6 +412,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("WorkKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Genre")
@@ -406,10 +436,17 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("WorkId");
 
+                    b.HasIndex("WorkKey")
+                        .HasDatabaseName("IX_Books_WorkKey");
+
                     b.HasIndex("FirstSeenAt", "Title")
                         .IsDescending(true, false)
                         .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    b.HasIndex("IsIsbndbSourced", "IsAbsentFromIsbndb")
+                        .HasDatabaseName("IX_Books_IsbndbSourceFlags")
+                        .HasFilter("[IsIsbndbSourced] = 0");
 
                     b.HasIndex("MetadataStatus", "BibliographicDetailsRefreshedAt")
                         .HasDatabaseName("IX_Books_MetadataStatus_BibliographicDetailsRefreshedAt");
@@ -497,6 +534,129 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_BookGenres_Name_BookIsbn13");
 
                     b.ToTable("BookGenres", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", b =>
+                {
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<string>("Authors")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Binding")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DatePublished")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("DeweyDecimal")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Dimensions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Edition")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("EditionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Excerpt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HeightUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("HeightValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("Isbn10")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("char(10)");
+
+                    b.Property<string>("LanguageCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("LengthUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("LengthValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("ListPriceAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ListPriceCurrency")
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<decimal?>("Msrp")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OtherIsbns")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Overview")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Publisher")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("RawJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Related")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subjects")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Synopsis")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TitleLong")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WeightUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("WeightValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("WidthUnit")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("WidthValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Isbn13");
+
+                    b.ToTable("BookIsbndbRecords", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
@@ -689,6 +849,106 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasFilter("[RareBookId] IS NOT NULL");
 
                     b.ToTable("CheckoutPassageLines", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.IsbndbAggregate.IsbndbCatchUpRun", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Absent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Filled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("Rechecked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("Remaining")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte?>("StopReason")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IsbndbCatchUpRuns", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.IsbndbAggregate.IsbndbDailyUsage", b =>
+                {
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<byte>("Usage")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int>("Credits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Day", "Usage");
+
+                    b.ToTable("IsbndbDailyUsages", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.IsbndbAggregate.IsbndbQuotaState", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DailyLimit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DailyRemaining")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExhaustedUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastFailureAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastFailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ObservedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ResetsAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IsbndbQuotaStates", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DailyLimit = 5000,
+                            DailyRemaining = 5000
+                        });
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ManualRequestAggregate.ManualBookRequest", b =>
@@ -1877,6 +2137,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
                         .WithMany("Genres")
                         .HasForeignKey("BookIsbn13")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithOne()
+                        .HasForeignKey("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", "Isbn13")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

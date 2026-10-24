@@ -289,6 +289,7 @@ param sqlAdministratorLogin = readEnvironmentVariable('SQL_ADMIN_LOGIN', 'vpdadm
 param sqlAdministratorLoginPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD', '')
 param jwtSecret = readEnvironmentVariable('JWT_SECRET', '')
 param googleBooksApiKey = readEnvironmentVariable('GOOGLE_BOOKS_API_KEY', '')
+param isbndbApiKey = readEnvironmentVariable('ISBNDB_API_KEY', '')
 param instagramAccessToken = readEnvironmentVariable('INSTAGRAM_ACCESS_TOKEN', '')
 param socialImportSchedule = '0 0 0,12 * * *'
 param socialImportGraphApiVersion = 'v22.0'

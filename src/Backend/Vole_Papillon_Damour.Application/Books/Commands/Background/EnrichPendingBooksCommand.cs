@@ -7,6 +7,7 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 public sealed record EnrichPendingBooksCommand(
     int BatchSize = 50,
     Isbn13? Isbn13 = null,
+    IReadOnlyList<Isbn13>? Isbn13s = null,
     bool IncludeMissingGenres = false,
     bool RefreshAllGenres = false,
     bool RefreshMissingBibliographicDetails = false,

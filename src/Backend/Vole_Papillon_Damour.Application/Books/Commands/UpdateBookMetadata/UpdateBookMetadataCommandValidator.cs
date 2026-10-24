@@ -6,6 +6,12 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
 
 public sealed class UpdateBookMetadataCommandValidator : AbstractValidator<UpdateBookMetadataCommand>
 {
+    private static readonly HashSet<string> CatalogGenres = new(StringComparer.Ordinal)
+    {
+        "Roman", "Jeunesse", "Bande dessinée", "Manga", "Policier", "Thriller", "Science-fiction",
+        "Fantasy", "Romance", "Histoire", "Biographie", "Documentaire", "Essai", "Théâtre", "Poésie", "Cuisine"
+    };
+
     public UpdateBookMetadataCommandValidator()
     {
         RuleFor(command => command.Isbn).NotEmpty();
@@ -54,5 +60,15 @@ public sealed class UpdateBookMetadataCommandValidator : AbstractValidator<Updat
             .InclusiveBetween(1, 9999)
             .When(command => command.Fields?.Contains(BookMetadataField.PublicationYear) == true &&
                              command.PublicationYear.HasValue);
+        RuleFor(command => command.Pages)
+            .InclusiveBetween(1, 100_000)
+            .When(command => command.Fields?.Contains(BookMetadataField.Pages) == true && command.Pages.HasValue);
+        RuleFor(command => command.Edition)
+            .MaximumLength(100)
+            .When(command => command.Fields?.Contains(BookMetadataField.Edition) == true);
+        RuleFor(command => command.Genres)
+            .Must(genres => genres is null || genres.All(genre => CatalogGenres.Contains(genre)))
+            .When(command => command.Fields?.Contains(BookMetadataField.Genre) == true)
+            .WithMessage("Genres must be selected from the catalog genre list.");
     }
 }

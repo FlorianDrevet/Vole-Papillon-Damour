@@ -2,7 +2,26 @@ import {
   ScanOutboxEntry,
   ScanOutboxStatus,
   ScanSetAsideReason,
+  scanStoreNames,
 } from './scan-offline.model';
+
+const catalogEditionMetadataVersion = 7;
+
+export function shouldForceCatalogResync(oldVersion: number): boolean {
+  return oldVersion > 0 && oldVersion < catalogEditionMetadataVersion;
+}
+
+export function forceCatalogResyncForMetadataUpgrade(
+  oldVersion: number,
+  transaction: IDBTransaction,
+): void {
+  if (!shouldForceCatalogResync(oldVersion)) {
+    return;
+  }
+
+  transaction.objectStore(scanStoreNames.catalog).clear();
+  transaction.objectStore(scanStoreNames.session).delete('catalog-sync');
+}
 
 export type LegacyScanOutboxEntry = Omit<ScanOutboxEntry, 'status' | 'clientSessionId'> & {
   clientSessionId?: string;

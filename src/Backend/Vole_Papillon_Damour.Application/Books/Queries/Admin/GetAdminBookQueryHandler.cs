@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -20,7 +21,7 @@ public sealed class GetAdminBookQueryHandler(IProjectDbContext dbContext)
             return Errors.Book.InvalidIsbn(query.Isbn);
         }
 
-        var book = await dbContext.Books.AsNoTracking().SingleOrDefaultAsync(
+        var book = await dbContext.Books.AsNoTracking().Include(candidate => candidate.Genres).SingleOrDefaultAsync(
             candidate => candidate.Id == isbn13,
             cancellationToken);
         if (book is null)
@@ -39,6 +40,8 @@ public sealed class GetAdminBookQueryHandler(IProjectDbContext dbContext)
         var isRare = await dbContext.RareBooks
             .AsNoTracking()
             .AnyAsync(rareBook => rareBook.Isbn13 == isbn13, cancellationToken);
-        return AdminQueryProjection.ToBookResult(book, announcements, movements, isRare);
+        var record = await dbContext.BookIsbndbRecords.AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.Isbn13 == isbn13, cancellationToken);
+        return AdminQueryProjection.ToBookResult(book, announcements, movements, isRare, isbndbRecord: record);
     }
 }

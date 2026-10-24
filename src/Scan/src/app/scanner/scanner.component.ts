@@ -698,6 +698,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       case 'Selling':
         return `${verdict.salesCount} vente${verdict.salesCount > 1 ? 's' : ''} déjà enregistrée${verdict.salesCount > 1 ? 's' : ''}`;
       case 'TooMany':
+        if (verdict.otherEditions.some(edition => edition.strong)) {
+          return `Déjà ${verdict.totalKnownQuantity} exemplaires de cette œuvre · toutes éditions`;
+        }
         return `Déjà ${verdict.totalKnownQuantity} exemplaire${verdict.totalKnownQuantity > 1 ? 's' : ''} · ${this.availableQuantity} disponibles + ${this.announcedQuantity} annoncés`;
       default:
         return verdict.isKnown
@@ -821,6 +824,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           if (lookupVersion !== this.lookupVersion) {
             return;
           }
+          await this.refreshTriageOtherEditions(lookupVersion);
           this.trySync();
         }
       } else {
@@ -2464,6 +2468,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           // Bibliographic metadata is best-effort; the durable scan remains in the outbox.
         }
       }
+      await this.refreshTriageOtherEditions(lookupVersion);
       return;
     }
 
@@ -2475,6 +2480,35 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
       : 'La notice ne peut pas être chargée pour le moment.';
     this.refreshView();
+  }
+
+  private async refreshTriageOtherEditions(lookupVersion: number): Promise<void> {
+    const localScan = this.localScan;
+    const scannedBook = this.metadata ?? localScan?.catalogBook;
+    if (!localScan || !scannedBook || !this.scanWorkflow) {
+      return;
+    }
+
+    try {
+      const otherEditions = await this.scanWorkflow.getSiblingEditions(scannedBook);
+      if (
+        lookupVersion !== this.lookupVersion ||
+        this.localScan?.entry.isbn13 !== localScan.entry.isbn13
+      ) {
+        return;
+      }
+
+      this.localScan = {
+        ...this.localScan,
+        verdict: {
+          ...this.localScan.verdict,
+          otherEditions,
+        },
+      };
+      this.refreshView();
+    } catch {
+      // Edition grouping is supplemental; a local read failure must not alter the triage decision.
+    }
   }
 
   private startManualRequestLookup(isbn13: string, lookupVersion: number): void {

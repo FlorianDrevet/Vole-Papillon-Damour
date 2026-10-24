@@ -8,6 +8,7 @@ import {
   ScanAssociationSettings,
   ScanCatalogBook,
   ScanCatalogSyncState,
+  ScanOtherEdition,
   ScanOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSessionCounts,
@@ -92,7 +93,11 @@ export class ScanWorkflowService {
     }
 
     const catalogBook = await this.store.getCatalogBook(entry.isbn13);
-    const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
+    const [settings, catalog] = await Promise.all([
+      this.store.getSettings(),
+      this.store.getCatalogBooks(),
+    ]);
+    const verdict = this.verdictService.calculate(catalogBook, settings, catalog);
     const entryIndex = entries.findIndex(candidate => candidate.clientGestureId === entry.clientGestureId);
     const previousEntry = entries
       .slice(0, entryIndex)
@@ -115,13 +120,22 @@ export class ScanWorkflowService {
   async lookupCatalog(isbn13: string): Promise<LocalCatalogResult> {
     return await this.enqueue(async () => {
       const catalogBook = await this.store.getCatalogBook(isbn13);
-      const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
+      const [settings, catalog] = await Promise.all([
+        this.store.getSettings(),
+        this.store.getCatalogBooks(),
+      ]);
+      const verdict = this.verdictService.calculate(catalogBook, settings, catalog);
       return {catalogBook, verdict};
     });
   }
 
   async getCatalogBook(isbn13: string): Promise<ScanCatalogBook | null> {
     return await this.store.getCatalogBook(isbn13);
+  }
+
+  async getSiblingEditions(book: ScanCatalogBook | BookMetadata): Promise<ScanOtherEdition[]> {
+    return this.verdictService.siblings(book, await this.store.getCatalogBooks())
+      .filter(edition => edition.quantity > 0);
   }
 
   async deleteOutboxEntry(clientGestureId: string): Promise<void> {
@@ -416,7 +430,11 @@ export class ScanWorkflowService {
       const counts = await this.store.getSessionCounts(session.clientSessionId);
       const catalogBook = await this.store.getCatalogBook(isbn13);
       const settings = await this.store.getSettings();
-      const verdict = this.verdictService.calculate(catalogBook, settings);
+      const verdict = this.verdictService.calculate(
+        catalogBook,
+        settings,
+        await this.store.getCatalogBooks(),
+      );
       const timestamp = occurredAt.toISOString();
       const entry: ScanOutboxEntry = {
         clientGestureId: createClientId(),
@@ -507,6 +525,10 @@ export class ScanWorkflowService {
         title: metadata.title,
         authors: metadata.authors,
         workId: metadata.workId,
+        workKey: metadata.workKey ?? existing?.workKey ?? null,
+        publisher: metadata.publisher ?? existing?.publisher ?? null,
+        publicationYear: metadata.publicationYear ?? existing?.publicationYear ?? null,
+        otherIsbns: existing?.otherIsbns,
         qtyAvailable: existing?.qtyAvailable ?? 0,
         qtyAnnounced: existing?.qtyAnnounced ?? 0,
         salesCount: existing?.salesCount ?? 0,

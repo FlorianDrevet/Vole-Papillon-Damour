@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FluentAssertions;
 using MapsterMapper;
 using MediatR;
@@ -81,6 +82,7 @@ public class EndpointAuthorizationTests
             "/catalog/works/{workId}",
             "/catalog/sitemap.xml",
             "/catalog/reference/search",
+            "/catalog/reference/isbndb",
         };
 
         var publicCatalogEndpoints = RegisteredEndpoints()
@@ -110,6 +112,43 @@ public class EndpointAuthorizationTests
             .GetOrderedMetadata<IAuthorizeData>()
             .Should()
             .Contain(data => data.Policy == "Administration");
+    }
+
+    [Fact]
+    public async Task Isbndb_administration_routes_require_administration_and_return_401_or_403_by_identity()
+    {
+        var routes = new[]
+        {
+            "/books/admin/isbndb/status",
+            "/books/admin/books/isbndb-absent",
+            "/books/admin/books/{isbn13}/isbndb-completion",
+            "/books/admin/books/{isbn13}/isbndb-recheck"
+        };
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddAuthorization(options =>
+            options.AddPolicy("Administration", policy => policy.RequireRole("Administration", "Admin")));
+        builder.Services.AddSingleton(Substitute.For<IMediator>());
+        await using var application = builder.Build();
+        application.UseRouting();
+        application.UseIsbndbAdministrationController();
+
+        var endpoints = application.Services.GetRequiredService<EndpointDataSource>()
+            .Endpoints.OfType<RouteEndpoint>()
+            .Where(endpoint => routes.Contains(RouteOf(endpoint)))
+            .ToArray();
+        endpoints.Should().HaveCount(routes.Length);
+        endpoints.SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
+            .Should().OnlyContain(data => data.Policy == "Administration");
+
+        var authorization = application.Services.GetRequiredService<IAuthorizationService>();
+        var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+        var authenticatedMember = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.Role, "Volunteer")], "test"));
+
+        (await Task.WhenAll(endpoints.Select(endpoint => AuthorizeIsbndbAsync(authorization, endpoint, anonymous))))
+            .Should().OnlyContain(status => status == StatusCodes.Status401Unauthorized);
+        (await Task.WhenAll(endpoints.Select(endpoint => AuthorizeIsbndbAsync(authorization, endpoint, authenticatedMember))))
+            .Should().OnlyContain(status => status == StatusCodes.Status403Forbidden);
     }
 
     [Fact]
@@ -293,6 +332,7 @@ public class EndpointAuthorizationTests
         application.UseBibliographicReferenceController();
         application.UseBookAdministrationController();
         application.UseManualRequestAdministrationController();
+        application.UseIsbndbAdministrationController();
         application.UseActualityController();
         application.UseProductController();
         application.UseOrdersController();
@@ -316,4 +356,15 @@ public class EndpointAuthorizationTests
 
     private static string Describe(RouteEndpoint endpoint) =>
         $"{string.Join('/', HttpMethods(endpoint))} {RouteOf(endpoint)}";
+
+    private static async Task<int> AuthorizeIsbndbAsync(
+        IAuthorizationService authorization,
+        Endpoint endpoint,
+        ClaimsPrincipal principal)
+    {
+        var policyName = endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Single().Policy!;
+        var result = await authorization.AuthorizeAsync(principal, resource: null, policyName);
+        return result.Succeeded ? StatusCodes.Status200OK :
+            principal.Identity?.IsAuthenticated == true ? StatusCodes.Status403Forbidden : StatusCodes.Status401Unauthorized;
+    }
 }

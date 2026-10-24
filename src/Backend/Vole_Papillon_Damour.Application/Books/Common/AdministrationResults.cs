@@ -47,7 +47,8 @@ public sealed record CatalogAdminOverviewResult(
     int UndatedAnnouncementCount,
     int InventoryDriftTitleCount,
     int InventoryDriftQuantity,
-    AdminAlertQueueSummaryResult PendingAlerts);
+    AdminAlertQueueSummaryResult PendingAlerts,
+    int IsbndbAbsentToCompleteCount = 0);
 
 public sealed record AdminBookPageResult(
     DateTimeOffset GeneratedAt,
@@ -100,7 +101,17 @@ public sealed record AdminBookResult(
     DateTimeOffset? LastAvailableAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<AdminAnnouncementResult> Announcements,
-    IReadOnlyList<AdminBookMovementResult> Movements);
+    IReadOnlyList<AdminBookMovementResult> Movements,
+    bool IsIsbndbSourced = false,
+    bool IsAbsentFromIsbndb = false,
+    DateTimeOffset? IsbndbCheckedAt = null,
+    DateTimeOffset? IsbndbCompletedAt = null,
+    int? Pages = null,
+    string? Edition = null,
+    string? Summary = null,
+    IReadOnlyList<string>? Genres = null,
+    IReadOnlyList<string>? Subjects = null,
+    string? FallbackSource = null);
 
 public sealed record AdminAnnouncementResult(
     Guid Id,

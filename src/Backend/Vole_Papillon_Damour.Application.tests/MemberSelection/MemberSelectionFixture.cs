@@ -331,6 +331,10 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(new ValueConverter<UserId?, Guid?>(
+                    userId => userId == null ? null : userId.Value,
+                    value => value.HasValue ? UserId.Create(value.Value) : null));
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte>();
             builder.Property(book => book.RowVersion)

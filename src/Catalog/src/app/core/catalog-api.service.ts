@@ -5,6 +5,7 @@ import {Observable, map} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {
   CatalogBook,
+  CatalogIsbndbEditionSearchResponse,
   CatalogPublicEventResponse,
   CatalogReferenceSearchResponse,
   CatalogFair,
@@ -131,6 +132,14 @@ export class CatalogApiService {
     return this.http.get<CatalogReferenceSearchResponse>(
       `${this.apiUrl}/catalog/reference/search`,
       {params: httpParams},
+    );
+  }
+
+  searchIsbndbEditions(query: string): Observable<CatalogIsbndbEditionSearchResponse> {
+    const params = new HttpParams().set('q', query.trim());
+    return this.http.get<CatalogIsbndbEditionSearchResponse>(
+      `${this.apiUrl}/catalog/reference/isbndb`,
+      {params},
     );
   }
 

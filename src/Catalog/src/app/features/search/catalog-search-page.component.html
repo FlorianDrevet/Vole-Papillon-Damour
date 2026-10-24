@@ -467,6 +467,102 @@
             } @else {
               <p class="external-empty">Aucun autre titre ne correspond à cette recherche.</p>
             }
+
+            @if (canSearchIsbndbEditions()) {
+              <div class="isbndb-editions-callout">
+                <div class="external-follow-copy">
+                  <p class="external-follow-kicker">Vous n'avez pas trouvé l'édition que vous cherchez ?</p>
+                  <p class="isbndb-editions-description">D'autres éditions en français peuvent exister ailleurs.</p>
+                </div>
+                <button
+                  type="button"
+                  class="reference-follow"
+                  [disabled]="isbndbEditionLoading"
+                  [attr.aria-busy]="isbndbEditionLoading ? 'true' : null"
+                  (click)="searchIsbndbEditions()">
+                  @if (isbndbEditionLoading) {
+                    <vpd-loader variant="ring" size="small" label="Recherche en cours"></vpd-loader>
+                  } @else {
+                    <span>Voir d'autres éditions</span>
+                  }
+                </button>
+              </div>
+            }
+
+            @if (isbndbEditionRequested) {
+              <section class="isbndb-editions-results" aria-labelledby="isbndb-editions-heading">
+                <div class="section-heading-line isbndb-editions-heading-line">
+                  <h3 id="isbndb-editions-heading">Autres éditions proposées</h3>
+                  @if (isbndbEditionResponse && !isbndbEditionUnavailable) {
+                    <span class="section-count isbndb-editions-count">{{ isbndbEditionCountLabel() }}</span>
+                  }
+                </div>
+
+                @if (isbndbEditionLoading) {
+                  <div class="external-loader">
+                    <vpd-loader
+                      variant="butterflies"
+                      logoSrc="images/papillon_without_back.png"
+                      label="Recherche d'autres éditions…"></vpd-loader>
+                  </div>
+                } @else if (isbndbEditionUnavailable) {
+                  <p class="isbndb-editions-unavailable" role="status">
+                    Les propositions supplémentaires sont momentanément indisponibles. Réessayez plus tard.
+                  </p>
+                } @else if (isbndbEditionResponse) {
+                  @if (suggestedIsbndbReferences().length) {
+                    <div class="reference-list">
+                      @for (reference of suggestedIsbndbReferences(); track trackReference($index, reference)) {
+                        <article class="reference-card">
+                          <div class="reference-cover">
+                            @if (reference.coverUrl) {
+                              <img [catalogCover]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
+                            } @else {
+                              <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
+                            }
+                          </div>
+                          <div class="reference-copy">
+                            <h3 [attr.title]="reference.title || 'Titre à compléter'">{{ reference.title || 'Titre à compléter' }}</h3>
+                            @if (reference.authors) { <p [attr.title]="reference.authors">{{ reference.authors }}</p> }
+                            <small [attr.title]="referenceEditionLabel(reference)">{{ referenceEditionLabel(reference) }}</small>
+                            @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
+                          </div>
+                          <div class="reference-actions">
+                            @if (referenceFollowed(reference, 'Edition')) {
+                              <span class="reference-followed" role="status">
+                                <span aria-hidden="true">✓</span>
+                                Déjà dans vos livres suivis
+                              </span>
+                            } @else {
+                              <button
+                                type="button"
+                                class="reference-follow reference-follow--edition"
+                                [attr.aria-label]="referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout en cours' : 'Suivre cette édition'"
+                                [attr.aria-busy]="referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'true' : null"
+                                [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
+                                (click)="followReference(reference, 'Edition')">
+                                @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
+                                  <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                                } @else {
+                                  <span>Suivre cette édition</span>
+                                }
+                              </button>
+                            }
+                          </div>
+                        </article>
+                      }
+                    </div>
+                  } @else {
+                    <p class="external-empty">Aucune autre édition trouvée pour cette recherche.</p>
+                  }
+                  @if (isbndbEditionResponse.truncated) {
+                    <p class="isbndb-editions-truncated">
+                      Seules les 100 premières éditions sont affichées. Précisez votre recherche pour affiner.
+                    </p>
+                  }
+                }
+              </section>
+            }
           }
         </section>
       </div>

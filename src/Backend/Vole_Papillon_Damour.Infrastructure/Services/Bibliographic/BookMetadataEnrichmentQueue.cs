@@ -35,4 +35,45 @@ public sealed class BookMetadataEnrichmentQueue : IBookMetadataEnrichmentQueue
         pending.TryRemove(isbn13, out _);
         return isbn13;
     }
+
+    public async ValueTask<IReadOnlyList<Isbn13>> DequeueBatchAsync(
+        int max,
+        CancellationToken cancellationToken)
+    {
+        if (max <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(max));
+        }
+
+        var batch = new List<Isbn13>(max);
+        var included = new HashSet<Isbn13>();
+        var first = await DequeueAsync(cancellationToken);
+        batch.Add(first);
+        included.Add(first);
+        if (max == 1)
+        {
+            return batch;
+        }
+
+        using var batchWindow = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        batchWindow.CancelAfter(TimeSpan.FromMilliseconds(500));
+        while (batch.Count < max)
+        {
+            try
+            {
+                var next = await channel.Reader.ReadAsync(batchWindow.Token);
+                pending.TryRemove(next, out _);
+                if (included.Add(next))
+                {
+                    batch.Add(next);
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+
+        return batch;
+    }
 }

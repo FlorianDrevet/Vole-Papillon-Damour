@@ -7,4 +7,6 @@ public interface IBookMetadataEnrichmentQueue
     void Enqueue(Isbn13 isbn13);
 
     ValueTask<Isbn13> DequeueAsync(CancellationToken cancellationToken);
+
+    ValueTask<IReadOnlyList<Isbn13>> DequeueBatchAsync(int max, CancellationToken cancellationToken);
 }

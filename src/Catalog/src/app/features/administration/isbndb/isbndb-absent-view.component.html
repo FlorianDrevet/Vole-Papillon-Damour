@@ -1,0 +1,64 @@
+<section class="admin-view isbndb-absent-view" aria-labelledby="admin-title" data-testid="isbndb-absent-view">
+  <div class="admin-heading">
+    <span class="admin-accent" aria-hidden="true"></span>
+    <span class="admin-kicker">Le fonds de livres</span>
+    <h1 id="admin-title">Livres hors ISBNdb.</h1>
+    <p class="admin-intro">ISBNdb ne connaît pas ces livres : leur fiche vient de la BnF, d’Open Library ou de Google Books et il manque souvent des informations. Complétez-les, puis marquez-les complétées pour relancer les recommandations.</p>
+  </div>
+
+  <div class="period-chips isbndb-absent-filters" role="group" aria-label="Filtrer les livres hors ISBNdb">
+    <button class="period-chip" data-testid="isbndb-filter-to-complete" type="button" [class.active]="filter() === 'to-complete'" [attr.aria-pressed]="filter() === 'to-complete'" (click)="selectFilter('to-complete')">À compléter · {{ pendingCount() }}</button>
+    <button class="period-chip" data-testid="isbndb-filter-completed" type="button" [class.active]="filter() === 'completed'" [attr.aria-pressed]="filter() === 'completed'" (click)="selectFilter('completed')">Complétées · {{ completedCount() }}</button>
+  </div>
+
+  <form class="isbndb-absent-search" (ngSubmit)="submitSearch()">
+    <label class="search-field">
+      <span>Rechercher un livre</span>
+      <input name="isbndbAbsentSearch" [(ngModel)]="search" placeholder="ISBN, titre ou auteur…">
+    </label>
+    <button class="button button-outline" type="submit" [disabled]="loading()">Rechercher</button>
+  </form>
+
+  @if (error(); as message) {
+    <p class="admin-status admin-status-error" role="alert">{{ message }}</p>
+  } @else if (loading() && !page()) {
+    <p class="admin-status" role="status">Chargement des livres hors ISBNdb…</p>
+  } @else if (page(); as current) {
+    <div class="isbndb-absent-column-headings" aria-hidden="true">
+      <span>Livre</span><span>Fiche de secours</span><span>Champs manquants</span><span>En stock</span><span></span>
+    </div>
+    <div class="isbndb-absent-list">
+      @for (item of current.items; track item.isbn13) {
+        <article class="isbndb-absent-card" data-testid="isbndb-absent-book">
+          <div class="isbndb-absent-book-identity">
+            @if (item.coverUrl) {<img class="isbndb-absent-cover" [src]="item.coverUrl" alt="">} @else {<span class="isbndb-absent-cover book-cover-placeholder" aria-hidden="true"></span>}
+            <div>
+              <span class="isbn-label">{{ item.isbn13 }}</span>
+              <strong>{{ item.title || 'Titre inconnu' }}</strong>
+              <span>{{ item.authors || 'Auteur non renseigné' }}</span>
+            </div>
+          </div>
+          <div class="isbndb-absent-source"><span class="isbndb-mobile-label">Fiche de secours</span>{{ fallbackSourceLabel(item.fallbackSource) }}</div>
+          <div class="isbndb-missing-fields">
+            <span class="isbndb-mobile-label">Champs manquants</span>
+            @for (field of item.missingFields; track field) {<span class="isbndb-missing-field">{{ missingFieldLabel(field) }}</span>}
+            @empty {<span class="isbndb-all-fields-present">Tous les champs sont renseignés</span>}
+          </div>
+          <div class="isbndb-absent-stock"><span class="isbndb-mobile-label">En stock</span>{{ stockLabel(item) }}</div>
+          <div class="isbndb-absent-action">
+            <button class="button button-outline" data-testid="isbndb-absent-open-book" type="button" (click)="openBook(item)">Compléter →</button>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-panel"><h2>{{ filter() === 'to-complete' ? 'Aucun livre à compléter' : 'Aucun livre marqué comme complété' }}</h2><p>Les livres qu’ISBNdb ne connaît pas apparaîtront ici.</p></div>
+      }
+    </div>
+    @if (current.totalCount > current.pageSize) {
+      <div class="pagination" aria-label="Pages des livres hors ISBNdb">
+        <button type="button" [disabled]="current.page <= 1 || loading()" (click)="goToPage(current.page - 1)">←</button>
+        <span>Page {{ current.page }} / {{ pageCount() }}</span>
+        <button type="button" [disabled]="current.page >= pageCount() || loading()" (click)="goToPage(current.page + 1)">→</button>
+      </div>
+    }
+  }
+</section>

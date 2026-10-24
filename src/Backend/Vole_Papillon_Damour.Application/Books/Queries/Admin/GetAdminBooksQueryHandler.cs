@@ -69,6 +69,7 @@ public sealed class GetAdminBooksQueryHandler(
             .ThenBy(book => book.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
+            .Include(book => book.Genres)
             .ToListAsync(cancellationToken);
         var ids = pageBooks.Select(book => book.Id).ToArray();
         var rareIsbns = ids.Length == 0
@@ -85,6 +86,11 @@ public sealed class GetAdminBooksQueryHandler(
                 .AsNoTracking()
                 .Where(announcement => ids.Contains(announcement.Isbn13))
                 .ToListAsync(cancellationToken);
+        var records = ids.Length == 0
+            ? new Dictionary<Isbn13, Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord>()
+            : await dbContext.BookIsbndbRecords.AsNoTracking()
+                .Where(record => ids.Contains(record.Isbn13))
+                .ToDictionaryAsync(record => record.Isbn13, cancellationToken);
 
         // The page projection does not include movements, so they are not loaded.
         return new AdminBookPageResult(
@@ -95,7 +101,8 @@ public sealed class GetAdminBooksQueryHandler(
                     announcements,
                     [],
                     rareIsbns.Contains(book.Id.Value),
-                    false))
+                    false,
+                    records.GetValueOrDefault(book.Id)))
                 .ToArray(),
             totalCount,
             query.Page,

@@ -377,6 +377,23 @@
                 </div>
               </article>
 
+              <aside
+                *ngIf="activeVerdict?.otherEditions?.length"
+                class="other-editions"
+                aria-label="Autre édition déjà à la bourse"
+                data-testid="other-editions">
+                <h3>Autre édition déjà à la bourse</h3>
+                <ul>
+                  <li *ngFor="let edition of activeVerdict?.otherEditions">
+                    <div class="other-edition-row">
+                      <span>{{ edition.publisher || 'Édition inconnue' }} · {{ edition.publicationYear ?? '—' }}</span>
+                      <strong>{{ edition.quantity }} exemplaire{{ edition.quantity > 1 ? 's' : '' }}</strong>
+                    </div>
+                    <p *ngIf="!edition.strong">Même titre et même auteur — à vérifier</p>
+                  </li>
+                </ul>
+              </aside>
+
               <div class="book-facts">
                 <div><span>Disponibles</span><strong>{{ availableQuantity }}</strong></div>
                 <div><span>Annoncés</span><strong>{{ announcedQuantity }}</strong></div>

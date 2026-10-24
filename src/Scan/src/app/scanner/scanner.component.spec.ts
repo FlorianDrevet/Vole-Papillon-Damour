@@ -184,6 +184,69 @@ describe('ScannerComponent', () => {
     manualFixture.destroy();
   });
 
+  it('shows other editions and explains a duplicate verdict across the whole work', () => {
+    const otherFixture = TestBed.createComponent(ScannerComponent);
+    const otherComponent = otherFixture.componentInstance;
+    const result = createLocalScanResult();
+    result.verdict.verdict = 'TooMany';
+    result.verdict.totalKnownQuantity = 3;
+    (result.verdict as unknown as {otherEditions: unknown[]}).otherEditions = [{
+      isbn13: '9782070612758',
+      publisher: 'Gallimard',
+      publicationYear: 1998,
+      quantity: 2,
+      strong: true,
+    }, {
+      isbn13: '9782070412083',
+      publisher: null,
+      publicationYear: null,
+      quantity: 1,
+      strong: false,
+    }];
+    otherComponent.localScan = result;
+    otherFixture.detectChanges();
+
+    expect(otherComponent.verdictSummary).toBe('Déjà 3 exemplaires de cette œuvre · toutes éditions');
+    expect(otherFixture.nativeElement.textContent).toContain('Autre édition déjà à la bourse');
+    expect(otherFixture.nativeElement.textContent).toContain('Gallimard · 1998');
+    expect(otherFixture.nativeElement.textContent).toContain('2 exemplaires');
+    expect(otherFixture.nativeElement.textContent).toContain('Édition inconnue');
+    expect(otherFixture.nativeElement.textContent).toContain('Même titre et même auteur — à vérifier');
+    otherFixture.destroy();
+  });
+
+  it('adds sibling editions when later metadata arrives without changing the recorded verdict', async () => {
+    const localResult = createLocalScanResult();
+    const workflow = {
+      recordScan: jasmine.createSpy('recordScan').and.resolveTo(localResult),
+      cacheMetadata: jasmine.createSpy('cacheMetadata').and.resolveTo(),
+      getSiblingEditions: jasmine.createSpy('getSiblingEditions').and.resolveTo([{
+        isbn13: '9782070612758',
+        publisher: 'Gallimard',
+        publicationYear: 1998,
+        quantity: 2,
+        strong: false,
+      }]),
+      getSession: jasmine.createSpy('getSession').and.resolveTo(null),
+      getOutboxCounts: jasmine.createSpy('getOutboxCounts'),
+      getSettings: jasmine.createSpy('getSettings').and.resolveTo(null),
+      getCatalogSyncState: jasmine.createSpy('getCatalogSyncState').and.resolveTo(null),
+    };
+    Object.defineProperty(component, 'scanWorkflow', {value: workflow});
+    metadataService.getMetadata.and.returnValue(of(createMetadata('Les Misérables')));
+
+    await component.lookup('9782070409228', 'tri');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const verdict = component.activeVerdict as unknown as {
+      verdict: string;
+      otherEditions?: Array<{strong: boolean}>;
+    };
+    expect(verdict.verdict).toBe('FirstCopy');
+    expect(verdict.otherEditions).toEqual([jasmine.objectContaining({strong: false})]);
+  });
+
   it('does not look up manual requester contacts in cash mode', async () => {
     metadataService.getMetadata.and.returnValue(of(createMetadata()));
     component.screen = 'cash';
@@ -2426,6 +2489,7 @@ describe('ScannerComponent', () => {
         activeRequesterCount: 0,
         isRare: false,
         isKnown: false,
+        otherEditions: [],
       },
       catalogBook: null,
       isImmediateRepeat: false,

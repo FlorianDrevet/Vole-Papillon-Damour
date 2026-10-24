@@ -76,6 +76,122 @@ describe('ScanVerdictService', () => {
     expect(result.totalKnownQuantity).toBe(5);
   });
 
+  it('counts strongly linked editions of a work in the duplicate verdict', () => {
+    const scannedBook = {
+      ...createBook(),
+      qtyAvailable: 1,
+      workId: 'openlibrary-work-1',
+    };
+    const sibling = {
+      ...createBook(),
+      isbn13: '9782070612758',
+      qtyAvailable: 2,
+      workId: 'openlibrary-work-1',
+      publisher: 'Gallimard',
+      publicationYear: 1998,
+    };
+
+    const result = calculateWithCatalog(scannedBook, [scannedBook, sibling], createSettings(3, 10));
+
+    expect(result.verdict).toBe('TooMany');
+    expect(result.totalKnownQuantity).toBe(3);
+    expect(result.otherEditions).toEqual([{
+      isbn13: '9782070612758',
+      publisher: 'Gallimard',
+      publicationYear: 1998,
+      quantity: 2,
+      strong: true,
+    }]);
+  });
+
+  it('shows work-key matches as weak siblings without changing the ISBN verdict', () => {
+    const scannedBook = {
+      ...createBook(),
+      qtyAvailable: 1,
+      workKey: 'MISERABLES|HUGO',
+    };
+    const sibling = {
+      ...createBook(),
+      isbn13: '9782070612758',
+      qtyAvailable: 9,
+      workKey: 'MISERABLES|HUGO',
+    };
+
+    const result = calculateWithCatalog(scannedBook, [scannedBook, sibling], createSettings(5, 10));
+
+    expect(result.verdict).toBe('FirstCopy');
+    expect(result.totalKnownQuantity).toBe(1);
+    expect(result.otherEditions).toEqual([jasmine.objectContaining({
+      isbn13: '9782070612758',
+      quantity: 9,
+      strong: false,
+    })]);
+  });
+
+  it('uses an ISBN listed by the sibling as a strong link even without a work ID', () => {
+    const scannedBook = createBook();
+    const sibling = {
+      ...createBook(),
+      isbn13: '9782070612758',
+      qtyAnnounced: 2,
+      otherIsbns: ['9782070363735'],
+    };
+
+    const result = calculateWithCatalog(scannedBook, [scannedBook, sibling], createSettings(2, 10));
+
+    expect(result.verdict).toBe('TooMany');
+    expect(result.totalKnownQuantity).toBe(2);
+    expect(result.otherEditions?.[0].strong).toBeTrue();
+  });
+
+  it('accepts metadata as the scanned work candidate and ignores old records without work keys', () => {
+    const scannedMetadata = {
+      isbn13: '9782070409228',
+      workId: 'openlibrary-work-1',
+      workKey: 'MISERABLES|HUGO',
+    };
+    const sibling = {
+      ...createBook(),
+      isbn13: '9782070612758',
+      qtyAvailable: 1,
+      workId: 'openlibrary-work-1',
+    };
+    const serviceWithSiblings = service as unknown as {
+      siblings: (book: unknown, catalog: readonly unknown[]) => unknown[];
+    };
+
+    expect(serviceWithSiblings.siblings(scannedMetadata, [sibling])).toEqual([{
+      isbn13: '9782070612758',
+      publisher: null,
+      publicationYear: null,
+      quantity: 1,
+      strong: true,
+    }]);
+    expect(calculateWithCatalog(createBook(), [createBook()]).otherEditions).toEqual([]);
+  });
+
+  function calculateWithCatalog(
+    book: unknown,
+    catalog: readonly unknown[],
+    settings = createSettings(5, 1),
+  ) {
+    return (service.calculate as unknown as (
+      book: unknown,
+      settings: unknown,
+      catalog: readonly unknown[],
+    ) => {
+      verdict: string;
+      totalKnownQuantity: number;
+      otherEditions?: Array<{
+        isbn13: string;
+        publisher: string | null | undefined;
+        publicationYear: number | null | undefined;
+        quantity: number;
+        strong: boolean;
+      }>;
+    })(book, settings, catalog);
+  }
+
   function createBook() {
     return {
       isbn13: '9782070363735',

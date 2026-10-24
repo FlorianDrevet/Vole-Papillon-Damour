@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries;
@@ -98,6 +99,51 @@ public sealed class GetBookMetadataQueryHandlerTests
         result.Value.Title.Should().Be("Le Petit Prince");
         result.Value.Source.Should().Be("BnF");
         result.Value.CoverSource.Should().Be("BnF");
+        await resolver.DidNotReceive().ResolveAsync(Arg.Any<Isbn13>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenBookIsIsbndbSourced_ReturnsWorkKeyPagesAndEditionFromTheDatabase()
+    {
+        await using var fixture = await GetBookMetadataFixture.CreateAsync();
+        Isbn13.TryCreate("9782070409228", out var isbn13).Should().BeTrue();
+        var book = Book.Create(isbn13, new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc));
+        book.ApplyIsbndbNotice(
+            new BookMetadataPatch(
+                "Les Misérables",
+                "Victor Hugo",
+                "Gallimard",
+                1862,
+                null,
+                null,
+                "Classique",
+                "https://images.isbndb.com/covers/book.jpg",
+                [
+                    BookMetadataField.Title,
+                    BookMetadataField.Authors,
+                    BookMetadataField.Publisher,
+                    BookMetadataField.PublicationYear,
+                    BookMetadataField.Genre,
+                    BookMetadataField.CoverUrl,
+                    BookMetadataField.Pages,
+                    BookMetadataField.Edition
+                ],
+                Pages: 512,
+                Edition: "Folio classique"),
+            new DateTime(2026, 9, 1, 9, 0, 0, DateTimeKind.Utc));
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        var handler = new GetBookMetadataQueryHandler(fixture.Context, resolver);
+
+        var result = await handler.Handle(new GetBookMetadataQuery(isbn13), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Source.Should().Be("ISBNdb");
+        result.Value.CoverSource.Should().Be("ISBNdb");
+        result.Value.WorkKey.Should().Be("MISERABLES|HUGO");
+        result.Value.Pages.Should().Be(512);
+        result.Value.Edition.Should().Be("Folio classique");
         await resolver.DidNotReceive().ResolveAsync(Arg.Any<Isbn13>(), Arg.Any<CancellationToken>());
     }
 
@@ -224,6 +270,10 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(book => book.IsbndbCompletedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
             builder.Property(book => book.MetadataStatus).HasConversion<byte>();
             builder.Property(book => book.MetadataSource).HasConversion<byte?>();
             builder.Property(book => book.CoverSource).HasConversion<byte?>();

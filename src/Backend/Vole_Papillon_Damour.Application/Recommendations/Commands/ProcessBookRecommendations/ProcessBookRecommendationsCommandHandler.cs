@@ -38,18 +38,25 @@ public sealed class ProcessBookRecommendationsCommandHandler(
         }
 
         var isbns = requestedByIsbn.Keys.ToArray();
+        var bookIds = isbns
+            .Select(value => Isbn13.TryCreate(value, out var isbn13)
+                ? isbn13
+                : throw new InvalidOperationException("A recommendation request ISBN was not canonical."))
+            .ToArray();
         var jobs = await dbContext.BookRecommendationJobs
             .Where(job => isbns.Contains(job.Isbn13))
             .ToDictionaryAsync(job => job.Isbn13, cancellationToken);
         var books = await dbContext.Books
             .AsNoTracking()
-            .Where(book => isbns.Contains(book.Id.Value))
+            .Where(book => bookIds.Contains(book.Id))
             .Select(book => new
             {
                 Isbn13 = book.Id.Value,
                 book.MetadataStatus,
                 book.IsHiddenFromCatalog,
                 book.RedirectedToIsbn13,
+                book.IsIsbndbSourced,
+                book.IsAbsentFromIsbndb,
             })
             .ToDictionaryAsync(book => book.Isbn13, cancellationToken);
 
@@ -64,7 +71,8 @@ public sealed class ProcessBookRecommendationsCommandHandler(
                 continue;
             }
 
-            if (book.MetadataStatus == BookMetadataStatus.Pending)
+            if (book.MetadataStatus == BookMetadataStatus.Pending ||
+                (!book.IsIsbndbSourced && !book.IsAbsentFromIsbndb))
             {
                 waitingForMetadata++;
                 continue;

@@ -6,4 +6,5 @@ public enum BookCoverSource : byte
     OpenLibrary,
     GoogleBooks,
     Manual,
+    Isbndb,
 }

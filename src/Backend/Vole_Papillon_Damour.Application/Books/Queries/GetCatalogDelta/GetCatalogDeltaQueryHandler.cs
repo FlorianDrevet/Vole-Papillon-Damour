@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Persistence;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
@@ -91,7 +93,11 @@ public sealed class GetCatalogDeltaQueryHandler(
                 manualTargets.Matches(book),
                 false,
                 book.IsHiddenFromCatalog,
-                book.UpdatedAt))
+                book.UpdatedAt,
+                book.WorkKey,
+                book.Publisher,
+                book.PublicationYear,
+                ParseOtherIsbns(book.OtherIsbns)))
             .ToArray();
 
         var rareBookSelection = await GetRareBooksToProjectAsync(
@@ -310,18 +316,48 @@ public sealed class GetCatalogDeltaQueryHandler(
             book.UpdatedAt > sinceAsOf);
     }
 
-    private static IQueryable<CatalogBookRow> SelectRows(IQueryable<Book> books)
+    private IQueryable<CatalogBookRow> SelectRows(IQueryable<Book> books)
     {
-        return books.Select(book => new CatalogBookRow(
-            book.Id,
-            book.Title,
-            book.Authors,
-            book.WorkId,
-            book.QuantityAvailable,
-            book.SalesCount,
-            book.IsHiddenFromCatalog,
-            book.UpdatedAt,
-            book.RowVersion));
+        return from book in books
+               join record in dbContext.BookIsbndbRecords.AsNoTracking()
+                   on book.Id equals record.Isbn13 into records
+               from record in records.DefaultIfEmpty()
+               select new CatalogBookRow(
+                   book.Id,
+                   book.Title,
+                   book.Authors,
+                   book.WorkId,
+                   book.QuantityAvailable,
+                   book.SalesCount,
+                   book.IsHiddenFromCatalog,
+                   book.UpdatedAt,
+                   book.RowVersion,
+                   book.WorkKey,
+                   book.Publisher,
+                   book.PublicationYear,
+                   record == null ? null : record.OtherIsbns);
+    }
+
+    private static IReadOnlyList<string> ParseOtherIsbns(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        try
+        {
+            return (JsonSerializer.Deserialize<IsbndbOtherIsbn[]>(json) ?? [])
+                .Select(otherIsbn => otherIsbn.Isbn?.Trim())
+                .Where(value => Isbn13.TryCreate(value, out _))
+                .Select(value => value!)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     private async Task<WantedTargets> GetWantedTargetsAsync(CancellationToken cancellationToken)
@@ -514,7 +550,11 @@ public sealed class GetCatalogDeltaQueryHandler(
         int SalesCount,
         bool IsHiddenFromCatalog,
         DateTime UpdatedAt,
-        byte[] RowVersion);
+        byte[] RowVersion,
+        string? WorkKey,
+        string? Publisher,
+        int? PublicationYear,
+        string? OtherIsbns);
 
     private sealed record WatchlistTarget(
         WatchlistItemScope Scope,

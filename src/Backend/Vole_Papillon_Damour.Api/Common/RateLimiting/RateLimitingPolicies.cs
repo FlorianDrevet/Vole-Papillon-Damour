@@ -12,5 +12,6 @@ public static class RateLimitingPolicies
     public const string PublicCatalog = "PublicCatalog";
     public const string BibliographicMetadata = "BibliographicMetadata";
     public const string BibliographicSearch = "BibliographicSearch";
+    public const string IsbndbSearch = "IsbndbSearch";
     public const string MemberCardResolve = "member-card-resolve";
 }

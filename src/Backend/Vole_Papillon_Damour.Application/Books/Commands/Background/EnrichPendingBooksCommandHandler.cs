@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 
@@ -13,10 +15,10 @@ public sealed class EnrichPendingBooksCommandHandler(
     IProjectDbContext dbContext,
     IBibliographicMetadataResolver metadataResolver,
     IDateTimeProvider dateTimeProvider,
-    IBookRecommendationWorkQueue? recommendationWorkQueue = null)
+    IBookRecommendationWorkQueue? recommendationWorkQueue = null,
+    IIsbndbLookupService? isbndbLookupService = null)
     : IRequestHandler<EnrichPendingBooksCommand, EnrichPendingBooksResult>
 {
-    private static readonly TimeSpan InterIsbnDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan ProviderFailureRetryAfter = TimeSpan.FromHours(1);
     private static readonly TimeSpan NotFoundRetryAfterFirstAttempt = TimeSpan.FromDays(7);
     private static readonly TimeSpan NotFoundRetryAfterSecondAttempt = TimeSpan.FromDays(30);
@@ -71,6 +73,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                 (fullCatalogRefreshStartedAt != null &&
                  (book.MetadataStatus == BookMetadataStatus.Resolved ||
                   book.MetadataStatus == BookMetadataStatus.Manual) &&
+                 !book.IsIsbndbSourced &&
                  book.CoverUrl == null &&
                  (book.ManuallyEditedFields == null ||
                   !book.ManuallyEditedFields.Contains("\"CoverUrl\"")) &&
@@ -78,18 +81,21 @@ public sealed class EnrichPendingBooksCommandHandler(
                   book.CoverCheckedAt < fullCatalogRefreshStartedAt)) ||
                 (fullCatalogRefreshStartedAt == null &&
                  book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 !book.IsIsbndbSourced &&
                  book.CoverUrl == null &&
                  (book.CoverCheckedAt == null ||
                   book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))) ||
                 (command.IncludeMissingGenres &&
                  !command.RefreshAllGenres &&
                  book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 !book.IsIsbndbSourced &&
                  book.Genre == null &&
                  (book.MetadataFetchedAt == null ||
                   book.MetadataFetchedAt <= now.Subtract(GenreRetryAfter)) &&
                  (book.LastAttemptAt == null ||
                   book.LastAttemptAt <= now.Subtract(GenreRetryAfter))) ||
                 (command.RefreshAllGenres &&
+                 !book.IsIsbndbSourced &&
                  ((book.MetadataStatus == BookMetadataStatus.Resolved &&
                    (book.ManuallyEditedFields == null ||
                     !book.ManuallyEditedFields.Contains("\"Genre\""))) ||
@@ -100,6 +106,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                   book.GenresRefreshedAt == null ||
                   book.GenresRefreshedAt < fullCatalogRefreshStartedAt)) ||
                 (command.RefreshMissingBibliographicDetails &&
+                 !book.IsIsbndbSourced &&
                  (book.MetadataStatus == BookMetadataStatus.Resolved ||
                   book.MetadataStatus == BookMetadataStatus.Manual) &&
                  ((book.Title == null &&
@@ -137,12 +144,27 @@ public sealed class EnrichPendingBooksCommandHandler(
             candidateQuery = candidateQuery.Where(book => book.Id == requestedIsbn13);
         }
 
+        if (command.Isbn13s is not null)
+        {
+            candidateQuery = candidateQuery.Where(book => command.Isbn13s.Contains(book.Id));
+        }
+
+        var candidateLimit = command.Isbn13s?.Count ?? command.BatchSize;
         var candidates = await candidateQuery
             .OrderBy(book => book.LastAttemptAt)
             .ThenBy(book => book.Id)
-            .Take(command.BatchSize)
+            .Take(candidateLimit)
             .Select(book => book.Id)
             .ToListAsync(cancellationToken);
+
+        IReadOnlyDictionary<Isbn13, IsbndbLookup>? isbndbLookups = null;
+        if (isbndbLookupService is not null && candidates.Count > 0)
+        {
+            isbndbLookups = await isbndbLookupService.LookupManyAsync(
+                candidates,
+                IsbndbUsage.Scan,
+                cancellationToken);
+        }
 
         var resolvedCount = 0;
         var notFoundCount = 0;
@@ -150,22 +172,20 @@ public sealed class EnrichPendingBooksCommandHandler(
         var coverUpdatedCount = 0;
         var genreUpdatedCount = 0;
         var bibliographicDetailsUpdatedCount = 0;
-        var hasProcessedCandidate = false;
         foreach (var isbn13 in candidates)
         {
-            if (hasProcessedCandidate && command.Isbn13 is null)
-            {
-                await Task.Delay(InterIsbnDelay, cancellationToken);
-            }
-
-            hasProcessedCandidate = true;
+            var prefetchedLookup = isbndbLookups is not null && isbndbLookups.TryGetValue(isbn13, out var lookup)
+                ? lookup
+                : null;
             BookMetadataResult? metadata;
             try
             {
                 metadata = await metadataResolver.ResolveAsync(
                     isbn13,
                     cancellationToken,
-                    command.RefreshMissingBibliographicDetails);
+                    command.RefreshMissingBibliographicDetails,
+                    IsbndbUsage.Scan,
+                    prefetchedLookup);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -183,6 +203,11 @@ public sealed class EnrichPendingBooksCommandHandler(
                     command.RefreshMissingBibliographicDetails,
                     fullCatalogRefreshStartedAt,
                     cancellationToken);
+                if (prefetchedLookup is IsbndbLookup.NotFound)
+                {
+                    await MarkAbsentAfterFallbackFailureAsync(isbn13, now, cancellationToken);
+                }
+
                 continue;
             }
 
@@ -196,6 +221,87 @@ public sealed class EnrichPendingBooksCommandHandler(
 
             if (book.MetadataStatus == BookMetadataStatus.Discarded)
             {
+                continue;
+            }
+
+            var wasDefinitiveForRecommendation = book.IsDefinitiveForRecommendation;
+            if (prefetchedLookup is IsbndbLookup.NotFound)
+            {
+                book.MarkAbsentFromIsbndb(now);
+            }
+
+            if (prefetchedLookup is IsbndbLookup.Found foundNotice)
+            {
+                var wasResolvedBeforeIsbndb =
+                    book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual;
+                var fetchedAt = metadata?.RetrievedAt.UtcDateTime ?? now;
+                var noticePatch = IsbndbNoticeMapper.ToPatch(foundNotice.Book);
+                var workId = metadata?.WorkId;
+                if (string.IsNullOrWhiteSpace(workId) &&
+                    book.WorkId is null &&
+                    !book.IsMetadataFieldManuallyEdited(BookMetadataField.WorkId))
+                {
+                    workId = await metadataResolver.ResolveWorkIdAsync(isbn13, cancellationToken);
+                }
+
+                if (!string.IsNullOrWhiteSpace(workId) &&
+                    book.WorkId is null &&
+                    !book.IsMetadataFieldManuallyEdited(BookMetadataField.WorkId))
+                {
+                    noticePatch = noticePatch with
+                    {
+                        WorkId = workId.Trim(),
+                        Fields = noticePatch.Fields.Append(BookMetadataField.WorkId).ToArray()
+                    };
+                }
+
+                try
+                {
+                    if (noticePatch.Fields.Count == 0)
+                    {
+                        failedCount++;
+                        book.RecordMetadataProviderFailure(
+                            now,
+                            "La notice ISBNdb ne contient aucune métadonnée exploitable.");
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                        continue;
+                    }
+
+                    book.ApplyIsbndbNotice(noticePatch, fetchedAt);
+                    await UpsertIsbndbRecordAsync(foundNotice.Book, fetchedAt, cancellationToken);
+                }
+                catch (ArgumentException exception)
+                {
+                    failedCount++;
+                    book.RecordMetadataProviderFailure(
+                        now,
+                        DescribeMetadataValidationFailure(exception));
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    continue;
+                }
+
+                if (!wasResolvedBeforeIsbndb)
+                {
+                    resolvedCount++;
+                }
+
+                var isbndbRecommendationJob = recommendationWorkQueue is null
+                    ? null
+                    : await dbContext.BookRecommendationJobs
+                        .SingleOrDefaultAsync(job => job.Isbn13 == isbn13.Value, cancellationToken);
+                if (isbndbRecommendationJob is not null &&
+                    isbndbRecommendationJob.Request(now, force: true))
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await recommendationWorkQueue!.EnqueueBooksAsync(
+                        [new BookRecommendationQueueItem(isbndbRecommendationJob.Isbn13, isbndbRecommendationJob.RequestVersion)],
+                        cancellationToken);
+                }
+                else
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+
                 continue;
             }
 
@@ -463,9 +569,13 @@ public sealed class EnrichPendingBooksCommandHandler(
             }
 
             var recommendationInputChanged = previousSummary != book.Summary ||
+                                             (!wasDefinitiveForRecommendation &&
+                                              book.IsDefinitiveForRecommendation) ||
                                              (!wasResolved &&
                                               book.MetadataStatus is (BookMetadataStatus.Resolved or BookMetadataStatus.Manual));
-            var recommendationJob = recommendationInputChanged && recommendationWorkQueue is not null
+            var recommendationJob = recommendationInputChanged &&
+                                    book.IsDefinitiveForRecommendation &&
+                                    recommendationWorkQueue is not null
                 ? await dbContext.BookRecommendationJobs
                     .SingleOrDefaultAsync(job => job.Isbn13 == isbn13.Value, cancellationToken)
                 : null;
@@ -549,6 +659,55 @@ public sealed class EnrichPendingBooksCommandHandler(
         }
     }
 
+    private async Task UpsertIsbndbRecordAsync(
+        IsbndbBook isbndbBook,
+        DateTime fetchedAt,
+        CancellationToken cancellationToken)
+    {
+        var record = IsbndbNoticeMapper.ToRecord(isbndbBook, fetchedAt);
+        var exists = await dbContext.BookIsbndbRecords
+            .AnyAsync(candidate => candidate.Isbn13 == record.Isbn13, cancellationToken);
+        if (exists)
+        {
+            dbContext.BookIsbndbRecords.Update(record);
+        }
+        else
+        {
+            dbContext.BookIsbndbRecords.Add(record);
+        }
+    }
+
+    private async Task MarkAbsentAfterFallbackFailureAsync(
+        Isbn13 isbn13,
+        DateTime checkedAt,
+        CancellationToken cancellationToken)
+    {
+        var book = await dbContext.Books
+            .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+        if (book is null)
+        {
+            return;
+        }
+
+        var wasDefinitiveForRecommendation = book.IsDefinitiveForRecommendation;
+        book.MarkAbsentFromIsbndb(checkedAt);
+        var recommendationJob = !wasDefinitiveForRecommendation &&
+                                recommendationWorkQueue is not null
+            ? await dbContext.BookRecommendationJobs
+                .SingleOrDefaultAsync(job => job.Isbn13 == isbn13.Value, cancellationToken)
+            : null;
+        if (recommendationJob is not null && recommendationJob.Request(checkedAt, force: true))
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await recommendationWorkQueue!.EnqueueBooksAsync(
+                [new BookRecommendationQueueItem(recommendationJob.Isbn13, recommendationJob.RequestVersion)],
+                cancellationToken);
+            return;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private static string DescribeProviderFailure(Exception exception)
     {
         var detail = string.IsNullOrWhiteSpace(exception.Message)
@@ -587,6 +746,9 @@ public sealed class EnrichPendingBooksCommandHandler(
         var summary = includeDetails ? BookSummaryText.Clean(metadata.Summary, metadata.Title) : null;
         var physicalFormat = includeDetails ? Clean(metadata.PhysicalFormat) : null;
         var language = includeDetails ? Clean(metadata.Language) : null;
+        var pages = includeDetails && metadata.Pages is > 0 and <= 100_000 ? metadata.Pages : null;
+        var edition = includeDetails ? Clean(metadata.Edition) : null;
+        if (edition?.Length > 100) edition = edition[..100];
         if (existingBook)
         {
             if (book.Title is not null || book.IsMetadataFieldManuallyEdited(BookMetadataField.Title))
@@ -645,6 +807,8 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (physicalFormat is not null) fields.Add(BookMetadataField.PhysicalFormat);
         if (language is not null) fields.Add(BookMetadataField.Language);
         if (summary is not null) fields.Add(BookMetadataField.Summary);
+        if (pages is not null) fields.Add(BookMetadataField.Pages);
+        if (edition is not null) fields.Add(BookMetadataField.Edition);
 
         return new BookMetadataPatch(
             title,
@@ -658,7 +822,9 @@ public sealed class EnrichPendingBooksCommandHandler(
             fields,
             workId,
             genres,
-            summary);
+            summary,
+            pages,
+            edition);
     }
 
     private static string? Clean(string? value)
@@ -771,6 +937,12 @@ public sealed class EnrichPendingBooksCommandHandler(
             return true;
         }
 
+        if (string.Equals(source, "ISBNdb", StringComparison.OrdinalIgnoreCase))
+        {
+            mappedSource = BookMetadataSource.Isbndb;
+            return true;
+        }
+
         mappedSource = default;
         return false;
     }
@@ -796,6 +968,12 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (string.Equals(source, "GoogleBooks", StringComparison.OrdinalIgnoreCase))
         {
             mappedSource = BookCoverSource.GoogleBooks;
+            return true;
+        }
+
+        if (string.Equals(source, "ISBNdb", StringComparison.OrdinalIgnoreCase))
+        {
+            mappedSource = BookCoverSource.Isbndb;
             return true;
         }
 

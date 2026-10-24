@@ -256,8 +256,9 @@ public static class BookAdministrationController
                 .WithName("ImportAdminBooks")
                 .RequireAuthorization("Administration");
 
-            endpoints.MapPatch(
+            endpoints.MapMethods(
                     "/books/admin/books/{isbn13}/metadata",
+                    ["PATCH", "PUT"],
                     async (
                         string isbn13,
                         UpdateAdminBookMetadataRequest request,
@@ -285,7 +286,10 @@ public static class BookAdministrationController
                                 fields,
                                 userId,
                                 request.WorkId,
-                                request.Summary),
+                                request.Summary,
+                                request.Pages,
+                                request.Edition,
+                                request.Genres),
                             cancellationToken);
                         return result.Match(
                             operation => Results.Ok(new
@@ -1227,7 +1231,8 @@ public static class BookAdministrationController
             new AdminAlertQueueSummaryResponse(
                 result.PendingAlerts.PendingCount,
                 result.PendingAlerts.OldestDueAt,
-                result.PendingAlerts.NextDueAt));
+                result.PendingAlerts.NextDueAt),
+            result.IsbndbAbsentToCompleteCount);
 
     private static AdminPeriodMetricsResponse ToResponse(AdminPeriodMetricsResult result) =>
         new(result.From, result.To, result.ScannedCount, result.KeptCount, result.RejectedCount,
@@ -1276,7 +1281,17 @@ public static class BookAdministrationController
             result.RejectionCount, result.IsRare, result.IsHidden, result.RedirectedToIsbn13,
             result.CoverUrl, result.FirstSeenAt, result.LastAvailableAt, result.UpdatedAt,
             result.Announcements.Select(ToResponse).ToArray(),
-            result.Movements.Select(ToResponse).ToArray());
+            result.Movements.Select(ToResponse).ToArray(),
+            result.IsIsbndbSourced,
+            result.IsAbsentFromIsbndb,
+            result.IsbndbCheckedAt,
+            result.IsbndbCompletedAt,
+            result.Pages,
+            result.Edition,
+            result.Summary,
+            result.Genres,
+            result.Subjects,
+            result.FallbackSource);
 
     private static AdminAnnouncementResponse ToResponse(AdminAnnouncementResult result) =>
         new(result.Id, result.Isbn13, result.FairId, result.Quantity, result.Status,

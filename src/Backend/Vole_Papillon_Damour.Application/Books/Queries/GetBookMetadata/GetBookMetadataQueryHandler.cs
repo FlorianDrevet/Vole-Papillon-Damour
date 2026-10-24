@@ -74,7 +74,10 @@ public sealed class GetBookMetadataQueryHandler(
             book.Genre,
             Summary: book.Summary,
             PhysicalFormat: book.PhysicalFormat,
-            Language: book.Language);
+            Language: book.Language,
+            Pages: book.Pages,
+            Edition: book.Edition,
+            WorkKey: book.WorkKey);
     }
 
     private static string MapSource(BookMetadataSource? source) => source switch
@@ -82,6 +85,7 @@ public sealed class GetBookMetadataQueryHandler(
         BookMetadataSource.Bnf => "BnF",
         BookMetadataSource.OpenLibrary => "OpenLibrary",
         BookMetadataSource.GoogleBooks => "GoogleBooks",
+        BookMetadataSource.Isbndb => "ISBNdb",
         _ => "Manual",
     };
 
@@ -90,6 +94,7 @@ public sealed class GetBookMetadataQueryHandler(
         BookCoverSource.Bnf => "BnF",
         BookCoverSource.OpenLibrary => "OpenLibrary",
         BookCoverSource.GoogleBooks => "GoogleBooks",
+        BookCoverSource.Isbndb => "ISBNdb",
         _ => "Manual",
     };
 }

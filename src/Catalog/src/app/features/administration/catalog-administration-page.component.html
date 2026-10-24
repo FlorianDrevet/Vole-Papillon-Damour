@@ -234,6 +234,8 @@
                   </article>
                 </div>
 
+                <app-isbndb-status-card [status]="isbndbStatus()"></app-isbndb-status-card>
+
                 @if (notFoundSummary()?.openTargetCount || manualRequestSummary()?.foundCount) {
                   <div class="dashboard-attention-tiles">
                     @if (notFoundSummary()?.openTargetCount; as openCount) {
@@ -397,7 +399,7 @@
             <section class="admin-view" aria-labelledby="admin-title">
               @if (selectedBook(); as book) {
                 <div class="detail-screen">
-                  <div class="breadcrumb"><button class="text-link" type="button" (click)="closeBookDetail()">{{ bookDetailReturnSection() === 'isbn-queue' ? 'ISBN en cours d’analyse' : 'Catalogue' }}</button><span>· Fiche</span></div>
+                  <div class="breadcrumb"><button class="text-link" type="button" (click)="closeBookDetail()">{{ bookDetailReturnSection() === 'isbn-queue' ? 'ISBN en cours d’analyse' : bookDetailReturnSection() === 'isbndb-absent' ? 'Livres hors ISBNdb' : 'Catalogue' }}</button><span>· Fiche</span></div>
                   <div class="detail-heading"><div><span class="admin-kicker">{{ book.title ? 'Catalogue · Fiche' : 'ISBN en cours d’analyse' }}</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'ISBN en cours d’analyse' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div>@if (book.title) {<a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a>}</div>
                   <div class="detail-layout">
                     <div class="detail-main-column">
@@ -410,17 +412,36 @@
                             } @else {
                               <span class="book-cover book-cover-placeholder" aria-hidden="true"></span>
                             }
+                            <span class="isbndb-provenance-badge" [class.isbndb-provenance-absent]="book.isAbsentFromIsbndb" [class.isbndb-provenance-sourced]="book.isIsbndbSourced">{{ provenanceBadgeLabel(book) }}</span>
                           </div>
                           <form class="detail-form" (ngSubmit)="updateMetadata(book)">
-                            <label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label>
-                            <label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label>
-                            <label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label>
-                            <label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label>
-                            <label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label>
+                            <label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title" [placeholder]="metadataPlaceholder(book, metadataForm.title)"></label>
+                            <label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors" [placeholder]="metadataPlaceholder(book, metadataForm.authors)"></label>
+                            <label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher" [placeholder]="metadataPlaceholder(book, metadataForm.publisher)"></label>
+                            <label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear" [placeholder]="metadataPlaceholder(book, metadataForm.publicationYear)"></label>
+                            <label><span>Nombre de pages</span><input type="number" name="metaPages" min="1" [(ngModel)]="metadataForm.pages" [placeholder]="metadataPlaceholder(book, metadataForm.pages)"></label>
+                            <label><span>Édition</span><input name="metaEdition" [(ngModel)]="metadataForm.edition" [placeholder]="metadataPlaceholder(book, metadataForm.edition)"></label>
+                            <label><span>Format</span><select name="metaFormat" [(ngModel)]="metadataForm.physicalFormat"><option value="">Choisir un format</option><option value="Broché">Broché</option><option value="Relié">Relié</option><option value="Poche">Poche</option><option value="Numérique">Numérique</option><option value="Livre audio">Livre audio</option><option value="Tout-carton">Tout-carton</option></select></label>
+                            <label><span>Langue</span><input name="metaLanguage" [(ngModel)]="metadataForm.language" [placeholder]="metadataPlaceholder(book, metadataForm.language)"></label>
+                            <fieldset class="metadata-genre-fieldset">
+                              <legend>Genres</legend>
+                              <div class="metadata-genre-options" role="group" aria-label="Genres du catalogue">
+                                @for (genre of catalogGenres; track genre) {
+                                  <button class="metadata-genre-chip" [class.active]="metadataForm.genres.includes(genre)" [attr.aria-pressed]="metadataForm.genres.includes(genre)" type="button" (click)="toggleMetadataGenre(genre)">{{ genre }}</button>
+                                }
+                              </div>
+                              @if (book.isAbsentFromIsbndb && !metadataForm.genres.length) {<small class="isbndb-missing-hint">· manquant</small>}
+                            </fieldset>
+                            <label class="metadata-summary-field"><span>Résumé</span><textarea name="metaSummary" rows="5" [(ngModel)]="metadataForm.summary" [placeholder]="metadataPlaceholder(book, metadataForm.summary)"></textarea></label>
+                            <label><span>Identifiant de l’œuvre</span><input name="metaWorkId" [(ngModel)]="metadataForm.workId" placeholder="Facultatif"></label>
                             <label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label>
                             <button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button>
                           </form>
                         </div>
+                        <section class="isbndb-subjects" aria-labelledby="isbndb-subjects-title">
+                          <h3 id="isbndb-subjects-title">Sujets reçus</h3>
+                          @if (book.subjects.length) {<div class="isbndb-subject-tags">@for (subject of book.subjects; track subject) {<span>{{ subject }}</span>}</div>} @else {<p>Aucun sujet reçu.</p>}
+                        </section>
                         <p class="detail-help"><strong>Couverture</strong></p>
                         <p>
                           <label>
@@ -441,7 +462,7 @@
                             <button class="text-link" type="button" [disabled]="loading()" (click)="clearPendingBookCover(book)">Annuler</button>
                           </div>
                         }
-                        <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>La correction manuelle est conservée comme telle et ne sera pas écrasée par une prochaine mise à jour automatique.</p></div>
+                        <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Un champ enregistré ici devient une correction manuelle et n'est plus écrasé.</p></div>
                       </section>
                       <section class="detail-section"><div class="section-heading"><h2>Quantités</h2><span class="mono-note">stock déclaré</span></div><div class="quantity-editor"><label><span>Disponible</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Annoncé</span><input type="number" name="quantityAnnounced" [value]="book.quantityAnnounced" readonly></label><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="correctBookQuantity(book)">Enregistrer la correction</button></div><p class="detail-help">Toute modification produit un mouvement CORRECTION dans le ledger. Une note obligatoire explique le geste.</p><input class="wide-input" name="quantityNote" [(ngModel)]="quantityNote" placeholder="Note obligatoire pour la correction"></section>
                       <section class="detail-section"><div class="section-heading"><h2>Historique des mouvements</h2><span class="mono-note">{{ formatNumber(book.movements.length) }} mouvements</span></div><div class="movement-list">@for (movement of book.movements; track movement.id) {<div class="movement-row"><span>{{ formatDate(movement.occurredAt) }}</span><span class="movement-type" [class]="movementClass(movement.type)">{{ movementLabel(movement.type) }}</span><strong [class.movement-negative]="movement.quantity < 0">{{ movementQuantity(movement.quantity) }}</strong><span>{{ movement.note || movement.volunteerId || 'Système' }}</span>@if (isNotFoundMovement(movement)) {<span class="not-found-movement-tag">suite à signalement</span>}</div>} @empty {<div class="empty-inline">Aucun mouvement enregistré.</div>}</div></section>
@@ -460,6 +481,16 @@
                         </section>
                       }
                       <section class="side-card"><span class="section-kicker">État de la fiche</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir la fiche livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publiée' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer la fiche livre rare</strong><small>Préremplir depuis cette fiche</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification de la fiche livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>La fiche reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
+                      <section class="side-card isbndb-provenance-card" data-testid="isbndb-provenance-card"><span class="section-kicker">Provenance de la fiche</span><dl><div><dt>ISBNdb</dt><dd>{{ isbndbLookupLabel(book) }}</dd></div><div><dt>Source de secours</dt><dd>{{ provenanceSourceLabel(book.fallbackSource) }}</dd></div><div><dt>Dernière vérification</dt><dd>{{ book.isbndbCheckedAt ? formatDate(book.isbndbCheckedAt, true) : '—' }}</dd></div></dl>
+                        @if (book.isAbsentFromIsbndb) {
+                          <button class="button button-outline isbndb-completion-action" data-testid="isbndb-completion-toggle" type="button" [disabled]="loading() || (!book.isbndbCompletedAt && (!metadataForm.title.trim() || !metadataForm.authors.trim()))" (click)="setIsbndbCompletion(book, !book.isbndbCompletedAt)">{{ book.isbndbCompletedAt ? 'Rouvrir' : 'Marquer comme complétée' }}</button>
+                          <small>Retire la fiche de « À compléter » et recalcule ses recommandations. Titre et auteur obligatoires.</small>
+                        }
+                        @if (!book.isIsbndbSourced) {
+                          <button class="button button-outline isbndb-recheck-action" data-testid="isbndb-recheck" type="button" [disabled]="loading() || !canRecheckIsbndbBook(book)" (click)="recheckIsbndbBook(book)">Revérifier dans ISBNdb</button>
+                          @if (isIsbndbQuotaExhausted()) {<small>Quota épuisé jusqu'à {{ isbndbExhaustedUntil() }}</small>} @else if (book.isbndbCompletedAt) {<small>Rouvrez cette fiche avant de la revérifier.</small>} @else {<small>Gratuit si le livre reste inconnu · 1 crédit s'il est trouvé.</small>}
+                        }
+                      </section>
                       <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec une autre fiche</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger la fiche</button><button class="danger-link" data-testid="permanently-delete-book" type="button" [disabled]="loading() || !canPermanentlyDeleteBook(book)" (click)="permanentlyDeleteBook(book)">Supprimer définitivement la fiche</button><small>Efface la fiche, son stock et ses suivis. Indisponible après une vente, une annonce, un scan ou une fusion.</small></section>
                       <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
                     </aside>
@@ -768,6 +799,12 @@
 
           @case ('rare-books') {
             <app-admin-rare-books></app-admin-rare-books>
+          }
+
+          @case ('isbndb-absent') {
+            <app-isbndb-absent-view
+              [accessToken]="isbndbAccessToken()"
+              (bookSelected)="openBook($event, 'isbndb-absent')"></app-isbndb-absent-view>
           }
 
           @case ('statistics') {

@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchBibliographicReferences;
+using Vole_Papillon_Damour.Application.Isbndb.Queries.SearchIsbndbEditions;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
@@ -15,6 +16,35 @@ public static class BibliographicReferenceController
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapGet(
+                    "/catalog/reference/isbndb",
+                    async (
+                        [FromQuery(Name = "q")] string? query,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new SearchIsbndbEditionsQuery(query),
+                            cancellationToken);
+                        return result.Match(
+                            search => Results.Ok(new IsbndbEditionSearchResponse(
+                                search.Items.Select(item => new IsbndbEditionSearchItemResponse(
+                                    item.Isbn13,
+                                    item.Title,
+                                    item.Authors,
+                                    item.Publisher,
+                                    item.PublicationYear,
+                                    item.CoverUrl,
+                                    item.Binding)).ToArray(),
+                                search.Total,
+                                search.Truncated,
+                                search.Unavailable)),
+                            error => error.Result());
+                    })
+                .WithName("SearchIsbndbEditions")
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.IsbndbSearch);
+
             endpoints.MapGet(
                     "/catalog/reference/search",
                     async (

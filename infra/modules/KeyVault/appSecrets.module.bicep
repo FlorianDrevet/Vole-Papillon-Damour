@@ -56,6 +56,10 @@ param memberCardSigningKey string
 @secure()
 param googleBooksApiKey string
 
+@description('Optional API key for ISBNdb')
+@secure()
+param isbndbApiKey string
+
 @description('Optional long-lived Instagram Graph API access token')
 @secure()
 param instagramAccessToken string = ''
@@ -68,6 +72,7 @@ var acsEmailWebhookSecretName = 'email-bounce-webhook-secret'
 var bookAlertsUnsubscribeSigningKeySecretName = 'book-alerts-unsubscribe-signing-key'
 var memberCardSigningKeySecretName = 'member-card-signing-key'
 var googleBooksApiKeySecretName = 'google-books-api-key'
+var isbndbApiKeySecretName = 'isbndb-api-key'
 var instagramAccessTokenSecretName = 'instagram-access-token'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
@@ -142,6 +147,14 @@ resource googleBooksApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' 
   }
 }
 
+resource isbndbApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(isbndbApiKey)) {
+  parent: keyVault
+  name: isbndbApiKeySecretName
+  properties: {
+    value: isbndbApiKey
+  }
+}
+
 resource instagramAccessTokenSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(instagramAccessToken)) {
   parent: keyVault
   name: instagramAccessTokenSecretName
@@ -160,5 +173,6 @@ output secretUris object = {
   '${bookAlertsUnsubscribeSigningKeySecretName}': '${keyVault.properties.vaultUri}secrets/${bookAlertsUnsubscribeSigningKeySecretName}'
   '${memberCardSigningKeySecretName}': '${keyVault.properties.vaultUri}secrets/${memberCardSigningKeySecretName}'
   '${googleBooksApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${googleBooksApiKeySecretName}'
+  '${isbndbApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${isbndbApiKeySecretName}'
   '${instagramAccessTokenSecretName}': '${keyVault.properties.vaultUri}secrets/${instagramAccessTokenSecretName}'
 }

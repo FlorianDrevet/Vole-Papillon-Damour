@@ -143,12 +143,20 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 │  Annoncés       2                     │
 │  Déjà vendus    2                     │
 │  Recherché par  —                     │
+│                                       │
+│  Autre édition déjà à la bourse       │
+│  Gallimard · 1999 — 4 exemplaires     │
 ├───────────────────────────────────────┤
 │   ┌──────────┐      ┌──────────────┐  │
 │   │  ÉCARTER │      │    GARDER    │  │
 │   └──────────┘      └──────────────┘  │
 └───────────────────────────────────────┘
 ```
+
+L'encart n'apparaît que si une autre édition a des exemplaires en stock. Si le lien entre
+les éditions repose seulement sur le titre et l'auteur, il porte aussi la mention
+« Même titre et même auteur — à vérifier » ; ce lien ne modifie pas le verdict (`RG-119`
+à `RG-122`).
 
 **Cas « à garder absolument »**
 

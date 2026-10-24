@@ -17,6 +17,7 @@ import {
   CatalogAvailability,
   CatalogBook,
   CatalogBookReference,
+  CatalogIsbndbEditionSearchResponse,
   CatalogSearchParams,
   CatalogSearchResponse,
   CatalogSort,
@@ -85,6 +86,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   externalLoading = false;
   externalError = false;
   externalResponse: CatalogReferenceSearchResponse | null = null;
+  isbndbEditionRequested = false;
+  isbndbEditionLoading = false;
+  isbndbEditionUnavailable = false;
+  isbndbEditionResponse: CatalogIsbndbEditionSearchResponse | null = null;
   referenceFollowPending: string | null = null;
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
@@ -139,6 +144,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   ];
 
   private readonly destroyed = new Subject<void>();
+  private readonly isbndbEditionSearchCancelled = new Subject<void>();
   private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
   private readonly pendingGenreFavoriteStorageKey = 'vpd.catalog.pending-genre-favorite';
   private routeState: CatalogSearchRouteState | null = null;
@@ -179,17 +185,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.sortMenuOpen = false;
         this.routeState = nextState;
 
+        const externalStateChanged = !previousState || this.externalRouteStateChanged(previousState, nextState);
         if (!previousState || this.localRouteStateChanged(previousState, nextState)) {
           this.loadLocalResults();
         }
-        if (!previousState || this.externalRouteStateChanged(previousState, nextState)) {
+        if (externalStateChanged) {
           this.loadExternalResults();
+        } else if (previousState.page !== nextState.page) {
+          this.resetIsbndbEditionSearch();
         }
       });
     void this.initializeReferenceFollowState();
   }
 
   ngOnDestroy(): void {
+    this.isbndbEditionSearchCancelled.next();
+    this.isbndbEditionSearchCancelled.complete();
     this.destroyed.next();
     this.destroyed.complete();
   }
@@ -758,6 +769,76 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
   }
 
+  canSearchIsbndbEditions(): boolean {
+    const response = this.externalResponse;
+    return response !== null && this.submittedQuery.trim().length >= 3 &&
+      (response.items.length === 0 || response.items.length < response.pageSize);
+  }
+
+  searchIsbndbEditions(): void {
+    if (!this.canSearchIsbndbEditions() || this.isbndbEditionLoading) {
+      return;
+    }
+
+    this.isbndbEditionRequested = true;
+    this.isbndbEditionLoading = true;
+    this.isbndbEditionUnavailable = false;
+    this.isbndbEditionResponse = null;
+    this.changeDetector.markForCheck();
+
+    this.api.searchIsbndbEditions(this.submittedQuery.trim())
+      .pipe(
+        catchError(() => {
+          this.isbndbEditionUnavailable = true;
+          this.isbndbEditionLoading = false;
+          this.changeDetector.markForCheck();
+          return of(null);
+        }),
+        takeUntil(this.isbndbEditionSearchCancelled),
+        takeUntil(this.destroyed),
+      )
+      .subscribe(response => {
+        if (response) {
+          this.isbndbEditionResponse = response;
+          this.isbndbEditionUnavailable = Boolean(response.unavailable);
+        }
+        this.isbndbEditionLoading = false;
+        this.changeDetector.markForCheck();
+      });
+  }
+
+  suggestedIsbndbReferences(): CatalogBookReference[] {
+    const alreadyListed = new Set(
+      (this.externalResponse?.items ?? [])
+        .map(reference => this.normalizeIsbn(reference.isbn13))
+        .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+    );
+    const suggested = new Set<string>();
+
+    return (this.isbndbEditionResponse?.items ?? []).flatMap(item => {
+      const isbn13 = this.normalizeIsbn(item.isbn13);
+      if (!isbn13 || alreadyListed.has(isbn13) || suggested.has(isbn13)) {
+        return [];
+      }
+      suggested.add(isbn13);
+      return [{
+        isbn13: item.isbn13,
+        workId: null,
+        title: item.title,
+        authors: item.authors,
+        publisher: item.publisher,
+        publicationYear: item.publicationYear,
+        coverUrl: item.coverUrl,
+        source: 'ISBNdb',
+      }];
+    });
+  }
+
+  isbndbEditionCountLabel(): string {
+    const count = this.suggestedIsbndbReferences().length;
+    return `${count} ${count === 1 ? 'édition' : 'éditions'}`;
+  }
+
   // The reference search is shared with administration, so exclude exact local editions here.
   visibleExternalReferences(): CatalogBookReference[] {
     return (this.externalResponse?.items ?? []).filter(reference => {
@@ -950,6 +1031,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private loadExternalResults(): void {
+    this.resetIsbndbEditionSearch();
     const loadVersion = ++this.externalLoadVersion;
     const referenceQuery = this.submittedQuery.trim();
     if (referenceQuery.length < 2) {
@@ -1129,6 +1211,14 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     next: CatalogSearchRouteState,
   ): boolean {
     return previous.query !== next.query || previous.referencePage !== next.referencePage;
+  }
+
+  private resetIsbndbEditionSearch(): void {
+    this.isbndbEditionSearchCancelled.next();
+    this.isbndbEditionRequested = false;
+    this.isbndbEditionLoading = false;
+    this.isbndbEditionUnavailable = false;
+    this.isbndbEditionResponse = null;
   }
 
   availableSortChoices(): ReadonlyArray<{

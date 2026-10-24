@@ -27,4 +27,10 @@ describe('catalog administration routes', () => {
     expect(isCatalogAdminSection('isbn-queue')).toBeTrue();
     expect(catalogAdminSectionPath('isbn-queue')).toBe('/administration/isbn-queue');
   });
+
+  it('recognizes the ISBNdb absent-books workspace', () => {
+    expect(CATALOG_ADMIN_SECTIONS).toContain('isbndb-absent');
+    expect(isCatalogAdminSection('isbndb-absent')).toBeTrue();
+    expect(catalogAdminSectionPath('isbndb-absent')).toBe('/administration/isbndb-absent');
+  });
 });

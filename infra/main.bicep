@@ -297,6 +297,10 @@ param jwtExpiryMinutes int
 @secure()
 param googleBooksApiKey string = ''
 
+@description('Optional API key for ISBNdb')
+@secure()
+param isbndbApiKey string = ''
+
 @description('Optional long-lived Instagram Graph API access token')
 @secure()
 param instagramAccessToken string = ''
@@ -984,6 +988,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     bookAlertsUnsubscribeSigningKey: bookAlertsUnsubscribeSigningKey
     memberCardSigningKey: memberCardSigningKey
     googleBooksApiKey: googleBooksApiKey
+    isbndbApiKey: isbndbApiKey
     instagramAccessToken: instagramAccessToken
   }
   dependsOn: [
@@ -1278,6 +1283,9 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
+    }], empty(isbndbApiKey) ? [] : [{
+      name: 'isbndb-api-key'
+      keyVaultUrl: appSecretsModule.outputs.secretUris['isbndb-api-key']
     }])
     envVars: concat([
       {
@@ -1291,6 +1299,14 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'Recommendations__Enabled'
         value: string(recommendationsEnabled)
+      }
+      {
+        name: 'Isbndb__RequestsPerSecond'
+        value: '1'
+      }
+      {
+        name: 'Isbndb__CatchUpSchedule'
+        value: '0 30 2 * * *'
       }
       {
         name: 'ConnectionStrings__ProjectDatabase'
@@ -1418,6 +1434,11 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'Bibliographic__GoogleBooksApiKey'
         secretRef: 'google-books-api-key'
+      }
+    ], empty(isbndbApiKey) ? [] : [
+      {
+        name: 'Isbndb__ApiKey'
+        secretRef: 'isbndb-api-key'
       }
     ], corsEnvVars)
   }
@@ -1634,6 +1655,9 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
+    }], empty(isbndbApiKey) ? [] : [{
+      name: 'isbndb-api-key'
+      keyVaultUrl: appSecretsModule.outputs.secretUris['isbndb-api-key']
     }], empty(instagramAccessToken) ? [] : [{
       name: 'instagram-access-token'
       keyVaultUrl: appSecretsModule.outputs.secretUris['instagram-access-token']
@@ -1654,6 +1678,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'Recommendations__Enabled'
         value: string(recommendationsEnabled)
+      }
+      {
+        name: 'Isbndb__RequestsPerSecond'
+        value: '1'
+      }
+      {
+        name: 'Isbndb__CatchUpSchedule'
+        value: '0 30 2 * * *'
       }
       {
         name: 'FUNCTIONS_WORKER_RUNTIME_VERSION'
@@ -1803,6 +1835,11 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'Bibliographic__GoogleBooksApiKey'
         secretRef: 'google-books-api-key'
+      }
+    ], empty(isbndbApiKey) ? [] : [
+      {
+        name: 'Isbndb__ApiKey'
+        secretRef: 'isbndb-api-key'
       }
     ], empty(instagramAccessToken) ? [] : [
       {

@@ -78,6 +78,9 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                     book.Title == null ||
                     book.Title.Trim() == string.Empty,
             cancellationToken);
+        var isbndbAbsentToCompleteCount = await dbContext.Books.AsNoTracking().CountAsync(
+            book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null,
+            cancellationToken);
 
         var activeAnnouncements = dbContext.BookAnnouncements
             .AsNoTracking()
@@ -166,7 +169,8 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             new AdminAlertQueueSummaryResult(
                 pendingAlerts.TotalCount,
                 pendingAlertAt is { } oldest ? new DateTimeOffset(oldest, TimeSpan.Zero) : null,
-                pendingAlertAt is { } next ? new DateTimeOffset(next, TimeSpan.Zero) : null));
+                pendingAlertAt is { } next ? new DateTimeOffset(next, TimeSpan.Zero) : null),
+            isbndbAbsentToCompleteCount);
     }
 
     private async Task<AdminPeriodMetricsResult> BuildPeriodMetricsAsync(

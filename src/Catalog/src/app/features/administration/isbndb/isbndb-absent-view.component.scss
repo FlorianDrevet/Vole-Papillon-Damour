@@ -1,0 +1,116 @@
+:host { display: block; }
+
+.admin-view { min-width: 0; padding: 32px 38px 50px; }
+.admin-heading { margin-bottom: 24px; }
+.admin-accent { display: block; width: 40px; height: 3px; margin-bottom: 12px; background: linear-gradient(90deg, var(--admin-blue-bright), var(--admin-orange)); }
+.admin-kicker,
+.section-kicker { color: var(--admin-blue); font: 500 9px/1.3 var(--admin-mono, 'IBM Plex Mono'), monospace; letter-spacing: .18em; text-transform: uppercase; }
+.admin-heading h1 { margin: 6px 0 9px; color: var(--admin-ink); font: 500 2.2rem/1.05 var(--admin-display, 'Newsreader'), Georgia, serif; }
+.admin-intro { max-width: 780px; margin: 0; color: var(--admin-slate); font-size: .84rem; line-height: 1.6; }
+.period-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.period-chip { min-height: 37px; padding: 0 14px; border: 1px solid var(--admin-line); border-radius: 999px; background: var(--admin-white); color: var(--admin-slate); cursor: pointer; font: inherit; font-size: .73rem; }
+.period-chip.active { border-color: var(--admin-ink); background: var(--admin-ink); color: var(--admin-white); }
+.search-field { display: grid; gap: 6px; color: var(--admin-slate); font-size: .7rem; }
+.search-field input { width: 100%; min-height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--admin-line); background: var(--admin-white); color: var(--admin-ink); font: inherit; }
+.button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid transparent; border-radius: 999px; cursor: pointer; font: inherit; font-size: .73rem; font-weight: 600; text-decoration: none; }
+.button-outline { border-color: var(--admin-line); background: var(--admin-white); color: var(--admin-blue); }
+.button:disabled { cursor: wait; opacity: .6; }
+.empty-panel { padding: 35px 20px; border: 1px dashed var(--admin-line); background: var(--admin-white); text-align: center; }
+.empty-panel h2 { margin: 0; color: var(--admin-ink); font: 500 1.35rem var(--admin-display, 'Newsreader'), Georgia, serif; }
+.empty-panel p { margin: 8px 0 0; color: var(--admin-slate); font-size: .77rem; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 18px; color: var(--admin-slate); font-size: .74rem; }
+.pagination button { width: 35px; height: 35px; border: 1px solid var(--admin-line); border-radius: 50%; background: var(--admin-white); color: var(--admin-blue); cursor: pointer; }
+.pagination button:disabled { cursor: not-allowed; opacity: .5; }
+.isbn-label { color: var(--admin-muted); font: 500 9px/1.3 var(--admin-mono, 'IBM Plex Mono'), monospace; letter-spacing: .04em; }
+
+.isbndb-absent-filters { margin: 0 0 18px; }
+
+.isbndb-absent-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-white);
+}
+
+.isbndb-absent-column-headings,
+.isbndb-absent-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(110px, .8fr) minmax(160px, 1.5fr) minmax(90px, .7fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.isbndb-absent-column-headings {
+  padding: 0 16px 9px;
+  color: var(--admin-muted);
+  font: 500 9px/1.3 var(--admin-mono, 'IBM Plex Mono'), monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.isbndb-absent-list { display: grid; gap: 9px; }
+
+.isbndb-absent-card {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-white);
+}
+
+.isbndb-absent-book-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+}
+
+.isbndb-absent-cover {
+  display: block;
+  width: 50px;
+  height: 68px;
+  flex: none;
+  object-fit: contain;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-paper);
+}
+
+.isbndb-absent-book-identity > div { display: grid; min-width: 0; gap: 4px; }
+.isbndb-absent-book-identity strong { overflow: hidden; color: var(--admin-ink); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.isbndb-absent-book-identity > div > span:last-child { overflow: hidden; color: var(--admin-slate); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.isbndb-absent-book-identity .isbn-label { color: var(--admin-muted); font-size: .59rem; }
+
+.isbndb-absent-source,
+.isbndb-absent-stock { color: var(--admin-slate); font-size: .72rem; }
+.isbndb-absent-stock { color: var(--admin-ink); font-weight: 600; }
+
+.isbndb-missing-fields { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; }
+.isbndb-missing-field { padding: 4px 7px; border: 1px solid #eedbbf; border-radius: 999px; background: #fff9f0; color: #83531f; font-size: .62rem; line-height: 1.2; }
+.isbndb-all-fields-present { color: #18703a; font-size: .68rem; }
+.isbndb-absent-action { justify-self: end; }
+.isbndb-mobile-label { display: none; }
+
+@media (max-width: 1120px) {
+  .isbndb-absent-column-headings { display: none; }
+  .isbndb-absent-card { grid-template-columns: minmax(0, 1.8fr) minmax(110px, 1fr) minmax(140px, 1.3fr); }
+  .isbndb-absent-stock { grid-column: 2; }
+  .isbndb-absent-action { grid-column: 3; grid-row: 2; }
+}
+
+@media (max-width: 680px) {
+  .admin-view { padding: 24px 16px 36px; }
+  .admin-heading h1 { font-size: 1.8rem; }
+  .isbndb-absent-search { grid-template-columns: 1fr; }
+  .isbndb-absent-search .button { width: 100%; }
+  .isbndb-absent-card { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 13px; padding: 13px; }
+  .isbndb-absent-book-identity { grid-column: 1 / -1; }
+  .isbndb-absent-source,
+  .isbndb-absent-stock,
+  .isbndb-missing-fields { display: flex; align-items: flex-start; flex-direction: column; gap: 6px; }
+  .isbndb-mobile-label { display: block; color: var(--admin-muted); font: 500 8px/1.3 var(--admin-mono, 'IBM Plex Mono'), monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .isbndb-absent-action { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; }
+  .isbndb-absent-action .button { width: 100%; }
+}

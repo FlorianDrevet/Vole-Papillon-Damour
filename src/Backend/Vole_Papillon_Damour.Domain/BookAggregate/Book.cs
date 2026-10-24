@@ -4,6 +4,8 @@ using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using WorkKeyValue = Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.WorkKey;
 
 namespace Vole_Papillon_Damour.Domain.BookAggregate;
 
@@ -23,6 +25,9 @@ public sealed class Book : AggregateRoot<Isbn13>
     public string? Summary { get; private set; }
     public string? Genre { get; private set; }
     public IReadOnlyCollection<BookGenre> Genres => _genres;
+    public int? Pages { get; private set; }
+    public string? Edition { get; private set; }
+    public string? WorkKey { get; private set; }
 
     public int QuantityAvailable { get; private set; }
     public int SalesCount { get; private set; }
@@ -43,6 +48,12 @@ public sealed class Book : AggregateRoot<Isbn13>
     public string? MetadataFailureReason { get; private set; }
     public string? RawPayload { get; private set; }
     public string? ManuallyEditedFields { get; private set; }
+    public bool IsIsbndbSourced { get; private set; }
+    public bool IsAbsentFromIsbndb { get; private set; }
+    public DateTime? IsbndbCheckedAt { get; private set; }
+    public DateTime? IsbndbCompletedAt { get; private set; }
+    public UserId? IsbndbCompletedBy { get; private set; }
+    public bool IsDefinitiveForRecommendation => IsIsbndbSourced || IsAbsentFromIsbndb;
 
     public DateTime FirstSeenAt { get; private set; }
     public DateTime? LastAvailableAt { get; private set; }
@@ -103,6 +114,23 @@ public sealed class Book : AggregateRoot<Isbn13>
     public void RecordAnnouncementEntry(DateTime occurredAt)
     {
         UpdatedAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+    }
+
+    public bool ComputeWorkKeyIfMissing()
+    {
+        if (WorkKey is not null)
+        {
+            return false;
+        }
+
+        var workKey = WorkKeyValue.Compute(Title, Authors);
+        if (workKey is null)
+        {
+            return false;
+        }
+
+        WorkKey = workKey;
+        return true;
     }
 
     public void RecordSale(DateTime occurredAt, int quantity = 1)
@@ -216,7 +244,7 @@ public sealed class Book : AggregateRoot<Isbn13>
         DateTime? coverCheckedAt = null)
     {
         ArgumentNullException.ThrowIfNull(patch);
-        if (source is not (BookMetadataSource.Bnf or BookMetadataSource.OpenLibrary or BookMetadataSource.GoogleBooks))
+        if (source is not (BookMetadataSource.Bnf or BookMetadataSource.OpenLibrary or BookMetadataSource.GoogleBooks or BookMetadataSource.Isbndb))
         {
             throw new ArgumentException(
                 "Automatic metadata must use a bibliographic source.",
@@ -300,6 +328,156 @@ public sealed class Book : AggregateRoot<Isbn13>
         MetadataFailureReason = null;
         UpdatedAt = utcFetchedAt;
         return changed;
+    }
+
+    public bool ApplyIsbndbNotice(BookMetadataPatch patch, DateTime fetchedAt)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+        if (MetadataStatus == BookMetadataStatus.Discarded)
+        {
+            throw new InvalidOperationException("A discarded book cannot receive ISBNdb metadata.");
+        }
+
+        var utcFetchedAt = DomainTime.RequireUtc(fetchedAt, nameof(fetchedAt));
+        var fields = patch.Fields?.Distinct().ToArray()
+            ?? throw new ArgumentNullException(nameof(patch.Fields));
+        if (fields.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one metadata field must be selected.",
+                nameof(patch));
+        }
+
+        ValidatePatch(patch, fields);
+        if (fields.Contains(BookMetadataField.CoverUrl) &&
+            patch.CoverUrl is not null &&
+            !string.Equals(patch.CoverUrl, CoverUrl, StringComparison.Ordinal))
+        {
+            ValidateCoverUrl(patch.CoverUrl);
+        }
+
+        var manuallyEditedFields = ReadManuallyEditedFields();
+        var onlyFillEmptyFields = IsbndbCompletedAt is not null;
+        var changed = false;
+
+        foreach (var field in fields)
+        {
+            if (manuallyEditedFields.Contains(field))
+            {
+                continue;
+            }
+
+            if (onlyFillEmptyFields && !IsFieldEmpty(field))
+            {
+                continue;
+            }
+
+            changed |= ApplyField(patch, field);
+            if (field == BookMetadataField.CoverUrl && patch.CoverUrl is not null)
+            {
+                changed |= CoverSource != BookCoverSource.Isbndb;
+                CoverSource = BookCoverSource.Isbndb;
+                changed |= CoverCheckedAt != utcFetchedAt;
+                CoverCheckedAt = utcFetchedAt;
+            }
+        }
+
+        if (fields.Contains(BookMetadataField.CoverUrl) && patch.CoverUrl is null && !onlyFillEmptyFields)
+        {
+            changed |= CoverSource is not null;
+            CoverSource = null;
+            changed |= CoverCheckedAt != utcFetchedAt;
+            CoverCheckedAt = utcFetchedAt;
+        }
+
+        if (ResolveAttempts < int.MaxValue)
+        {
+            ResolveAttempts++;
+            changed = true;
+        }
+
+        var genreRefreshAt = fields.Contains(BookMetadataField.Genre) ? utcFetchedAt : GenresRefreshedAt;
+        changed |= !IsIsbndbSourced || IsAbsentFromIsbndb || IsbndbCheckedAt != utcFetchedAt ||
+                   LastAttemptAt != utcFetchedAt || MetadataFetchedAt != utcFetchedAt ||
+                   GenresRefreshedAt != genreRefreshAt || RawPayload is not null ||
+                   MetadataFailureReason is not null;
+        IsIsbndbSourced = true;
+        IsAbsentFromIsbndb = false;
+        IsbndbCheckedAt = utcFetchedAt;
+        LastAttemptAt = utcFetchedAt;
+        MetadataFetchedAt = utcFetchedAt;
+        GenresRefreshedAt = genreRefreshAt;
+        RawPayload = null;
+        MetadataFailureReason = null;
+
+        var nextStatus = manuallyEditedFields.Count == 0
+            ? BookMetadataStatus.Resolved
+            : BookMetadataStatus.Manual;
+        var nextSource = manuallyEditedFields.Count == 0
+            ? BookMetadataSource.Isbndb
+            : BookMetadataSource.Manual;
+        changed |= MetadataStatus != nextStatus || MetadataSource != nextSource;
+        MetadataStatus = nextStatus;
+        MetadataSource = nextSource;
+        UpdatedAt = utcFetchedAt;
+        return changed;
+    }
+
+    public bool MarkAbsentFromIsbndb(DateTime checkedAt)
+    {
+        var utcCheckedAt = DomainTime.RequireUtc(checkedAt, nameof(checkedAt));
+        var changed = !IsAbsentFromIsbndb || IsIsbndbSourced || IsbndbCheckedAt != utcCheckedAt;
+        IsAbsentFromIsbndb = true;
+        IsIsbndbSourced = false;
+        IsbndbCheckedAt = utcCheckedAt;
+        UpdatedAt = utcCheckedAt;
+        return changed;
+    }
+
+    public bool RecordIsbndbCheck(DateTime at)
+    {
+        var utcAt = DomainTime.RequireUtc(at, nameof(at));
+        var changed = IsbndbCheckedAt != utcAt;
+        IsbndbCheckedAt = utcAt;
+        UpdatedAt = utcAt;
+        return changed;
+    }
+
+    public bool MarkIsbndbCompleted(UserId by, DateTime at)
+    {
+        ArgumentNullException.ThrowIfNull(by);
+        if (!IsAbsentFromIsbndb ||
+            string.IsNullOrWhiteSpace(Title) ||
+            string.IsNullOrWhiteSpace(Authors))
+        {
+            throw new InvalidOperationException(
+                "Only an absent ISBNdb book with a title and author can be marked as completed.");
+        }
+
+        if (IsbndbCompletedAt is not null)
+        {
+            return false;
+        }
+
+        var utcAt = DomainTime.RequireUtc(at, nameof(at));
+        IsbndbCompletedAt = utcAt;
+        IsbndbCompletedBy = by;
+        UpdatedAt = utcAt;
+        return true;
+    }
+
+    public bool ReopenIsbndbCompletion(DateTime at)
+    {
+        var utcAt = DomainTime.RequireUtc(at, nameof(at));
+        if (IsbndbCompletedAt is null && IsbndbCompletedBy is null)
+        {
+            return false;
+        }
+
+        IsbndbCompletedAt = null;
+        IsbndbCompletedBy = null;
+        UpdatedAt = utcAt;
+        return true;
     }
 
     public bool RecordCoverCheck(DateTime checkedAt)
@@ -522,6 +700,18 @@ public sealed class Book : AggregateRoot<Isbn13>
                 case BookMetadataField.Summary:
                     ValidateLength(patch.Summary, 20_000, nameof(patch.Summary));
                     break;
+                case BookMetadataField.Pages:
+                    if (patch.Pages is < 1 or > 100_000)
+                    {
+                        throw new ArgumentOutOfRangeException(
+                            nameof(patch.Pages),
+                            "The page count must be between 1 and 100000.");
+                    }
+
+                    break;
+                case BookMetadataField.Edition:
+                    ValidateLength(patch.Edition, 100, nameof(patch.Edition));
+                    break;
                 case BookMetadataField.Genre:
                     ValidateLength(patch.Genre, 100, nameof(patch.Genre));
                     if (patch.Genres is not null)
@@ -570,9 +760,21 @@ public sealed class Book : AggregateRoot<Isbn13>
         switch (field)
         {
             case BookMetadataField.Title:
-                return SetValue(Title, patch.Title, value => Title = value);
+                var titleChanged = SetValue(Title, patch.Title, value => Title = value);
+                if (titleChanged)
+                {
+                    WorkKey = WorkKeyValue.Compute(Title, Authors);
+                }
+
+                return titleChanged;
             case BookMetadataField.Authors:
-                return SetValue(Authors, patch.Authors, value => Authors = value);
+                var authorsChanged = SetValue(Authors, patch.Authors, value => Authors = value);
+                if (authorsChanged)
+                {
+                    WorkKey = WorkKeyValue.Compute(Title, Authors);
+                }
+
+                return authorsChanged;
             case BookMetadataField.WorkId:
                 return SetValue(WorkId, patch.WorkId, value => WorkId = value);
             case BookMetadataField.Publisher:
@@ -585,6 +787,10 @@ public sealed class Book : AggregateRoot<Isbn13>
                 return SetValue(Language, patch.Language, value => Language = value);
             case BookMetadataField.Summary:
                 return SetValue(Summary, patch.Summary, value => Summary = value);
+            case BookMetadataField.Pages:
+                return SetValue(Pages, patch.Pages, value => Pages = value);
+            case BookMetadataField.Edition:
+                return SetValue(Edition, patch.Edition, value => Edition = value);
             case BookMetadataField.Genre:
                 var primaryGenreChanged = SetValue(Genre, patch.Genre, value => Genre = value);
                 var genreNames = patch.Genres ?? (patch.Genre is null ? [] : [patch.Genre]);
@@ -594,6 +800,26 @@ public sealed class Book : AggregateRoot<Isbn13>
             default:
                 throw new ArgumentOutOfRangeException(nameof(field), field, "The metadata field is not supported.");
         }
+    }
+
+    private bool IsFieldEmpty(BookMetadataField field)
+    {
+        return field switch
+        {
+            BookMetadataField.Title => string.IsNullOrWhiteSpace(Title),
+            BookMetadataField.Authors => string.IsNullOrWhiteSpace(Authors),
+            BookMetadataField.WorkId => string.IsNullOrWhiteSpace(WorkId),
+            BookMetadataField.Publisher => string.IsNullOrWhiteSpace(Publisher),
+            BookMetadataField.PublicationYear => PublicationYear is null,
+            BookMetadataField.PhysicalFormat => string.IsNullOrWhiteSpace(PhysicalFormat),
+            BookMetadataField.Language => string.IsNullOrWhiteSpace(Language),
+            BookMetadataField.Summary => string.IsNullOrWhiteSpace(Summary),
+            BookMetadataField.Pages => Pages is null,
+            BookMetadataField.Edition => string.IsNullOrWhiteSpace(Edition),
+            BookMetadataField.Genre => string.IsNullOrWhiteSpace(Genre) && _genres.Count == 0,
+            BookMetadataField.CoverUrl => string.IsNullOrWhiteSpace(CoverUrl),
+            _ => false
+        };
     }
 
     private bool ReplaceGenres(IEnumerable<string> genreNames)

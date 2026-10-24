@@ -14,4 +14,7 @@ public sealed record BookMetadataResponse(
     string? Genre = null,
     string? Summary = null,
     string? PhysicalFormat = null,
-    string? Language = null);
+    string? Language = null,
+    string? WorkKey = null,
+    int? Pages = null,
+    string? Edition = null);
