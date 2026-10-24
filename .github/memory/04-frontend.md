@@ -38,6 +38,11 @@ While it loads, title/author/edition fields use skeletons. A metadata 404 gets a
 manual-entry notice from a temporary lookup failure, and `lookupVersion` prevents an older
 scan's metadata from replacing the current book.
 
+On 2026-10-24, Tri resumes its existing camera stream when a decoded value cannot produce a
+local scan result, such as an invalid ISBN. A valid local result still pauses the camera until
+the volunteer records the keep/discard decision. The scanner component regression covers both
+recovery and the preserved pause.
+
 On 2026-10-21, the anonymous-customer state in cash mode puts a compact « Scanner » card
 action beside its status from 19rem upward and stacks it below that width. The button keeps
 a descriptive accessible name and a 44px touch target; its presentation rules live in the
