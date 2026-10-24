@@ -36,8 +36,9 @@ La révision API `vpd-api-ca-dev-fc--0000022` (`vpd-api:8f55d46`) est **Unhealth
 être explicitement `[FromBody]`. La dernière révision prête, `0000013`, ne reçoit pas le
 trafic. Le Worker `vpd-worker-ca-dev-fc--0000024` (`vpd-worker:8f55d46`) est **Healthy**.
 
-Le correctif est préparé sur `fix/isbndb-api-startup-route` : annotation `[FromBody]` et
-test de construction de l’endpoint. Aucun changement Azure n’a été fait. Après fusion,
+Le correctif est dans la [PR #341](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/341),
+branche `fix/isbndb-api-startup-route` : annotation `[FromBody]` et test de construction
+de l’endpoint. Aucun changement Azure n’a été fait. Après fusion,
 redéployer l’API et vérifier que sa nouvelle révision est Healthy, que le trafic passe
 dessus et que les routes ISBNdb répondent.
 
