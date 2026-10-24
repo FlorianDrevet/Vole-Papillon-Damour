@@ -833,3 +833,10 @@ loads its full page; the rare-book count uses `status: Published`. Administrator
 three counts, while the rare-book manager role loads only its permitted rare-book count.
 The mobile workspace selector uses the same formatted counts. A failed count request is
 non-blocking and opening that workspace still performs its normal data request.
+
+## Scan manual code entry and portrait orientation (2026-10-24)
+
+The Scan PWA clears `manualIsbn` whenever manual entry opens, so a previous book's ISBN
+does not prefill the next entry. `touch-action: manipulation` on the manual keypad buttons
+prevents double-tap zoom while preserving pinch zoom. The PWA manifest sets
+`orientation: portrait` for the installed Scan app across its routes.

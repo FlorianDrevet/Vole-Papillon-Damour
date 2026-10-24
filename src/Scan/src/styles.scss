@@ -1447,6 +1447,7 @@ input:focus-visible {
 .manual-key {
   display: flex;
   min-height: 74px;
+  touch-action: manipulation;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--scan-line);
