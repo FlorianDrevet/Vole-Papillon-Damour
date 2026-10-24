@@ -33,6 +33,7 @@
 | `.github/memory/changelog.md` | Memory changelog |
 | `.github/memory/dream-state.md` | Dream gate state and code graph choice |
 | `.github/memory/14-scan-metadata-latency.md` | Dated provider telemetry, ISBN error triage, and the Google Books key issue |
+| `.github/memory/15-isbndb-migration.md` | ISBNdb-first book notices, quota, catch-up, Catalog/Scan flows, infra and validation |
 
 ## Quick Reference
 
@@ -52,6 +53,7 @@
 14. Open Library reference search can aggregate publishers across editions; values over the 200-character watchlist limit are omitted before follow. See `.github/memory/10-api-endpoints.md`.
 
 15. The Google Books key currently returns `API_KEY_INVALID`; the Worker-only BnF timeout fix is in PR #338. See .github/memory/14-scan-metadata-latency.md for the provider evidence and current enrichment run.
+16. ISBNdb is the primary notice source with BnF/Open Library/Google Books fallback; its quota, catch-up and public/admin flows are documented in .github/memory/15-isbndb-migration.md. Do not deploy before configuring `ISBNDB_API_KEY`.
 
 ## Commands To Remember
 
