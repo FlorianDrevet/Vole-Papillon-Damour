@@ -39,7 +39,7 @@
 
 1. Start from `@dev` for day-to-day work; use `@memory-bootstrap` only when the stack or agent foundation changes materially.
 2. Use Graphify (`GRAPH_REPORT.md`, `query`, `path`, `explain`, or MCP) for structural exploration before changing shared handlers, repositories, controllers, route extensions, and Angular shared services.
-3. The API layer uses endpoint-mapping extension classes under `Api/Controllers/`, not MVC `ControllerBase` classes.
+3. The API layer uses endpoint-mapping extension classes under `Api/Controllers/`, not MVC `ControllerBase` classes. Mark JSON DTO bodies on `DELETE` routes with `[FromBody]` so endpoint discovery does not fail at startup; see `.github/memory/10-api-endpoints.md`.
 4. Apply TDD for executable code; record temporary exceptions in `.github/test-debt.md`.
 5. Keep backend changes inside the existing boundaries: API wiring in `Api`, MediatR handlers and validators in `Application`, persistence and adapters in `Infrastructure`, invariants in `Domain`, DTOs in `Contracts`.
 6. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for association content, `Catalog` for the public books catalog, and `MauiCashApp` for the cashier client.
