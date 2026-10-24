@@ -111,6 +111,9 @@ Des listes de travail concrètes, plutôt que des écrans de recherche :
   programmée (`RG-24`). Ils se rattachent automatiquement dès qu'une bourse est créée,
   mais **leurs alertes restent en attente d'ici là**. Une file qui s'allonge est le
   signe que l'agenda n'est pas tenu.
+- **Livres hors ISBNdb** — fiches de secours alimentées par la BnF, Open Library ou Google
+  Books, à compléter puis à marquer comme complétées pour relancer les recommandations
+  (`RG-110`, `RG-126`, `RG-127`).
 
 ## 4 bis. Sessions de scan
 

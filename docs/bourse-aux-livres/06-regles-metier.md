@@ -60,6 +60,10 @@ confondues, atteint le seuil de doublon *(valeur de départ : 5)*.
 Le comptage inclut les exemplaires annoncés : sans cela, deux bénévoles triant en
 parallèle garderaient chacun cinq exemplaires du même titre le même jour.
 
+Pour les éditions d'une même œuvre, ce seuil ne compte l'ensemble des exemplaires que si
+leur lien est fiable (`workId` ou `otherIsbns`). Une correspondance fondée seulement sur le
+titre et l'auteur reste un signal à vérifier et ne change pas le verdict (`RG-121`).
+
 ### `RG-11` — Verdict « premier exemplaire »
 Aucun exemplaire disponible, aucun annoncé, aucune vente passée : la fiche est nouvelle
 pour l'association.
@@ -567,6 +571,12 @@ copiées sur un appareil de scan pour un usage hors ligne.
 ### Demandes manuelles pour une personne sans compte
 La gestion, l'accès aux coordonnées, leur conservation et leur effacement suivent les
 règles `RG-77` à `RG-89` de la [spécification fonctionnelle des demandes manuelles](../features/manual-book-requests/01-fonctionnel.md).
+
+### Source ISBNdb
+La source principale des fiches, ses règles de secours, de quota, de rattrapage, de
+recherche publique et de rapprochement des éditions sont décrites dans la
+[spécification fonctionnelle ISBNdb](../features/isbndb-migration/01-fonctionnel.md),
+règles `RG-100` à `RG-129`.
 
 ---
 
