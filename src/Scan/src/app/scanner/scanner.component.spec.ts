@@ -1271,9 +1271,33 @@ describe('ScannerComponent', () => {
     await (component as unknown as {startCamera: () => Promise<void>}).startCamera();
     onDetected?.('9782070363735');
     await fixture.whenStable();
+
+    expect(component.localScan).toEqual(localScan);
+    expect(component.cameraActive).toBeFalse();
+    expect(resume).not.toHaveBeenCalled();
+
     await component.keepCurrentScan();
 
     expect(cameraService.start).toHaveBeenCalledTimes(1);
+    expect(resume).toHaveBeenCalledOnceWith();
+    expect(component.cameraActive).toBeTrue();
+  });
+
+  it('resumes the camera after a detected value cannot produce a triage result', async () => {
+    const resume = jasmine.createSpy('resume');
+    let onDetected: ((rawValue: string) => void) | undefined;
+    cameraService.start.and.callFake(async (_container, callback) => {
+      onDetected = callback;
+      return {resume, refocus: async () => true, stop: async () => undefined};
+    });
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    await component.toggleCamera();
+    onDetected?.('not-an-isbn');
+    await fixture.whenStable();
+
+    expect(component.errorMessage).toContain('ISBN');
     expect(resume).toHaveBeenCalledOnceWith();
     expect(component.cameraActive).toBeTrue();
   });

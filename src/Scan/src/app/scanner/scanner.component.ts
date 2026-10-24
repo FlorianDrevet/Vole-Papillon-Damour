@@ -2143,7 +2143,14 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private restartContinuousCamera(destination: ScanDestination): void {
-    if (destination === 'tri' || this.screen !== destination) {
+    if (this.screen !== destination) {
+      return;
+    }
+
+    // A valid triage result intentionally pauses the camera until the volunteer
+    // chooses Garder/Jeter. If the decoded value produced no local result (for
+    // example, an incomplete barcode), there is no decision action to resume it.
+    if (destination === 'tri' && this.localScan !== null) {
       return;
     }
 
