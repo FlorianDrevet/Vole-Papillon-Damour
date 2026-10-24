@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
@@ -301,7 +302,7 @@ public static class MemberAccountController
             endpoints.MapDelete(
                     "/catalog/me/genre-favorites",
                     async (
-                        SetMemberGenreFavoriteRequest request,
+                        [FromBody] SetMemberGenreFavoriteRequest request,
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,

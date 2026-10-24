@@ -27,6 +27,20 @@
 | **Catalogue admin — pagination et recherche ISBN** | PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ouverte sur `fix/catalog-admin-list-lookup`; cinq fiches par page et résultat ISBN désormais visible. Aucun déploiement. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
+### Incident API ISBNdb — DEV — 2026-10-24
+
+La révision API `vpd-api-ca-dev-fc--0000022` (`vpd-api:8f55d46`) est **Unhealthy** depuis
+07:54 UTC et reçoit 100 % du trafic. Les logs de démarrage à 07:54:56 UTC montrent
+`Body was inferred but the method does not allow inferred body parameters` sur
+`DELETE /catalog/me/genre-favorites` : le paramètre `SetMemberGenreFavoriteRequest` doit
+être explicitement `[FromBody]`. La dernière révision prête, `0000013`, ne reçoit pas le
+trafic. Le Worker `vpd-worker-ca-dev-fc--0000024` (`vpd-worker:8f55d46`) est **Healthy**.
+
+Le correctif est préparé sur `fix/isbndb-api-startup-route` : annotation `[FromBody]` et
+test de construction de l’endpoint. Aucun changement Azure n’a été fait. Après fusion,
+redéployer l’API et vérifier que sa nouvelle révision est Healthy, que le trafic passe
+dessus et que les routes ISBNdb répondent.
+
 ### Sessions de scan Catalog — 2026-10-22
 
 La PR [#320](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/320) est ouverte et non fusionnée. Dans le portail admin Catalog, Toutes et En cours arrivent en tête; le filtre, le badge latéral et le libellé utilisent le statut API InProgress. La vue par défaut est Toutes.

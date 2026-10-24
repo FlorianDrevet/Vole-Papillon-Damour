@@ -4,6 +4,7 @@
 
 - The API uses static extension classes with `endpoints.MapGet/MapPost/MapPut/MapDelete`, not MVC controllers deriving from `ControllerBase`.
 - Several write endpoints accept `multipart/form-data` through `[FromForm]` for image or file uploads.
+- JSON body DTO parameters on `DELETE` routes must use `[FromBody]`; otherwise minimal API endpoint discovery can throw `Body was inferred but the method does not allow inferred body parameters` and prevent the whole API from starting. `DELETE /catalog/me/genre-favorites` follows this rule; `GenreFavoriteEndpointRegistrationTests` guards startup registration.
 
 ## Auth Endpoints
 
