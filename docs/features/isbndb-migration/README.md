@@ -14,4 +14,4 @@
 - [x] 2. Maquettes — sans objet : Codex s'aligne sur les écrans existants (voir ci-dessus)
 - [x] 3. Plan validé (`check_zones.py` sans objet) — [`02-plan.md`](02-plan.md)
 - [x] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
-- [ ] 5. PR ouverte par Codex — <lien>
+- [x] 5. PR ouverte par Codex — [PR #340](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/340)
