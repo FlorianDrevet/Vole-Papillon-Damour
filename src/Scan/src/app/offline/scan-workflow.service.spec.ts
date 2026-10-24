@@ -91,6 +91,36 @@ describe('ScanWorkflowService', () => {
     expect((await store.getSession())?.lastScanAt).toBe('2026-09-03T08:01:00.000Z');
   });
 
+  it('uses strongly linked local editions in the scan verdict while retaining their details', async () => {
+    await store.saveSettings(createSettings(3, 10));
+    await store.putCatalogBooks([
+      createBook({qtyAvailable: 1, workId: 'openlibrary-work-1'}),
+      createBook({
+        isbn13: '9782070612758',
+        qtyAvailable: 1,
+        qtyAnnounced: 1,
+        workId: 'openlibrary-work-1',
+        publisher: 'Gallimard',
+        publicationYear: 1998,
+      }),
+    ]);
+
+    const result = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+
+    expect(result.verdict.verdict).toBe('TooMany');
+    expect(result.verdict.totalKnownQuantity).toBe(3);
+    expect(result.verdict.otherEditions).toEqual([{
+      isbn13: '9782070612758',
+      publisher: 'Gallimard',
+      publicationYear: 1998,
+      quantity: 2,
+      strong: true,
+    }]);
+  });
+
   it('keeps requester contact details out of local scan records', async () => {
     await store.putCatalogBooks([createBook({isManuallyRequested: true})]);
     const candidate = {
@@ -210,12 +240,14 @@ describe('ScanWorkflowService', () => {
       coverUrl: null,
       source: 'BnF',
       workId: 'work-1',
+      workKey: 'PETIT-PRINCE|SAINT-EXUPERY',
       retrievedAt: '2026-09-03T08:03:00.000Z',
     });
 
     const book = await store.getCatalogBook('9782070363735');
     expect(book?.title).toBe('Le Petit Prince');
     expect(book?.workId).toBe('work-1');
+    expect(book?.workKey).toBe('PETIT-PRINCE|SAINT-EXUPERY');
     expect(book?.qtyAvailable).toBe(3);
   });
 

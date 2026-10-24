@@ -26,6 +26,7 @@ import {
 } from './scan-offline.model';
 import type {ScanDiagnosticStoreState} from './scan-diagnostic-export';
 import {
+  forceCatalogResyncForMetadataUpgrade,
   migrateLegacyScanOutboxEntry,
   LegacyScanOutboxEntry,
 } from './scan-local-store-migration';
@@ -1436,6 +1437,10 @@ export class ScanLocalStoreService {
         }
         if (!database.objectStoreNames.contains(scanStoreNames.passageAssociations)) {
           database.createObjectStore(scanStoreNames.passageAssociations, {keyPath: 'checkoutPassageId'});
+        }
+
+        if (request.transaction) {
+          forceCatalogResyncForMetadataUpgrade(event.oldVersion, request.transaction);
         }
 
         if (event.oldVersion < 3 && database.objectStoreNames.contains(scanStoreNames.outbox)) {
