@@ -1112,7 +1112,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.stopCamera();
     this.manualReturnScreen = this.destinationForScreen();
     this.manualAssociationCode = this.manualReturnScreen === 'cash' && this.isAwaitingCashMemberCredential;
-    this.manualIsbn = this.manualAssociationCode ? '' : this.isbnInput;
+    this.manualIsbn = '';
     this.manualError = null;
     this.screen = 'manual';
     this.refreshView();
