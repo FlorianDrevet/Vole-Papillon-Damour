@@ -1,5 +1,8 @@
 # Catalog request and statistics latency
 
+The implementation is in [PR #346](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/346),
+open and not merged. No deployment was made.
+
 ## Deployed telemetry (2026-10-18 to 2026-10-25)
 
 Read-only Application Insights queries against `vpd-catalog-appi-dev-fc` and
