@@ -18,6 +18,35 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandlerTests
     private static readonly UserId VolunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000021"));
 
     [Fact]
+    public async Task Handle_applies_the_requested_period_to_database_queries()
+    {
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminCatalogueFlowStatsQueryHandler(fixture.Context, clock);
+        sqlCapture.Clear();
+
+        var result = await handler.Handle(
+            new GetAdminCatalogueFlowStatsQuery(
+                new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 9, 12, 0, 0, 0, TimeSpan.Zero)),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"ScanSessions\"", StringComparison.Ordinal) &&
+            command.Contains("\"StartedAt\" >=", StringComparison.Ordinal) &&
+            command.Contains("\"StartedAt\" <", StringComparison.Ordinal));
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"BookMovements\"", StringComparison.Ordinal) &&
+            command.Contains("\"OccurredAt\" >=", StringComparison.Ordinal) &&
+            command.Contains("\"OccurredAt\" <", StringComparison.Ordinal));
+        sqlCapture.Commands.Should().NotContain(command =>
+            command.Contains("FROM \"Books\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Handle_builds_the_funnel_and_the_genre_flow_rate()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

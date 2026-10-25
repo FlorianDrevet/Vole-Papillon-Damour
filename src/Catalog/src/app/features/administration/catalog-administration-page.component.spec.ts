@@ -2143,6 +2143,24 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(scatterLabels).toContain('Patrick Noël');
   });
 
+  it('starts the volunteer statistics request while fair options are still loading', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const fairsResponse = new Subject<CatalogAdminFairPage>();
+    api.getFairs.and.returnValue(fairsResponse);
+
+    const loading = fixture.componentInstance.loadVolunteerStatistics();
+    await Promise.resolve();
+    await Promise.resolve();
+    const statisticsStartedBeforeFairsLoaded = api.getVolunteerStatistics.calls.count() === 1;
+
+    fairsResponse.next({generatedAt: '', fairs: [], totalCount: 0, page: 1, pageSize: 50});
+    fairsResponse.complete();
+    await loading;
+
+    expect(statisticsStartedBeforeFairsLoaded).toBeTrue();
+  });
+
   it('distinguishes fairs with the same name by their dates in the statistics selector', () => {
     fixture.detectChanges();
     auth.account.set(account('Administrator'));
