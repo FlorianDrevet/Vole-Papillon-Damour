@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | **Lot en cours** | Préparer l'import progressif du CSV application : 155 fichiers de 50 ISBN maximum dans `C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50`. |
-| **Prochaine action** | Revoir et fusionner la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271), puis lancer Books runtime - deploy avec `run_migrations: true`, déployer Catalog et vérifier la file ISBN ainsi que le catalogue public. Ensuite, importer les lots un par un et reporter leur état dans `lots_50\avancement.csv`. |
+| **Prochaine action** | Valider et fusionner la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345), lancer `Books runtime - deploy` avec `run_migrations: false`, puis vérifier les p95 et statuts provider dans App Insights. Ensuite, reprendre la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271), déployer Catalog, vérifier la file ISBN et importer les lots un par un. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-scan-metadata-provider-latency-20261025` |
-| **Dernière mise à jour** | 2026-10-25 — App Insights (7 jours) : `/books/{isbn13}/metadata` p95 10,932 s, max 15,497 s; `/scan/manual-requests/candidate` p95 10,910 s, max 15,419 s. Cause identifiée dans la résolution Open Library; correctif et suites backend validées sur `fix/scan-metadata-provider-latency`. SSR Catalog reste à instrumenter. Aucun changement Azure ni déploiement; voir l’enquête ci-dessous. |
+| **Dernière mise à jour** | 2026-10-25 — App Insights (7 jours) : `/books/{isbn13}/metadata` p95 10,932 s, max 15,497 s; `/scan/manual-requests/candidate` p95 10,910 s, max 15,419 s. Cause identifiée dans la résolution Open Library; correctif et suites backend validées dans la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345), ouverte et non fusionnée. SSR Catalog reste à instrumenter. Aucun changement Azure ni déploiement; voir l’enquête ci-dessous. |
 | **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
 | **Amélioration UI import CSV** | PR [#300](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/300) ouverte sur `fix/admin-catalog-csv-import-ux`; aucun import ni déploiement effectué. |
 | **Catalogue admin — pagination et recherche ISBN** | PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ouverte sur `fix/catalog-admin-list-lookup`; cinq fiches par page et résultat ISBN désormais visible. Aucun déploiement. |
@@ -45,9 +45,10 @@ l’environnement de production.
   quand `includeBibliographicDetails` était faux. Ces appels Open Library étaient
   séquentiels et chacun pouvait consommer son propre délai HTTP.
 
-Le correctif est préparé sur `fix/scan-metadata-provider-latency` : le client Open Library
-ne charge les détails édition/œuvre que pour l’enrichissement qui les demande; il conserve
-un recours édition si la recherche ne retourne aucun résultat ou aucun `WorkId`. Le
+Le correctif est dans la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345),
+branche `fix/scan-metadata-provider-latency`, ouverte et non fusionnée : le client Open
+Library ne charge les détails édition/œuvre que pour l’enrichissement qui les demande; il
+conserve un recours édition si la recherche ne retourne aucun résultat ou aucun `WorkId`. Le
 candidat de demande manuelle évite toute résolution réseau s’il n’existe pas de demande
 active de portée œuvre et utilise la résolution ciblée du `WorkId`. L’enrichissement complet
 continue de demander les détails. Les tests Application (690) et Infrastructure (241)
