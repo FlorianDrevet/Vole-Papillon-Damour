@@ -19,3 +19,10 @@
   Component regressions live in `similar-books.component.spec.ts`; backend defaults and query
   behavior are covered by the Infrastructure and Application recommendation test projects.
 - `Book.Summary` is ISBN-level bibliographic data and the public book detail reads it directly. `WorkGrouping` receives summaries keyed by ISBN and prefers that value, with a legacy-profile fallback. `RefreshBookSimilarityProfilesCommandHandler` copies a fetched legacy summary into an empty `Book.Summary` and clears summary fields before persisting refreshed `NoticeJson`; profile refresh remains gated by `Recommendations:Enabled`.
+
+## Runtime observation (2026-10-25)
+
+- The production API and Worker (in resource group `rg-vpd-dev`) both reported `Recommendations__Enabled=True`, but the authenticated BackOffice recommendations tab showed zero jobs. The initial recommendation catch-up is a separate manual BackOffice action (`Rattraper le catalogue`); enabling the feature does not seed jobs by itself.
+- ISBNdb catch-up only force-requests/re-enqueues a recommendation job when a job already exists for that ISBN. It does not create the initial job for an existing book with no job.
+- A newly closed scan session creates recommendation jobs which the Worker consumes from `book-recommendations`. Public per-book similar suggestions and personalized `Pour vous` suggestions are separate flows; the latter needs a signed-in member's purchases and explicit preferences.
+- The manual catalog backfill was not run during the 2026-10-25 investigation. A public detail page checked during that investigation had no similar-books block; its ISBNdb source was not established, so this alone does not prove behavior for an ISBNdb-sourced book.
