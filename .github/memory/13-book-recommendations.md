@@ -1,5 +1,9 @@
 # 13 - Book Recommendations
 
+## Production queue observation — 2026-10-25
+
+- The Worker was processing `book-recommendations`, but 18 batch-completion traces between 10:42 and 10:55 UTC each reported `Started: 50, Ready: 0, Failed: 50`. EF logs show the insert into `dbo.BookNeighbors` failing. The failure cause is still unknown; do not treat recommendations as healthy merely because `Recommendations__Enabled=True`.
+- ISBNdb catch-up only re-enqueues a recommendation job that already exists for a book. It does not seed the initial job for a book without one; the catalog recommendation backfill is separate.
 ## Public similar-book suggestions
 
 - `src/Backend/Vole_Papillon_Damour.Infrastructure/Services/Recommendations/RecommendationOptions.cs`

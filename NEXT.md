@@ -346,6 +346,14 @@ Après fusion, suivre [`docs/recommandations-livres/10-runbook-activation-et-lan
 pour activer le service puis lancer le premier rattrapage depuis le Back Office. La
 fonctionnalité reste désactivée par défaut.
 
+### Rattrapage ISBNdb et recommandations — suivi opérationnel — 2026-10-25
+
+- Après le redémarrage du Worker, le minuteur temporaire `0 40 10 * * *` était bien chargé, mais aucune invocation `IsbndbCatchUp` n’apparaît dans App Insights à 10:40 UTC. La route manuelle `POST /api/IsbndbCatchUpManual` a ensuite été appelée à 10:50 UTC avec une clé valide et a répondu HTTP 500 vers 10:52 UTC.
+- L’exception observée est `DbUpdateConcurrencyException` (« expected to affect 1 row, actually affected 0 ») pendant `CatchUpIsbndbBooksCommandHandler.FinishRunAsync` (ligne 492). La finalisation de secours a échoué elle aussi. Le run du tableau reste celui de 03:30 Paris et ne prouve pas qu’aucune écriture partielle n’a été faite ; le nombre de livres effectivement enrichis n’est pas établi.
+- Le tableau affichait encore 3 400 / 5 000 crédits, sur une réponse ISBNdb lue à 03:59 Paris, et 12 636 livres en attente. Ce solde affiché est périmé et ne doit pas être pris comme le quota actuel.
+- Le Worker de recommandations traitait des lots : entre 10:42 et 10:55 UTC, 18 traces indiquent chacune 50 démarrées, 0 prêtes et 50 échouées. Les logs signalent un échec SQL sur l’insertion dans `dbo.BookNeighbors`. La cause racine de cet échec reste à trouver ; les recommandations ne sont donc pas opérationnelles à cette date.
+- État Azure après l’opération : révision `vpd-worker-ca-dev-fc--0000033` Healthy, 1 réplique ; déclencheur restauré à `0 30 2 * * *` UTC ; ingress externe HTTPS sur le port 8080 (`allowInsecure=false`) ; sortie réseau ouverte (environnement public, sans VNet). Le `GET /` public répond 200. Ces réglages d’ingress/port sont des changements live et doivent être rapprochés du Bicep.
+- La route manuelle est protégée par une clé Function et attend la fin de tout le rattrapage avant de répondre ; ce n’est pas une route asynchrone qui renvoie immédiatement un identifiant de tâche. Ne pas réessayer le rattrapage avant d’avoir traité l’erreur de concurrence et vérifié le run/quotas.
 ### Correctif livres rares Catalog — 2026-09-24
 
 Les photos sélectionnées dans le formulaire de création sont désormais prévisualisées
