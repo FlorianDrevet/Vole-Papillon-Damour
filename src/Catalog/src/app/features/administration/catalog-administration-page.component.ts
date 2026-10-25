@@ -1803,33 +1803,39 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   async loadVolunteerStatistics(): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
     await this.run('volunteer-statistics', async token => {
-      await this.ensureStatisticsFairOptions(token);
-      this.volunteerStatistics.set(await firstValueFrom(this.api.getVolunteerStatistics(
+      const fairOptions = this.ensureStatisticsFairOptions(token);
+      const statistics = firstValueFrom(this.api.getVolunteerStatistics(
         token,
         from,
         to,
         this.selectedStatisticsFairId(),
-      )));
+      ));
+      const [, result] = await Promise.all([fairOptions, statistics]);
+      this.volunteerStatistics.set(result);
     });
   }
 
   async loadFairsEvolution(): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
     await this.run('fairs-evolution', async token => {
-      await this.ensureStatisticsFairOptions(token);
-      this.fairsEvolution.set(await firstValueFrom(
+      const fairOptions = this.ensureStatisticsFairOptions(token);
+      const statistics = firstValueFrom(
         this.api.getFairsEvolution(token, from, to, this.selectedStatisticsFairId()),
-      ));
+      );
+      const [, result] = await Promise.all([fairOptions, statistics]);
+      this.fairsEvolution.set(result);
     });
   }
 
   async loadCatalogueFlowStats(): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
     await this.run('catalogue-flow-stats', async token => {
-      await this.ensureStatisticsFairOptions(token);
-      this.catalogueFlowStats.set(await firstValueFrom(
+      const fairOptions = this.ensureStatisticsFairOptions(token);
+      const statistics = firstValueFrom(
         this.api.getCatalogueFlowStats(token, from, to, this.selectedStatisticsFairId()),
-      ));
+      );
+      const [, result] = await Promise.all([fairOptions, statistics]);
+      this.catalogueFlowStats.set(result);
     });
   }
 

@@ -2,7 +2,7 @@ import {signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {RouterModule, Router} from '@angular/router';
-import {of} from 'rxjs';
+import {of, Subject} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
@@ -151,6 +151,25 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: true});
     expect(api.getPublicRareBooks).toHaveBeenCalledWith({includeSold: false, sort: 'recent', pageSize: 4});
+  });
+
+  it('shows the book catalogue before the optional home sections finish loading', async () => {
+    fixture.destroy();
+    const rareBooksResponse = new Subject<CatalogRareBookPage>();
+    const fairsResponse = new Subject<CatalogFair[]>();
+    api.search.calls.reset();
+    api.getPublicRareBooks.and.returnValue(rareBooksResponse);
+    api.getUpcomingFairs.and.returnValue(fairsResponse);
+
+    fixture = TestBed.createComponent(CatalogHomePageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+    expect(api.getPublicRareBooks).toHaveBeenCalled();
+    expect(api.getUpcomingFairs).toHaveBeenCalled();
   });
 
   it('opens a branded genre menu instead of relying on the native select popup', () => {

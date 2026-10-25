@@ -11,8 +11,6 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
-using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
@@ -66,36 +64,65 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             }
         }
 
-        var sessions = await dbContext.ScanSessions
+        var sessionsQuery = dbContext.ScanSessions
             .AsNoTracking()
-            .Where(session => session.ScannedCount > 0)
-            .ToListAsync(cancellationToken);
-        sessions = sessions
-            .Where(session => IsInPeriod(session.StartedAt, from, to))
-            .Where(session => selectedFair is null || session.TargetAssoEventsId == selectedFair.Id)
-            .ToList();
-        var sessionsById = sessions.ToDictionary(session => session.Id, session => session);
+            .Where(session => session.ScannedCount > 0);
+        if (from is not null)
+        {
+            sessionsQuery = sessionsQuery.Where(session => session.StartedAt >= from.Value);
+        }
+
+        if (to is not null)
+        {
+            sessionsQuery = sessionsQuery.Where(session => session.StartedAt < to.Value);
+        }
+
+        if (selectedFair is not null)
+        {
+            sessionsQuery = sessionsQuery.Where(session => session.TargetAssoEventsId == selectedFair.Id);
+        }
+
+        var sessions = await sessionsQuery.ToListAsync(cancellationToken);
         var scannedCount = sessions.Sum(session => session.ScannedCount);
 
-        var relevantMovements = await dbContext.BookMovements
+        var movementsQuery = dbContext.BookMovements
             .AsNoTracking()
             .Where(movement =>
                 movement.Type == BookMovementType.DirectEntry ||
                 movement.Type == BookMovementType.AnnouncementEntry ||
                 movement.Type == BookMovementType.Sale ||
-                movement.Type == BookMovementType.Correction)
-            .ToListAsync(cancellationToken);
-        var movements = relevantMovements
-            .Where(movement => IsInPeriod(movement.OccurredAt, from, to))
-            .Where(movement => IsInSelectedFair(movement, sessionsById, selectedFair?.Id))
-            .ToArray();
+                movement.Type == BookMovementType.Correction);
+        if (from is not null)
+        {
+            movementsQuery = movementsQuery.Where(movement => movement.OccurredAt >= from.Value);
+        }
 
-        var books = await dbContext.Books.AsNoTracking().ToDictionaryAsync(book => book.Id, cancellationToken);
+        if (to is not null)
+        {
+            movementsQuery = movementsQuery.Where(movement => movement.OccurredAt < to.Value);
+        }
+
+        if (selectedFair is not null)
+        {
+            var sessionIds = sessions.Select(session => session.Id).ToArray();
+            movementsQuery = movementsQuery.Where(movement =>
+                movement.AssoEventsId == selectedFair.Id ||
+                (movement.ScanSessionId != null && sessionIds.Contains(movement.ScanSessionId)));
+        }
+
+        var movements = await movementsQuery.ToArrayAsync(cancellationToken);
 
         var keptMovements = movements
             .Where(movement => movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry)
             .ToArray();
         var sales = BuildEffectiveSales(movements);
+        var bookIsbns = keptMovements.Select(movement => movement.Isbn13).Distinct().ToArray();
+        var books = bookIsbns.Length == 0
+            ? new Dictionary<Isbn13, Book>()
+            : await dbContext.Books
+                .AsNoTracking()
+                .Where(book => bookIsbns.Contains(book.Id))
+                .ToDictionaryAsync(book => book.Id, cancellationToken);
 
         var keptCount = keptMovements.Sum(movement => Math.Abs(movement.Quantity));
         var soldCount = sales.Sum(sale => sale.Quantity);
@@ -209,24 +236,6 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
                 Math.Max(0, Math.Abs(sale.Quantity) - voidedBySale.GetValueOrDefault(sale.Id.Value))))
             .Where(sale => sale.Quantity > 0)
             .ToArray();
-    }
-
-    private static bool IsInPeriod(DateTime value, DateTime? from, DateTime? to) =>
-        (from is null || value >= from.Value) && (to is null || value < to.Value);
-
-    private static bool IsInSelectedFair(
-        BookMovement movement,
-        IReadOnlyDictionary<ScanSessionId, ScanSession> sessions,
-        AssoEventsId? fairId)
-    {
-        if (fairId is null || movement.AssoEventsId == fairId)
-        {
-            return true;
-        }
-
-        return movement.ScanSessionId is { } sessionId &&
-               sessions.TryGetValue(sessionId, out var session) &&
-               session.TargetAssoEventsId == fairId;
     }
 
     private static decimal? Percent(int numerator, int denominator) =>
