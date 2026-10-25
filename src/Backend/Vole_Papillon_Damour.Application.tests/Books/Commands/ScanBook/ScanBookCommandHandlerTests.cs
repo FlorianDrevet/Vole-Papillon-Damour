@@ -365,9 +365,8 @@ public sealed class ScanBookCommandHandlerTests
         var request = await AddManualRequestAsync(fixture, ManualBookRequestScope.Work, workId: "OL123W");
         const string isbn = "9782070363735";
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<BookMetadataResult?>(new BookMetadataResult(
-                isbn, "Le Petit Prince", null, null, null, null, "OpenLibrary", "OL123W", ReceivedAt)));
+        resolver.ResolveWorkIdAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>("OL123W"));
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ReceivedAt);
         var handler = new ScanBookCommandHandler(fixture.Context, clock, metadataResolver: resolver);
@@ -379,7 +378,8 @@ public sealed class ScanBookCommandHandlerTests
         (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
         (await fixture.Context.ManualBookRequests.SingleAsync()).Id.Should().Be(request.Id);
         (await fixture.Context.ManualBookRequests.SingleAsync()).Status.Should().Be(ManualBookRequestStatus.Found);
-        await resolver.Received(1).ResolveAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveWorkIdAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>());
+        await resolver.DidNotReceive().ResolveAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -56,7 +56,6 @@ internal static class ManualRequestMatcher
             return null;
         }
 
-        var metadata = await resolver.ResolveAsync(isbn13, ct);
-        return string.IsNullOrWhiteSpace(metadata?.WorkId) ? null : metadata.WorkId;
+        return await resolver.ResolveWorkIdAsync(isbn13, ct);
     }
 }

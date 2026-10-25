@@ -23,8 +23,10 @@ public sealed class GetManualRequestScanCandidateQueryHandler(
             return Errors.Book.InvalidIsbn(query.Isbn13);
         }
 
-        var workId = await ManualRequestMatcher.ResolveWorkIdAsync(
-            dbContext, metadataResolver, isbn13, cancellationToken);
+        var workId = await ManualRequestMatcher.AnySearchingWorkRequestAsync(dbContext, cancellationToken)
+            ? await ManualRequestMatcher.ResolveWorkIdAsync(
+                dbContext, metadataResolver, isbn13, cancellationToken)
+            : null;
         var request = await ManualRequestMatcher.FindOldestSearchingAsync(
             dbContext, isbn13, workId, cancellationToken);
         if (request is null)

@@ -62,9 +62,8 @@ public sealed class ManualRequestCommonTests
         var bookIsbn = await fixture.AddBookAsync(Isbn, workId: "OL_FROM_BOOK");
         var resolverIsbn = await fixture.AddBookAsync(OtherIsbn);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(resolverIsbn.Id, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<BookMetadataResult?>(new BookMetadataResult(
-                resolverIsbn.Id.Value, null, null, null, null, null, "OpenLibrary", "OL_FROM_RESOLVER", Now)));
+        resolver.ResolveWorkIdAsync(resolverIsbn.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>("OL_FROM_RESOLVER"));
 
         var fromBook = await ManualRequestMatcher.ResolveWorkIdAsync(
             fixture.Context, resolver, bookIsbn.Id, CancellationToken.None);
@@ -73,6 +72,7 @@ public sealed class ManualRequestCommonTests
 
         fromBook.Should().Be("OL_FROM_BOOK");
         fromResolver.Should().Be("OL_FROM_RESOLVER");
+        await resolver.DidNotReceive().ResolveAsync(resolverIsbn.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]

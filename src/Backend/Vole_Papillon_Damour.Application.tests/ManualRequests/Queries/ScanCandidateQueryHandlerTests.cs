@@ -1,4 +1,6 @@
 using FluentAssertions;
+using NSubstitute;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetScanCandidate;
 
 namespace Vole_Papillon_Damour.Application.tests.ManualRequests.Queries;
@@ -42,5 +44,43 @@ public sealed class ScanCandidateQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ScanCandidate_WithEditionRequestAndNoSearchingWorkRequest_SkipsMetadataLookup()
+    {
+        await using var fixture = await ManualRequestFixture.CreateAsync();
+        var requester = await fixture.AddRequesterAsync("Martin", "Jeanne", "0612345678");
+        var editionRequest = await fixture.AddEditionRequestAsync(requester.Id, Isbn);
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        var handler = new GetManualRequestScanCandidateQueryHandler(fixture.Context, resolver);
+
+        var result = await handler.Handle(new GetManualRequestScanCandidateQuery(Isbn), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().NotBeNull();
+        result.Value!.RequestId.Should().Be(editionRequest.Id);
+        resolver.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ScanCandidate_WithSearchingWorkRequest_UsesWorkIdOnlyLookup()
+    {
+        await using var fixture = await ManualRequestFixture.CreateAsync();
+        var requester = await fixture.AddRequesterAsync("Martin", "Jeanne", "0612345678");
+        var workRequest = await fixture.AddWorkRequestAsync(requester.Id, "OL_SCAN_CANDIDATE");
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveWorkIdAsync(ManualRequestFixture.ParseIsbn(Isbn), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>("OL_SCAN_CANDIDATE"));
+        var handler = new GetManualRequestScanCandidateQueryHandler(fixture.Context, resolver);
+
+        var result = await handler.Handle(new GetManualRequestScanCandidateQuery(Isbn), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().NotBeNull();
+        result.Value!.RequestId.Should().Be(workRequest.Id);
+        await resolver.Received(1).ResolveWorkIdAsync(
+            ManualRequestFixture.ParseIsbn(Isbn),
+            Arg.Any<CancellationToken>());
     }
 }

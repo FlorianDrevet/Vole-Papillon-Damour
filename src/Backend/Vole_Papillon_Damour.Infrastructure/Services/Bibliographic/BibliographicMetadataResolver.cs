@@ -90,7 +90,10 @@ public sealed class BibliographicMetadataResolver(
 
         var openLibraryResult = await TryFindAsync(
             OpenLibraryProvider,
-            () => openLibraryClient.FindAsync(isbn13, cancellationToken),
+            () => openLibraryClient.FindAsync(
+                isbn13,
+                cancellationToken,
+                includeBibliographicDetails: false),
             isbn13,
             cancellationToken);
         return string.IsNullOrWhiteSpace(openLibraryResult.Metadata?.WorkId)
@@ -145,7 +148,10 @@ public sealed class BibliographicMetadataResolver(
             {
                 var openLibraryResult = await TryFindAsync(
                     OpenLibraryProvider,
-                    () => openLibraryClient.FindAsync(isbn13, cancellationToken),
+                    () => openLibraryClient.FindAsync(
+                        isbn13,
+                        cancellationToken,
+                        includeBibliographicDetails),
                     isbn13,
                     cancellationToken);
                 merged = Merge(merged, openLibraryResult.Metadata);
@@ -160,7 +166,10 @@ public sealed class BibliographicMetadataResolver(
 
         var openLibraryFallbackResult = await TryFindAsync(
             OpenLibraryProvider,
-            () => openLibraryClient.FindAsync(isbn13, cancellationToken),
+            () => openLibraryClient.FindAsync(
+                isbn13,
+                cancellationToken,
+                includeBibliographicDetails),
             isbn13,
             cancellationToken);
         if (openLibraryFallbackResult.Metadata is not null)
