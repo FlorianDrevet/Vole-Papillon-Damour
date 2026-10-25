@@ -10,6 +10,18 @@
 - `GetSimilarBooksQueryHandler` reads the current neighbor generation, filters by score,
   canonical public visibility, and available or announced stock, then applies the minimum and
   maximum counts.
+- Incremental recomputation is requested by `ProcessBookRecommendationsCommandHandler` and
+  persisted by `SqlBookNeighborWriter`. It now locks the singleton generation row and
+  transactionally replaces only affected ISBN lists in the active generation; a full rebuild
+  still writes a new generation and switches the active pointer. This avoids copying every
+  unchanged neighbor row for each queue batch and serializes concurrent incremental writes.
+- During ISBNdb catch-up, the handler creates a missing per-book job and enqueues every
+  processed found/absent ISBN after its page commits when recommendations are enabled. The
+  separate catalog backfill is still required to queue books that catch-up has not processed.
+- The 2026-10-25 production telemetry showed failures on the former `INSERT ... SELECT`
+  generation-copy command, but did not retain the underlying SQL Server error code. The copy
+  path has been removed; a SQL Server integration run is still needed to verify the write
+  against a live SQL Server provider.
 - Catalog renders the public list in
   `src/Catalog/src/app/features/book-detail/similar-books/`. One returned book is enough to
   show the section. Multiple items use a horizontal, snap-scrolling track; accessible previous

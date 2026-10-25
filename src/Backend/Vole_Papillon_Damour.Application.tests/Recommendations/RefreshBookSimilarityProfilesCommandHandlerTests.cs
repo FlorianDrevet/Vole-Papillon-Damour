@@ -247,6 +247,8 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
+    public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
+    public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -254,6 +256,8 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => Books;
     DbSet<BookIsbndbRecord> IProjectDbContext.BookIsbndbRecords => BookIsbndbRecords;
+    DbSet<BookNeighbor> IProjectDbContext.BookNeighbors => BookNeighbors;
+    DbSet<RecommendationGeneration> IProjectDbContext.RecommendationGenerations => RecommendationGenerations;
     DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
@@ -298,6 +302,8 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
             .ValueGeneratedNever()
             .IsConcurrencyToken(false);
         modelBuilder.ApplyConfiguration(new BookSimilarityProfileConfiguration());
+        modelBuilder.ApplyConfiguration(new BookNeighborConfiguration());
+        modelBuilder.ApplyConfiguration(new RecommendationGenerationConfiguration());
         modelBuilder.Entity<BookSimilarityProfile>().Property(profile => profile.NoticeJson).HasColumnType("TEXT");
         modelBuilder.Entity<BookSimilarityProfile>().Property(profile => profile.ProfileText).HasColumnType("TEXT");
         modelBuilder.Entity<BookIsbndbRecord>(builder =>

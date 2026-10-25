@@ -774,6 +774,20 @@ internal sealed class SqlCaptureInterceptor : DbCommandInterceptor
 internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbContext> options)
     : DbContext(options), IProjectDbContext
 {
+    public int SaveChangesCallCount { get; private set; }
+    public HashSet<int> ThrowDbUpdateConcurrencyOnSaveCalls { get; } = [];
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        SaveChangesCallCount++;
+        if (ThrowDbUpdateConcurrencyOnSaveCalls.Contains(SaveChangesCallCount))
+        {
+            throw new DbUpdateConcurrencyException("simulated concurrent update");
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
     public DbSet<IsbndbQuotaState> IsbndbQuotaStates => Set<IsbndbQuotaState>();

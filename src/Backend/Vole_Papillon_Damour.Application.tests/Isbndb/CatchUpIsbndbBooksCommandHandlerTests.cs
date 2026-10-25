@@ -146,6 +146,57 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenIsbndbFindsBookWithoutRecommendationJob_CreatesAndEnqueuesIt()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var notice = new IsbndbBook
+        {
+            Isbn13 = book.Id.Value,
+            Title = "Livre ISBNdb",
+            Authors = ["Auteur ISBNdb"],
+            Publisher = "Gallimard",
+            DatePublished = "1995",
+            RawJson = "{\"title\":\"Livre ISBNdb\"}"
+        };
+        var lookups = new RecordingLookupService(_ => new IsbndbLookup.Found(notice));
+        var recommendationQueue = Substitute.For<IBookRecommendationWorkQueue>();
+        var handler = CreateHandler(fixture, lookups, recommendationQueue: recommendationQueue);
+
+        var result = await handler.Handle(CreateCommand(), CancellationToken.None);
+
+        result.Filled.Should().Be(1);
+        var job = await fixture.Context.BookRecommendationJobs.SingleAsync(candidate => candidate.Isbn13 == book.Id.Value);
+        job.RequestVersion.Should().Be(1);
+        await recommendationQueue.Received(1).EnqueueBooksAsync(
+            Arg.Is<IReadOnlyCollection<BookRecommendationQueueItem>>(items =>
+                items.Single().Isbn13 == book.Id.Value && items.Single().RequestVersion == 1),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenRecommendationsAreDisabled_DoesNotCreateOrEnqueueRecommendationJobs()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var recommendationQueue = Substitute.For<IBookRecommendationWorkQueue>();
+        var recommendationSettings = Substitute.For<IRecommendationSettings>();
+        recommendationSettings.Enabled.Returns(false);
+        var handler = CreateHandler(
+            fixture,
+            new RecordingLookupService(_ => new IsbndbLookup.NotFound()),
+            recommendationQueue: recommendationQueue,
+            recommendationSettings: recommendationSettings);
+
+        await handler.Handle(CreateCommand(), CancellationToken.None);
+
+        (await fixture.Context.BookRecommendationJobs.ToListAsync()).Should().BeEmpty();
+        await recommendationQueue.DidNotReceive().EnqueueBooksAsync(
+            Arg.Any<IReadOnlyCollection<BookRecommendationQueueItem>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_WhenRecheckingStaleAbsentBooks_SkipsCompletedAndRecordsFreshCheck()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -172,6 +223,7 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
             Now.AddDays(-20));
         fixture.Context.Books.AddRange(stale, completed);
         await fixture.Context.SaveChangesAsync();
+        fixture.Context.ThrowDbUpdateConcurrencyOnSaveCalls.Add(fixture.Context.SaveChangesCallCount + 2);
 
         var lookups = new RecordingLookupService(
             _ => new IsbndbLookup.NotFound(),
@@ -203,11 +255,71 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
         (await fixture.Context.IsbndbCatchUpRuns.SingleAsync()).StopReason.Should().Be(IsbndbCatchUpStopReason.Cancelled);
     }
 
+    [Fact]
+    public async Task Handle_WhenPageSaveHasAConcurrencyConflict_RetriesWithoutRepeatingIsbndbLookup()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = CreateResolvedBook("9782070363735", Now.AddDays(-1), "Livre absent", "Auteur");
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ThrowDbUpdateConcurrencyOnSaveCalls.Add(fixture.Context.SaveChangesCallCount + 2);
+        var lookups = new RecordingLookupService(_ => new IsbndbLookup.NotFound());
+        var handler = CreateHandler(fixture, lookups);
+
+        var result = await handler.Handle(CreateCommand(), CancellationToken.None);
+
+        result.Absent.Should().Be(1);
+        result.Remaining.Should().Be(0);
+        result.StopReason.Should().Be(IsbndbCatchUpStopReason.Completed);
+        lookups.BulkCalls.Should().ContainSingle();
+        var persistedBook = await fixture.Context.Books
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.Id == book.Id);
+        persistedBook.IsAbsentFromIsbndb.Should().BeTrue();
+        var run = await fixture.Context.IsbndbCatchUpRuns.SingleAsync();
+        run.StopReason.Should().Be(IsbndbCatchUpStopReason.Completed);
+        run.EndedAt.Should().NotBeNull();
+        run.Absent.Should().Be(1);
+        run.Remaining.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPageKeepsConflicting_FinalizesRunWithoutSavingThePageAndRethrowsOriginalException()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = CreateResolvedBook("9782070363735", Now.AddDays(-1), "Livre absent", "Auteur");
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        var firstFailedPageSave = fixture.Context.SaveChangesCallCount + 2;
+        for (var call = firstFailedPageSave; call < firstFailedPageSave + 3; call++)
+        {
+            fixture.Context.ThrowDbUpdateConcurrencyOnSaveCalls.Add(call);
+        }
+
+        var lookups = new RecordingLookupService(_ => new IsbndbLookup.NotFound());
+        var handler = CreateHandler(fixture, lookups);
+
+        var act = () => handler.Handle(CreateCommand(), CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
+        exception.Which.Message.Should().Contain("simulated concurrent update");
+        lookups.BulkCalls.Should().ContainSingle();
+        var persistedBook = await fixture.Context.Books
+            .AsNoTracking()
+            .SingleAsync(candidate => candidate.Id == book.Id);
+        persistedBook.IsAbsentFromIsbndb.Should().BeFalse();
+        var run = await fixture.Context.IsbndbCatchUpRuns.SingleAsync();
+        run.StopReason.Should().Be(IsbndbCatchUpStopReason.Unavailable);
+        run.EndedAt.Should().NotBeNull();
+        run.Remaining.Should().Be(1);
+    }
+
     private static CatchUpIsbndbBooksCommandHandler CreateHandler(
         ScanBookFixture fixture,
         RecordingLookupService lookupService,
         IBibliographicMetadataResolver? resolver = null,
-        IBookRecommendationWorkQueue? recommendationQueue = null)
+        IBookRecommendationWorkQueue? recommendationQueue = null,
+        IRecommendationSettings? recommendationSettings = null)
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
@@ -216,7 +328,8 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
             lookupService,
             resolver ?? Substitute.For<IBibliographicMetadataResolver>(),
             clock,
-            recommendationQueue);
+            recommendationQueue,
+            recommendationSettings);
     }
 
     private static CatchUpIsbndbBooksCommand CreateCommand(int batchSize = 100) =>

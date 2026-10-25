@@ -11,7 +11,7 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
 {
     private const int BulkBatchSize = 10_000;
 
-    public async Task WriteIncrementalGenerationAsync(
+    public async Task<Guid> WriteIncrementalGenerationAsync(
         Guid generationId,
         IReadOnlyCollection<string> replacedIsbns,
         IReadOnlyCollection<BookNeighborRow> replacementRows,
@@ -26,10 +26,13 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
             throw new InvalidOperationException("Book neighbor generations can only be written to SQL Server.");
         }
 
+        var activeGenerationId = generationId;
         await using (var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
         {
             var connection = (SqlConnection)dbContext.Database.GetDbConnection();
             var sqlTransaction = (SqlTransaction)transaction.GetDbTransaction();
+            activeGenerationId = await LockCurrentGenerationAsync(connection, sqlTransaction, cancellationToken)
+                                 ?? generationId;
             var replaced = replacedIsbns.Distinct(StringComparer.Ordinal).ToArray();
             var replacementArray = replacementRows as BookNeighborRow[] ?? replacementRows.ToArray();
 
@@ -55,21 +58,16 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
             }
 
             await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
-                INSERT INTO [dbo].[BookNeighbors]
-                    ([GenerationId], [Isbn13], [Rank], [NeighborIsbn13], [Score], [Reason])
-                SELECT {generationId}, current.[Isbn13], current.[Rank], current.[NeighborIsbn13], current.[Score], current.[Reason]
+                DELETE current
                   FROM [dbo].[BookNeighbors] AS current
-                  INNER JOIN [dbo].[RecommendationGenerations] AS generation
-                    ON generation.[Id] = 1 AND current.[GenerationId] = generation.[CurrentGenerationId]
-                 WHERE NOT EXISTS (
-                    SELECT 1 FROM #ReplacedIsbns AS replaced WHERE replaced.[Isbn13] = current.[Isbn13]
-                 )
+                  INNER JOIN #ReplacedIsbns AS replaced ON replaced.[Isbn13] = current.[Isbn13]
+                 WHERE current.[GenerationId] = {activeGenerationId}
                 """, cancellationToken);
 
             for (var offset = 0; offset < replacementArray.Length; offset += BulkBatchSize)
             {
                 var count = Math.Min(BulkBatchSize, replacementArray.Length - offset);
-                var table = CreateTable(generationId, replacementArray.AsSpan(offset, count));
+                var table = CreateTable(activeGenerationId, replacementArray.AsSpan(offset, count));
                 using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.Default, sqlTransaction)
                 {
                     DestinationTableName = "[dbo].[BookNeighbors]",
@@ -81,7 +79,7 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
 
             var updated = await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
                 UPDATE [dbo].[RecommendationGenerations]
-                   SET [CurrentGenerationId] = {generationId},
+                   SET [CurrentGenerationId] = {activeGenerationId},
                        [BookCount] = {bookCount},
                        [ComputedAt] = {computedAt}
                  WHERE [Id] = 1
@@ -91,17 +89,19 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
                 throw new InvalidOperationException("The singleton recommendation generation row is missing.");
             }
 
+            int deleted;
+            do
+            {
+                deleted = await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"DELETE TOP (50000) FROM [dbo].[BookNeighbors] WHERE [GenerationId] <> {activeGenerationId}",
+                    cancellationToken);
+            }
+            while (deleted > 0);
+
             await transaction.CommitAsync(cancellationToken);
         }
 
-        int deleted;
-        do
-        {
-            deleted = await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                $"DELETE TOP (50000) FROM [dbo].[BookNeighbors] WHERE [GenerationId] <> {generationId}",
-                cancellationToken);
-        }
-        while (deleted > 0);
+        return activeGenerationId;
     }
 
     public async Task WriteGenerationAsync(
@@ -121,6 +121,7 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
         {
             var connection = (SqlConnection)dbContext.Database.GetDbConnection();
             var sqlTransaction = (SqlTransaction)transaction.GetDbTransaction();
+            await LockCurrentGenerationAsync(connection, sqlTransaction, cancellationToken);
 
             var rowArray = rows as BookNeighborRow[] ?? rows.ToArray();
             for (var offset = 0; offset < rowArray.Length; offset += BulkBatchSize)
@@ -151,14 +152,46 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
             await transaction.CommitAsync(cancellationToken);
         }
 
+        await PruneObsoleteGenerationsAsync(cancellationToken);
+    }
+
+    private async Task PruneObsoleteGenerationsAsync(CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var connection = (SqlConnection)dbContext.Database.GetDbConnection();
+        var sqlTransaction = (SqlTransaction)transaction.GetDbTransaction();
+        var activeGenerationId = await LockCurrentGenerationAsync(connection, sqlTransaction, cancellationToken)
+                                ?? throw new InvalidOperationException(
+                                    "The singleton recommendation generation has no active generation.");
         int deleted;
         do
         {
             deleted = await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                $"DELETE TOP (50000) FROM [dbo].[BookNeighbors] WHERE [GenerationId] <> {generationId}",
+                $"DELETE TOP (50000) FROM [dbo].[BookNeighbors] WHERE [GenerationId] <> {activeGenerationId}",
                 cancellationToken);
         }
         while (deleted > 0);
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private static async Task<Guid?> LockCurrentGenerationAsync(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("""
+            SELECT [CurrentGenerationId]
+              FROM [dbo].[RecommendationGenerations] WITH (UPDLOCK, HOLDLOCK)
+             WHERE [Id] = 1
+            """, connection, transaction);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        if (value is null)
+        {
+            throw new InvalidOperationException("The singleton recommendation generation row is missing.");
+        }
+
+        return value is DBNull ? null : (Guid)value;
     }
 
     private static DataTable CreateTable(Guid generationId, ReadOnlySpan<BookNeighborRow> rows)

@@ -63,6 +63,24 @@ public sealed class RecomputeBookNeighborsCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenRecomputingIncrementally_ReportsTheActiveGenerationId()
+    {
+        await using var fixture = await RecommendationProfileFixture.CreateAsync();
+        await fixture.AddEditionAsync(Edition("9782742793099", "Saga 1", series: "Saga", tome: 1), Now);
+        await fixture.AddEditionAsync(Edition("9782742765010", "Saga 2", series: "Saga", tome: 2), Now);
+        var embeddings = new CapturingEmbeddingService(_ => Vector(1f, 0f));
+        var writer = new CapturingNeighborWriter();
+        var handler = CreateHandler(fixture.Context, embeddings, writer, enabled: true);
+        var initial = await handler.Handle(new RecomputeBookNeighborsCommand(), CancellationToken.None);
+
+        var incremental = await handler.Handle(
+            new RecomputeBookNeighborsCommand(["9782742793099"]),
+            CancellationToken.None);
+
+        incremental.GenerationId.Should().Be(initial.GenerationId);
+    }
+
+    [Fact]
     public async Task Handle_ReembedsOnlyEditionsSharingAChangedWorkSummary()
     {
         await using var fixture = await RecommendationProfileFixture.CreateAsync();
@@ -222,5 +240,20 @@ internal sealed class CapturingNeighborWriter : IBookNeighborWriter
         BookCount = bookCount;
         Rows = rows.ToArray();
         return Task.CompletedTask;
+    }
+
+    public Task<Guid> WriteIncrementalGenerationAsync(
+        Guid generationId,
+        IReadOnlyCollection<string> replacedIsbns,
+        IReadOnlyCollection<BookNeighborRow> replacementRows,
+        int bookCount,
+        DateTime computedAt,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        GenerationId ??= generationId;
+        BookCount = bookCount;
+        Rows = replacementRows.ToArray();
+        return Task.FromResult(GenerationId.Value);
     }
 }

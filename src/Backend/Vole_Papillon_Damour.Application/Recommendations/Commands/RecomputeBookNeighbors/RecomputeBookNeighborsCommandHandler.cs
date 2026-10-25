@@ -203,7 +203,7 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         }
         else
         {
-            await neighborWriter.WriteIncrementalGenerationAsync(
+            generationId = await neighborWriter.WriteIncrementalGenerationAsync(
                 generationId,
                 neighborsByIsbn.Keys.ToArray(),
                 rows,
