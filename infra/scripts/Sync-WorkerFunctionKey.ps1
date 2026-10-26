@@ -20,8 +20,19 @@ function Invoke-AzCli {
     )
 
     $cliArguments = @($Arguments) + @('--subscription', $SubscriptionId)
-    $output = & rtk proxy az @cliArguments 2>$null
-    if ($LASTEXITCODE -ne 0) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # Windows PowerShell turns native stderr (including Azure CLI extension warnings)
+        # into PowerShell errors when ErrorActionPreference is Stop.
+        $ErrorActionPreference = 'Continue'
+        $output = & rtk proxy az @cliArguments 2>$null
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0) {
         if ($AllowFailure) {
             return $null
         }

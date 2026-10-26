@@ -364,7 +364,9 @@ var targetEnv = {
   tags: tags
 }
 var workerFunctionKeyVaultName = BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
-var workerFunctionKeyVaultUri = 'https://${workerFunctionKeyVaultName}.${environment().suffixes.keyvaultDns}'
+// Azure's Key Vault DNS suffix includes its leading dot (for example,
+// ".vault.azure.net"), so append it directly to avoid an invalid double dot.
+var workerFunctionKeyVaultUri = 'https://${workerFunctionKeyVaultName}${environment().suffixes.keyvaultDns}'
 var corsEnvVars = [for (origin, index) in corsAllowedOrigins: {
   name: 'Cors__AllowedOrigins__${index}'
   value: origin
