@@ -63,7 +63,11 @@ public sealed class BookGenre
                 appendSeparator = false;
             }
 
-            key.Append(Rune.ToUpperInvariant(rune).ToString());
+            // NFKD keeps the œ ligature intact, while the SQL column's CI_AI collation
+            // compares it with the expanded spelling. Keep the in-memory check aligned.
+            key.Append(rune.Value is 0x0152 or 0x0153
+                ? "OE"
+                : Rune.ToUpperInvariant(rune).ToString());
         }
 
         return key.ToString();
