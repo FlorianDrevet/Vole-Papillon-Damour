@@ -14,6 +14,9 @@ param name string
 @description('The principal ID to assign the role to')
 param principalId string
 
+@description('The principal type to assign the role to')
+param principalType string = 'ServicePrincipal'
+
 @description('The roles to assign to the principal')
 param roles RbacRoleType[]
 
@@ -27,7 +30,7 @@ resource roleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', role.id)
     principalId: principalId
-    principalType: 'ServicePrincipal'
+    principalType: principalType
     description: role.description
   }
 }]

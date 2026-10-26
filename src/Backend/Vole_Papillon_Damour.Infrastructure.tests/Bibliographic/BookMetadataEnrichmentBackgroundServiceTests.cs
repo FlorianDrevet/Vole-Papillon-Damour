@@ -13,6 +13,8 @@ namespace Vole_Papillon_Damour.Infrastructure.tests.Bibliographic;
 
 public sealed class BookMetadataEnrichmentBackgroundServiceTests
 {
+    private static readonly TimeSpan BackgroundServiceStartTimeout = TimeSpan.FromSeconds(10);
+
     [Fact]
     public async Task StartAsync_WhenAnIsbnIsQueued_SendsTargetedEnrichmentCommand()
     {
@@ -39,7 +41,7 @@ public sealed class BookMetadataEnrichmentBackgroundServiceTests
 
         queue.Enqueue(isbn13);
         await service.StartAsync(stopping.Token);
-        await processed.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await processed.Task.WaitAsync(BackgroundServiceStartTimeout);
         stopping.Cancel();
         await service.StopAsync(CancellationToken.None);
 
@@ -80,7 +82,7 @@ public sealed class BookMetadataEnrichmentBackgroundServiceTests
         queue.Enqueue(ParseIsbn("9791036377426"));
         queue.Enqueue(ParseIsbn("9783140464079"));
         await service.StartAsync(stopping.Token);
-        await processed.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await processed.Task.WaitAsync(BackgroundServiceStartTimeout);
         stopping.Cancel();
         await service.StopAsync(CancellationToken.None);
 

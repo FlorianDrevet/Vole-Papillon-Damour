@@ -7,7 +7,7 @@
 // Functions metadata or its single-revision behavior.
 // =======================================================================
 
-import { ContainerRuntimeConfig, ScalingConfig, EnvVar, KeyVaultSecretRef } from './types.bicep'
+import { ContainerRuntimeConfig, ScalingConfig, IngressConfig, EnvVar, KeyVaultSecretRef } from './types.bicep'
 
 @description('Azure region for the Function Container App')
 param location string
@@ -26,6 +26,9 @@ param containerRuntime ContainerRuntimeConfig
 
 @description('Scaling boundaries for the Function app')
 param scaling ScalingConfig
+
+@description('Ingress configuration for the Function app')
+param ingress IngressConfig
 
 @description('ACR login server')
 param acrLoginServer string
@@ -57,6 +60,12 @@ resource functionContainerApp 'Microsoft.App/containerApps@2025-07-01' = {
     managedEnvironmentId: containerAppEnvironmentId
     configuration: {
       activeRevisionsMode: 'Single'
+      ingress: ingress.enabled ? {
+        external: ingress.external
+        targetPort: ingress.targetPort
+        transport: ingress.transportMethod
+        allowInsecure: false
+      } : null
       registries: [
         {
           server: acrLoginServer
@@ -95,3 +104,4 @@ resource functionContainerApp 'Microsoft.App/containerApps@2025-07-01' = {
 }
 
 output containerAppResourceId string = functionContainerApp.id
+output containerAppFqdn string = functionContainerApp.properties.configuration.ingress.fqdn

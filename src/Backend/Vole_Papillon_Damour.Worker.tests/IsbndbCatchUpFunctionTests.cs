@@ -31,5 +31,22 @@ public sealed class IsbndbCatchUpFunctionTests
 
         trigger.AuthLevel.Should().Be(AuthorizationLevel.Function);
         trigger.Methods.Should().ContainSingle().Which.Should().Be("post");
+        method.GetParameters()
+            .SelectMany(parameter => parameter.GetCustomAttributes<DurableClientAttribute>())
+            .Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Manual_catch_up_orchestration_calls_an_activity()
+    {
+        var method = typeof(IsbndbCatchUpOrchestrationFunction).GetMethod(
+                nameof(IsbndbCatchUpOrchestrationFunction.Run))
+            ?? throw new InvalidOperationException("The ISBNdb catch-up orchestration was not found.");
+
+        method.GetCustomAttributes<FunctionAttribute>()
+            .Should().ContainSingle(attribute => attribute.Name == "IsbndbCatchUpOrchestration");
+        method.GetParameters()
+            .SelectMany(parameter => parameter.GetCustomAttributes<OrchestrationTriggerAttribute>())
+            .Should().ContainSingle();
     }
 }

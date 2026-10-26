@@ -91,6 +91,8 @@ param containerAppCatalogHealthProbes HealthProbeConfig
 param containerAppWorkerContainerRuntime ContainerRuntimeConfig
 @description('Value for scaling of the Functions worker Container App.')
 param containerAppWorkerScaling ScalingConfig
+@description('Value for ingress of the Functions worker Container App.')
+param containerAppWorkerIngress IngressConfig
 
 @description('Apex hostname bound to the Website Container App')
 param websiteCustomDomain string
@@ -145,6 +147,9 @@ param keyVaultSku KeyVaultSkuName
 
 @description('Enable purge protection on the Key Vault. Keep false outside production.')
 param keyVaultEnablePurgeProtection bool = false
+
+@description('Object ID of the operator who can provision and read the local Worker function invocation key.')
+param workerFunctionKeyOperatorPrincipalId string
 
 // -----------------------------------------------------------------------
 // SQL
@@ -434,6 +439,18 @@ module keyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
   params: {
     location: targetLocation
     name: BuildResourceName('vpd', 'kv', targetEnv)
+    tags: tags
+    sku: keyVaultSku
+    enablePurgeProtection: keyVaultEnablePurgeProtection
+  }
+}
+
+module workerFunctionKeyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
+  name: 'workerFunctionKeyVault'
+  scope: applicationResourceGroup
+  params: {
+    location: targetLocation
+    name: BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
     tags: tags
     sku: keyVaultSku
     enablePurgeProtection: keyVaultEnablePurgeProtection
@@ -1217,6 +1234,22 @@ module containerAppWorkerKeyVaultRoles './modules/KeyVault/keyvault.roleassignme
   ]
 }
 
+module workerFunctionKeyVaultOperatorRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
+  name: 'workerFunctionKeyVaultOperatorRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
+    principalId: workerFunctionKeyOperatorPrincipalId
+    principalType: 'User'
+    roles: [
+      RbacRoles.keyvault['Key Vault Secrets Officer']
+    ]
+  }
+  dependsOn: [
+    workerFunctionKeyVaultModule
+  ]
+}
+
 module containerAppWorkerApplicationInsightsRoles './modules/ApplicationInsights/applicationinsights.roleassignments.module.bicep' = {
   name: 'containerAppWorkerApplicationInsightsRoles'
   scope: applicationResourceGroup
@@ -1632,6 +1665,7 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
     containerImage: empty(workerImage) ? placeholderImage : workerImage
     containerRuntime: containerAppWorkerContainerRuntime
     scaling: containerAppWorkerScaling
+    ingress: containerAppWorkerIngress
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityWorkerModule.outputs.resourceId
@@ -1921,12 +1955,14 @@ output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', tar
 output scanContainerAppName string = BuildResourceName('vpd-scan', 'ca', targetEnv)
 output catalogContainerAppName string = BuildResourceName('vpd-catalog', 'ca', targetEnv)
 output workerContainerAppName string = BuildResourceName('vpd-worker', 'ca', targetEnv)
+output workerFunctionKeyVaultName string = BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
 
 output apiUrl string = 'https://${containerAppApiModule.outputs.containerAppFqdn}'
 output websiteUrl string = 'https://${containerAppWebsiteModule.outputs.containerAppFqdn}'
 output backOfficeUrl string = 'https://${containerAppBackOfficeModule.outputs.containerAppFqdn}'
 output scanUrl string = 'https://${containerAppScanModule.outputs.containerAppFqdn}'
 output catalogUrl string = 'https://${containerAppCatalogModule.outputs.containerAppFqdn}'
+output workerUrl string = 'https://${containerAppWorkerModule.outputs.containerAppFqdn}'
 
 output sqlServerName string = existingSqlServer.name
 output sqlServerFqdn string = existingSqlServer.properties.fullyQualifiedDomainName

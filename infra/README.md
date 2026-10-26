@@ -15,6 +15,7 @@ recrees ni deplaces.
 | Scan / Catalog / Worker | `vpd-scan-ca-dev-fc` / `vpd-catalog-ca-dev-fc` / `vpd-worker-ca-dev-fc` |
 | Storage Account | `vpdstdevfc` |
 | Key Vault | `vpd-kv-dev-fc` |
+| Worker invocation-key Key Vault | `vpd-worker-fn-kv-dev-fc` |
 | Log Analytics | `vpd-law-dev-fc` |
 | Application Insights | `vpd-<api,web,bo,scan,catalog,worker>-appi-dev-fc` |
 | Managed identities | `vpd-<api,web,bo,scan,catalog,worker>-id-dev-fc` |
@@ -215,9 +216,9 @@ C'est aussi l'endroit où activer une *required reviewer* si un déploiement doi
 
 ### 5. Vérifier les noms globalement uniques
 
-`vpdacrshared`, `vpd-kv-dev-fc`, `vpd-sql-dev` et `vpdstdevfc` sont les noms
-utilisés par la migration. L'ACR est déjà créé dans `rg-core-florian`; le serveur
-SQL existant reste `vpd-sql-dev`. Le stockage et Key Vault ont des noms globaux
+`vpdacrshared`, `vpd-kv-dev-fc`, `vpd-worker-fn-kv-dev-fc`, `vpd-sql-dev` et
+`vpdstdevfc` sont les noms utilisés par la migration. L'ACR est déjà créé dans
+`rg-core-florian`; le serveur SQL existant reste `vpd-sql-dev`. Le stockage et Key Vault ont des noms globaux
 et doivent être disponibles avant le déploiement.
 
 ### 6. Vérifier l'ACR partagé
@@ -323,10 +324,39 @@ Azure Container Apps. Son domaine canonique est
 technique de secours. La caméra est activée seulement après autorisation du site par
 Safari.
 
-Le worker est une Azure Function native sur Container Apps (`kind=functionapp`). Il
-utilise l'outbox SQL, le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault
-et l'identité managée dédiée. Pendant `P1-1`, sa cible est `minReplicas: 0`,
-`maxReplicas: 1` pendant la mesure du timer sur deux heures.
+Le worker est une Azure Function native sur Container Apps (`kind=functionapp`) avec
+ingress externe HTTPS sur le port `8080`. L'environnement ACA conserve le réseau managé
+externe sans VNet, NSG ni route de sortie personnalisée : ACA
+autorise déjà l'egress Internet nécessaire à ISBNdb, BnF et Azure. Aucun réglage egress
+par application n'est nécessaire dans cette configuration. Il utilise l'outbox SQL,
+le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault et l'identité managée
+dédiée. Pendant `P1-1`, sa cible reste `minReplicas: 0`, `maxReplicas: 1`.
+
+Le coffre `vpd-worker-fn-kv-dev-fc` est dédié à la clé cliente du rattrapage ISBNdb ; il
+ne contient aucun secret applicatif. L'opérateur de développement reçoit `Key Vault Secrets
+Officer` uniquement sur ce coffre. Après le déploiement de l'infrastructure et du nouvel artefact Worker, créer ou
+synchroniser la clé Functions dédiée et l'écrire localement avec des ACL Windows limitées
+à l'utilisateur et à SYSTEM :
+
+```powershell
+./infra/scripts/Sync-WorkerFunctionKey.ps1
+```
+
+Le script crée la clé Functions `local-runner` pour `IsbndbCatchUpManual`, la synchronise
+dans Key Vault et écrit le fichier hors dépôt
+`%LOCALAPPDATA%/VolePapillonDamour/secrets/worker-function.json`. Si nécessaire, il porte
+temporairement le minimum de réplicas à `1` pour gérer la clé, puis rétablit sa valeur.
+Ne pas committer ni copier le fichier dans le dépôt. Pour lancer le rattrapage :
+
+```powershell
+./infra/scripts/Invoke-WorkerIsbndbCatchUp.ps1
+```
+
+Ajouter `-Wait` pour suivre l'orchestration jusqu'à la fin. Les URL Durable contenant une
+clé de management ne sont jamais affichées. L'endpoint répond `202 Accepted` dès que
+l'orchestration est planifiée ; la durée du traitement ne dépend donc plus du délai de
+réponse HTTP ACA de 240 secondes. Le Worker permet jusqu'à 24 heures d'exécution pour ses
+fonctions d'arrière-plan.
 
 ### Lancer le rattrapage complet `Enrich`
 

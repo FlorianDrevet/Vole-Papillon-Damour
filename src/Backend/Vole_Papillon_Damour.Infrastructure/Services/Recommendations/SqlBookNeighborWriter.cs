@@ -57,12 +57,9 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
                 await keyCopy.WriteToServerAsync(keyTable, cancellationToken);
             }
 
-            await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
-                DELETE current
-                  FROM [dbo].[BookNeighbors] AS current
-                  INNER JOIN #ReplacedIsbns AS replaced ON replaced.[Isbn13] = current.[Isbn13]
-                 WHERE current.[GenerationId] = {activeGenerationId}
-                """, cancellationToken);
+            await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                BuildDeleteReplacedRowsSql(activeGenerationId),
+                cancellationToken);
 
             for (var offset = 0; offset < replacementArray.Length; offset += BulkBatchSize)
             {
@@ -103,6 +100,12 @@ public sealed class SqlBookNeighborWriter(ProjectDbContext dbContext) : IBookNei
 
         return activeGenerationId;
     }
+
+    internal static FormattableString BuildDeleteReplacedRowsSql(Guid activeGenerationId) => $"""
+        DELETE FROM [dbo].[BookNeighbors]
+         WHERE [GenerationId] = {activeGenerationId}
+           AND [Isbn13] IN (SELECT [Isbn13] FROM #ReplacedIsbns)
+        """;
 
     public async Task WriteGenerationAsync(
         Guid generationId,
