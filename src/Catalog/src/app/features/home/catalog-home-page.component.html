@@ -165,7 +165,7 @@
             </div>
           </section>
         }
-      } @else {
+      } @else if (fairsLoaded()) {
         <p class="empty-state">La prochaine bourse aux livres sera annoncée ici dès qu'une date sera confirmée.</p>
       }
     </div>
@@ -274,7 +274,7 @@
         </div>
         <a routerLink="/prochaines-dates">Plus d’infos <span aria-hidden="true">→</span></a>
       </aside>
-    } @else if (!loading()) {
+    } @else if (fairsLoaded()) {
       <p class="home-fair-teaser-empty page-width">La prochaine bourse aux livres sera annoncée prochainement.</p>
     }
   </section>
@@ -322,7 +322,7 @@
       <button type="button" class="text-link" (click)="showRare()">Voir la sélection <span aria-hidden="true">→</span></button>
     </div>
 
-    @if (loading()) {
+    @if (!rareLoaded()) {
       <vpd-loader
         class="page-width"
         variant="skeleton"
@@ -334,7 +334,7 @@
           <app-rare-book-card [book]="book"></app-rare-book-card>
         }
       </div>
-    } @else if (!loading()) {
+    } @else {
       <p class="empty-state page-width">Les livres rares seront signalés par les bénévoles au fil des tris.</p>
     }
   </section>

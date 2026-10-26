@@ -1,6 +1,8 @@
+using System.Data.Common;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
@@ -540,7 +542,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     public ScanBookTestDbContext Context { get; }
     public IBookAlertOutbox AlertOutbox { get; } = Substitute.For<IBookAlertOutbox>();
 
-    public static async Task<ScanBookFixture> CreateAsync()
+    public static async Task<ScanBookFixture> CreateAsync(DbCommandInterceptor? interceptor = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -548,9 +550,14 @@ internal sealed class ScanBookFixture : IAsyncDisposable
             "Latin1_General_100_CI_AI",
             (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
 
-        var options = new DbContextOptionsBuilder<ScanBookTestDbContext>()
-            .UseSqlite(connection)
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<ScanBookTestDbContext>()
+            .UseSqlite(connection);
+        if (interceptor is not null)
+        {
+            optionsBuilder.AddInterceptors(interceptor);
+        }
+
+        var options = optionsBuilder.Options;
         var context = new ScanBookTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
 
@@ -745,6 +752,23 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     }
 
     private DateTime _receivedAt = ScanBookCommandHandlerTests.ReceivedAt;
+}
+
+internal sealed class SqlCaptureInterceptor : DbCommandInterceptor
+{
+    public List<string> Commands { get; } = [];
+
+    public void Clear() => Commands.Clear();
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        Commands.Add(command.CommandText);
+        return ValueTask.FromResult(result);
+    }
 }
 
 internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbContext> options)

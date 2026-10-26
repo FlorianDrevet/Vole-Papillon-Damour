@@ -20,6 +20,37 @@ public sealed class GetAdminVolunteerStatisticsQueryHandlerTests
         new(2026, 9, 12, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task Handle_applies_the_requested_period_to_database_queries()
+    {
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminVolunteerStatisticsQueryHandler(fixture.Context, clock);
+        sqlCapture.Clear();
+
+        var result = await handler.Handle(
+            new GetAdminVolunteerStatisticsQuery(
+                new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 9, 12, 0, 0, 0, TimeSpan.Zero),
+                null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"ScanSessions\"", StringComparison.Ordinal) &&
+            command.Contains("\"StartedAt\" >=", StringComparison.Ordinal) &&
+            command.Contains("\"StartedAt\" <", StringComparison.Ordinal));
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"BookMovements\"", StringComparison.Ordinal) &&
+            command.Contains("\"OccurredAt\" >=", StringComparison.Ordinal) &&
+            command.Contains("\"OccurredAt\" <", StringComparison.Ordinal));
+        sqlCapture.Commands.Should().NotContain(command =>
+            command.Contains("FROM \"Books\"", StringComparison.Ordinal) ||
+            command.Contains("FROM \"User\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Handle_aggregates_the_team_and_nets_voided_sales()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

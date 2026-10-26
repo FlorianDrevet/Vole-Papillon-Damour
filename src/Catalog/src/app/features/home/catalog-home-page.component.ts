@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -57,6 +58,8 @@ export class CatalogHomePageComponent implements OnInit {
   heroGenreMenuOpen = false;
   heroGenreMenuActiveIndex = 0;
   loading = signal(true);
+  rareLoaded = signal(false);
+  fairsLoaded = signal(false);
   hasLoadError = signal(false);
   recent = signal<CatalogBook[]>([]);
   recentTotal = signal<number | null>(null);
@@ -79,7 +82,13 @@ export class CatalogHomePageComponent implements OnInit {
     private readonly changeDetector: ChangeDetectorRef,
     private readonly elementRef: ElementRef<HTMLElement>,
     public readonly consent: CookieConsentService,
-  ) {}
+  ) {
+    afterNextRender(() => {
+      if (!this.upcomingOnly()) {
+        this.loadSupplementaryHomeContent();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.upcomingOnly.set(this.route.snapshot.data['upcomingOnly'] === true);
@@ -108,24 +117,14 @@ export class CatalogHomePageComponent implements OnInit {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
-      rare: this.api.getPublicRareBooks({includeSold: false, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
-        this.hasLoadError.set(true);
-        return of(EMPTY_RARE);
-      })),
-      fairs: this.api.getUpcomingFairs().pipe(catchError(() => {
-        this.hasLoadError.set(true);
-        return of([] as CatalogFair[]);
-      })),
-    }).subscribe(({recent, catalog, rare, fairs}) => {
+    }).subscribe(({recent, catalog}) => {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
       this.recentHasMore.set(recent.hasMore);
       this.catalogTotal.set(catalog.totalCount);
       this.catalogHasMore.set(catalog.hasMore);
       this.catalogCountLoaded.set(catalog.books.length);
-      this.rare.set(rare.books);
       this.genres.set(recent.genres ?? []);
-      this.setFairs(fairs);
       this.loading.set(false);
     });
   }
@@ -392,11 +391,27 @@ export class CatalogHomePageComponent implements OnInit {
     });
   }
 
+  private loadSupplementaryHomeContent(): void {
+    this.api.getPublicRareBooks({includeSold: false, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
+      this.hasLoadError.set(true);
+      return of(EMPTY_RARE);
+    })).subscribe(rare => {
+      this.rare.set(rare.books);
+      this.rareLoaded.set(true);
+    });
+
+    this.api.getUpcomingFairs().pipe(catchError(() => {
+      this.hasLoadError.set(true);
+      return of([] as CatalogFair[]);
+    })).subscribe(fairs => this.setFairs(fairs));
+  }
+
   private setFairs(fairs: CatalogFair[]): void {
     const sortedFairs = [...fairs].sort((a, b) =>
       new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
     this.upcomingFairs.set(sortedFairs);
     this.nextFair.set(sortedFairs[0] ?? null);
+    this.fairsLoaded.set(true);
   }
 
   private openHeroGenreMenu(): void {
