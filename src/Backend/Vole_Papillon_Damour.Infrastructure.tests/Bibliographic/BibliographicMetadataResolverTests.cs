@@ -124,7 +124,10 @@ public sealed class BibliographicMetadataResolverTests
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
         result.Should().BeEquivalentTo(bnfMetadata with { Genre = "Jeunesse", Genres = ["Jeunesse"] });
-        await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+        await openLibrary.Received(1).FindAsync(
+            isbn13,
+            Arg.Any<CancellationToken>(),
+            includeBibliographicDetails: false);
     }
 
     [Fact]
@@ -172,7 +175,51 @@ public sealed class BibliographicMetadataResolverTests
         var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
 
         result.Should().BeEquivalentTo(bnfMetadata with { WorkId = "OL42W", Genres = ["Romans"] });
-        await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+        await openLibrary.Received(1).FindAsync(
+            isbn13,
+            Arg.Any<CancellationToken>(),
+            includeBibliographicDetails: false);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_WhenBibliographicDetailsAreRequested_ForwardsTheRequestToOpenLibrary()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF") with { Summary = null, PhysicalFormat = null, Language = null };
+        var openLibraryMetadata = CreateMetadata("OpenLibrary") with
+        {
+            Summary = "A young prince travels among planets and meets a pilot in the desert.",
+            PhysicalFormat = "Paperback",
+            Language = "fre"
+        };
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        var googleBooks = Substitute.For<IGoogleBooksClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>(), includeBibliographicDetails: true)
+            .Returns(openLibraryMetadata);
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            googleBooks,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(
+            isbn13,
+            CancellationToken.None,
+            includeBibliographicDetails: true);
+
+        result.Should().BeEquivalentTo(bnfMetadata with
+        {
+            Summary = openLibraryMetadata.Summary,
+            PhysicalFormat = openLibraryMetadata.PhysicalFormat,
+            Language = openLibraryMetadata.Language,
+            Genres = ["Romans"]
+        });
+        await openLibrary.Received(1).FindAsync(
+            isbn13,
+            Arg.Any<CancellationToken>(),
+            includeBibliographicDetails: true);
     }
 
     [Fact]

@@ -58,6 +58,76 @@ public sealed class OpenLibraryClientTests
     }
 
     [Fact]
+    public async Task FindAsync_WhenBibliographicDetailsAreNotRequested_SkipsEditionAndWorkLookups()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var requestedPaths = new List<string>();
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            requestedPaths.Add(path);
+            return path == "/search.json"
+                ? new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"numFound":1,"docs":[{"title":"Le Petit Prince","key":"/works/OL123W"}]}""")
+                }
+                : new HttpResponseMessage(HttpStatusCode.NotFound);
+        }));
+        var client = new OpenLibraryClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                OpenLibrarySearchEndpoint = "https://openlibrary.example.test/search.json"
+            }));
+
+        var result = await client.FindAsync(isbn13, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.WorkId.Should().Be("OL123W");
+        requestedPaths.Should().Equal("/search.json");
+    }
+
+    [Fact]
+    public async Task FindAsync_WhenBibliographicDetailsAreRequested_LoadsEditionAndWorkDetails()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var requestedPaths = new List<string>();
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            requestedPaths.Add(path);
+            var content = path switch
+            {
+                "/isbn/9782070363735.json" => """{"title":"Le Petit Prince","works":[{"key":"/works/OL123W"}],"physical_format":"Hardcover","languages":[{"key":"/languages/fre"}]}""",
+                "/works/OL123W.json" => """{"description":"A young prince travels among planets and meets a pilot in the desert."}""",
+                "/search.json" => """{"numFound":1,"docs":[{"title":"Le Petit Prince","key":"/works/OL123W"}]}""",
+                _ => "{}"
+            };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(content)
+            };
+        }));
+        var client = new OpenLibraryClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                OpenLibrarySearchEndpoint = "https://openlibrary.example.test/search.json"
+            }));
+
+        var result = await client.FindAsync(isbn13, CancellationToken.None, includeBibliographicDetails: true);
+
+        result.Should().NotBeNull();
+        result!.Summary.Should().Be("A young prince travels among planets and meets a pilot in the desert.");
+        result.PhysicalFormat.Should().Be("Hardcover");
+        result.Language.Should().Be("fre");
+        requestedPaths.Should().Equal(
+            "/isbn/9782070363735.json",
+            "/works/OL123W.json",
+            "/search.json");
+    }
+
+    [Fact]
     public async Task FindAsync_WhenCoverIdIsMissing_ReturnsMetadataWithoutACover()
     {
         Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();

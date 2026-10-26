@@ -53,7 +53,7 @@
 13. Use `.agents/skills/vpd-prod-backup/SKILL.md` for an explicitly requested local backup. The Azure resources named `rg-vpd-dev`, `vpd-sql-dev`, and `vpdstdevfc` are the user's production environment; do not treat them as disposable development resources.
 14. Open Library reference search can aggregate publishers across editions; values over the 200-character watchlist limit are omitted before follow. See `.github/memory/10-api-endpoints.md`.
 
-15. The Google Books key currently returns `API_KEY_INVALID`; the Worker-only BnF timeout fix is in PR #338. See .github/memory/14-scan-metadata-latency.md for the provider evidence and current enrichment run.
+15. Seven-day App Insights data shows metadata API p95 10.9 s; code inspection ties the main avoidable delay to unconditional Open Library edition/work lookups. The fix is in [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345), open and unmerged. Google Books separately returns `API_KEY_INVALID`; the Worker-only BnF timeout fix is in PR #338. See `.github/memory/14-scan-metadata-latency.md` for evidence and follow-up.
 16. ISBNdb is the primary notice source with BnF/Open Library/Google Books fallback; its quota, catch-up and public/admin flows are documented in .github/memory/15-isbndb-migration.md. Do not deploy before configuring `ISBNDB_API_KEY`.
 17. The 2026-10-25 Catalog latency investigation and fixes are recorded in `.github/memory/16-catalog-performance.md`; the deployed search endpoint still has an unattributed SQL long tail because Application Insights omits command text.
 

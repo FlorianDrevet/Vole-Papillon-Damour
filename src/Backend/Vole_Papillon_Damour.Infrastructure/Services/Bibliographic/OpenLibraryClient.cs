@@ -17,9 +17,12 @@ public sealed class OpenLibraryClient(
 
     public async Task<BookMetadataResult?> FindAsync(
         Isbn13 isbn13,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeBibliographicDetails = false)
     {
-        var edition = await ReadEditionDetailsAsync(isbn13, cancellationToken);
+        var edition = includeBibliographicDetails
+            ? await ReadEditionDetailsAsync(isbn13, cancellationToken)
+            : OpenLibraryEditionDetails.Empty;
         using var response = await httpClient.GetAsync(
             BuildRequestUri(isbn13),
             HttpCompletionOption.ResponseHeadersRead,
@@ -36,6 +39,11 @@ public sealed class OpenLibraryClient(
             documents.ValueKind != JsonValueKind.Array ||
             documents.GetArrayLength() == 0)
         {
+            if (!includeBibliographicDetails)
+            {
+                edition = await ReadEditionDetailsAsync(isbn13, cancellationToken);
+            }
+
             return edition.IsEmpty
                 ? null
                 : new BookMetadataResult(
@@ -59,6 +67,11 @@ public sealed class OpenLibraryClient(
         var workId = workKey?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true
             ? workKey["/works/".Length..]
             : null;
+        if (!includeBibliographicDetails && string.IsNullOrWhiteSpace(workId))
+        {
+            edition = await ReadEditionDetailsAsync(isbn13, cancellationToken);
+            workId = edition.WorkId;
+        }
         var genres = ReadStringValues(documentElement, "subject")
             .Concat(ReadStringValues(documentElement, "subject_facet"))
             .Distinct(StringComparer.OrdinalIgnoreCase)

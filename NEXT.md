@@ -18,6 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Préparer l'import progressif du CSV application : 155 fichiers de 50 ISBN maximum dans `C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50`. |
+| **Prochaine action** | Valider et fusionner la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345), lancer `Books runtime - deploy` avec `run_migrations: false`, puis vérifier les p95 et statuts provider dans App Insights. Ensuite, reprendre la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271), déployer Catalog, vérifier la file ISBN et importer les lots un par un. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-scan-metadata-provider-latency-20261025` |
+| **Dernière mise à jour** | 2026-10-25 — App Insights (7 jours) : `/books/{isbn13}/metadata` p95 10,932 s, max 15,497 s; `/scan/manual-requests/candidate` p95 10,910 s, max 15,419 s. Cause identifiée dans la résolution Open Library; correctif et suites backend validées dans la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345), ouverte et non fusionnée. SSR Catalog reste à instrumenter. Aucun changement Azure ni déploiement; voir l’enquête ci-dessous. |
+| **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
 | **Prochaine action** | Revoir la [PR #346](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/346) (CI en cours). Après validation et fusion de la PR, déployer `Books runtime - deploy` puis `Catalog - deploy` sans migration, et vérifier la page principale et les statistiques avec données réelles. Le long tail de `/catalog/search` reste à attribuer avec Query Store ou des timings par requête. Reprendre ensuite la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) puis continuer le chargement progressif du CSV. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-catalog-book-statistics-latency-20261025` |
 | **Dernière mise à jour** | 2026-10-25 — Enquête App Insights en lecture seule et PR #346 ouverte, non fusionnée : `/` p95 14,8 s/max 17,9 s, `/recherche` max 13,1 s, statistiques bénévoles max 5,82 s. Application 690/690, tests Catalog ciblés 101/101, builds API et Catalog réussis; suite Catalog 576/580 avec les quatre mêmes échecs déjà présents sur `origin/main`. CI GitHub en cours, aucun déploiement. Le 2026-10-22, la PR #321 a livré le verdict local immédiat et le chargement progressif des notices Scan. |
@@ -26,6 +30,59 @@
 | **Catalogue admin — pagination et recherche ISBN** | PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ouverte sur `fix/catalog-admin-list-lookup`; cinq fiches par page et résultat ISBN désormais visible. Aucun déploiement. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
+### Latence API et requêtes les plus longues — 2026-10-25
+
+Lecture seule d’Application Insights sur les sept derniers jours. Même si les ressources
+s’appellent `rg-vpd-dev` / `*-dev-fc`, la mémoire du projet indique qu’elles portent
+l’environnement de production.
+
+- `GET /books/{isbn13}/metadata` : 5 343 requêtes observées, p95 10,932 s, maximum
+  15,497 s, dont 1 293 en échec.
+- `GET /scan/manual-requests/candidate` : 5 322 observées, p95 10,910 s, maximum
+  15,419 s, dont 989 en échec.
+- SQL reste entre 2 et 42 ms sur les traces lentes; ce n’est pas leur cause. Une trace
+  metadata de 15,497 s contient une résolution bibliographique de 15,493 s. Les spans
+  Open Library expirent souvent après environ 10 s et ses requêtes HTTP atteignent le
+  délai configuré de 5 s; les expirations BnF durent environ 800 ms.
+- Cause identifiée dans le code et corroborée par ces spans : le chemin courant de scan
+  appelait `/isbn/{isbn}.json` (et parfois `/works/{id}.json`) avant `/search.json`, même
+  quand `includeBibliographicDetails` était faux. Ces appels Open Library étaient
+  séquentiels et chacun pouvait consommer son propre délai HTTP.
+
+Le correctif est dans la [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345),
+branche `fix/scan-metadata-provider-latency`, ouverte et non fusionnée : le client Open
+Library ne charge les détails édition/œuvre que pour l’enrichissement qui les demande; il
+conserve un recours édition si la recherche ne retourne aucun résultat ou aucun `WorkId`. Le
+candidat de demande manuelle évite toute résolution réseau s’il n’existe pas de demande
+active de portée œuvre et utilise la résolution ciblée du `WorkId`. L’enrichissement complet
+continue de demander les détails. Les tests Application (690) et Infrastructure (241)
+passent. Aucun changement Azure, rotation de clé ni déploiement.
+
+Autres observations à traiter séparément :
+
+- Catalog SSR `GET /` : 38 requêtes, p95 14,794 s, maximum 17,891 s. Les appels API directs
+  des traces durent environ 2,7–3,2 s et n’expliquent pas le reste; la cause n’est pas
+  confirmée. Ajouter des spans autour du rendu SSR et du chargement initial avant de choisir
+  une correction.
+- Worker `EnrichCatalogBatch` : lots d’arrière-plan de 50 livres, p95 environ 164–171 s,
+  maximum 179,8 s; ce n’est pas une requête interactive. Réévaluer taille de lot,
+  concurrence et reprises après le correctif API.
+- Google Books renvoie HTTP 400 sur les appels observés; le Worker a déjà reçu
+  `API_KEY_INVALID`. Vérifier l’activation de l’API Google Books et les restrictions de clé,
+  puis remplacer le secret Azure par une clé valide. La valeur du secret n’a pas été lue ni
+  modifiée.
+
+### Incident de démarrage de route ISBNdb — 2026-10-24
+
+Le 24 octobre, la révision API `vpd-api-ca-dev-fc--0000022` (`vpd-api:8f55d46`) a échoué
+au démarrage sur `DELETE /catalog/me/genre-favorites` : le paramètre
+`SetMemberGenreFavoriteRequest` devait être annoté `[FromBody]`. La correction et le test de
+construction d’endpoint ont été fusionnés par la [PR #341](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/341),
+branche `fix/isbndb-api-startup-route`.
+
+Au 25 octobre, la révision active est `vpd-api-ca-dev-fc--0000023` (`vpd-api:6b4418a`),
+créée le 24 octobre, contenant le commit de la PR #341 et recevant 100 % du trafic.
+L’enquête de latence ci-dessus est restée en lecture seule; aucun changement Azure n’a été fait.
 ### Latence du catalogue et des statistiques — 2026-10-25
 
 Les ressources Azure du groupe `rg-vpd-dev` et la base `vpd-sql-dev` sont les ressources de production selon MEMORY. Journaux consultés en lecture seule; aucune ressource, base ou configuration modifiée.
