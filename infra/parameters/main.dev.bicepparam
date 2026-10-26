@@ -19,8 +19,8 @@ param containerRegistryCiPrincipalId = readEnvironmentVariable('ACR_CI_PRINCIPAL
 // -----------------------------------------------------------------------
 // Container Apps
 // -----------------------------------------------------------------------
-// Every image listens on 8080: the API through ASPNETCORE_URLS, the Website
-// through the SSR server's PORT, the BackOffice through nginx.conf.
+// The API, Website and BackOffice listen on 8080 through their app server or
+// nginx configuration. The Functions Worker uses the base image's port 80.
 // All six apps use ACA's minimum Consumption allocation: 0.25 vCPU and 0.5 GiB.
 
 param containerAppApiContainerRuntime = {
@@ -202,7 +202,7 @@ param containerAppWorkerScaling = {
 }
 param containerAppWorkerIngress = {
   enabled: true
-  targetPort: 8080
+  targetPort: 80
   external: true
   transportMethod: 'auto'
 }
