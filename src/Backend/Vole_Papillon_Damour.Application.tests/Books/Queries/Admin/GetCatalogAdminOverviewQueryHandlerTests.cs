@@ -7,6 +7,8 @@ using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries.Admin;
 
@@ -55,6 +57,44 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         // Only 9783140464079 disagrees with its ledger (2 in stock, no movement).
         result.Value.InventoryDriftTitleCount.Should().Be(1);
         result.Value.InventoryDriftQuantity.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Handle_UsesFewerSqlRoundTripsForPeriodSummaries()
+    {
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
+        var previousPeriodBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var currentSession = await fixture.AddSessionAsync(ScanMode.AvailableNow, startedAt: Now.AddDays(-1));
+        currentSession.RecordScan(true, Now.AddDays(-1), Now.AddDays(-1));
+        currentSession.RecordScan(false, Now.AddDays(-1).AddMinutes(1), Now.AddDays(-1).AddMinutes(1));
+        var previousSession = await fixture.AddSessionAsync(ScanMode.AvailableNow, startedAt: Now.AddDays(-35));
+        previousSession.RecordScan(true, Now.AddDays(-34), Now.AddDays(-34));
+        AddMovement(fixture, previousPeriodBook, BookMovementType.DirectEntry, 2, Now.AddDays(-45));
+        AddMovement(fixture, previousPeriodBook, BookMovementType.Sale, -2, Now.AddDays(-35));
+        await fixture.Context.SaveChangesAsync();
+        fixture.AlertOutbox
+            .GetAdminPageAsync(default, default, default, default, default, default)
+            .ReturnsForAnyArgs(new BookAlertOutboxAdminPage([], 0, 1, 1));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock, fixture.AlertOutbox);
+        sqlCapture.Clear();
+
+        var result = await handler.Handle(
+            new GetCatalogAdminOverviewQuery(From: null, To: null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.CurrentPeriod.ScannedCount.Should().Be(2);
+        result.Value.CurrentPeriod.KeptCount.Should().Be(1);
+        result.Value.CurrentPeriod.RejectedCount.Should().Be(1);
+        result.Value.PreviousPeriod.ScannedCount.Should().Be(1);
+        result.Value.PreviousPeriod.KeptCount.Should().Be(1);
+        result.Value.PreviousPeriod.RejectedCount.Should().Be(0);
+        result.Value.PreviousPeriod.SoldQuantity.Should().Be(2);
+        result.Value.PreviousPeriod.SoldTitles.Should().Be(1);
+        sqlCapture.Commands.Should().HaveCount(13);
     }
 
     private static void AddMovement(

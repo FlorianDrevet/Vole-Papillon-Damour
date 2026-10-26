@@ -59,25 +59,28 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
         var canonicalBooks = dbContext.Books
             .AsNoTracking()
             .Where(book => book.RedirectedToIsbn13 == null);
-        var availableQuantity = await canonicalBooks.SumAsync(
-            book => book.QuantityAvailable,
-            cancellationToken);
-        var availableTitleCount = await canonicalBooks.CountAsync(
-            book => book.QuantityAvailable > 0,
-            cancellationToken);
-        var rareTitleCount = await canonicalBooks.CountAsync(
-            book => dbContext.RareBooks
-                .AsNoTracking()
-                .PublishedAvailable()
-                .Any(rareBook => rareBook.Isbn13 == book.Id),
-            cancellationToken);
-        var metadataToReviewCount = await canonicalBooks.CountAsync(
-            book => book.MetadataStatus == BookMetadataStatus.Pending ||
+        var bookSummary = await canonicalBooks
+            .GroupBy(_ => 1)
+            .Select(books => new
+            {
+                AvailableQuantity = books.Sum(book => book.QuantityAvailable),
+                AvailableTitleCount = books.Count(book => book.QuantityAvailable > 0),
+                RareTitleCount = books.Count(book => dbContext.RareBooks
+                    .AsNoTracking()
+                    .PublishedAvailable()
+                    .Any(rareBook => rareBook.Isbn13 == book.Id)),
+                MetadataToReviewCount = books.Count(book =>
+                    book.MetadataStatus == BookMetadataStatus.Pending ||
                     book.MetadataStatus == BookMetadataStatus.NotFound ||
                     book.MetadataStatus == BookMetadataStatus.Failed ||
                     book.Title == null ||
-                    book.Title.Trim() == string.Empty,
-            cancellationToken);
+                    book.Title.Trim() == string.Empty),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        var availableQuantity = bookSummary?.AvailableQuantity ?? 0;
+        var availableTitleCount = bookSummary?.AvailableTitleCount ?? 0;
+        var rareTitleCount = bookSummary?.RareTitleCount ?? 0;
+        var metadataToReviewCount = bookSummary?.MetadataToReviewCount ?? 0;
         var isbndbAbsentToCompleteCount = await dbContext.Books.AsNoTracking().CountAsync(
             book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null,
             cancellationToken);
@@ -187,15 +190,32 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 movement.Type == BookMovementType.Sale &&
                 movement.OccurredAt >= from &&
                 movement.OccurredAt < to);
+        var sessionMetrics = await sessions
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                ScannedCount = group.Sum(session => session.ScannedCount),
+                KeptCount = group.Sum(session => session.KeptCount),
+                RejectedCount = group.Sum(session => session.RejectedCount),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        var salesMetrics = await sales
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                SoldQuantity = group.Sum(movement => Math.Abs(movement.Quantity)),
+                SoldTitleCount = group.Select(movement => movement.Isbn13).Distinct().Count(),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
         return new AdminPeriodMetricsResult(
             new DateTimeOffset(from, TimeSpan.Zero),
             new DateTimeOffset(to, TimeSpan.Zero),
-            await sessions.SumAsync(session => session.ScannedCount, cancellationToken),
-            await sessions.SumAsync(session => session.KeptCount, cancellationToken),
-            await sessions.SumAsync(session => session.RejectedCount, cancellationToken),
-            await sales.SumAsync(movement => Math.Abs(movement.Quantity), cancellationToken),
-            await sales.Select(movement => movement.Isbn13).Distinct().CountAsync(cancellationToken));
+            sessionMetrics?.ScannedCount ?? 0,
+            sessionMetrics?.KeptCount ?? 0,
+            sessionMetrics?.RejectedCount ?? 0,
+            salesMetrics?.SoldQuantity ?? 0,
+            salesMetrics?.SoldTitleCount ?? 0);
     }
 
     private async Task<AdminFairSummaryResult?> BuildLastFairSummaryAsync(

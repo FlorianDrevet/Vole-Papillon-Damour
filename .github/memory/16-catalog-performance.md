@@ -67,3 +67,25 @@ sustained saturation or prove a correlation with the slow queries.
   Then decide whether the public genre-facet aggregation should be cached or computed
   separately, and whether the SQL tier needs more capacity. Do not scale production based
   on one hourly maximum alone.
+
+## BackOffice administration overview latency — 2026-10-26
+
+Read-only Application Insights queries against `vpd-api-appi-dev-fc` observed five
+`GET /books/admin/overview` requests on 2026-10-26: p50 4.274 s, p95/max 7.191 s,
+with no failures. This is a small one-day sample. Four correlated requests each had 21
+SQL dependencies; their total dependency duration was 2.94–4.26 s within 2.96–4.65 s
+HTTP requests. The Application Insights browser component for BackOffice returned no
+page views or browser dependencies in the prior 30 days, so end-to-end screen readiness
+is not measured and the reason for missing client telemetry remains unconfirmed.
+
+The default admin Actualités page calls `GET /actuality/all`; two observed API calls
+had a 6 ms p95 and no failures. The slow data path is the separate Catalog
+administration overview. Its S0 SQL database (10 DTU) was online; during two five-minute
+intervals around the observed requests, average DTU was 6.5% and 9.5%, with maxima of
+47% and 46%. This does not show sustained database saturation.
+
+The targeted optimization groups four book counters into one aggregate query and groups
+each current/previous period summary from five SQL commands into two. The SQLite command
+counter regression measured 22 commands before and 13 after (41% fewer); Application
+tests pass 698/698. No Azure resource, database or deployment was changed. Recheck
+production latency after merging and deploying the API.
