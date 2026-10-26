@@ -194,10 +194,11 @@ param containerAppWorkerContainerRuntime = {
   cpuCores: '0.25'
   memoryGi: '0.5Gi'
 }
-// P1-1 measures whether a timer-triggered Function wakes correctly with no
-// warm host. Keep one maximum replica while observing the production timer.
+// This Worker is deployed as a Container App without trigger-specific scale
+// rules. Keep one replica available so queue, Durable, and timer triggers keep
+// processing when HTTP ingress is idle.
 param containerAppWorkerScaling = {
-  minReplicas: 0
+  minReplicas: 1
   maxReplicas: 1
 }
 param containerAppWorkerIngress = {
