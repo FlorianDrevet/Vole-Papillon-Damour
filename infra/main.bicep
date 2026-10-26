@@ -363,6 +363,8 @@ var targetEnv = {
   location: targetLocation
   tags: tags
 }
+var workerFunctionKeyVaultName = BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
+var workerFunctionKeyVaultUri = 'https://${workerFunctionKeyVaultName}.${environment().suffixes.keyvaultDns}'
 var corsEnvVars = [for (origin, index) in corsAllowedOrigins: {
   name: 'Cors__AllowedOrigins__${index}'
   value: origin
@@ -450,7 +452,7 @@ module workerFunctionKeyVaultModule './modules/KeyVault/keyVault.module.bicep' =
   scope: applicationResourceGroup
   params: {
     location: targetLocation
-    name: BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
+    name: workerFunctionKeyVaultName
     tags: tags
     sku: keyVaultSku
     enablePurgeProtection: keyVaultEnablePurgeProtection
@@ -1238,9 +1240,24 @@ module workerFunctionKeyVaultOperatorRoles './modules/KeyVault/keyvault.roleassi
   name: 'workerFunctionKeyVaultOperatorRoles'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-worker-fn', 'kv', targetEnv)
+    name: workerFunctionKeyVaultName
     principalId: workerFunctionKeyOperatorPrincipalId
     principalType: 'User'
+    roles: [
+      RbacRoles.keyvault['Key Vault Secrets Officer']
+    ]
+  }
+  dependsOn: [
+    workerFunctionKeyVaultModule
+  ]
+}
+
+module containerAppWorkerFunctionKeyVaultRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
+  name: 'containerAppWorkerFunctionKeyVaultRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: workerFunctionKeyVaultName
+    principalId: userAssignedIdentityWorkerModule.outputs.principalId
     roles: [
       RbacRoles.keyvault['Key Vault Secrets Officer']
     ]
@@ -1755,7 +1772,15 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       }
       {
         name: 'AzureWebJobsSecretStorageType'
-        value: 'containerapps'
+        value: 'keyvault'
+      }
+      {
+        name: 'AzureWebJobsSecretStorageKeyVaultUri'
+        value: workerFunctionKeyVaultUri
+      }
+      {
+        name: 'AzureWebJobsSecretStorageKeyVaultClientId'
+        value: userAssignedIdentityWorkerModule.outputs.clientId
       }
       {
         name: 'ConnectionStrings__ProjectDatabase'
@@ -1911,6 +1936,7 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
   dependsOn: [
     containerAppWorkerAcrRoles
     containerAppWorkerKeyVaultRoles
+    containerAppWorkerFunctionKeyVaultRoles
     containerAppWorkerApplicationInsightsRoles
   ]
 }

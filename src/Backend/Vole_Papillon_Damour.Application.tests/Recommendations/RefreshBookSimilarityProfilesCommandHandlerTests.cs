@@ -55,6 +55,23 @@ public sealed class RefreshBookSimilarityProfilesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenIsbnIsSpecified_FiltersBooksInSql()
+    {
+        await using var fixture = await RecommendationProfileFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", Now.AddDays(-1));
+        await fixture.AddBookAsync("9783140464079", Now.AddDays(-1));
+        var reader = new CapturingNoticeReader(_ => Edition("9782070363735"));
+        var handler = CreateHandler(fixture.Context, reader, enabled: true);
+
+        var result = await handler.Handle(
+            new RefreshBookSimilarityProfilesCommand("9782070363735"),
+            CancellationToken.None);
+
+        result.Should().Be(new RefreshBookSimilarityProfilesResult(1, 1, 0));
+        reader.Calls.Should().Equal("9782070363735");
+    }
+
+    [Fact]
     public async Task Handle_RefreshesProfilesOlderThanNinetyDaysOrTheirBook()
     {
         await using var fixture = await RecommendationProfileFixture.CreateAsync();
@@ -245,6 +262,7 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
@@ -255,6 +273,7 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => Books;
+    DbSet<BookRecommendationJob> IProjectDbContext.BookRecommendationJobs => BookRecommendationJobs;
     DbSet<BookIsbndbRecord> IProjectDbContext.BookIsbndbRecords => BookIsbndbRecords;
     DbSet<BookNeighbor> IProjectDbContext.BookNeighbors => BookNeighbors;
     DbSet<RecommendationGeneration> IProjectDbContext.RecommendationGenerations => RecommendationGenerations;
@@ -302,6 +321,7 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
             .ValueGeneratedNever()
             .IsConcurrencyToken(false);
         modelBuilder.ApplyConfiguration(new BookSimilarityProfileConfiguration());
+        modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
         modelBuilder.ApplyConfiguration(new BookNeighborConfiguration());
         modelBuilder.ApplyConfiguration(new RecommendationGenerationConfiguration());
         modelBuilder.Entity<BookSimilarityProfile>().Property(profile => profile.NoticeJson).HasColumnType("TEXT");

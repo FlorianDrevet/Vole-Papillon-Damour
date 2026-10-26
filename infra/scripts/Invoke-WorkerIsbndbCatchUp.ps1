@@ -26,13 +26,36 @@ if ($response.id -and $response.statusQueryGetUri) {
         return
     }
 
+    if ([string]::IsNullOrWhiteSpace($credential.keyVaultName)) {
+        throw 'The local Worker credential does not identify the dedicated Key Vault needed to read Durable status.'
+    }
+
+    $systemKeyOutput = & rtk proxy az keyvault secret show `
+        --vault-name $credential.keyVaultName `
+        --name 'host--systemKey--durabletask-095extension' `
+        --query value `
+        --output tsv 2>$null
+    $systemKeyExitCode = $LASTEXITCODE
+    $systemKey = ($systemKeyOutput -join [Environment]::NewLine).Trim()
+    if ($systemKeyExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($systemKey)) {
+        throw 'Could not read the Durable system key from the Worker Key Vault. Sign in to Azure and verify Key Vault access.'
+    }
+
+    $endpointUri = [Uri] $credential.endpoint
+    $statusUri = [UriBuilder]::new($endpointUri)
+    $statusUri.Scheme = 'https'
+    $statusUri.Port = -1
+    $statusUri.Path = '/runtime/webhooks/durabletask/instances/{0}' -f [Uri]::EscapeDataString([string] $response.id)
+    $statusUri.Query = ''
+    $statusHeaders = @{ 'x-functions-key' = $systemKey }
+
     do {
         Start-Sleep -Seconds 10
         try {
-            $status = Invoke-RestMethod -Uri $response.statusQueryGetUri -Method Get -TimeoutSec 60
+            $status = Invoke-RestMethod -Uri $statusUri.Uri -Headers $statusHeaders -Method Get -TimeoutSec 60
         }
         catch {
-            throw "Could not read Durable status for instance '$($response.id)'. The status URL contains a management key and has been withheld. Check Worker telemetry."
+            throw "Could not read Durable status for instance '$($response.id)'. The management URL and key have been withheld. Check the Worker Key Vault and telemetry."
         }
     } while ($status.runtimeStatus -in @('Pending', 'Running', 'ContinuedAsNew'))
 

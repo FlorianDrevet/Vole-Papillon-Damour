@@ -38,7 +38,12 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
             .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
         if (request.Isbn13 is { } requestedIsbn13)
         {
-            bookQuery = bookQuery.Where(book => book.Id.Value == requestedIsbn13);
+            if (!Isbn13.TryCreate(requestedIsbn13, out var isbn13))
+            {
+                return new RefreshBookSimilarityProfilesResult(0, 0, 0);
+            }
+
+            bookQuery = bookQuery.Where(book => book.Id == isbn13);
         }
 
         var books = await bookQuery
