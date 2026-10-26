@@ -19,13 +19,12 @@ public interface IBookNeighborWriter
         DateTime computedAt,
         CancellationToken cancellationToken);
 
-    /// <summary>Writes changed neighbor lists while copying untouched rows from the current generation.</summary>
-    Task WriteIncrementalGenerationAsync(
+    /// <summary>Atomically replaces changed neighbor lists and returns the active generation identifier.</summary>
+    Task<Guid> WriteIncrementalGenerationAsync(
         Guid generationId,
         IReadOnlyCollection<string> replacedIsbns,
         IReadOnlyCollection<BookNeighborRow> replacementRows,
         int bookCount,
         DateTime computedAt,
-        CancellationToken cancellationToken) =>
-        WriteGenerationAsync(generationId, replacementRows, bookCount, computedAt, cancellationToken);
+        CancellationToken cancellationToken);
 }

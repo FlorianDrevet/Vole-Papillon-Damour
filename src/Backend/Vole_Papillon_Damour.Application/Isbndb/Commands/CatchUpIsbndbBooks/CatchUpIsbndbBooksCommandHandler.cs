@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate;
@@ -17,10 +18,13 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
     IIsbndbLookupService lookupService,
     IBibliographicMetadataResolver metadataResolver,
     IDateTimeProvider dateTimeProvider,
-    IBookRecommendationWorkQueue? recommendationWorkQueue = null)
+    IBookRecommendationWorkQueue? recommendationWorkQueue = null,
+    IRecommendationSettings? recommendationSettings = null,
+    ILogger<CatchUpIsbndbBooksCommandHandler>? logger = null)
     : IRequestHandler<CatchUpIsbndbBooksCommand, CatchUpIsbndbBooksResult>
 {
     private const int MaximumBulkSize = 100;
+    private const int MaximumConcurrencyRetries = 2;
     private const int WorkKeyBatchSize = 500;
 
     public async Task<CatchUpIsbndbBooksResult> Handle(
@@ -87,28 +91,30 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 stopReason,
                 cancellationToken);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
         {
-            await FinishRunAsync(
+            await FinishRunAfterFailureAsync(
                 run,
                 startedAt,
                 filled,
                 absent,
                 rechecked,
                 IsbndbCatchUpStopReason.Cancelled,
-                CancellationToken.None);
+                CancellationToken.None,
+                exception);
             throw;
         }
-        catch
+        catch (Exception exception)
         {
-            await FinishRunAsync(
+            await FinishRunAfterFailureAsync(
                 run,
                 startedAt,
                 filled,
                 absent,
                 rechecked,
                 IsbndbCatchUpStopReason.Unavailable,
-                CancellationToken.None);
+                CancellationToken.None,
+                exception);
             throw;
         }
     }
@@ -156,77 +162,96 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 candidateIds,
                 IsbndbUsage.CatchUp,
                 cancellationToken);
-            var books = await LoadBooksAsync(candidateIds, cancellationToken);
-            var existingRecordIds = await dbContext.BookIsbndbRecords
-                .AsNoTracking()
-                .Where(record => candidateIds.Contains(record.Isbn13))
-                .Select(record => record.Isbn13)
-                .ToHashSetAsync(cancellationToken);
-            var queueItems = new List<BookRecommendationQueueItem>();
-            var pageCounts = new PageCounts();
-            var stopReason = (IsbndbCatchUpStopReason?)null;
-
-            foreach (var isbn13 in candidateIds)
+            for (var attempt = 0; ; attempt++)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!lookups.TryGetValue(isbn13, out var lookup))
-                {
-                    stopReason ??= IsbndbCatchUpStopReason.Unavailable;
-                    continue;
-                }
+                var books = await LoadBooksAsync(candidateIds, cancellationToken);
+                var existingRecordIds = await dbContext.BookIsbndbRecords
+                    .AsNoTracking()
+                    .Where(record => candidateIds.Contains(record.Isbn13))
+                    .Select(record => record.Isbn13)
+                    .ToHashSetAsync(cancellationToken);
+                var queueItems = new List<BookRecommendationQueueItem>();
+                var pageCounts = new PageCounts();
+                var stopReason = (IsbndbCatchUpStopReason?)null;
 
-                if (lookup is IsbndbLookup.QuotaExhausted)
+                foreach (var isbn13 in candidateIds)
                 {
-                    stopReason = IsbndbCatchUpStopReason.QuotaExhausted;
-                    continue;
-                }
-
-                if (lookup is IsbndbLookup.Unavailable)
-                {
-                    stopReason ??= IsbndbCatchUpStopReason.Unavailable;
-                    continue;
-                }
-
-                if (!books.TryGetValue(isbn13, out var book))
-                {
-                    continue;
-                }
-
-                if (lookup is IsbndbLookup.NotFound)
-                {
-                    book.MarkAbsentFromIsbndb(GetUtcNow());
-                    pageCounts.Absent++;
-                    await RequestRecommendationAsync(book, queueItems, cancellationToken);
-                    continue;
-                }
-
-                if (lookup is IsbndbLookup.Found found)
-                {
-                    try
-                    {
-                        await ApplyIsbndbNoticeAsync(
-                            book,
-                            found.Book,
-                            existingRecordIds.Contains(isbn13),
-                            queueItems,
-                            cancellationToken);
-                        pageCounts.Filled++;
-                    }
-                    catch (ArgumentException)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!lookups.TryGetValue(isbn13, out var lookup))
                     {
                         stopReason ??= IsbndbCatchUpStopReason.Unavailable;
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.QuotaExhausted)
+                    {
+                        stopReason = IsbndbCatchUpStopReason.QuotaExhausted;
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.Unavailable)
+                    {
+                        stopReason ??= IsbndbCatchUpStopReason.Unavailable;
+                        continue;
+                    }
+
+                    if (!books.TryGetValue(isbn13, out var book))
+                    {
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.NotFound)
+                    {
+                        book.MarkAbsentFromIsbndb(GetUtcNow());
+                        pageCounts.Absent++;
+                        await RequestRecommendationAsync(book, queueItems, cancellationToken);
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.Found found)
+                    {
+                        try
+                        {
+                            await ApplyIsbndbNoticeAsync(
+                                book,
+                                found.Book,
+                                existingRecordIds.Contains(isbn13),
+                                queueItems,
+                                cancellationToken);
+                            pageCounts.Filled++;
+                        }
+                        catch (ArgumentException)
+                        {
+                            stopReason ??= IsbndbCatchUpStopReason.Unavailable;
+                        }
                     }
                 }
-            }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await EnqueueRecommendationsAsync(queueItems, cancellationToken);
-            addFilled(pageCounts);
-            addAbsent(pageCounts);
+                try
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateConcurrencyException exception) when (attempt < MaximumConcurrencyRetries)
+                {
+                    logger?.LogWarning(
+                        exception,
+                        "ISBNdb catch-up page save hit a concurrent update; retrying page {Attempt} of {MaximumAttempts} without repeating ISBNdb lookups.",
+                        attempt + 1,
+                        MaximumConcurrencyRetries);
+                    DiscardPendingChangesExcept(null);
+                    continue;
+                }
 
-            if (stopReason is not null)
-            {
-                return stopReason;
+                addFilled(pageCounts);
+                addAbsent(pageCounts);
+                await EnqueueRecommendationsAsync(queueItems, cancellationToken);
+
+                if (stopReason is not null)
+                {
+                    return stopReason;
+                }
+
+                break;
             }
         }
     }
@@ -248,73 +273,101 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 return null;
             }
 
-            var books = await LoadBooksAsync(staleIds, cancellationToken);
-            var existingRecordIds = await dbContext.BookIsbndbRecords
-                .AsNoTracking()
-                .Where(record => staleIds.Contains(record.Isbn13))
-                .Select(record => record.Isbn13)
-                .ToHashSetAsync(cancellationToken);
-            var queueItems = new List<BookRecommendationQueueItem>();
-            var pageCounts = new PageCounts();
-            var stopReason = (IsbndbCatchUpStopReason?)null;
-
-            foreach (var isbn13 in staleIds)
+            var lookups = new Dictionary<Isbn13, IsbndbLookup>();
+            for (var attempt = 0; ; attempt++)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var lookup = await lookupService.LookupAsync(isbn13, IsbndbUsage.CatchUp, cancellationToken);
-                if (lookup is IsbndbLookup.QuotaExhausted)
-                {
-                    stopReason = IsbndbCatchUpStopReason.QuotaExhausted;
-                    break;
-                }
+                var books = await LoadBooksAsync(staleIds, cancellationToken);
+                var existingRecordIds = await dbContext.BookIsbndbRecords
+                    .AsNoTracking()
+                    .Where(record => staleIds.Contains(record.Isbn13))
+                    .Select(record => record.Isbn13)
+                    .ToHashSetAsync(cancellationToken);
+                var queueItems = new List<BookRecommendationQueueItem>();
+                var pageCounts = new PageCounts();
+                var stopReason = (IsbndbCatchUpStopReason?)null;
 
-                if (lookup is IsbndbLookup.Unavailable)
+                foreach (var isbn13 in staleIds)
                 {
-                    stopReason = IsbndbCatchUpStopReason.Unavailable;
-                    break;
-                }
-
-                if (!books.TryGetValue(isbn13, out var book))
-                {
-                    continue;
-                }
-
-                if (lookup is IsbndbLookup.NotFound)
-                {
-                    book.RecordIsbndbCheck(GetUtcNow());
-                    pageCounts.Rechecked++;
-                    continue;
-                }
-
-                if (lookup is IsbndbLookup.Found found)
-                {
-                    try
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!lookups.TryGetValue(isbn13, out var lookup))
                     {
-                        await ApplyIsbndbNoticeAsync(
-                            book,
-                            found.Book,
-                            existingRecordIds.Contains(isbn13),
-                            queueItems,
+                        lookup = await lookupService.LookupAsync(
+                            isbn13,
+                            IsbndbUsage.CatchUp,
                             cancellationToken);
-                        pageCounts.Filled++;
-                        pageCounts.Rechecked++;
+                        lookups.Add(isbn13, lookup);
                     }
-                    catch (ArgumentException)
+
+                    if (lookup is IsbndbLookup.QuotaExhausted)
+                    {
+                        stopReason = IsbndbCatchUpStopReason.QuotaExhausted;
+                        break;
+                    }
+
+                    if (lookup is IsbndbLookup.Unavailable)
                     {
                         stopReason = IsbndbCatchUpStopReason.Unavailable;
                         break;
                     }
+
+                    if (!books.TryGetValue(isbn13, out var book))
+                    {
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.NotFound)
+                    {
+                        book.RecordIsbndbCheck(GetUtcNow());
+                        pageCounts.Rechecked++;
+                        continue;
+                    }
+
+                    if (lookup is IsbndbLookup.Found found)
+                    {
+                        try
+                        {
+                            await ApplyIsbndbNoticeAsync(
+                                book,
+                                found.Book,
+                                existingRecordIds.Contains(isbn13),
+                                queueItems,
+                                cancellationToken);
+                            pageCounts.Filled++;
+                            pageCounts.Rechecked++;
+                        }
+                        catch (ArgumentException)
+                        {
+                            stopReason = IsbndbCatchUpStopReason.Unavailable;
+                            break;
+                        }
+                    }
                 }
-            }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await EnqueueRecommendationsAsync(queueItems, cancellationToken);
-            addFilled(pageCounts);
-            addRechecked(pageCounts);
+                try
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateConcurrencyException exception) when (attempt < MaximumConcurrencyRetries)
+                {
+                    logger?.LogWarning(
+                        exception,
+                        "ISBNdb absent-book recheck save hit a concurrent update; retrying page {Attempt} of {MaximumAttempts} without repeating ISBNdb lookups.",
+                        attempt + 1,
+                        MaximumConcurrencyRetries);
+                    DiscardPendingChangesExcept(null);
+                    continue;
+                }
 
-            if (stopReason is not null)
-            {
-                return stopReason;
+                addFilled(pageCounts);
+                addRechecked(pageCounts);
+                await EnqueueRecommendationsAsync(queueItems, cancellationToken);
+
+                if (stopReason is not null)
+                {
+                    return stopReason;
+                }
+
+                break;
             }
         }
     }
@@ -380,14 +433,20 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
         ICollection<BookRecommendationQueueItem> queueItems,
         CancellationToken cancellationToken)
     {
-        if (recommendationWorkQueue is null)
+        if (recommendationWorkQueue is null || recommendationSettings is { Enabled: false })
         {
             return;
         }
 
         var job = await dbContext.BookRecommendationJobs
             .SingleOrDefaultAsync(candidate => candidate.Isbn13 == book.Id.Value, cancellationToken);
-        if (job is not null && job.Request(GetUtcNow(), force: true))
+        if (job is null)
+        {
+            job = BookRecommendationJob.Create(book.Id.Value);
+            dbContext.BookRecommendationJobs.Add(job);
+        }
+
+        if (job.Request(GetUtcNow(), force: true))
         {
             queueItems.Add(new BookRecommendationQueueItem(job.Isbn13, job.RequestVersion));
         }
@@ -491,6 +550,48 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
         run.Finish(GetUtcNow(), filled, absent, rechecked, remaining, stopReason);
         await dbContext.SaveChangesAsync(cancellationToken);
         return new CatchUpIsbndbBooksResult(run.Id, filled, absent, rechecked, remaining, stopReason);
+    }
+
+    private async Task FinishRunAfterFailureAsync(
+        IsbndbCatchUpRun? run,
+        DateTime startedAt,
+        int filled,
+        int absent,
+        int rechecked,
+        IsbndbCatchUpStopReason stopReason,
+        CancellationToken cancellationToken,
+        Exception originalException)
+    {
+        DiscardPendingChangesExcept(run);
+        try
+        {
+            await FinishRunAsync(
+                run,
+                startedAt,
+                filled,
+                absent,
+                rechecked,
+                stopReason,
+                cancellationToken);
+        }
+        catch (Exception finishException)
+        {
+            logger?.LogError(
+                finishException,
+                "Failed to persist ISBNdb catch-up run status after {OriginalExceptionType}.",
+                originalException.GetType().Name);
+        }
+    }
+
+    private void DiscardPendingChangesExcept(IsbndbCatchUpRun? run)
+    {
+        foreach (var entry in dbContext.ChangeTracker.Entries()
+                     .Where(entry => !ReferenceEquals(entry.Entity, run) &&
+                                     entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+                     .ToArray())
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private DateTime GetUtcNow()
