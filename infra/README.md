@@ -331,8 +331,9 @@ Functions écoute par défaut sur `80`; le `targetPort` ACA, les sondes par déf
 conserve le réseau managé externe sans VNet, NSG ni route de sortie personnalisée : ACA
 autorise déjà l'egress Internet nécessaire à ISBNdb, BnF et Azure. Aucun réglage egress
 par application n'est nécessaire dans cette configuration. Il utilise l'outbox SQL,
-le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault et l'identité managée
-dédiée. Pendant `P1-1`, sa cible reste `minReplicas: 0`, `maxReplicas: 1`.
+le stockage Azure pour `AzureWebJobsStorage` et `containerapps` comme backend des clés
+Functions (`AzureWebJobsSecretStorageType`), ainsi que les secrets Key Vault et l'identité
+managée dédiée. Pendant `P1-1`, sa cible reste `minReplicas: 0`, `maxReplicas: 1`.
 
 Le coffre `vpd-worker-fn-kv-dev-fc` est dédié à la clé cliente du rattrapage ISBNdb ; il
 ne contient aucun secret applicatif. L'opérateur de développement reçoit `Key Vault Secrets

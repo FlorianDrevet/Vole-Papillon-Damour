@@ -1754,6 +1754,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         secretRef: 'storage-connectionstring'
       }
       {
+        name: 'AzureWebJobsSecretStorageType'
+        value: 'containerapps'
+      }
+      {
         name: 'ConnectionStrings__ProjectDatabase'
         secretRef: 'sql-connectionstring'
       }
