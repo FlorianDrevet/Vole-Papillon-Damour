@@ -200,6 +200,12 @@ param containerAppWorkerScaling = {
   minReplicas: 0
   maxReplicas: 1
 }
+param containerAppWorkerIngress = {
+  enabled: true
+  targetPort: 8080
+  external: true
+  transportMethod: 'auto'
+}
 
 // -----------------------------------------------------------------------
 // Platform
@@ -207,6 +213,8 @@ param containerAppWorkerScaling = {
 
 param keyVaultSku = 'standard'
 param keyVaultEnablePurgeProtection = false
+// Operator allowed to create/read the dedicated local Worker function key.
+param workerFunctionKeyOperatorPrincipalId = 'da337599-cc21-4bc1-a5da-4bfad13b418b'
 
 // Reuse the live database without redeploying its server, SKU, or firewall.
 param sqlDatabaseName = 'vole-papillon-damour-db'
