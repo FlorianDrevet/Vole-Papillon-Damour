@@ -1037,16 +1037,16 @@ git pull
 
 ### Extraction des genres ISBNdb et sauvegarde production — 2026-10-27
 
-Après connexion à une identité acceptée par Azure SQL, la requête a extrait 26 libellés pour
-12 278 livres IsIsbndbSourced, en regroupant BookGenres.Name et Books.Genre et en dédoublonnant
-les couples ISBN/genre. Le CSV genres-isbndb.csv est conservé dans le dossier local de sauvegarde;
-les données de production ne sont pas dans le dépôt.
+La requête a réussi après connexion Entra acceptée par Azure SQL. Elle regroupe BookGenres.Name
+et Books.Genre pour les livres IsIsbndbSourced et dédoublonne les couples ISBN/genre. Le CSV
+genres-isbndb.csv contient la liste et le nombre de livres par genre; il reste dans le dossier
+local de sauvegarde et n’est pas ajouté au dépôt.
 
-L’export SQL local a réussi (BACPAC de 45 863 197 octets). Le téléchargement des blobs a échoué
-faute de rôle Azure Storage de lecture des données; l’erreur cite Storage Blob Data Reader,
-Storage Blob Data Contributor ou Storage Blob Data Owner. Le dossier local reste partiel tant que
-ce rôle n’est pas attribué à l’identité CLI sur vpdstdevfc et que le script de sauvegarde n’est
-pas relancé.
+L’export SQL local a réussi. Le téléchargement des blobs a échoué faute de rôle Azure Storage de
+lecture des données; l’erreur cite Storage Blob Data Reader, Storage Blob Data Contributor ou
+Storage Blob Data Owner. Le dossier local reste partiel tant que ce rôle n’est pas attribué à
+l’identité CLI sur vpdstdevfc et que le script de sauvegarde n’est pas relancé. Aucune clé Storage
+n’a été utilisée.
 
 ### Compteur de l’accueil Catalog — 2026-10-22
 
@@ -2536,12 +2536,12 @@ dans Azure sans être déductible du dépôt.
 Au 2026-10-27, vole-papillon-damour-db est en ligne dans rg-vpd-dev / vpd-sql-dev. Les
 sauvegardes Azure PITR sont configurées sur 7 jours, avec des différentielles toutes les 12 heures
 et un stockage géoredondé; aucune rétention LTR n’est configurée. Après connexion Entra acceptée
-par SQL, une copie PITR temporaire a été exportée en BACPAC local (45 863 197 octets). La règle
-pare-feu dédiée et la base PITR temporaire ont été supprimées et leur absence vérifiée. La copie
-des blobs a échoué dès le premier conteneur, faute de rôle de lecture des données Blob; aucune clé
-Storage n’a été utilisée. Le dossier local contient le BACPAC SQL et le CSV des genres, mais pas
-les blobs. Pour terminer, attribuer Storage Blob Data Reader à l’identité CLI sur vpdstdevfc et
-relancer le script de sauvegarde. Aucun changement permanent Azure n’a été fait.
+par SQL, la copie PITR temporaire a été exportée en BACPAC local. La règle pare-feu dédiée et la
+base PITR temporaire ont été supprimées et leur absence vérifiée. La copie des blobs a échoué dès
+le premier conteneur, faute de rôle de lecture des données Blob; aucune clé Storage n’a été
+utilisée. Le dossier local contient le BACPAC SQL et le CSV des genres, mais pas les blobs. Pour
+terminer, attribuer Storage Blob Data Reader à l’identité CLI sur vpdstdevfc et relancer le script
+de sauvegarde. Aucun changement permanent Azure n’a été fait.
 
 Au 2026-10-22, l’investigation App Insights de la latence des notices Scan est restée en lecture seule. Échantillon des dernières 24 h : p95 endpoint 3,50 s; SQL p95 ~5,8 ms sans échec; BnF 25 timeouts; Open Library p95 ~954 ms; Google Books 103 HTTP 400 (p95 ~670 ms). Les traces ne montrent pas le corps des 400. La valeur de la clé Google Books n’a pas été lue et aucun secret, ressource, configuration ni déploiement Azure n’a été modifié. Vérifier dans Google Cloud que Books API est activée et que les restrictions de la clé référencée par Container Apps lui permettent cet appel; l’hypothèse de clé invalide ou restreinte n’est pas confirmée.
 
@@ -2771,7 +2771,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-10-27 | Windows | **Genres ISBNdb et sauvegarde production.** Requête SQL réussie après connexion Entra : 12 278 livres marqués IsIsbndbSourced et 26 libellés de genre; le CSV reste local. BACPAC SQL de 45 863 197 octets exporté. La copie Blob a échoué au premier conteneur, faute de rôle Storage Blob Data Reader (ou Contributor/Owner); aucun accès par clé n’a été utilisé. La base PITR temporaire et la règle pare-feu ont été supprimées et vérifiées absentes. PITR natif 7 jours, différentielles 12 h, stockage Geo; LTR désactivée. Accorder Storage Blob Data Reader à l’identité CLI sur vpdstdevfc puis relancer la sauvegarde complète. |
+| 2026-10-27 | Windows | **Genres ISBNdb et sauvegarde production.** Requête SQL réussie après connexion Entra; le CSV local contient les genres et leurs nombres. BACPAC SQL exporté. La copie Blob a échoué au premier conteneur, faute de rôle Storage Blob Data Reader (ou Contributor/Owner); aucun accès par clé n’a été utilisé. La base PITR temporaire et la règle pare-feu ont été supprimées et vérifiées absentes. PITR natif 7 jours, différentielles 12 h, stockage Geo; LTR désactivée. Accorder Storage Blob Data Reader à l’identité CLI sur vpdstdevfc puis relancer la sauvegarde complète. |
 | 2026-10-22 | Windows | **Catalog — compteur d’accueil.** Le compteur de la recherche couvre tous les titres publics, y compris sans stock ; le chargement des huit nouveautés disponibles est séparé et un couple `totalCount` / `hasMore` incohérent ne s’affiche pas comme valeur exacte. Build Catalog réussi ; tests non lancés. API de production HTTP 503, donc contrôle live impossible. Graphify a réextrait l’AST, mais le rendu HTML dépasse la limite de 8 546 nœuds. Aucun déploiement ni accès aux données. [PR #330](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/330) ouverte, non fusionnée. |
 | 2026-10-22 | Windows | **Scan — verdict immédiat et notice progressive.** Dans le worktree `Vole-Papillon-Damour-scan-progressive-metadata-20261022`, la décision locale « Jeter »/« Garder » arrive avec l’enregistrement; la notice et sa couverture se chargent sur squelettes, avec une icône rouge et une consigne de saisie manuelle si aucune fiche Internet n’existe. Enquête App Insights en lecture seule : endpoint metadata p95 3,50 s, SQL p95 ~5,8 ms sans échec, BnF 25 timeouts, Open Library p95 ~954 ms, Google Books 103 HTTP 400 (p95 ~670 ms); cause des 400 non confirmée faute de corps de réponse. Tests Scan 304/304, build, diff check et Graphify réussis; fixture responsive 320/390/1440 sans débordement. Smoke authentifié MSAL reste à faire. Aucune modification Azure ni aucun déploiement. [PR #321](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/321) ouverte, non fusionnée. |
 | 2026-10-20 | Windows | **Catalog — finition de la fiche livre.** Depuis `origin/main` dans le worktree `VPD-catalog-book-detail-polish`, conservation du lien vers les éditions sous la couverture, suppression du doublon et de la mention sur les données personnelles ; le carrousel masque la barre de défilement et place les flèches à ses deux extrémités. Build Catalog réussi ; contrôle Chrome desktop et 390 × 844 avec API fictive, aucun débordement ; tests automatisés non lancés. L’API réelle était suspendue. Graphify a réextrait l’AST, sans visualisation HTML au-delà de 8 272 nœuds. Aucun déploiement ni accès aux données réelles. [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295) ouverte, non fusionnée. |
