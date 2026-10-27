@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'WorkerDurableStatus.psm1') -Force
 
 if (-not (Test-Path -LiteralPath $CredentialPath -PathType Leaf)) {
     throw "Credential file was not found at '$CredentialPath'. Run Sync-WorkerFunctionKey.ps1 after deploying the infrastructure."
@@ -47,16 +48,9 @@ if ($response.id -and $response.statusQueryGetUri) {
     $statusUri.Port = -1
     $statusUri.Path = '/runtime/webhooks/durabletask/instances/{0}' -f [Uri]::EscapeDataString([string] $response.id)
     $statusUri.Query = ''
-    $statusHeaders = @{ 'x-functions-key' = $systemKey }
-
     do {
         Start-Sleep -Seconds 10
-        try {
-            $status = Invoke-RestMethod -Uri $statusUri.Uri -Headers $statusHeaders -Method Get -TimeoutSec 60
-        }
-        catch {
-            throw "Could not read Durable status for instance '$($response.id)'. The management URL and key have been withheld. Check the Worker Key Vault and telemetry."
-        }
+        $status = Get-WorkerDurableStatus -Uri $statusUri.Uri -SystemKey $systemKey
     } while ($status.runtimeStatus -in @('Pending', 'Running', 'ContinuedAsNew'))
 
     if ($status.runtimeStatus -ne 'Completed') {
