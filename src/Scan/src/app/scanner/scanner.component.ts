@@ -591,6 +591,14 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.localScan?.isImmediateRepeat === true;
   }
 
+  get isAdditionalEdition(): boolean {
+    const verdict = this.activeVerdict;
+    return !this.isImmediateRepeatScan &&
+      this.activeVerdictKey === 'FirstCopy' &&
+      verdict?.isKnown === true &&
+      verdict.totalKnownQuantity > 0;
+  }
+
   get activeTitle(): string {
     return this.metadata?.title
       ?? this.activeBook?.title
@@ -672,8 +680,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       case 'TooMany':
         return 'Inutile d’en garder';
       default:
-        return this.activeVerdict?.isKnown && this.activeVerdict.totalKnownQuantity > 0
-          ? 'Exemplaire supplémentaire'
+        return this.isAdditionalEdition
+          ? 'Édition supplémentaire'
           : 'Premier exemplaire';
     }
   }
