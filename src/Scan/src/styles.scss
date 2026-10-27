@@ -17,6 +17,7 @@
   --scan-purple: #5f3a86;
   --scan-verdict-hold: #0d5c63;
   --scan-verdict-hold-soft: #e3f1f2;
+  --scan-verdict-additional: #a84d00;
 }
 
 * {
@@ -956,6 +957,10 @@ input:focus-visible {
 
 .verdict-card-first {
   background: var(--scan-ink);
+}
+
+.verdict-card-additional {
+  background: var(--scan-verdict-additional);
 }
 
 .verdict-card-repeat {

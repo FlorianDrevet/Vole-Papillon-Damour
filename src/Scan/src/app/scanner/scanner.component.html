@@ -267,6 +267,7 @@
                 [class.verdict-card-wanted]="activeVerdictKey === 'Wanted' || activeVerdictKey === 'Selling'"
                 [class.verdict-card-rare]="activeVerdictKey === 'Rare'"
                 [class.verdict-card-first]="activeVerdictKey === 'FirstCopy'"
+                [class.verdict-card-additional]="isAdditionalEdition"
                 [class.verdict-card-repeat]="isImmediateRepeatScan">
                 <div class="verdict-main">
                   <div class="verdict-icon" [ngSwitch]="activeVerdictKey" aria-hidden="true">
