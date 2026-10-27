@@ -25,6 +25,19 @@ public sealed class WorkKeyTests
     }
 
     [Fact]
+    public void Compute_LongTitles_ReturnsDeterministicKeyWithinStorageLimit()
+    {
+        var title = new string('A', WorkKey.MaximumLength + 50);
+
+        var result = WorkKey.Compute(title, "Hugo, Victor");
+
+        result.Should().NotBeNull();
+        result!.Length.Should().BeLessThanOrEqualTo(WorkKey.MaximumLength);
+        result.Should().Be(WorkKey.Compute(title, "Hugo, Victor"));
+        result.Should().NotBe(WorkKey.Compute(title + "B", "Hugo, Victor"));
+    }
+
+    [Fact]
     public void Book_RecomputesWorkKeyWhenTitleOrAuthorsChange()
     {
         Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
