@@ -9,6 +9,41 @@ namespace Vole_Papillon_Damour.Worker.Tests;
 public sealed class WorkerTriggerScheduleTests
 {
     [Fact]
+    public void Host_logging_keeps_function_summaries_and_warnings_without_default_information()
+    {
+        var hostJsonPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "../../../../Vole_Papillon_Damour.Worker/host.json"));
+        using var hostJson = JsonDocument.Parse(File.ReadAllText(hostJsonPath));
+        var logLevels = hostJson.RootElement
+            .GetProperty("logging")
+            .GetProperty("logLevel");
+
+        logLevels.GetProperty("default").GetString().Should().Be("Warning");
+        logLevels.GetProperty("Host.Aggregator").GetString().Should().Be("Warning");
+        logLevels.GetProperty("Host.Results").GetString().Should().Be("Information");
+
+        foreach (var functionName in new[]
+        {
+            "Enrich",
+            "ResumeEnrich",
+            "EnrichCatalogBatch",
+            "Sweep",
+            "IsbndbCatchUp",
+            "IsbndbCatchUpManual",
+            "RecommendationsBackfill",
+            "ProcessBookRecommendations",
+            "ImportSocialActualities"
+        })
+        {
+            logLevels.GetProperty($"Function.{functionName}.User")
+                .GetString()
+                .Should()
+                .Be("Information");
+        }
+    }
+
+    [Fact]
     public void Sweep_runs_once_per_hour()
     {
         GetSchedule<BookSweepFunction>().Should().Be("0 0 * * * *");

@@ -12,19 +12,15 @@ using Vole_Papillon_Damour.Application;
 using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Infrastructure;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
+using Vole_Papillon_Damour.Worker;
 
 const int defaultWorkerBnfTimeoutMilliseconds = 2_000;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
-    .ConfigureLogging(logging =>
-    {
-        // SQL statements carry parameter values and are the first useless ingestion
-        // item (11-observabilite.md §6); per-request HttpClient logs duplicate the
-        // dependency spans.
-        logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
-        logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
-    })
+    .ConfigureLogging((context, logging) => WorkerLoggingConfiguration.Configure(
+        logging,
+        context.HostingEnvironment.IsProduction()))
     .ConfigureServices((context, services) =>
     {
         services
