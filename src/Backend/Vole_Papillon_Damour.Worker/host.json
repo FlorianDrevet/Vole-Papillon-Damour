@@ -4,8 +4,18 @@
   "telemetryMode": "OpenTelemetry",
   "logging": {
     "logLevel": {
-      "default": "Information",
-      "Host.Aggregator": "Warning"
+      "default": "Warning",
+      "Host.Aggregator": "Warning",
+      "Host.Results": "Information",
+      "Function.Enrich.User": "Information",
+      "Function.ResumeEnrich.User": "Information",
+      "Function.EnrichCatalogBatch.User": "Information",
+      "Function.Sweep.User": "Information",
+      "Function.IsbndbCatchUp.User": "Information",
+      "Function.IsbndbCatchUpManual.User": "Information",
+      "Function.RecommendationsBackfill.User": "Information",
+      "Function.ProcessBookRecommendations.User": "Information",
+      "Function.ImportSocialActualities.User": "Information"
     }
   },
   "extensions": {
