@@ -1035,6 +1035,24 @@ git pull
 
 ## En cours
 
+### Coût Azure Monitor et journaux du Worker — 2026-10-30
+
+Lecture seule du workspace `vpd-law-dev-fc` : du 16 au 30 octobre (données disponibles
+jusqu’au 30 octobre à 08:00 UTC), ingestion Analytics d’environ 11,894 Go. Les sorties
+`ContainerAppConsoleLogs` en représentent 6,890 Go (58 %), dont 6,806 Go pour
+`vpd-worker-ca-dev-fc`; viennent ensuite `AppMetrics` (2,623 Go) et
+`AppDependencies` (1,347 Go). Les catégories dominantes de console incluent des journaux
+Azure SDK et Durable Functions répétitifs. Cost Management a renvoyé HTTP 429 et les
+détails d’usage ne fournissent aucun montant, donc les 28 € ne peuvent pas être répartis
+exactement par source.
+
+La PR [#355](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/355) réduit les
+informations console Azure SDK/Durable en production et conserve les messages applicatifs,
+les résumés de fonctions, les succès d’exécution, les avertissements et les erreurs.
+21 tests Worker passent; Graphify a été actualisé. Après fusion et déploiement, vérifier
+les résumés et erreurs puis comparer l’ingestion `ContainerAppConsoleLogs`. Aucun
+changement Azure ni déploiement effectué.
+
 ### Compteur de l’accueil Catalog — 2026-10-22
 
 Dans le worktree `VPD-catalog-home-book-count-20261022`, le compteur sous la recherche compte tous les titres publics du catalogue, y compris ceux sans stock disponible. Le chargement des huit nouveautés disponibles reste séparé. Les réponses incohérentes entre `totalCount` et `hasMore` ne sont pas présentées comme un total exact.
@@ -2520,6 +2538,12 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-10-30, le workspace `vpd-law-dev-fc` est conservé 30 jours, sur Analytics. La
+rétention jusqu’à 31 jours est incluse dans le prix d’ingestion; purger l’historique ne
+réduirait donc pas cette facture et détruirait des données utiles. Aucune donnée n’a été
+purgée et aucune ressource Azure n’a été modifiée. La [PR #355](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/355)
+est ouverte; les nouveaux filtres de logs attendent une fusion et un déploiement.
+
 Au 2026-10-22, l’investigation App Insights de la latence des notices Scan est restée en lecture seule. Échantillon des dernières 24 h : p95 endpoint 3,50 s; SQL p95 ~5,8 ms sans échec; BnF 25 timeouts; Open Library p95 ~954 ms; Google Books 103 HTTP 400 (p95 ~670 ms). Les traces ne montrent pas le corps des 400. La valeur de la clé Google Books n’a pas été lue et aucun secret, ressource, configuration ni déploiement Azure n’a été modifié. Vérifier dans Google Cloud que Books API est activée et que les restrictions de la clé référencée par Container Apps lui permettent cet appel; l’hypothèse de clé invalide ou restreinte n’est pas confirmée.
 
 Au 2026-10-22, l’API de production du Catalog répond HTTP 503 à la recherche publique. Le compteur de l’accueil ne peut pas être vérifié avec les données réelles ; aucun déploiement, accès aux données ou changement de service n’a eu lieu.
@@ -2748,6 +2772,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-30 | Windows | **Worker — baisse du volume de logs console.** Dans `VPD-worker-console-log-volume-20261030`, le runtime Functions passe par défaut à `Warning`, tandis que les résumés applicatifs, résultats d’exécution, avertissements et erreurs restent accessibles. En production, seuls les logs `Information` des SDK Azure/Durable sont filtrés de la console. Tests Worker 21/21; Graphify et `git diff --check` réussis. Investigation Azure en lecture seule, aucune purge ni déploiement. [PR #355](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/355) ouverte et non fusionnée. Vérifier les logs utiles et la baisse d’ingestion après déploiement. |
 | 2026-10-22 | Windows | **Catalog — compteur d’accueil.** Le compteur de la recherche couvre tous les titres publics, y compris sans stock ; le chargement des huit nouveautés disponibles est séparé et un couple `totalCount` / `hasMore` incohérent ne s’affiche pas comme valeur exacte. Build Catalog réussi ; tests non lancés. API de production HTTP 503, donc contrôle live impossible. Graphify a réextrait l’AST, mais le rendu HTML dépasse la limite de 8 546 nœuds. Aucun déploiement ni accès aux données. [PR #330](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/330) ouverte, non fusionnée. |
 | 2026-10-22 | Windows | **Scan — verdict immédiat et notice progressive.** Dans le worktree `Vole-Papillon-Damour-scan-progressive-metadata-20261022`, la décision locale « Jeter »/« Garder » arrive avec l’enregistrement; la notice et sa couverture se chargent sur squelettes, avec une icône rouge et une consigne de saisie manuelle si aucune fiche Internet n’existe. Enquête App Insights en lecture seule : endpoint metadata p95 3,50 s, SQL p95 ~5,8 ms sans échec, BnF 25 timeouts, Open Library p95 ~954 ms, Google Books 103 HTTP 400 (p95 ~670 ms); cause des 400 non confirmée faute de corps de réponse. Tests Scan 304/304, build, diff check et Graphify réussis; fixture responsive 320/390/1440 sans débordement. Smoke authentifié MSAL reste à faire. Aucune modification Azure ni aucun déploiement. [PR #321](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/321) ouverte, non fusionnée. |
 | 2026-10-20 | Windows | **Catalog — finition de la fiche livre.** Depuis `origin/main` dans le worktree `VPD-catalog-book-detail-polish`, conservation du lien vers les éditions sous la couverture, suppression du doublon et de la mention sur les données personnelles ; le carrousel masque la barre de défilement et place les flèches à ses deux extrémités. Build Catalog réussi ; contrôle Chrome desktop et 390 × 844 avec API fictive, aucun débordement ; tests automatisés non lancés. L’API réelle était suspendue. Graphify a réextrait l’AST, sans visualisation HTML au-delà de 8 272 nœuds. Aucun déploiement ni accès aux données réelles. [PR #295](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/295) ouverte, non fusionnée. |
