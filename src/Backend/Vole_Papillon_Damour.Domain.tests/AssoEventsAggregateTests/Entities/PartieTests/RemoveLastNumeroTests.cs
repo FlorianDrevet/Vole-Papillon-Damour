@@ -149,6 +149,28 @@ public class RemoveLastNumeroTests
     }
 
     [Fact]
+    public void RemoveLastNumero_WhenCartonPleinIsOnlyLine_RemovesWinnerAndResetsLineIndex()
+    {
+        var cartonPleinLine = LinePartie.Create(
+            [Lot.Create("Lot", "lot.jpg", 0)],
+            new NumberLine(NumberLine.NumberLineEnum.CartonPlein));
+        var partie = Partie.Create(
+            "Carton plein",
+            new PartieType(PartieType.PartieTypeEnum.CartonPlein),
+            0,
+            false,
+            [cartonPleinLine]);
+        partie.AddLiveNumero(25);
+        partie.AddWin();
+
+        var numeroRemoved = partie.RemoveLastNumero();
+
+        numeroRemoved.Should().Be(25);
+        cartonPleinLine.Lots.Single().IsWon.Should().BeNull();
+        partie.CurrentLineIndex.Should().Be(0);
+    }
+
+    [Fact]
     public void RemoveLastNumero_WhenNoLineParties_RemovesLastNumeroWithoutThrowing()
     {
         var partie = Partie.Create(

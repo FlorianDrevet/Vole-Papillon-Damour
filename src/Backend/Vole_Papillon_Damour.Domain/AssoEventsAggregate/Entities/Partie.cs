@@ -144,21 +144,21 @@ public sealed class Partie : Entity<PartieId>
             return lastNumero;
         }
 
-        var lineIndexToUpdate = CurrentLineIndex >= _lineParties.Count
-            ? _lineParties.Count - 1
-            : CurrentLineIndex;
+        var orderedLineParties = _lineParties.OrderBy(linePartie => linePartie.Index).ToList();
+        var linePositionToUpdate = Math.Clamp(CurrentLineIndex, 0, orderedLineParties.Count - 1);
 
-        var linePartie = _lineParties.First(l => l.Index == lineIndexToUpdate);
+        var linePartie = orderedLineParties[linePositionToUpdate];
         var hasANumberBeenDeleted = linePartie.RemoveNumero(lastNumeros);
 
-        var previousLineIndex = CurrentLineIndex - 1;
-        if (!hasANumberBeenDeleted && previousLineIndex >= 0 && previousLineIndex != lineIndexToUpdate)
+        var previousLinePosition = CurrentLineIndex - 1;
+        if (!hasANumberBeenDeleted && previousLinePosition >= 0 &&
+            previousLinePosition < orderedLineParties.Count && previousLinePosition != linePositionToUpdate)
         {
-            var previousLinePartie = _lineParties.First(l => l.Index == previousLineIndex);
+            var previousLinePartie = orderedLineParties[previousLinePosition];
             hasANumberBeenDeleted = previousLinePartie.RemoveNumero(lastNumeros);
         }
         
-        if (CurrentLineIndex != 0 && hasANumberBeenDeleted)
+        if (CurrentLineIndex > 0 && hasANumberBeenDeleted)
         {
             CurrentLineIndex--;
         }
@@ -177,11 +177,13 @@ public sealed class Partie : Entity<PartieId>
             return false;
         }
 
-        var linePartie = _lineParties.FirstOrDefault(l => l.Index == CurrentLineIndex);
-        if (linePartie is null)
+        var orderedLineParties = _lineParties.OrderBy(candidate => candidate.Index).ToList();
+        if (CurrentLineIndex < 0 || CurrentLineIndex >= orderedLineParties.Count)
         {
             return false;
         }
+
+        var linePartie = orderedLineParties[CurrentLineIndex];
 
         var lastNumero = _lastNumeros[^1];
         if (linePartie.GetLastWinningNumber().Contains(lastNumero))
@@ -192,7 +194,7 @@ public sealed class Partie : Entity<PartieId>
         if (linePartie.AddWin(lastNumero))
         {
             CurrentLineIndex++;
-            if (CurrentLineIndex == _lineParties.Count())
+            if (CurrentLineIndex == orderedLineParties.Count)
             {
                 return true;
             }

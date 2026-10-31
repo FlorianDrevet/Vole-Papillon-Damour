@@ -104,6 +104,27 @@ public class AddWinTests
         partie.CurrentLineIndex.Should().Be(1);
     }
 
+    [Fact]
+    public void AddWin_WhenOnlyCartonPleinLineExists_CompletesParty()
+    {
+        var cartonPleinLine = LinePartie.Create(
+            [Lot.Create("Lot", "lot.jpg", 0)],
+            new NumberLine(NumberLine.NumberLineEnum.CartonPlein));
+        var partie = Partie.Create(
+            "Carton plein",
+            new PartieType(PartieType.PartieTypeEnum.CartonPlein),
+            0,
+            false,
+            [cartonPleinLine]);
+        partie.AddLiveNumero(25);
+
+        var result = partie.AddWin();
+
+        result.Should().BeTrue();
+        cartonPleinLine.Lots.Single().IsWon.Should().Be(25);
+        partie.CurrentLineIndex.Should().Be(1);
+    }
+
     private static Partie CreatePartieWithOneLine()
     {
         return Partie.Create(
