@@ -873,3 +873,21 @@ The Scan PWA clears `manualIsbn` whenever manual entry opens, so a previous book
 does not prefill the next entry. `touch-action: manipulation` on the manual keypad buttons
 prevents double-tap zoom while preserving pinch zoom. The PWA manifest sets
 `orientation: portrait` for the installed Scan app across its routes.
+
+## Seasonal events page
+
+`src/Website/src/app/feature/vpd-events/` owns the `/evenement` agenda. Its page composes
+the featured event, next dates, shared list/calendar views, filters, and past editions.
+Date helpers and event identity live in `src/Website/src/app/shared/events/`; event
+identity is reused by the event detail, site banner, and home event cards. The calendar
+view is the default and persists `calendrier` / `liste` at `vpd.agenda.vue`. Upcoming
+counts use Paris calendar days; countdown chips appear inside 30 days and the site banner
+starts at J-7. `HalloweenPreferences` shares the existing `vpd.tableau.calm` setting and
+guards browser-only APIs for SSR. BackOffice labels the existing theme field « Thème du
+loto » without changing its projection contract.
+
+Final validation for the seasonal events handoff: Website tests 186/186 and SSR build pass;
+BackOffice build and the feature dialog spec (3/3) pass. `npm test` in BackOffice still
+fails its existing bootstrap contract checks (4/6). Chrome screenshots at 390/1440 could
+not be captured because the CUA browser host was unavailable; the public Render API also
+returned `Service Suspended` during the local visual check.

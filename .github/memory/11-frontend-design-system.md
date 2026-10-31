@@ -240,3 +240,13 @@ Both `src/BackOffice/src/app/shared/components/{title,under-section,vpd-button,v
 - Account tabs wrap as 44px pills below 700px; selection filters switch to a native dropdown below 760px, and the four personal states use a two-column mobile grid.
 - Use the Catalog V2 variables from `src/Catalog/src/styles.scss` (`--catalog-paper`, `--catalog-ink`, `--catalog-blue`, `--catalog-orange`, `--catalog-green`, `--catalog-purple`) instead of copying mockup inline styles.
 - The empty state, device-only banner, freshness line, availability badges, and merge sheet are implemented in `src/Catalog/src/app/features/account/selection/`.
+
+## Seasonal event identities
+
+The Website event agenda uses one identity helper across calendar days, list banners,
+featured event, event detail, global J-7 banner, and home cards. Halloween scenes use the
+existing themed characters; book-fair scenes use the A bookmark butterfly over straight
+paper lines; classic loto uses a numbered bingo ball. Respect the shared calm preference
+and `prefers-reduced-motion`, and keep text/date rendering SSR-safe. Website's
+`anyComponentStyle` budget is 7 kB warning / 8 kB error to allow the dedicated calendar and
+seasonal card styles while keeping a bounded component stylesheet size.
