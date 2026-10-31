@@ -434,3 +434,25 @@
     transition: none !important;
   }
 }
+
+/* Téléphone : la carte de la bourse garde toute la largeur pour le texte.
+   Une seule papillon, dans le coin, ne passe plus sur le titre ni la méta. */
+@media (max-width: 639.98px) {
+  .agenda-event--books {
+    grid-template-columns: 74px minmax(0, 1fr) 17px;
+  }
+
+  .agenda-event--books .event-day {
+    font-size: 22px;
+  }
+
+  .agenda-event--books .paper-butterfly {
+    display: none;
+  }
+
+  .agenda-event--books .paper-butterfly-small {
+    top: 8px;
+    right: 6px;
+    width: 46px;
+  }
+}
