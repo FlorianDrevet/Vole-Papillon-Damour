@@ -1,6 +1,7 @@
-import {NO_ERRORS_SCHEMA} from '@angular/core';
+import {NO_ERRORS_SCHEMA, PLATFORM_ID} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {CommonModule} from '@angular/common';
+import {By} from '@angular/platform-browser';
 import {provideRouter} from '@angular/router';
 import {DesignSystemModule} from '@vpd/ui';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
@@ -48,10 +49,7 @@ describe('VpdEventsPageComponent', () => {
   let fixture: ComponentFixture<VpdEventsPageComponent>;
   let eventsFacadeSpy: jasmine.SpyObj<VpdEventsFacadeService>;
 
-  beforeEach(async () => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date('2026-10-31T12:00:00Z'));
-    localStorage.removeItem('vpd.agenda.vue');
+  async function configureTestModule(platformId: 'browser' | 'server' = 'browser'): Promise<void> {
     eventsFacadeSpy = jasmine.createSpyObj<VpdEventsFacadeService>('VpdEventsFacadeService', ['getAllEvents$']);
 
     await TestBed.configureTestingModule({
@@ -66,9 +64,20 @@ describe('VpdEventsPageComponent', () => {
         AgendaCalendarComponent,
         AgendaViewToggleComponent,
       ],
-      providers: [provideRouter([]), {provide: VpdEventsFacadeService, useValue: eventsFacadeSpy}],
+      providers: [
+        provideRouter([]),
+        {provide: PLATFORM_ID, useValue: platformId},
+        {provide: VpdEventsFacadeService, useValue: eventsFacadeSpy},
+      ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
+  }
+
+  beforeEach(async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-10-31T12:00:00Z'));
+    localStorage.removeItem('vpd.agenda.vue');
+    await configureTestModule();
   });
 
   afterEach(() => {
@@ -185,6 +194,24 @@ describe('VpdEventsPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-date="2026-11-16"][data-event-id="books-1"]')).not.toBeNull();
   });
 
+  it('reuses the calendar months between unchanged change-detection passes', async () => {
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
+      apiEvent('books-1', 'Bourse aux livres', 'Books', '2026-11-11T00:00:00Z', {
+        dateEnd: '2026-11-16T00:00:00Z',
+      }),
+      apiEvent('jan-loto', 'Loto de janvier', 'Bingo', '2027-01-03T12:00:00Z'),
+    ]);
+
+    const calendar = fixture.debugElement.query(By.directive(AgendaCalendarComponent))
+      .componentInstance as unknown as {months: unknown};
+    const firstMonths = calendar.months;
+
+    fixture.detectChanges();
+
+    expect(calendar.months).toBe(firstMonths);
+  });
+
   it('shows the clicked January 3 loto beneath the calendar', async () => {
     await render([
       apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
@@ -239,5 +266,31 @@ describe('VpdEventsPageComponent', () => {
     expect(page.textContent).toContain("Pas de nouvelle date pour l'instant.");
     expect(page.textContent).toContain("Les prochains rendez-vous apparaîtront ici dès qu'ils seront fixés.");
     expect([...page.querySelectorAll('a')].some(link => link.textContent?.trim() === 'Voir les éditions passées')).toBeTrue();
+  });
+
+  describe('SSR event loading', () => {
+    beforeEach(async () => {
+      await TestBed.resetTestingModule();
+      await configureTestModule('server');
+    });
+
+    it('keeps the server render pending until the event request finishes', async () => {
+      let resolveEvents!: (events: never[]) => void;
+      eventsFacadeSpy.getAllEvents$.and.returnValue(new Promise(resolve => {
+        resolveEvents = resolve;
+      }));
+      fixture = TestBed.createComponent(VpdEventsPageComponent);
+      fixture.detectChanges();
+
+      let stable = false;
+      const stability = fixture.whenStable().then(() => stable = true);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(stable).toBeFalse();
+      resolveEvents([]);
+      await stability;
+      expect(stable).toBeTrue();
+    });
   });
 });

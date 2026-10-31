@@ -46,19 +46,9 @@ The backend and contracts expose features around:
 
 ## Current Constraints
 
-- `docs/bourse-aux-livres/10-evolution-compte-selection-achats.md` now specifies member
-  selection, account cards, checkout association, purchases, and deletion behavior. Code
-  CS-1–CS-26 is in PR #224; the F-10 §14 real-device acceptance paths remain pending,
-  migrations are unapplied, and the production signing secret still needs to be added.
-- F-11 (`docs/bourse-aux-livres/11-signalement-livre-introuvable.md`) is implemented in
-  `feat/not-found-reports`: member reports, admin queue/actions, closure history, dashboard
-  and book-detail indicators, settings, and deletion anonymization. The ten-point staging
-  recipe remains pending; migration `20260924135152_AddBookNotFoundReports` is not applied.
-- The backend currently enables a permissive CORS policy for all origins.
-- Domain tests exist, but cross-layer automated coverage is still thin.
-- Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.
-- The OCR bingo-card analysis slice was removed from the backend and BackOffice admin UI because automatic loto-card reading is no longer allowed by the business rules.
-- The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
-- `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests are still validated locally.
-- The MAUI Android build remains dependent on an Android SDK being available in the environment.
-- Graphify is configured for documentation and corpus-level orientation; its ignored local report artifacts may be absent from a clean worktree.
+- Treat Azure resources whose names include `dev` as production; see `.github/memory/08-runtime-and-orchestration.md` before any deployment or data operation.
+- The backend currently enables permissive CORS; inspect this when changing public/API deployment assumptions.
+- Frontend unit suites remain a local validation step even though CI builds the applications. The MAUI Android build requires an Android SDK.
+- Residual `MailingList` folders remain in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints. Automatic Bingo-card OCR was removed.
+- Backend projects remain free of `Aspire.*`; orchestration lives only in the AppHost. Graphify artifacts are local/ignored and may be absent in a clean worktree.
+- Member-account and not-found-report rollout details live in `.github/memory/03-domain-model.md`, `.github/memory/05-data-and-storage.md`, and `.github/memory/12-manual-book-requests.md`; do not rely on older branch/migration status copied here.

@@ -1,252 +1,31 @@
 # 11 - Frontend Design System
 
-## Shared UI Stack
+## Shared Website and BackOffice language
 
-- Both Angular apps use Angular Material plus Tailwind.
-- Both import `scss/main` from `styles.scss` and define a custom Material theme.
-- Both apps use custom font families through Tailwind and global body styling.
+- Website and BackOffice use Angular Material, Tailwind, shared SCSS foundations, and association-specific handwritten typography. Brand colors include navy `#012f5f`, cyan `#1ACDF8`, orange `#F67700`, text blue `#37628A`, and pale blue `#E9F3FF`; extend theme tokens before adding raw component colors.
+- Website shell primitives and semantic surface/ink/line tokens live in `src/Website/src/styles.scss`. Prefer editorial panels, restrained shadows, and association-specific copy over generic enterprise/tech styling.
+- BackOffice full-width bands use `px-shell`; centered content uses fixed `px-6 lg:px-11` gutters inside a max-width shell so parent scaling does not consume width on ultra-wide displays.
+- Keep controls keyboard-accessible, labeled, visibly focused, and touch-friendly (44 px target where practical). Respect `prefers-reduced-motion` and the shared `vpd.tableau.calm` setting for event/loto animation.
 
-## Theme Tokens
+## Catalog V2
 
-Verified Tailwind theme tokens include:
+- Catalog has a separate editorial catalogue system, not the Website association-content shell. The canonical mockup contract is `docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md`.
+- Core palette: paper `#f7fbfe`, navy ink `#041d30`/`#072b45`, slate text, blue/cyan, and orange availability accents. Typography is Newsreader for headings, Libre Franklin for body/control text, and IBM Plex Mono for metadata and IDs.
+- The shell uses the association butterfly, 1280 px content maximum, 24 px mobile/44 px desktop gutters, a cyan-blue-orange rule, and a dedicated three-column footer. At 1040 px it changes to mobile navigation to prevent intermediate-width overflow.
+- Use shared book-card variants for home, search/list, rare, work, and detail contexts. Keep availability, future announcements, and rare-book price truthful and distinct; no fabricated stock, reservation, role, or physical-inventory state.
+- Public catalogue pages remain crawlable. Account/admin screens use the same paper/ink language but keep API-backed roles/permissions and empty/error states explicit. Do not display account IDs, reporter identities, or prices beyond their contract.
+- Catalog mobile layouts collapse sidebars and controls, preserve safe areas, use internal scrolling only where designed, and keep menus/dialogs operable by keyboard and touch.
 
-- fonts: `CaveatBrush`, `DancingScript-Regular`
-- colors: `primary-color` `#012f5f`, `secondary-color` `#1ACDF8`, `tertiary-color` `#F67700`, `text-color` `#37628A`, `background-color` `#E9F3FF`, `white`, `gold`, `success`
-- `BackOffice` also defines `gray`
-- `Website` now also maps semantic RGB-backed tokens through Tailwind/CSS variables for `surface`, `surface-soft`, `surface-strong`, `ink`, `ink-soft`, and `line`, so component templates can stay on semantic colors instead of raw hex values.
+## Shared UI package
 
-## Angular Material Theme Details
+- `src/SharedUi/` is raw TypeScript source consumed via `@vpd/ui` path mappings, not a separately built Angular library. Every app maps `@vpd/ui` and `@vpd/ui/*` and includes shared source in app/spec compilation and Tailwind content scanning.
+- Shared module components include title, section, button, image, actuality/event/product cards and product list, plus price/capitalize/line-title pipes. Keep app-side wrappers thin: BackOffice wrappers wire dialogs/facades; Website wrappers are read-only.
+- Shared display components remain display-only by default. Editing/deleting is enabled explicitly through inputs and event outputs; do not put app-specific dialogs or facade logic in `SharedUi`.
+- Each app runs `src/SharedUi/scripts/link-shared-ui.mjs` through its own prebuild/prestart hook. Resolve dependencies relative to the consuming app.
 
-- `BackOffice` uses a light theme based on the Material blue palette and also themes `ngx-mat-timepicker`.
-- `BackOffice` sets both `brand-family` and `plain-family` to `CaveatBrush`.
-- `Website` uses a light theme with Material azure/blue palettes.
+## Event surfaces
 
-## Global Layout Conventions
-
-- `html` and `body` are forced to full height with a light background.
-- `body` uses a flex column layout and the `font-caveatbrush` utility.
-- `Website` also defines a global `.no-scroll` helper class.
-- `Website` centralizes shell-heavy styling in `src/styles.scss` with reusable primitives such as `.vpd-glass-card`, `.vpd-pill-badge`, and `.vpd-button`, which keeps shared navigation/home polish out of Angular component style budgets.
-- The Website Sass entrypoint now uses `@use "scss/main"` and `src/scss/_main.scss` re-exports its partials via `@forward`, which removes the Dart Sass `@import` deprecation warnings without changing the rendered CSS.
-
-## UX Structure Notes
-
-- Both apps keep a `core/feature/shared` organization.
-- `BackOffice` routes concentrate on admin workflows: login, actualities, events, tableau, and cash register.
-- `Website` routes concentrate on public presentation, events, and the `Maxence` informational content tree.
-
-### Scanette rare-books mockup language
-
-The rare-book Scanette flow uses a compact mobile-first shell distinct from the public
-Catalog: pale blue page surface, deep navy editorial labels, thin rules, rounded search and
-filter controls, striped photo placeholders, purple rare-book actions/cards, and orange cash
-confirmation. The list keeps the search and `Toutes`/`Brouillons` filters visible only after
-loading has completed; the creation flow exposes a three-step progress header and equal
-barcode/no-barcode choices; the cash flow keeps rare books visually separate from ordinary
-sale lines. The responsive reference viewport is 390×844, with a centered narrow shell at
-desktop widths. Shared rare-flow rules live in the global Scan stylesheet to stay below
-Angular's component-style budget, and the screens retain keyboard focus states and explicit
-labels.
-
-## Guardrails For Future UI Work
-
-- Preserve the custom handwritten/association visual identity rather than default enterprise styling.
-- In BackOffice, use `px-shell` on full-width bands; use fixed `px-6 lg:px-11` gutters inside centered `max-w-*` shells so the parent-scaled gutter cannot consume the content width on ultra-wide screens.
-- Extend existing Tailwind tokens and Material themes before introducing raw hex colors in components.
-- Recheck desktop/mobile behavior on navigation and event-table screens when changing layout or theme code.
-- For public-shell refinements, prefer evolving the semantic tokens and shared shell primitives in `src/styles.scss` before adding one-off component-level styling.
-- On the Website public shell, prefer solid editorial panels, restrained shadows, and association-specific copy over heavy glassmorphism, floating glows, or generic startup-style hero effects.
-
-## Public Catalog Visual Language
-
-`src/Catalog/` has a dedicated catalog shell matching
-`docs/bourse-aux-livres/maquettes/catalogue/`: pale blue surfaces, deep navy ink,
-blue/orange availability accents, Newsreader display text, Libre Franklin body text, and
-IBM Plex Mono metadata labels. It intentionally does not copy the Website's analytics or
-association-content shell. The shared `BookCardComponent` is the visual primitive for
-recent, rare, search, work, and detail entry points; available quantities and future
-announcements are rendered as separate lines.
-
-### Catalog administration shell
-
-The Catalog `/administration` route keeps the same public catalogue header as the rest of
-the site, then places a pale-blue responsive admin sidebar beside the paper workspace.
-The sidebar follows the maquette's rule/kicker/title treatment, icons, active white row with
-orange rule, and grouped navigation: `Pendant la bourse`, `Le fonds de livres`, and
-`Réservé à l'administration`. The last group combines members and Entra volunteers as
-`Comptes & rôles`, while the workspace preserves the maquette's volunteer table and role
-chips. Dashboard and workspace headings use Newsreader, metadata uses IBM Plex Mono, and
-body controls use Libre Franklin. The shell collapses the sidebar and content gutters at
-tablet/mobile breakpoints; physical inventory history/actions remain truthful empty or
-disabled when the API has no corresponding domain contract.
-
-The statistics workspace keeps the sidebar at one `Statistiques` item and uses an internal
-underlined tab bar for fair and volunteer statistics. Volunteer cards, table, scatter plot,
-calibration bars and monthly heatmap reuse the paper/ink/blue/orange palette and collapse to
-two-column cards, horizontal table scrolling and compact heatmap rows on mobile. The omitted
-quality-data mockup subtab is not represented in the navigation or DOM.
-
-Action confirmations and validation errors use a single fixed toast with the same paper/ink,
-blue/orange and restrained-shadow language; it is live-region accessible, dismissible, and
-responsive to the mobile header offset without shifting the administration layout.
-
-### Catalogue V2 — convention canonique
-
-The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md).
-
-- The current reference is the V2 catalogue mockup reviewed in September 2026. Future
-  Catalog work should extend this visual language by default, including the public pages,
-  account surface, and administration shell.
-- The shell uses the real `papillon_without_back.png` mark, a 1280px maximum content width,
-  24px mobile / 44px desktop gutters, the Website-like 302px dropdown panel, a thin
-  cyan-blue-orange brand rule, and a dedicated three-column Catalog footer. The footer
-  exposes catalogue navigation, the external association handoff, and local legal links;
-  it does not repeat the Website's Maxence or association-content sections. Navigation dropdowns
-  must be keyboard/focus usable and hidden when neither hovered nor focused.
-- The current header keeps the account trigger outside the desktop navigation flex, centers
-  the 42px controls, gives the external association link the same 42px height and orange
-  hover/focus underline, and uses a person/login icon in both auth states. Anonymous users
-  get an outlined `Mon compte` trigger; a connected user gets a filled navy trigger with
-  the full display name from MSAL. An administrator gets a clickable `Administration` tag as
-  the sole header entry to `/administration`; it uses the same 42px control height as the
-  account trigger. It switches to the mobile layout at `1040px` to avoid intermediate-width
-  overflow.
-- Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
-  controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
-  The canonical Catalog palette is paper `#f7fbfe`, paper-soft `#e9f4fb`, ink `#041d30` /
-  `#072b45`, slate `#33536e` / `#4e6c84` / `#6d8ba2`, blue `#0c6ea6` / `#1497d6`, cyan
-  `#7fd8f5`, orange `#f0801c` / `#f9a93c` / `#dc6412`, and pale lines `#d9e9f4` /
-  `#e2eef7`.
-- The External ID hosted authentication page uses the same Catalog palette through
-  `infra/entra/vpd-catalog-authentication.css`. It targets Microsoft's documented `.ext-*`
-  branding selectors, keeps the page French, and uses system fallbacks for Newsreader and
-  Libre Franklin because tenant branding CSS cannot load the Catalog's local font assets.
-- The home hero is an editorial question on a solid deep-navy panel, with the official
-  association butterfly used as the desktop visual mark and a restrained mobile placement.
-  Its search owns the genre selector and the API-backed title count; the next-fair block
-  may expose a generated `.ics` link. The home
-  genre panel is kept above the next-fair teaser stacking context and caps at 22rem or 70dvh.
-  Its in-panel search filters genre names case- and accent-insensitively without changing the
-  title query; only the options area scrolls for long API genre lists.
-  `#prochaines-dates` calendar keeps the next Books event prominent with a dark date card
-  and a light map/location card inspired by the Website event detail, then uses editorial
-  date rows for the remaining future fairs.
-- The home genre section uses compact four-column editorial cards, with the existing
-  paper/ink palette and brand rule. Cards route to the filtered search page and end with a
-  catalogue-wide link; labels come from the API/fallback genre list, without invented
-  counts. The home also places its account-following guidance after the rare-books section.
-- Recent home books use the shared `BookCardComponent` `home` variant: a square paper cover
-  treatment, truthful availability status, compact Newsreader metadata and a follow/alert
-  affordance. BnF cover URLs are normalized through the shared Catalog cover helper so legacy
-  thumbnails become original 660×990 images; the home tile removes image padding and uses
-  `object-fit: cover` to fill its square frame. Public search and browse results default to
-  the `square` variant; `view=list` explicitly selects the shared `list` variant. Existing
-  `view=grid` URLs remain valid. Square search cards retain ordinary edition metadata and
-  availability instead of the home card's follow/alert affordance; switching views does not
-  reload the API. Rare-only search
-  keeps its dedicated rare-book cards and hides this toggle. The default/grid variants remain
-  the visual contract for work and detail entry points, including the shared no-cover placeholder.
-- Public catalogue, search, work, detail, account, legal, and existing administration
-  views share the same spacing, cards, pills, border language, restrained motion, and
-  responsive collapse. Availability and future announcements remain truthful and separate;
-  no price, stock, role, or external-reference data may be invented in the UI.
-- The account page's authenticated watchlist follows the September 2026 mockup: a large
-  editorial heading, two local tabs, one bordered card per followed title, and a separate
-  preferences/account panel. Cards use the existing `CatalogWatchlistItem` contract for
-  cover URL, edition publisher/year, quantity availability, next fair date, added date and
-  last alert; they must not invent a reservation or price state.
-- The volunteer account extension keeps the same Catalog typography and paper/ink palette:
-  `Ma contribution` is a third tab only for `Tri`/`Caisse` users, with blue/orange/ink KPI
-  rules, a dark impact band, bordered analytical cards, a twelve-month chart, weekday-slot
-  heatmap, fair sales bars and a compact session table. Estimated values use an explicit
-  `estimé` label and the footer explains that timestamps do not define per-book prices.
-  The Scan companion uses the compact mobile layout, a `TRI`/`CAISSE` badge or role switch,
-  local snapshot status and the same restrained visual vocabulary; its authenticated home
-  uses paired paper action cards with blue/orange icon chips, and its statistics styles
-  live in the global Scan stylesheet to stay below Angular component-style budgets. The
-  statistics report clips its route surface and scrolls through `.statistics-scroll` only,
-  preserving the Scan PWA's no-body-scroll behavior elsewhere.
-- The Catalog client now consumes the typed P2/P3 administration API for overview,
-  catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
-  members and settings. It also consumes the external bibliographic search separately
-  from local catalogue results and lets authenticated members follow editions/works and
-  suspend alerts. Keep the navigation/data contracts truthful: role assignment remains
-  Entra-owned and physical cartons/capacity are not API concepts, so those controls stay
-  explanatory rather than fake.
-- The Catalog administration Inventory workspace now uses the same paper/ink system as the
-  rest of the shell: a separate reference-add zone for ISBN or title/author lookup, a
-  candidate confirmation card, and a complete fiche list with a compact stock stepper. The
-  available quantity is adjusted only through confirmed, note-bearing corrections; announced
-  quantity remains a distinct value, and redirected fiches keep their detail link while their
-  stock controls are disabled. The `+`/`−` stepper opens a Catalog-styled accessible
-  confirmation modal with the fiche, recorded reason, current quantity and post-correction
-  quantity; cancel, backdrop click and `Escape` leave the stock untouched. The layout
-  collapses the lookup fields, adjustment controls, confirmation quantities and book-row
-  actions at the mobile breakpoint while keeping the catalogue focused on bibliographic data.
-- The September 11 Catalog polish keeps the search section rules on the shared blue-to-orange
-  brand gradient, gives the `Disponibilité` legend a visible gap before its options, and
-  replaces the external-reference scope modal with one explanatory all-editions callout above
-  a reference list, while edition cards keep only their precise-edition action. The callout is
-  rendered only when the results identify a common work. The connected account trigger and
-  adjacent administration pill use stable widths
-  so the public header does not jump between member and administrator states. Recent home
-  cards show availability as bordered colored status tags; the genre browser remains directly
-  after `Livres rares`.
-
-## Shared Design System Library (`@vpd/ui`)
-
-- Location: [src/SharedUi/](src/SharedUi/) (raw TS source, not an Angular library project). Consumed via TypeScript path mapping `@vpd/ui` declared in each app's `tsconfig.json`.
-- Module: `DesignSystemModule` from `@vpd/ui` is imported and re-exported by each app's `SharedModule`.
-- Wired into each app via:
-  - `tsconfig.json` `paths`: `@vpd/ui` + `@vpd/ui/*`, plus explicit `@angular/*`, `rxjs`, `rxjs/*`, `tslib` mappings so the bundler resolves bare imports from outside the app folder.
-  - `tsconfig.app.json` / `tsconfig.spec.json` `include`: adds `../SharedUi/src/**/*.ts`.
-  - `tailwind.config.js` `content`: adds `../SharedUi/src/**/*.{html,ts}`.
-- Components (selectors keep `app-*` legacy aliases to avoid template churn):
-  - `vpd-title` (`vpd-title, app-title`)
-  - `vpd-under-section` (`vpd-under-section, app-under-section`)
-  - `vpd-button` (`vpd-button, app-button, app-vpd-button`)
-  - `vpd-image` (`vpd-image, app-vpd-image`) - superset of both apps (rounded, backgroundColor, rotation, orientation, highPriorityFetching, height, width)
-  - `vpd-actuality-card`, `vpd-event-card`, `vpd-product-card`, `vpd-product-list`
-- Pipes (kept legacy names so templates still write `| price`, `| capitalize`, `| lineNumberTitle`): `VpdPricePipe`, `VpdCapitalizePipe`, `VpdLineNumberTitlePipe`.
-- Enums use string values (`OneLine`, `Bingo`, etc.) so they line up with API payloads. `DsVpdEventModel.eventType` is `VpdEventEnum | string | number` to remain compatible with Website's local numeric `VpdEventEnum` (which the Website itself converts at runtime).
-
-### Display vs Edit pattern
-
-DS card components are display-only by default. To enable edit/delete actions, pass `[editable]="true"` and listen to `(editRequested)` / `(deleteRequested)`:
-
-```html
-<vpd-actuality-card [actuality]="model()"
-                    [editable]="true"
-                    (editRequested)="openUpdateDialog()"
-                    (deleteRequested)="openDeleteDialog()"></vpd-actuality-card>
-```
-
-`vpd-product-list` exposes the same outputs as `productEditRequested` / `productDeleteRequested` for each product in the grid. `[showPromotions]` toggles the promotion ribbon (Website default: `true` via wrapper; BackOffice prices: `false`).
-
-### App-side wrappers
-
-Each app keeps thin "smart wrapper" components with the legacy `app-*` selectors and original input/output names (`ActualityModel`, `VpdEvent`, `Product`, `(actualityDeleted)`, `(actualityUpdated)`, etc.). These wrappers forward the model to the DS component, set `[editable]` to the right mode, and bind dialogs/facades - they hold no presentation logic.
-
-- BackOffice wrappers: `editable=true`, delegate edit/delete to Material dialogs + facades.
-- Website wrappers: `editable=false`, pass-through only (read-only public site).
-
-### Duplicates removed
-
-Both `src/BackOffice/src/app/shared/components/{title,under-section,vpd-button,vpd-image}/` and `src/Website/src/app/shared/components/{title,under-section,button,vpd-image}/`, plus the per-app `capitalize.pipe.ts` / `line-number-title.pipe.ts` / `price.pipe.ts` are gone - `@vpd/ui` is the single source. SharedModules now only declare app-specific components and pull in `DesignSystemModule`. Dialog components (`CreateUpdateActualityDialog`, `CreateUpdateProductDialog`) remain declared in `FeatureModule` where they already lived; `SharedModule` keeps only `ConfirmationDialogComponent` + `CreateUpdateEventDialogComponent` on the BackOffice side.
-
-## Catalog member account selection
-
-- Keep `Ma sélection` visually and behaviorally separate from the alert watchlist `Mes recherches`.
-- Account tabs wrap as 44px pills below 700px; selection filters switch to a native dropdown below 760px, and the four personal states use a two-column mobile grid.
-- Use the Catalog V2 variables from `src/Catalog/src/styles.scss` (`--catalog-paper`, `--catalog-ink`, `--catalog-blue`, `--catalog-orange`, `--catalog-green`, `--catalog-purple`) instead of copying mockup inline styles.
-- The empty state, device-only banner, freshness line, availability badges, and merge sheet are implemented in `src/Catalog/src/app/features/account/selection/`.
-
-## Seasonal event identities
-
-The Website event agenda uses one identity helper across calendar days, list banners,
-featured event, event detail, global J-7 banner, and home cards. Halloween scenes use the
-existing themed characters; book-fair scenes use the A bookmark butterfly over straight
-paper lines; classic loto uses a numbered bingo ball. Respect the shared calm preference
-and `prefers-reduced-motion`, and keep text/date rendering SSR-safe. Website's
-`anyComponentStyle` budget is 7 kB warning / 8 kB error to allow the dedicated calendar and
-seasonal card styles while keeping a bounded component stylesheet size.
+- One Website event-identity helper feeds calendar cells, list cards, detail views, banners, and home cards. Keep Paris date handling and server rendering safe.
+- Halloween scenes use the existing themed characters and event's `liveTheme`; classic/unthemed events retain the classic view. Calm/reduced-motion preferences apply to banner and board animation. Character styles are global to avoid per-component Sass budget growth.
+- The Website `anyComponentStyle` budget is 7 kB warning / 8 kB error. Put reusable shared-shell/character styling in the global stylesheet when that avoids duplicate component bundles.
+- See `.github/memory/18-halloween-loto-board.md` for current board behavior and its validation.
