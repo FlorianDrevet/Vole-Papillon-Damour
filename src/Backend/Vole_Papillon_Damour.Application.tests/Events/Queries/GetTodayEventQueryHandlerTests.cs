@@ -16,11 +16,52 @@ public class GetTodayEventQueryHandlerTests
     private static readonly DateTime Now = new(2026, 11, 15, 9, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task Handle_WithoutEventToday_ReturnsNull()
+    public async Task Handle_WithEventTomorrow_ReturnsIt()
     {
         var result = await Handle(Now, CreateEvent("Bourse", EventsType.EventsTypeEnum.Books, "2026-11-16T08:00:00Z"));
 
-        result.Should().BeNull();
+        result!.Name.Should().Be("Bourse");
+    }
+
+    [Fact]
+    public async Task Handle_ForLotoSevenDaysAhead_ReturnsItButNotOneEightDaysAhead()
+    {
+        var withinWindow = CreateEvent("Loto à J-7", EventsType.EventsTypeEnum.Bingo, "2026-11-22T12:00:00Z");
+        var outsideWindow = CreateEvent("Loto à J-8", EventsType.EventsTypeEnum.Bingo, "2026-11-23T12:00:00Z");
+
+        var sevenDaysResult = await Handle(Now, withinWindow);
+        var eightDaysResult = await Handle(Now, outsideWindow);
+
+        sevenDaysResult.Should().NotBeNull();
+        sevenDaysResult!.LiveStatus.Should().BeNull();
+        sevenDaysResult.LastNumero.Should().BeNull();
+        eightDaysResult.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ForBookEventAlreadyStartedAndStillInProgress_ReturnsIt()
+    {
+        var bookExchange = CreateEvent(
+            "Bourse en cours",
+            EventsType.EventsTypeEnum.Books,
+            "2026-11-14T08:00:00Z",
+            "2026-11-18T08:00:00Z");
+
+        var result = await Handle(Now, bookExchange);
+
+        result!.Id.Should().Be(bookExchange.Id);
+    }
+
+    [Fact]
+    public async Task Handle_PrefersCloserBookEventToLaterLoto()
+    {
+        var bookExchange = CreateEvent("Bourse", EventsType.EventsTypeEnum.Books, "2026-11-17T08:00:00Z");
+        var loto = CreateEvent("Loto", EventsType.EventsTypeEnum.Bingo, "2026-11-20T08:00:00Z");
+
+        var result = await Handle(Now, bookExchange, loto);
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(bookExchange.Id);
     }
 
     [Fact]
@@ -108,7 +149,11 @@ public class GetTodayEventQueryHandlerTests
             .Handle(new GetTodayEventQuery(), CancellationToken.None);
     }
 
-    private static AssoEvents CreateEvent(string name, EventsType.EventsTypeEnum type, string dateStart)
+    private static AssoEvents CreateEvent(
+        string name,
+        EventsType.EventsTypeEnum type,
+        string dateStart,
+        string? dateEnd = null)
     {
         var partie = Partie.Create(
             "Partie 1",
@@ -122,7 +167,7 @@ public class GetTodayEventQueryHandlerTests
             new Uri("https://example.com/event.jpg"),
             new EventsType(type),
             DateTimeOffset.Parse(dateStart),
-            null,
+            dateEnd is null ? null : DateTimeOffset.Parse(dateEnd),
             null,
             null,
             null,
