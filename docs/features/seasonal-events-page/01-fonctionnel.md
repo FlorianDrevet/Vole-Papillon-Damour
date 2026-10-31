@@ -1,6 +1,6 @@
 # Page Événements en agenda et thèmes des lotos — spécification fonctionnelle
 
-> Statut : brouillon du 2026-10-31, à valider.
+> Statut : validée le 2026-10-31.
 > Prolonge [`halloween-loto-board`](../halloween-loto-board/01-fonctionnel.md), dont elle reprend
 > le thème d'un loto (RG-25), le bandeau du jour (E6, RG-39, RG-40) et la palette Halloween.
 > La numérotation des règles continue à RG-41.
