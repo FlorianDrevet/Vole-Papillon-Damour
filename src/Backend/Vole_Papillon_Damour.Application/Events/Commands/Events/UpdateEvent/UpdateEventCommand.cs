@@ -21,5 +21,6 @@ public record UpdateEventCommand (
     IFormFile? ImageMap ,
     Uri? ImageMapUri ,
     string Description ,
-    Adresse Adresse
+    Adresse Adresse,
+    LiveTheme LiveTheme
 ) : IRequest<ErrorOr<AssoEventResult>>;

@@ -13,8 +13,11 @@ using NSubstitute;
 using Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 using Vole_Papillon_Damour.Api.LiveTableau;
 using Vole_Papillon_Damour.Application.Events.Common;
+using Vole_Papillon_Damour.Application.Events.Commands.CreateEvent;
+using Vole_Papillon_Damour.Application.Events.Commands.Events.UpdateEvent;
 using Vole_Papillon_Damour.Application.Events.Queries.GetAssoEventById;
 using Vole_Papillon_Damour.Application.Events.Queries.GetTodayEvent;
+using Vole_Papillon_Damour.Contracts.Events.Requests;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
@@ -44,6 +47,7 @@ public sealed class LiveTableauEndpointTests
     public async Task Sse_ForAKnownEvent_StreamsTheStateWithItsRevisionWithoutBuffering()
     {
         var loto = LiveTableauTestEvents.CreateLoto();
+        loto.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
         loto.MarkLiveChange();
         loto.MarkLiveChange();
         loto.MarkLiveChange();
@@ -60,11 +64,51 @@ public sealed class LiveTableauEndpointTests
 
         context.Response.ContentType.Should().StartWith("text/event-stream");
         context.Response.Headers["X-Accel-Buffering"].ToString().Should().Be("no");
-        body.Should().Contain("id: 3\n");
+        body.Should().Contain("id: 4\n");
         body.Should().Contain("retry: 3000\n");
         body.Should().Contain("data: {\"id\":\"" + loto.Id.Value);
-        body.Should().Contain("\"liveRevision\":3");
+        body.Should().Contain("\"liveRevision\":4");
+        body.Should().Contain("\"liveTheme\":\"Halloween\"");
         hub.GetWatchedEvents().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetEventById_ReturnsLiveTheme()
+    {
+        var loto = LiveTableauTestEvents.CreateLoto();
+        loto.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+        var mapper = LiveTableauTestEvents.CreateMapper();
+        var mediator = Substitute.For<IMediator>();
+        mediator.Send(Arg.Any<GetAssoEventByIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns((ErrorOr<AssoEventResult>)mapper.Map<AssoEventResult>(loto));
+        await using var application = CreateApplication(mediator, new LiveTableauHub(), mapper);
+
+        var context = await InvokeAsync(application, "/asso-events/{id}", loto.Id.Value, TimeSpan.FromSeconds(5));
+        var json = JsonNode.Parse(await ReadBodyAsync(context))!.AsObject();
+
+        json["liveTheme"]!.GetValue<string>().Should().Be("Halloween");
+    }
+
+    [Fact]
+    public void UpdateRequest_MapsLiveThemeIntoCommand()
+    {
+        var mapper = LiveTableauTestEvents.CreateMapper();
+        var request = new UpdateEventRequest { LiveTheme = "Halloween" };
+
+        var command = mapper.Map<UpdateEventCommand>((request, Guid.Parse("9a25d34c-7a08-4b33-b761-ec532ad6950d")));
+
+        command.LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+    }
+
+    [Fact]
+    public void CreateRequest_MapsLiveThemeIntoCommand()
+    {
+        var mapper = LiveTableauTestEvents.CreateMapper();
+        var request = new CreateEventRequest { EventType = "Bingo", LiveTheme = "Halloween" };
+
+        var command = mapper.Map<CreateEventCommand>(request);
+
+        command.LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
     }
 
     [Fact]

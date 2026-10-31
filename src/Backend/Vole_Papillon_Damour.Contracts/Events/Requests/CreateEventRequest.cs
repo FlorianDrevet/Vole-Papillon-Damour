@@ -7,6 +7,7 @@ public class CreateEventRequest
     public string? Name { get; set; }
     public IFormFile? Image { get; set; }
     public string? EventType { get; set; }
+    public string? LiveTheme { get; set; }
     public DateTimeOffset? DateStart { get; set; }
     public DateTimeOffset? DateEnd { get; set; }
     public DateTimeOffset? HourOpenDoors { get; set; }

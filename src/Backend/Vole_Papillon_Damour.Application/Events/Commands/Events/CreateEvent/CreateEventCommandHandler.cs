@@ -63,6 +63,7 @@ public class CreateEventCommandHandler(IEventRepository eventRepository, IBlobSe
             parties,
             command.Description
         );
+        events.SetLiveTheme(command.LiveTheme);
 
         return mapper.Map<AssoEventResult>(await eventRepository.AddAsync(events));
     }

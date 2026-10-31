@@ -23,7 +23,10 @@ public record CreateEventCommand(
     string City,
     int CityCode,
     string Road,
-    List<CreatePartiesCommand>? Parties) : IRequest<ErrorOr<AssoEventResult>>;
+    List<CreatePartiesCommand>? Parties) : IRequest<ErrorOr<AssoEventResult>>
+{
+    public LiveTheme LiveTheme { get; init; } = new(LiveTheme.LiveThemeEnum.Classic);
+}
 
 public class CreatePartiesCommand
 {

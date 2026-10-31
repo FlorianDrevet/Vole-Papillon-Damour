@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
@@ -509,6 +510,11 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
                 .HasConversion(
                     type => (int)type.Value,
                     value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Property(assoEvent => assoEvent.LiveTheme)
+                .HasConversion(
+                    theme => (int)theme.Value,
+                    value => new LiveTheme((LiveTheme.LiveThemeEnum)value))
+                .HasDefaultValueSql("0");
             builder.ComplexProperty(assoEvent => assoEvent.Adresse);
             builder.Ignore(assoEvent => assoEvent.UrlImage);
             builder.Ignore(assoEvent => assoEvent.UrlRegistration);
