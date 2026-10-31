@@ -6,9 +6,10 @@ describe('reduceRegieKey', () => {
   it('tire le numéro tapé à l’appui sur Entrée', () => {
     let state = reduceRegieKey('', '4');
     state = reduceRegieKey(state.buffer, '2');
-    expect(state).toEqual({buffer: '42', action: null});
+    expect(state as unknown).toEqual({buffer: '42', action: null, handled: true});
 
-    expect(reduceRegieKey(state.buffer, 'Enter')).toEqual({buffer: '', action: {type: 'draw', numero: 42}});
+    expect(reduceRegieKey(state.buffer, 'Enter') as unknown)
+      .toEqual({buffer: '', action: {type: 'draw', numero: 42}, handled: true});
   });
 
   it('recommence la saisie après deux chiffres et refuse un numéro hors 1–90', () => {
@@ -19,8 +20,9 @@ describe('reduceRegieKey', () => {
   });
 
   it('efface un chiffre, ou annule le dernier numéro sans saisie en cours', () => {
-    expect(reduceRegieKey('42', 'Backspace')).toEqual({buffer: '4', action: null});
-    expect(reduceRegieKey('', 'Backspace')).toEqual({buffer: '', action: {type: 'undo'}});
+    expect(reduceRegieKey('42', 'Backspace') as unknown).toEqual({buffer: '4', action: null, handled: true});
+    expect(reduceRegieKey('', 'Backspace') as unknown)
+      .toEqual({buffer: '', action: {type: 'undo'}, handled: true});
   });
 
   it('associe les raccourcis de la barre de régie', () => {
@@ -29,8 +31,9 @@ describe('reduceRegieKey', () => {
     expect(reduceRegieKey('', ' ').action).toEqual({type: 'pause'});
     expect(reduceRegieKey('', 'p').action).toEqual({type: 'palette'});
     expect(reduceRegieKey('', 'F').action).toEqual({type: 'fullscreen'});
-    expect(reduceRegieKey('4', 'Escape')).toEqual({buffer: '', action: null});
-    expect(reduceRegieKey('4', 'x')).toEqual({buffer: '4', action: null});
+    expect(reduceRegieKey('', 'g').action as unknown).toEqual({type: 'grid'});
+    expect(reduceRegieKey('4', 'Escape') as unknown).toEqual({buffer: '', action: null, handled: true});
+    expect(reduceRegieKey('4', 'x') as unknown).toEqual({buffer: '4', action: null, handled: false});
   });
 });
 

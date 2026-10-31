@@ -1,9 +1,9 @@
 // Tableau du loto projeté en salle (E1, E2, E3) — maquettes
 // docs/features/loto-live-board/maquettes/preview/Main.html (palette A) et preview/E1-Claire.html (B).
 // Feuille globale, préfixée par .loto-projection : le budget de style d'un composant
-// (4 Ko) est trop petit pour une page plein écran à deux palettes. Les deux palettes
-// partagent la mise en page ; seules les variables changent (RG-22). Les états d'une
-// case se lisent par la luminosité (RG-01).
+// (4 Ko) est trop petit pour une page plein écran à trois palettes. Elles partagent la
+// mise en page ; seules les variables changent (RG-22). Les états d'une case se lisent
+// par la luminosité (RG-01).
 .loto-projection {
   .pal-a {
     --bg: #020e18;
@@ -44,6 +44,32 @@
     --accent: #b4500e;
     --won: #6d8ba2;
     --qr-border: #072b45;
+  }
+
+  // Contraste renforcé pour la toile : chiffres blancs, cellules bien séparées,
+  // numéros sortis en ambre clair lisible sur fond sombre.
+  .pal-c {
+    --bg: #040d14;
+    --panel: #0a1b26;
+    --line: #5e7480;
+    --cell: #0b1e29;
+    --cell-num: #ffffff;
+    --on: #ffe066;
+    --on-num: #07131a;
+    --last: #ffd45e;
+    --last-num: #07131a;
+    --last-big-bg: #ffd45e;
+    --last-big-color: #07131a;
+    --text: #ffffff;
+    --muted: #cad8de;
+    --chip: #263e4a;
+    --accent: #ffe066;
+    --won: #d8e4e8;
+    --qr-border: #07131a;
+  }
+
+  .pal-c .c {
+    border: 2px solid var(--line);
   }
 
   .viewport {
@@ -465,8 +491,12 @@
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    width: min(1840px, calc(100% - 48px));
+    box-sizing: border-box;
+    padding: 14px 18px;
     border-radius: 10px;
     background: rgba(7, 27, 43, .94);
     border: 1px solid #1b3c57;
@@ -478,12 +508,13 @@
     align-items: center;
     gap: 10px;
     height: 52px;
-    padding: 0 16px;
+    padding: 0 18px;
     border-radius: 6px;
     border: 1px solid #1b3c57;
     background: #0b2438;
     color: #dcecf7;
     font: 600 17px 'Libre Franklin', sans-serif;
+    white-space: nowrap;
     cursor: pointer;
 
     &:disabled {

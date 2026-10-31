@@ -1,7 +1,7 @@
 import {Injectable, signal} from '@angular/core';
 
-/** RG-22 : A « sombre » (tableau lumineux) ou B « claire », choisie sur place le jour J. */
-export type LotoPalette = 'dark' | 'light';
+/** RG-22 : sombre, claire ou contraste renforcé pour les essais sur la toile. */
+export type LotoPalette = 'dark' | 'light' | 'projection';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +12,9 @@ export class LotoPaletteService {
   readonly palette = signal<LotoPalette>(LotoPaletteService.read());
 
   toggle(): void {
-    const next: LotoPalette = this.palette() === 'dark' ? 'light' : 'dark';
+    const next: LotoPalette = this.palette() === 'dark'
+      ? 'light'
+      : this.palette() === 'light' ? 'projection' : 'dark';
     this.palette.set(next);
     try {
       localStorage.setItem(LotoPaletteService.storageKey, next);
@@ -23,7 +25,8 @@ export class LotoPaletteService {
 
   private static read(): LotoPalette {
     try {
-      return localStorage.getItem(LotoPaletteService.storageKey) === 'light' ? 'light' : 'dark';
+      const stored = localStorage.getItem(LotoPaletteService.storageKey);
+      return stored === 'light' || stored === 'projection' ? stored : 'dark';
     } catch {
       return 'dark';
     }

@@ -43,6 +43,7 @@ export class TableauComponent implements OnInit {
   protected readonly busy = signal(false);
   protected readonly toast = signal<string | null>(null);
   protected readonly controlsVisible = signal(false);
+  protected readonly boardPreviewVisible = signal(false);
   protected readonly cursorVisible = signal(true);
   protected readonly keyBuffer = signal('');
   protected readonly stageScale = signal(1);
@@ -58,7 +59,7 @@ export class TableauComponent implements OnInit {
     if (overlay !== 'none') {
       return overlay;
     }
-    return phase === 'playing' ? 'board' : phase;
+    return phase === 'playing' || (phase === 'before' && this.boardPreviewVisible()) ? 'board' : phase;
   });
 
   private announceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -74,6 +75,7 @@ export class TableauComponent implements OnInit {
       .subscribe(params => {
         const id = params.get('id');
         if (id !== null) {
+          this.boardPreviewVisible.set(false);
           void this.eventFacade.getEventById$(id).then(event => this.assoEvent.set(event));
         }
       });
@@ -103,10 +105,15 @@ export class TableauComponent implements OnInit {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
-    this.showControls();
-    const result = reduceRegieKey(this.keyBuffer(), event.key);
-    if (result.action !== null || result.buffer !== this.keyBuffer()) {
+    const currentBuffer = this.keyBuffer();
+    const result = reduceRegieKey(currentBuffer, event.key);
+    if (result.action !== null || result.buffer !== currentBuffer) {
       event.preventDefault();
+    }
+    if (result.handled) {
+      this.hideControls();
+    } else {
+      this.showControls();
     }
     this.keyBuffer.set(result.buffer);
     if (result.action !== null) {
@@ -121,6 +128,11 @@ export class TableauComponent implements OnInit {
     this.controlsTimer = setTimeout(() => this.controlsVisible.set(false), CONTROLS_IDLE_MS);
   }
 
+  private hideControls(): void {
+    clearTimeout(this.controlsTimer);
+    this.controlsVisible.set(false);
+  }
+
   protected onCellClicked(cell: LotoCell): void {
     void this.run({type: 'draw', numero: cell.value});
   }
@@ -129,6 +141,11 @@ export class TableauComponent implements OnInit {
     switch (action.type) {
       case 'palette':
         this.paletteService.toggle();
+        return;
+      case 'grid':
+        if (this.view().phase === 'before') {
+          this.boardPreviewVisible.update(visible => !visible);
+        }
         return;
       case 'fullscreen':
         await this.toggleFullscreen();

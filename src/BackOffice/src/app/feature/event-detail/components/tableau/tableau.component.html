@@ -1,6 +1,7 @@
 <div class="viewport"
      [class.pal-a]="palette() === 'dark'"
      [class.pal-b]="palette() === 'light'"
+     [class.pal-c]="palette() === 'projection'"
      [class.cursor-hidden]="!cursorVisible()">
   <div class="stage" [style.transform]="'translate(-50%, -50%) scale(' + stageScale() + ')'">
     @switch (screen()) {
@@ -168,8 +169,8 @@
       }
     }
 
-    <!-- E3 · Aide clavier : affichée après une touche, masquée après 3 s sans clavier. -->
-    @if (controlsVisible() && keyBuffer() !== '') {
+    <!-- E3 · Numéro en attente de validation. -->
+    @if (keyBuffer() !== '') {
       <div class="key-buffer" aria-live="polite">
         <span class="kbd-label">Saisie</span>
         <span class="key-buffer-value">{{ keyBuffer() }}_</span>
@@ -186,6 +187,12 @@
 
     @if (controlsVisible()) {
       <div class="bar" role="toolbar" aria-label="Régie du loto">
+        @if (view().phase === 'before') {
+          <button type="button" class="btn" (click)="run({type: 'grid'})"
+                  [attr.aria-label]="boardPreviewVisible() ? 'Afficher le QR code' : 'Afficher la grille sans tirage'">
+            {{ boardPreviewVisible() ? 'Écran QR' : 'Grille sans tirage' }} <kbd>G</kbd>
+          </button>
+        }
         <button type="button" class="btn" [disabled]="busy()" (click)="run({type: 'undo'})">
           <app-icon name="undo" [size]="22"></app-icon> Annuler le dernier <kbd>⌫</kbd>
         </button>
@@ -201,15 +208,19 @@
         </button>
         <span class="sep" aria-hidden="true"></span>
         <button type="button" class="btn" (click)="run({type: 'palette'})"
-                [attr.aria-label]="palette() === 'dark' ? 'Passer en palette claire' : 'Passer en palette sombre'">
+                [attr.aria-label]="palette() === 'dark' ? 'Passer au thème clair' : palette() === 'light' ? 'Passer au thème projection' : 'Passer au thème sombre'">
           <app-icon name="contrast" [size]="22"></app-icon>
-          {{ palette() === 'dark' ? 'Palette claire' : 'Palette sombre' }} <kbd>P</kbd>
+          {{ palette() === 'dark' ? 'Palette claire' : palette() === 'light' ? 'Thème projection' : 'Palette sombre' }} <kbd>P</kbd>
         </button>
         <button type="button" class="btn" (click)="run({type: 'fullscreen'})" aria-label="Plein écran">
           <app-icon name="fullscreen" [size]="22"></app-icon> <kbd>F</kbd>
         </button>
         <span class="sep" aria-hidden="true"></span>
-        <span class="hint">Clic sur une case ou chiffres + <kbd>Entrée</kbd></span>
+        @if (view().phase === 'before') {
+          <span class="hint">G affiche la grille sans tirer de numéro</span>
+        } @else {
+          <span class="hint">Clic sur une case ou chiffres + <kbd>Entrée</kbd></span>
+        }
       </div>
     }
   </div>

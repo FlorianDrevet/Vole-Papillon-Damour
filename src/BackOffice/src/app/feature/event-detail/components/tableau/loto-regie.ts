@@ -8,21 +8,24 @@ export type RegieAction =
   | {type: 'bingo'}
   | {type: 'pause'}
   | {type: 'palette'}
+  | {type: 'grid'}
   | {type: 'fullscreen'};
 
 export interface RegieKeyResult {
   /** Chiffres tapés en attente de « Entrée », affichés dans le témoin de saisie. */
   buffer: string;
   action: RegieAction | null;
+  /** Distingue une touche de régie reconnue d’une touche sans commande associée. */
+  handled: boolean;
 }
 
 /**
  * Clavier de la régie : chiffres puis Entrée pour tirer, Retour arrière pour effacer un
- * chiffre ou, sans saisie en cours, annuler le dernier numéro ; L, B, Espace, P, F.
+ * chiffre ou, sans saisie en cours, annuler le dernier numéro ; L, B, Espace, P, G, F.
  */
 export function reduceRegieKey(buffer: string, key: string): RegieKeyResult {
   if (/^[0-9]$/.test(key)) {
-    return {buffer: buffer.length >= 2 ? key : buffer + key, action: null};
+    return {buffer: buffer.length >= 2 ? key : buffer + key, action: null, handled: true};
   }
 
   switch (key) {
@@ -31,30 +34,34 @@ export function reduceRegieKey(buffer: string, key: string): RegieKeyResult {
       return {
         buffer: '',
         action: buffer !== '' && numero >= 1 && numero <= 90 ? {type: 'draw', numero} : null,
+        handled: true,
       };
     }
     case 'Escape':
-      return {buffer: '', action: null};
+      return {buffer: '', action: null, handled: true};
     case 'Backspace':
       return buffer === ''
-        ? {buffer: '', action: {type: 'undo'}}
-        : {buffer: buffer.slice(0, -1), action: null};
+        ? {buffer: '', action: {type: 'undo'}, handled: true}
+        : {buffer: buffer.slice(0, -1), action: null, handled: true};
     case 'l':
     case 'L':
-      return {buffer, action: {type: 'line'}};
+      return {buffer, action: {type: 'line'}, handled: true};
     case 'b':
     case 'B':
-      return {buffer, action: {type: 'bingo'}};
+      return {buffer, action: {type: 'bingo'}, handled: true};
     case ' ':
-      return {buffer, action: {type: 'pause'}};
+      return {buffer, action: {type: 'pause'}, handled: true};
     case 'p':
     case 'P':
-      return {buffer, action: {type: 'palette'}};
+      return {buffer, action: {type: 'palette'}, handled: true};
+    case 'g':
+    case 'G':
+      return {buffer, action: {type: 'grid'}, handled: true};
     case 'f':
     case 'F':
-      return {buffer, action: {type: 'fullscreen'}};
+      return {buffer, action: {type: 'fullscreen'}, handled: true};
     default:
-      return {buffer, action: null};
+      return {buffer, action: null, handled: false};
   }
 }
 
