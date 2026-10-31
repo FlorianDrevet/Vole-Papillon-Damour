@@ -4,6 +4,7 @@ import {VpdEventModel} from '../../shared/models/vpdEvent.model';
 import {VpdEventEnum} from '../../shared/enums/vpdEvent.enum';
 import {parisDay} from '../../shared/events/countdown';
 import {EVENT_EDITORIAL_PHOTOS} from '../../shared/data/event-editorial-content';
+import {AgendaFilter} from './components/agenda-filters/agenda-filters.component';
 
 @Component({
   selector: 'app-vpd-events',
@@ -45,6 +46,19 @@ export class VpdEventsPageComponent implements OnInit {
   });
   protected readonly featuredEvent = computed<VpdEventModel | null>(() => this.upcomingEvents()[0] ?? null);
   protected readonly nextEvents = computed(() => this.upcomingEvents().slice(1, 4));
+  protected readonly agendaFilter = signal<AgendaFilter>('all');
+  protected readonly filteredEvents = computed(() => this.upcomingEvents().filter(event => {
+    switch (this.agendaFilter()) {
+      case 'bingo':
+        return event.eventType === VpdEventEnum.Bingo;
+      case 'books':
+        return event.eventType === VpdEventEnum.Books;
+      case 'other':
+        return event.eventType !== VpdEventEnum.Bingo && event.eventType !== VpdEventEnum.Books;
+      default:
+        return true;
+    }
+  }));
 
   ngOnInit(): void {
     this.eventFacade.getAllEvents$()

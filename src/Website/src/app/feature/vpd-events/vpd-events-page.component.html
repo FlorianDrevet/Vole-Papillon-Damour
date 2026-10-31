@@ -24,6 +24,29 @@
     </div>
   }
 </section>
+<section class="flex flex-col gap-6 bg-white px-shell py-10 lg:gap-8 lg:py-14" data-zone="E1-agenda">
+  <div class="flex flex-col gap-5 border-b border-line pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <h2 class="font-serif text-[32px] font-medium leading-none text-ink-2 lg:text-[44px]">L'agenda</h2>
+    <app-agenda-filters
+      [events]="upcomingEvents()"
+      [active]="agendaFilter()"
+      (activeChange)="agendaFilter.set($event)"></app-agenda-filters>
+  </div>
+
+  @if (filteredEvents().length) {
+    <app-agenda-liste [events]="filteredEvents()"></app-agenda-liste>
+  } @else if (isLoading()) {
+    <div class="grid grid-cols-1 gap-3" aria-hidden="true">
+      <span class="skeleton h-28 rounded-2xl"></span>
+      <span class="skeleton h-28 rounded-2xl"></span>
+    </div>
+  }
+
+  <a routerLink="/evenement/all" class="inline-flex min-h-11 items-center self-start font-semibold text-blue underline underline-offset-4" data-zone="E1-editions-passees">
+    Voir les éditions passées
+  </a>
+</section>
+
 <section class="flex flex-col gap-7 bg-white px-shell py-10 lg:gap-8 lg:py-16" data-zone="E1-nos-rendez-vous">
   <h2 class="font-serif text-[32px] font-medium leading-tight text-ink-2 lg:text-[44px]">Nos rendez-vous</h2>
   <div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 lg:gap-7">

@@ -1,0 +1,14 @@
+@if (filters.length > 1) {
+  <div class="agenda-filters" role="group" aria-label="Filtrer l'agenda" data-zone="E1-filtres">
+    @for (filter of filters; track filter.value) {
+      <button
+        type="button"
+        class="agenda-filter"
+        [class.agenda-filter--active]="active === filter.value"
+        [attr.aria-pressed]="active === filter.value"
+        (click)="activeChange.emit(filter.value)">
+        {{ filter.label }}
+      </button>
+    }
+  </div>
+}

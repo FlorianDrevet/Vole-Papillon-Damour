@@ -1,0 +1,61 @@
+@for (month of months; track month.key) {
+  <section class="agenda-month" data-zone="E1-mois">
+    <h3 class="month-name">{{ month.label }}</h3>
+    <div class="month-events">
+      @for (event of month.events; track event.id) {
+        <a
+          class="agenda-event"
+          [class.agenda-event--halloween]="identity(event) === 'halloween'"
+          [class.agenda-event--books]="identity(event) === 'books'"
+          [class.agenda-event--loto]="identity(event) === 'loto'"
+          [class.agenda-event--other]="identity(event) === 'other'"
+          [class.calm]="calm()"
+          [class.paused]="!visible()"
+          [attr.data-zone]="identity(event) === 'halloween' ? 'E1-bandeau-loto-theme' : identity(event) === 'books' ? 'E1-bandeau-bourse' : identity(event) === 'loto' ? 'E1-bandeau-loto' : 'E1-bandeau-autre'"
+          [routerLink]="['/evenement', event.id]">
+          <span class="event-decor" aria-hidden="true">
+            @if (identity(event) === 'halloween') {
+              <span class="halloween-stars"><i></i><i></i><i></i><i></i></span>
+              <span class="halloween-moon"></span>
+              <span class="halloween-fog"></span>
+              <vpd-chauve-souris class="halloween-bat" [size]="42" mood="vol" />
+              <vpd-citrouille class="halloween-pumpkin" [size]="118" mood="idle" />
+            } @else if (identity(event) === 'books') {
+              <span class="paper-margin"></span>
+              <vpd-papillon class="paper-butterfly-small" [size]="44" mood="pose" />
+              <vpd-papillon class="paper-butterfly" [size]="166" mood="vol" />
+            } @else if (identity(event) === 'loto') {
+              <span class="bingo-card-dots"></span>
+              <vpd-boule-bingo class="bingo-ball-small ball-orange" size="44" num="07" color="orange" mood="pose" />
+              <vpd-boule-bingo class="bingo-ball-small ball-cyan" size="36" num="42" color="cyan" mood="pose" />
+              <vpd-boule-bingo class="bingo-ball-large" [size]="120" [num]="event.dateStart | date:'dd':'UTC'" color="bleu" mood="saute" />
+            } @else {
+              <span class="other-orbit"></span>
+            }
+          </span>
+
+          <span class="event-date">
+            @if (event.dateEnd) {
+              <span class="event-day">{{ event.dateStart | date:'dd':'UTC' }}<span aria-hidden="true">–</span>{{ event.dateEnd | date:'dd':'UTC' }}</span>
+              <span class="event-weekday">{{ event.dateStart | date:'EEEE':'UTC' }} au {{ event.dateEnd | date:'EEEE':'UTC' }}</span>
+            } @else {
+              <span class="event-day">{{ event.dateStart | date:'dd':'UTC' }}</span>
+              <span class="event-weekday">{{ event.dateStart | date:'EEEE':'UTC' }}</span>
+            }
+          </span>
+
+          <span class="event-copy">
+            <span class="event-type">{{ typeLabel(event) }}</span>
+            <strong class="event-title">{{ event.name }}</strong>
+            <span class="event-meta">{{ meta(event) }}</span>
+            @if (countdown(event); as label) {
+              <span class="event-countdown">{{ label }}</span>
+            }
+          </span>
+
+          <svg class="event-open" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+        </a>
+      }
+    </div>
+  </section>
+}

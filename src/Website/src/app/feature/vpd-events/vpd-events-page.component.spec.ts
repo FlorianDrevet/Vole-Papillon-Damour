@@ -4,6 +4,8 @@ import {CommonModule} from '@angular/common';
 import {provideRouter} from '@angular/router';
 import {DesignSystemModule} from '@vpd/ui';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
+import {AgendaFiltersComponent} from './components/agenda-filters/agenda-filters.component';
+import {AgendaListComponent} from './components/agenda-liste/agenda-liste.component';
 import {FeaturedEventComponent} from './components/featured-event/featured-event.component';
 import {NextEventsComponent} from './components/next-events/next-events.component';
 import {SpecialEventComponent} from './components/special-event/special-event.component';
@@ -51,7 +53,14 @@ describe('VpdEventsPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [VpdEventsPageComponent, SpecialEventComponent],
-      imports: [CommonModule, DesignSystemModule, FeaturedEventComponent, NextEventsComponent],
+      imports: [
+        CommonModule,
+        DesignSystemModule,
+        FeaturedEventComponent,
+        NextEventsComponent,
+        AgendaFiltersComponent,
+        AgendaListComponent,
+      ],
       providers: [provideRouter([]), {provide: VpdEventsFacadeService, useValue: eventsFacadeSpy}],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -94,6 +103,25 @@ describe('VpdEventsPageComponent', () => {
 
     expect(fixture.nativeElement.querySelector('app-featured-event')?.textContent).toContain('Loto de Maxence');
     expect(fixture.nativeElement.querySelector('.halloween-scene')).toBeNull();
+  });
+
+  it('applies the Lotos filter to the list', async () => {
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-03T12:00:00Z'),
+      apiEvent('books-1', 'Bourse aux livres', 'Books', '2026-11-11T00:00:00Z', {
+        dateEnd: '2026-11-16T00:00:00Z',
+      }),
+    ]);
+
+    expect(fixture.nativeElement.querySelectorAll('.agenda-event').length).toBe(2);
+    const lotoFilter = [...fixture.nativeElement.querySelectorAll('button')]
+      .find(button => button.textContent?.trim() === 'Lotos') as HTMLButtonElement;
+    lotoFilter.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.agenda-event').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.agenda-event--books')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.agenda-event--loto')).not.toBeNull();
   });
 
   it('keeps the original presentation and expands the rest of the loto text', async () => {
