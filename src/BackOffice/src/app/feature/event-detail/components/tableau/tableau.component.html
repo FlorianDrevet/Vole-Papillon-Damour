@@ -32,8 +32,18 @@
             <span class="lead">On reprend dans quelques minutes.</span>
             @if (view().showBingo || view().bingoWon) {
               <div class="bingo-panel bingo-panel-lg">
-                <span class="k k-accent">Numéros du bingo</span>
-                <span class="bingo-numbers-lg">{{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+                <span class="k k-accent">Bingo</span>
+                @if (view().bingoWon) {
+                  <span class="bingo-won bingo-won-lg">Gagné !</span>
+                } @else if (view().bingoNumeros.length > 0) {
+                  <div class="bingo-numbers bingo-numbers-lg">
+                    @for (numero of view().bingoNumeros; track $index) {
+                      <span class="bingo-number-lg">{{ numero }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="bingo-empty">—</span>
+                }
               </div>
             }
             @if (view().nextPartie; as next) {
@@ -54,7 +64,6 @@
         <!-- E2 · Avant le début -->
         <div class="screen screen-split">
           <div class="split-main">
-            <span class="k">Vole Papillon d'Amour · {{ view().eventName }}</span>
             <span class="before-title">Le loto va commencer</span>
             @if (view().firstPartie; as first) {
               <div class="first-partie">
@@ -78,7 +87,20 @@
           <span class="k">Vole Papillon d'Amour · {{ view().eventName }}</span>
           <span class="finished-title">Loto terminé</span>
           <span class="finished-thanks">Merci à tous !</span>
-          <span class="bingo-pill"><span class="k k-accent">Bingo</span> {{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+          <div class="bingo-panel bingo-panel-finished">
+            <span class="k k-accent">Bingo</span>
+            @if (view().bingoWon) {
+              <span class="bingo-won">Gagné !</span>
+            } @else if (view().bingoNumeros.length > 0) {
+              <div class="bingo-numbers bingo-numbers-lg">
+                @for (numero of view().bingoNumeros; track $index) {
+                  <span class="bingo-number-lg">{{ numero }}</span>
+                }
+              </div>
+            } @else {
+              <span class="bingo-empty">—</span>
+            }
+          </div>
           <span class="lead">Les bénéfices de cet après-midi soutiennent Maxence.</span>
         </div>
       }
@@ -118,17 +140,6 @@
               }
             </div>
 
-            @if (view().previousNumeros.length > 0) {
-              <div class="side-block">
-                <span class="k">Précédents</span>
-                <div class="prev-row">
-                  @for (numero of view().previousNumeros; track $index) {
-                    <span class="prev">{{ numero }}</span>
-                  }
-                </div>
-              </div>
-            }
-
             <div class="side-block side-rule">
               <span class="k">Lots de la ligne</span>
               @for (lot of view().lots; track lot.id) {
@@ -139,7 +150,17 @@
             @if (view().showBingo) {
               <div class="bingo-panel">
                 <span class="k k-accent">Bingo</span>
-                <span class="bingo-numbers">{{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+                @if (view().bingoWon) {
+                  <span class="bingo-won">Gagné !</span>
+                } @else if (view().bingoNumeros.length > 0) {
+                  <div class="bingo-numbers">
+                    @for (numero of view().bingoNumeros; track $index) {
+                      <span class="prev">{{ numero }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="bingo-empty">—</span>
+                }
               </div>
             }
           </div>

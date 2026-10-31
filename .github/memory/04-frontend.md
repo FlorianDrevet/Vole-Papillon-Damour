@@ -21,6 +21,16 @@ shared `buildLotoTableauView` projection. At phone widths its live order is the 
 five previous numbers, the 90-cell grid, then the current party, prizes, and bingo; desktop keeps
 the summary and party details in the left column beside the grid.
 
+As of 2026-10-31, the BackOffice desktop projection no longer repeats previous draws beside the
+90-cell grid; its latest-number display is shorter, and Bingo numbers use separate boxes under
+`Bingo` without a surrounding frame. The pre-game screen omits the association/event kicker. No
+Website phone-tableau files changed, so its five-previous-number layout remains as documented.
+`npm ci` and the BackOffice production build pass, with existing Angular budget/CommonJS warnings;
+`npm ci` reports 80 dependency vulnerabilities. Authenticated visual review remains for the
+maintainer because Windows Computer Use could not resolve Chrome's current URL and the BackOffice
+table route uses `MsalGuard`. Graphify re-extracted all 1,861 source files but could not render its
+9,115-node graph within the HTML visualization limit.
+
 As of 2026-09-22, the Scan rare-book surfaces follow the supplied Claude mockups: the home
 orders `Trier des livres`, `Livres rares`, `Caisse`, and `Consulter`; the rare-book list has a
 compact search/header, all/draft tabs, editorial cards and a bottom add action; the create
