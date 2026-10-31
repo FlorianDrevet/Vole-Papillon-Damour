@@ -1,274 +1,37 @@
 # 09 - Auth And Build
 
-## Backend Auth Model
+## API authentication
 
-- L0-11 deployment 1 adds `Microsoft.Identity.Web` 4.14.2 and a composite `Bearer`
-  policy scheme. It forwards Entra External ID tokens (the `*.ciamlogin.com` issuer) to
-  the `Entra` scheme and existing tokens from `/auth/login` to `LegacyJwt`.
-- Entra role claims are read from `roles`; the staged policies are `Tri`, `Caisse`,
-  `Administration`, and `RareBooks`. `RareBooks` accepts the dedicated `LivresRares`
-  role plus `Administration` and the legacy `Admin` role. `IsAdmin` remains a
-  compatibility alias accepting `Administration` and the legacy `Admin` role until
-  deployment 3; `LivresRares` is intentionally not part of `ScanVolunteer`.
-- `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
-  1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
-- Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
-  `AzureAd__ClientId`, and `AzureAd__Audience`. For v2 access tokens, the audience is the
-  bare API application ID; the `api://<id>/access_as_user` form remains the delegated MSAL
-  scope. The development API settings and Bicep deployment use the bare ID so BackOffice
-  write requests validate against the `aud` claim issued by Entra.
-- Entra `JwtBearerOptions` disable inbound claim mapping and use `roles` as the role claim
-  type. This keeps app roles such as `Administration` visible to ASP.NET Core's
-  `RequireRole` policies; leaving the default mapping enabled makes those policies return
-  `403 Forbidden` even when the token contains the role.
-- `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
-- `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
+- The API uses a composite Bearer scheme: Entra External ID tokens go to `Entra`; legacy `/auth/login` JWTs go to `LegacyJwt` while old clients are retired. `IsAdmin` remains a compatibility policy.
+- Entra API app-role claims are named `roles`; inbound claim mapping is disabled so `RequireRole` sees `Tri`, `Caisse`, `Administration`, and `LivresRares`. `RareBooks` accepts `LivresRares`, `Administration`, or legacy `Admin`; Scan accepts `Tri`/`Caisse` as appropriate.
+- For Entra v2 access tokens, `AzureAd__Audience` is the bare API application ID. The delegated scope remains `api://<id>/access_as_user`.
+- `POST /auth/login` is public and rate-limited. `POST /auth/register` is currently public despite a commented authorization line; inspect before changing auth assumptions.
+- `/accounts/admin` uses the app-only Microsoft Graph adapter. Account enable/disable and password reset need delegated app permissions plus the appropriate manually assigned Entra directory role; provisioning scripts do not grant elevated directory roles implicitly.
 
-## Local Keycloak API Test Identities
+## Local Keycloak personas
 
-- The Aspire AppHost adds `Aspire.Hosting.Keycloak` with nominal local port `8080` and imports
-  `src/Backend/Vole_Papillon_Damour.AppHost/Realms/vpd-realm.json`. In Development,
-  `Authentication:Provider=Keycloak`, the dynamic HTTPS endpoint for realm `vpd`, and audience
-  `vpd-api` select the local `JwtBearer` handler. Aspire can randomize ports in isolated
-  worktrees, so AppHost passes the live endpoint to the API and the token helper resolves it
-  with `aspire describe`. HTTP metadata is accepted only for loopback authorities.
-- The Keycloak token handler leaves claim names unmapped, reads the `name` claim, and reads
-  application roles from a top-level `roles` claim. Realm personas carry a stable `oid` UUID,
-  email, and API client roles matching the VPD policies: `Administration`, `LivresRares`,
-  `Tri`, and `Caisse`. The `vpd-api-access` client scope explicitly maps `email`, `given_name`,
-  and `family_name`; member API routes require these profile claims in addition to a valid `oid`.
-- `tools/Get-LocalApiToken.ps1 -Persona admin|tri-volunteer|cashier|member` retrieves a
-  non-interactive token using the local-only `vpd-local-test` Direct Access Grant client.
-  Seeded users/passwords are fixtures; use this client only for local API tests. Direct
-  account administration/Graph paths still need mocks or a dedicated test seam.
-- The Keycloak AppHost admin password comes from the `Parameters:keycloak-admin-password`
-  .NET User Secret. Its persistent data volume retains console changes; Keycloak imports the
-  realm fixture only into an empty volume, so reset only its `keycloak-data` volume to load
-  fixture changes. Aspire also probes API readiness through `/health`.
-- `infra/main.bicep` explicitly sets `Authentication__Provider=Entra`. Production browser
-  sign-in remains Entra/MSAL. In BackOffice development, `environment.development.ts` selects
-  Keycloak and the `vpd-backoffice-local` public client uses Authorization Code + PKCE S256;
-  its allow-listed callback is `http://localhost:4200/*` and its `vpd-api-access` default
-  scope supplies API audience, role, and identity claims. Website, Catalog, and Scan still use Entra
-  locally. The `vpd-local-test` direct-grant client remains for API test tooling only.
+- Aspire AppHost imports `src/Backend/Vole_Papillon_Damour.AppHost/Realms/vpd-realm.json` into a persistent Keycloak volume. Realm import runs only on an empty volume; to reload fixture changes, reset only `keycloak-data`, never SQL.
+- API Development uses `Authentication:Provider=Keycloak`, realm `vpd`, audience `vpd-api`, and the live HTTPS endpoint passed by AppHost. Aspire may randomize ports; resolve them through `aspire describe` rather than assuming port 8080.
+- `tools/Get-LocalApiToken.ps1 -Persona admin|tri-volunteer|cashier|member` uses the local-only `vpd-local-test` direct-grant client. Do not use the fixture client outside local API tests.
+- The local `vpd-api-access` client scope maps email and first/last-name claims needed by member endpoints. Four personas cover `Administration`, `LivresRares`, `Tri`, and `Caisse`; local role smoke should assert anonymous 401, member 403 on admin routes, and admin success.
+- The AppHost Keycloak admin password is a .NET User Secret. In Azure Bicep explicitly selects Entra; local Keycloak does not change production identity.
+- BackOffice local browser sign-in uses public client `vpd-backoffice-local` with Authorization Code + PKCE S256. Website, Catalog, and Scan continue to use Entra locally.
 
-- Account administration keeps Entra app roles as the source of truth. The BackOffice
-  uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
-  creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`
-  and synchronizes `Tri`, `Caisse`, `Administration`, and `LivresRares` assignments. The app-only Graph
-  registration needs `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
-  `User-PasswordProfile.ReadWrite.All`, `Application.Read.All`, and
-  `AppRoleAssignment.ReadWrite.All`; the dedicated grants support sensitive account
-  enable/disable and password reset operations. App-only password resets also require the
-  Entra directory role `User Administrator` on the service principal, assigned manually;
-  the provisioning script does not assign it. The admin reset endpoint returns its generated
-  temporary password only to the authenticated administrator for secure handoff.
-  The API receives its tenant domain and API client ID through `EntraGraph__TenantDomain`
-  and `EntraGraph__ApiClientId`, plus the app-only credential through
-  `EntraGraph__ClientId` and `EntraGraph__ClientSecret`. If the Graph
-  directory cannot authenticate or lacks permissions, Catalog now keeps the accounts
-  workspace readable with a contextual dependency notice instead of the generic red error;
-  the runtime secret/permission fix remains an external deployment check. An app-only
-  `accountEnabled` call may also require an Entra directory role authorized for this
-  sensitive action; the provisioning script does not grant that broader role implicitly.
-- The member identity projection accepts the separate Entra name claims and asks the
-  app-only Graph directory to set `displayName` to `givenName + surname`. The
-  synchronization is best-effort for the site: a Graph failure is logged without blocking
-  the local member/watchlist operation, and the adapter retries later while avoiding
-  duplicate successful PATCH requests per process. `infra/entra/Sync-EntraDisplayNames.ps1`
-  repairs existing placeholder directory names after an explicit `-WhatIf` review.
+## Angular/MSAL behavior
 
-## Frontend And Client Auth Touchpoints
+- BackOffice, Catalog, and Scan use API access tokens for authorization roles; never trust the ID token's role claims. The backend remains the authorization boundary.
+- BackOffice uses MSAL Angular and Axios, not `MsalInterceptor`. `AppModule` waits for MSAL initialization; `<app-root>` and `<app-redirect>` must both be in `index.html`. `ApiAccessTokenService` waits for `InteractionStatus.None`, selects a sole cached account only when unambiguous, retries one 401 with a forced token refresh, and does not retry 403.
+- Never bootstrap the BackOffice Angular root inside an MSAL hidden iframe: the root URL doubles as silent redirect URI and could start a second router/MSAL flow before Axios reaches the API.
+- Catalog and Scan use the same active-account rule and should request `prompt: 'select_account'` when several accounts are cached with none active. Interaction-required errors can cross bundled module boundaries; classify by MSAL error codes as well as class identity.
+- Scan uses the tenant-scoped CIAM authority; its MSAL interceptor must protect `/scan/*` and `/rare-books/*`, including nested routes. Its role gate reads `roles` from an API-scoped token.
+- Production UI authentication remains Entra External ID. Local BackOffice Keycloak configuration belongs only in development environment/realm files.
 
-- `BackOffice` uses `@azure/msal-angular` 5.3.1 with `@azure/msal-browser` 5.20.0,
-  compatible with the repository's Angular 21 line. `shared/auth/msal-config.ts` configures
-  the Entra External ID authority, SPA redirect URIs, local storage cache, and the
-  `access_as_user` login scope. The CIAM custom-domain authority is tenant-scoped
-  (`https://volepapillondamour.ciamlogin.com/<tenantId>/`); `knownAuthorities` remains the
-  custom-domain host.
-- Protected BackOffice routes use `MsalGuard`; `MsalRedirectComponent` handles the redirect
-  response at application bootstrap, and `AppComponent` restores/selects the active cached
-  account. Because both root components are bootstrapped, `src/index.html` must declare both
-  `<app-root>` and `<app-redirect>`; omitting the latter raises Angular `NG05104` before the
-  MSAL redirect handler can initialize. `LoginComponent` starts `loginRedirect` instead of
-  posting local credentials.
-- `AppModule` provides an awaited `provideAppInitializer` that calls
-  `MsalService.initialize()` before either root component is created. Without this barrier,
-  a normal refresh can construct `AuthSessionService` before MSAL is initialized and leave
-  the BackOffice blank with `uninitialized_public_client_application`; a hard refresh only
-  masks the race.
-- `ApiAccessTokenService` waits for `MsalBroadcastService.inProgress$` to reach
-  `InteractionStatus.None` before resolving the cached account and calling
-  `MsalService.acquireTokenSilent` for the API scope. This keeps Axios requests from racing
-  MSAL redirect handling. It adopts a cached account automatically only when there is exactly
-  one; with several cached accounts and no active account, the login flow asks Entra to show
-  its account picker. The `LOGIN_SUCCESS` event's returned account is made active directly.
-  `AxiosService` adds the resulting bearer token to every API request and, after a `401`, forces
-  one silent token refresh and retries that request once. A second `401` routes to login; `403`
-  responses are not retried. `MsalInterceptor` is intentionally not registered because
-  BackOffice uses Axios rather than Angular `HttpClient`.
-  Silent MSAL failures must be classified by their error code as well as by
-  `InteractionRequiredAuthError`: iframe timeouts and cross-bundle error objects otherwise
-  reject before Axios sends anything. The BackOffice service starts one interactive redirect
-  with the current route for interaction-required/iframe-timeout codes, then leaves ordinary
-  transport errors to the page retry state.
-- Catalog and Scan follow the same account-selection rule: preserve MSAL's active account, infer
-  the account only when exactly one is cached, and use `prompt: 'select_account'` when the cache
-  is ambiguous. Catalog omits `loginHint` when requesting that picker because the hint can bypass
-  account selection. Catalog already refreshes silently when requesting API tokens and forces
-  refresh after a protected request returns `401`; Scan checks the API token silently when
-  publishing a cached session. `acquireTokenSilent` uses a valid cached token and handles silent
-  renewal when needed; it is request-driven rather than a background timer.
-- `src/main.ts` must not bootstrap Angular inside any iframe: the BackOffice root is also the
-  MSAL silent-renewal `redirectUri`, and starting the router in that hidden frame can launch
-  a second MSAL flow and make every Axios request fail before reaching the API. The top-level
-  window remains the only Angular bootstrap target; the silent MSAL response is consumed by
-  the parent MSAL instance.
-- The former BackOffice cookie/JWT authentication service, login facade, guard, token
-  interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
-  MSAL migration. Authorization remains enforced by the API's Entra role policies.
-- `Website` does not show the same auth guard pattern in its top-level routing and now runs through Angular SSR with client hydration.
-- `Catalog` uses a dynamic SSR-safe MSAL Browser loader. Its member/admin pages acquire the
-  API scope silently and read `roles` from that API access token (not from the cached ID
-  token); `Administration` and the compatibility `Admin` role expose the administration
-  navigation affordance, while `LivresRares` exposes the dedicated rare-books affordance.
-  Catalog and the legacy BackOffice account editors both expose the role for account
-  assignment. API policies still enforce every admin request. When silent
-  acquisition needs user interaction, `acquireTokenRedirect` keeps the current private URL
-  as `redirectStartPage` and the pages render a specific renewal state.
-- Public Catalog registration keeps the MSAL `prompt=create` request and `/compte` return
-  URL. The External ID form is provisioned separately by
-  `infra/entra/Configure-EntraUserFlow.ps1` through Graph v1.0 and is associated only with
-  `vpd-catalog-<environment>`; the flow body collects the built-in `givenName` and `surname`
-  attributes with French `Prénom`/`Nom` labels, optional portable 0–64-character validation,
-  and a hidden prefilled email attribute. The hosted form no longer collects `displayName`.
-  Scan, BackOffice and Cash have no self-service signup flow.
-- Catalog account labels do not depend on the legacy MSAL `AccountInfo.name` claim. The shared
-  formatter prefers `given_name`/`family_name`, also accepts the External ID spellings
-  `givenName`/`surname`, ignores placeholder values such as `unknown`, then falls back to a
-  usable `name` and finally `username`. The API uses the same claim families when it creates
-  or synchronizes the member projection, so separate first/last names are preserved instead
-  of being reconstructed from a display string. The API also synchronizes the Entra directory
-  `displayName` from those fields when a protected member request is processed.
-  `Configure-EntraApps.ps1` merges the two
-  optional claims into the Catalog ID token and API access token; `CatalogAuthService` keeps
-  those claims from the interactive result and hydrates them silently for cached accounts so
-  the header and account page do not regress to the email fallback after a browser refresh.
-  Existing sessions still need a sign-out/sign-in after an Entra claim configuration change.
-- Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
-  registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`
-  creates or updates the tenant's `fr-FR` branding, updates the External ID default
-  localization `0`, and uploads the Catalog CSS to both localization streams through Graph
-  `OrganizationalBranding.ReadWrite.All`. A missing branding localization is treated as an
-  empty collection only when Graph reports the expected fresh-tenant `ResourceNotFound`, and
-  every Graph write is explicitly terminating so a partial application cannot be reported as
-  successful. This changes the hosted page's visual language but does not move password entry
-  into the Catalog. A pixel-perfect custom form would require a separate Native Authentication
-  decision and a CORS proxy.
-- Because the production redirect URI is the Catalog origin, the root Catalog shell now
-  initializes `CatalogAuthService` on every browser bootstrap (SSR remains guarded). The
-  service's idempotent initialization handles both an MSAL `code`/`error` response and the
-  cached active/all-account lookup, so a returning member or administrator sees the account
-  name and navigation affordances without first pressing `Se connecter`. A configuration
-  failure still leaves the public catalogue available, and pending external-reference
-  follows reuse the same initialization promise after the redirect.
-- Catalog watchlist loading can fail before any API request when a cached account cannot
-  silently acquire the delegated API token. `CatalogAuthService` therefore recognizes the
-  official MSAL interaction-required error codes as well as the error class, including across
-  a module boundary; the account page offers reconnection for token failures and retry for
-  `status 0`/5xx watchlist transport failures. Keep this distinction when changing the
-  generic account feedback because a displayed error is not evidence that the API returned
-  `500`.
- - `Scan` gates the entire PWA through `ScanAuthService.authState$`: an Entra account with
-   `Tri` or `Caisse` renders the PWA (`Tri` triages; `Caisse` sells), while unauthenticated,
-   unauthorized, and token-renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
-  `MsalService.initialize()` and `src/index.html` declares `<app-redirect>` before MSAL
-  roots are bootstrapped, preventing the refresh-time `NG05104`/uninitialized-cache race.
-  `msalInterceptorConfig` protects `${environment.apiUrl}/scan/*`; the wildcard is required
-  because MSAL Angular 5.3.1 uses strict path matching by default, and `/scan` alone does not
-  match nested endpoints such as `/scan/catalog/delta` or `/scan/sessions`.
-  The role gate acquires the API-scoped access token silently and reads its `roles` claim;
-  `AccountInfo.idTokenClaims` is not sufficient for app roles defined on the API resource
-  in this two-registration SPA/API flow. The API remains the authoritative authorization
-  boundary.
-  Initial session restoration waits for `MsalBroadcastService.inProgress$` to reach
-  `InteractionStatus.None` after MSAL initialization and redirect handling. The `checking`
-  state then covers only the silent cached-token/role validation, so the Scan login action
-  remains available during that check. An active interactive MSAL operation still disables the
-  action, and `ScanAuthService.login()` guards against starting a concurrent redirect.
-  Both Scan environment files declare the tenant ID and tenant-scoped CIAM authority;
-  `ScanAuthService.login()` sends an explicit root `redirectStartPage` through a deferred
-  observable so MSAL redirect-start failures are rendered inline instead of being swallowed.
-  The production environment uses `https://scan.volepapillondamour.fr` for both redirect and
-  post-logout URLs; the deployment workflow and Dockerfile inject the same canonical origin.
-- `MauiCashApp` targets `net10.0-android` and does not use tablet authentication. Its public
-  Refit client is registered by `VpdApiServiceCollectionExtensions.AddUnauthenticatedVpdApi`;
-  `appsettings.json` points to the deployed Container App API and `GET /product` is public.
-  The MAUI cache and UI show only available products from `Bar` and `Bingo`; the `Book` section
-  is excluded.
+## Configuration and commands
 
-## Configuration Sources
-
-- Backend config comes from `appsettings.json`, environment-specific settings, and local
-  secrets; the AppHost injects SQL Server/Azurite connections and a stable secret-backed
-  `Parameters:sql-server-password` for its persisted SQL volume.
-- The AppHost keeps Blob storage on Aspire's dynamic connection and leaves
-  `AzureWebJobsStorage` to the Functions integration; forcing `UseDevelopmentStorage=true`
-  breaks the dynamic Azurite ports.
-- `BackOffice` config contains API/site URLs and Entra tenant, client, authority, redirect, and
-  scope values; its development environment selects the local Keycloak issuer and HTTPS API URL.
-  `Website` contains its API URL. Scan derives its LAN API host from port `5257`
-  in development and uses the tenant-scoped CIAM authority in both environments.
-- `Configure-EntraApps.ps1` merges SPA redirect URIs. The public Catalog and Scan redirects are
-  registered while existing local/technical URIs remain; the public Scan role gate was verified.
-- Scan uses `@zxing/browser` with `TRY_HARDER` for ISBN/QR camera and photo fallback decoding;
-  the HTTPS ACA deployment satisfies the secure-context camera requirement.
-- MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; it has no MSAL settings. Its Android
-  APK uses `ApplicationDisplayVersion` / `ApplicationVersion` from `ShopAppVpd.csproj`.
-  BackOffice serves a versioned standalone APK from `/apks/caisse-app-v1.2.apk` on the login
-  and product-management screens. When releasing a new app version, name the static APK
-  `caisse-app-v{ApplicationDisplayVersion}.apk` and update both links; the stable old path
-  was cached by Cloudflare for four hours. Build a standalone Release APK with
-  `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk`.
-  Standalone BackOffice APKs must embed assemblies; Fast Deployment artifacts abort at launch
-  when installed outside ADB deployment. This was reproduced from the distributed APK with
-  Android logcat: Mono exited because `files/.__override__/x86_64` contained no assemblies.
-  Enabling `EmbedAssembliesIntoApk` fixed startup on the API 36 emulator.
-  The APK is currently debug-signed; a differing signing certificate requires uninstalling the
-  previous package before installation. Use a shared release keystore for future in-place updates.
-  Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
-- Frontend images patch production environment values at build time through `API_URL` and
-  `WEBSITE_URL`; Docker builds use the `src/` context so `src/SharedUi/` resolves.
-- ACA probes check `/health` on port `8080`; the dev SQL parameter is Azure SQL `S0`, 10 DTUs,
-  250 GB, with no automatic pause. Azure deployment remains an operational step.
-
-## Build And Test Commands
-
+- API config comes from appsettings, environment variables, and local secrets. Aspire injects SQL/Azurite; keep SQL's persisted-volume password stable via its User Secret and let the Functions integration provide its own host-storage connection.
+- Frontend API/site URLs and Entra values are environment/build inputs. Docker builds use `src/` as context for `@vpd/ui`; never commit local connection strings or tokens.
 - Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`.
 - AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`.
-- Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`; Scan also uses
-  `npm test -- --watch=false --browsers=ChromeHeadless` and its SSR app has a serve command.
-- Docker images build from `src/` with the relevant `Dockerfile` and `API_URL`/`WEBSITE_URL` args;
-  ACA Bicep uses `az bicep build` and the subscription deployment command under `infra/aca/`.
-- MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`.
-
-The social-import change was validated locally with the backend solution build, Worker
-build, Bicep source and parameter compilation, and the four backend suites (Domain,
-Application, Infrastructure, API). BackOffice `test:bootstrap` and production build
-also pass. The Website production build prerenders 25 routes successfully; its existing
-bundle-budget and CommonJS warnings remain non-blocking.
-
-## Practical Warnings
-
-- Never store secrets in memory files or commit local connection strings. Prefer actual config,
-  routing, and services over template-oriented Angular README TODOs.
-- CI builds the backend, MAUI target, and Angular apps but does not run frontend unit tests;
-  those remain local validation. BackOffice retains known Angular signal, bundle, CSS, and
-  CommonJS warnings. The CI MAUI request still says `net9.0-android` while the project targets
-  `net10.0-android`; a missing SDK can produce local `XA5300`.
-- Website SSR route ownership is `src/app/app.routes.server.ts`. Dockerfiles use `npm install`
-  in the Linux container context and must retain the `src/` build context for `@vpd/ui`.
-- Replace the Infra Flow Sculptor placeholder subscription IDs before a real deployment. A
-  persisted Aspire SQL volume can yield `18456` until its stable AppHost password is restored.
-- Rider validation may generate `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`;
-  the Domain project excludes that tree from SDK default items.
+- Angular: run `npm run build` or `npm test` from `src/BackOffice`, `src/Website`, `src/Catalog`, or `src/Scan`. Frontend unit tests remain a local validation step.
+- MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`; requires the Android SDK. The CI workflow may target `net9.0-android` stale config—check project TFM when interpreting CI failures.
+- Existing Angular bundle/style/CommonJS warnings are known; report new warnings separately. Check `NEXT.md` before operational deployments or data-changing jobs.

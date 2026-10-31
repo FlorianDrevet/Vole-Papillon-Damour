@@ -1,241 +1,39 @@
 # 03 - Domain Model And Runtime Flow
 
-## Backend Runtime
+## Backend and CQRS
 
-The API boots from `Vole_Papillon_Damour.Api/Program.cs` and wires:
+- `Api/Program.cs` wires authentication/authorization, rate limiting, error handling, OpenTelemetry, and endpoint extensions.
+- The normal request path is endpoint mapping → typed command/query in `Application` → MediatR handler → domain rules and `Infrastructure` ports → typed `Contracts` response.
+- Keep domain rules in aggregates, transport DTOs in `Contracts`, HTTP wiring in `Api`, use cases in `Application`, and persistence/adapters in `Infrastructure`.
 
-- Swagger in development
-- controllers with camelCase JSON output
-- staged Entra/legacy bearer authentication with the compatibility authorization policy `IsAdmin`
-- Azure Monitor OpenTelemetry
-- custom error handling middleware
-- rate limiting
-- authentication and authorization
+## Live Loto
 
-## CQRS Flow
+- `AssoEvents.LiveRevision` is an EF concurrency token. Each successful number/win mutation increments it; conflicting writes return `409`.
+- `/asso-events/{id}/tableau/sse` subscribes before reading its initial snapshot, uses the revision as SSE event ID, suggests a 3-second retry, and sends a `ping` after 15 seconds idle. `LiveTableauSyncService` checks revisions for events watched on its replica every second and publishes changed snapshots, so clients on different replicas converge.
+- `GET /asso-events/today` uses the Paris calendar, skips cancelled events, prefers today's Bingo then the earliest event, returns `204` when empty, and caches for 10 seconds.
+- `CurrentLineIndex` is a zero-based position in `LineParties` ordered by persisted `Index`, not that persisted index. Add-win and undo use the same ordering; undo also handles completed events and multiple empty parties.
+- `Partie.AddWin()` safely returns false without a draw, a valid current line, or when the last number already won. Keep regression coverage for sparse lines, bingo undo, and replica synchronization.
 
-Application setup registers:
+## Domain slices and privacy
 
-- MediatR handlers from the Application assembly
-- FluentValidation validators from the Application assembly
-- a `ValidationBehavior<,>` pipeline behavior
+- Active slices include Actuality, AccountDeletion, Authentication, Books, Events, Orders, and Products. Mailing-list folders remain but are not mapped at runtime; automatic Bingo-card OCR was removed.
+- Manual actuality is published on creation. Imported actuality records keep a unique `(Source, ExternalId)` trace; successful social imports publish immediately, and deletion of an actuality does not permit re-import.
+- `Product.Available` and `VisibleOnWebsite` are independent gates for public product display; the full product projection remains for cashier/admin clients.
+- `MemberSelectionItem` belongs to one member and targets one edition ISBN-13 or rare-book ID. Members cannot set `Purchased`; association to a sale sets that state. The aggregate caps selection at 500.
+- `MemberCard` uses a versioned identifier and HMAC-signed QR without personal data; the API checks current card state. `CheckoutPassage` stores purchase-line metadata snapshots without price. Account deletion removes member-only projections, anonymizes passages, and retains audit movements without a usable member link.
+- `BookNotFoundReport` targets an edition or rare-book fiche, holds an optional comment and closure history, and has no location field. Detaching a member clears both their identity and free text while retaining history.
 
-The usual change path is:
+## Books domain invariants
 
-1. API endpoint or controller extension receives HTTP input
-2. request maps to a command or query in `Application`
-3. MediatR dispatches to a handler
-4. handler uses repositories or services from `Infrastructure`
-5. contracts and results flow back to clients
+- Ordinary ISBN `Book` and `RareBook` are distinct aggregates. Ordinary books use ISBN-13 as canonical key and an append-only `BookMovement` inventory ledger. Corrections, cancellations, and session reassignment use signed inverse/replay movements; only deletion of a provably unused erroneous fiche is an explicit hard-delete exception.
+- ISBN merges preserve redirect rows; ledger movements retain their original ISBN. Public/catalogue projections require a completed metadata state and title, and hide books while an `InProgress` scan session owns their movement.
+- Scan decisions and cash sales use client gesture IDs for idempotence. Cash has its own offline outbox and can run without opening a triage session. A scan session is unique per volunteer while open; close is retry-safe.
+- Book metadata patches lock selected fields. Automatic refresh skips locked fields but keeps fetch/attempt state; failed provider requests and “not found” use separate retry accounting.
+- A Books fair is the half-open interval `[OpenAt, CloseAt)` derived from event dates/times in Europe/Paris. Overlap validation rejects ambiguous fairs; do not guess when legacy events overlap.
+- Alert rows are created transactionally with session close, grouped per member, delayed by association settings, and protected by sent-history cooldowns. Undated fairs do not enqueue alerts.
+- Rare-book price is display data only: sales do not persist a price, basket total, or revenue. Rare-book photos use the dedicated blob container and deletion must remove blobs before database rows.
 
-## Live Loto Tableau Flow
+## Statistics and shared conventions
 
-- `AssoEvents.LiveRevision` starts at zero and `MarkLiveChange()` increments it for `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, and `AddBingoWin`. EF maps it as a concurrency token; a conflicting write becomes HTTP `409 Conflict`. Migration `20261013150626_AddAssoEventLiveRevision` adds the integer column with default `0` and must be applied before deploying the API change.
-- `EventsController` publishes the mapped full `EventResponse` after each successful mutation through `ILiveTableauHub`. The hub keeps a bounded, latest-snapshot channel per event and API replica. `/asso-events/{id}/tableau/sse` subscribes before reading the initial database snapshot, uses `LiveRevision` as the SSE event ID, suggests a 3-second retry, emits a `ping` after 15 seconds of silence, and returns 404 for a missing event.
-- `LiveTableauSyncService` is a hosted service. Every second it checks database revisions only for events watched on its replica, loads a full snapshot only when a revision advanced, then publishes it through that replica's hub. This replaces the former `ISSEClientManager.SendToEvent` path and keeps clients on different API replicas in sync.
-- `GET /asso-events/today` uses `ParisCalendar` and excludes cancelled events. It returns the earliest event happening on the current Paris day, prioritizes Bingo, and supplies `LiveStatus` (`NotStarted`, `Live`, `Finished`) and the last drawn number for Bingo events only. The API returns 204 when none is happening and caches the endpoint for 10 seconds.
-- `RemoveLastNumeroCommandHandler` supports rollback from a completed event by returning to the last partie when `CurrentPartieIndex == Parties.Count`, as well as rollback across multiple empty previous parties. It cleans the removed partie's `AddedBingoNumber` from `BingoNumeros` and resets `BingoHasBeenWon` when undoing a bingo partie numero.
-- `Partie.RemoveLastNumero()` tolerates parties without line parties and inconsistent live state where the last drawn numero is absent from `LiveNumeros`.
-- `CurrentLineIndex` is a zero-based position in `LineParties` ordered by `LinePartie.Index`; it is not necessarily the persisted line index. `Partie.AddWin()`, `Partie.RemoveLastNumero()`, and the shared live-board projection use that same ordering. This lets a party containing only a `CartonPlein` line (persisted index 2) display, complete, and undo correctly.
-- `Partie.AddWin()` safely returns `false` when no numero is drawn, when the current line position is missing, or when the last numero already won.
-- Critical live-flow tests live in `Vole_Papillon_Damour.Application.tests`, `Vole_Papillon_Damour.Infrastructure.tests`, and `Domain.tests`; May 2026 coverage verified 100% line/branch on live add/remove/win handlers and validator, plus 100% line/branch on targeted domain methods `Partie.AddLiveNumero()`, `Partie.RemoveLastNumero()`, `Partie.AddWin()`, `LinePartie.AddWin()`, `LinePartie.RemoveNumero()`, `Lot.IsWonByLastNumber()`, `AssoEvents.AddBingoNumero()`, and `AssoEvents.RemoveBingoNumero()`.
-
-## Feature Slices
-
-Verified slices in `Application` and `Contracts` include:
-
-- `Actuality`
-- `AccountDeletion`
-- `Authentication`
-- `Books` (catalogue, scanning, inventory, sales, alerts, and bibliographic metadata)
-- `Events`
-- `Orders`
-- `Products`
-
-### Actuality social-import slice
-
-`Domain.ActualityAggregate.Actuality` keeps manual creations `Published`, while
-`CreateImported` creates an import aggregate in `Draft` with `ImportedAt` and an
-optional `TitleNeedsReview` marker. The social-import handler calls `Publish()` before
-persisting it, so successful imports are published immediately; `Publish()` enforces a
-non-empty title and article. `Update()` keeps a draft in draft state and clears the
-review marker. The separate `SocialPostImport` aggregate records `(Source, ExternalId)`
-and survives actuality deletion through the nullable `ActualityId` relationship. The
-import command lives in `Application/Actuality/Commands/Background`, downloads media
-before persistence, and commits the published actuality plus import trace through
-`IActualityImportStore`.
-
-Residual `MailingList` folders still exist in `Application` and `Contracts`, but `Program.cs` no longer wires a mailing-list endpoint surface into the active API runtime.
-The dedicated `BingoCard` OCR slice was removed from `Application`, `Contracts`, and `Api` in May 2026; automatic loto-card analysis no longer exists in the active runtime.
-
-## Domain Aggregates
-
-Verified aggregate folders in `Domain` include:
-
-- `ActualityAggregate`
-- `AssoEventsAggregate`
-- `OrderAggregate`
-- `MemberSelectionAggregate`
-- `NotFoundReportAggregate`
-- `MemberCardAggregate`
-- `CheckoutPassageAggregate`
-- `ProductAggregate`
-- `UserAggregate`
-
-`Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
-
-`RareBookAggregate.RareBook` is separate from the ordinary ISBN `Book` aggregate. A rare
-book keeps bibliographic data, its firm display price, condition, publication/sale state,
-and photos. Rare-book checkout snapshots carry no physical-format fields. The ordinary
-ISBN `Book` aggregate holds catalogue metadata separately from its append-only inventory
-movements.
-
-`MemberSelectionItem` is keyed by `Guid` and belongs to one `UserId`; each row targets
-exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,
-only; `PurchasedAt` is set by an associated sale. The aggregate caps a member at 500
-items. A member cannot set or change `Purchased` manually.
-
-`BookNotFoundReport` targets one edition or one rare-book fiche and records the reporting
-member, optional comment, report time, status, and optional closure metadata. The report
-request and aggregate have no search-location field. Open reports are grouped by target for
-the administration queue. `DetachMember()`
-clears the member ID and free-text comment while preserving the report and its closure
-history; account deletion applies it to both open and closed reports.
-
-`MemberCard` belongs to one member and carries a versioned card identifier, recovery
-code, and issue/rotation/revocation timestamps. The QR is HMAC-signed and contains no
-personal information; the API checks the current card state when resolving it.
-`CheckoutPassage` and its lines form the member-only purchase projection. Lines preserve
-book metadata snapshots, contain no price fields, and are attached to sale movements via
-the nullable `BookMovement.CheckoutPassageId`; anonymous sales keep that field null.
-Account deletion removes selection and card rows, anonymizes that member's passage, and
-keeps audit movements and line snapshots without a usable member link. It also preserves
-not-found reports without their member link or free-text comment.
-
-## Books module — P1-5/P1-10 runtime slice
-
-P1-10 adds the cash path to the Scan PWA: a sale is recorded locally in its own
-IndexedDB outbox, decrements the local quantity immediately, and replays idempotently to
-`POST /scan/sales` under the `Caisse` policy without opening a triage session.
-
-As of 2026-09-03, the P1-3 domain foundation exists locally in `Domain`: `Book` (ISBN-13 key), `BookMovement` (append-only ledger), `ScanSession`, `AssociationSettings`, and the `BookAnnouncement` entity. Strong IDs are used for movement, announcement, and scan sessions. `Book.RedirectTo()` preserves the absorbed row and prevents self/repeated redirection; movement quantities are signed and non-zero; scan-session counters and close are idempotent; settings are a typed singleton with documented defaults. New module instants are required and persisted as UTC, while calendar comparisons and local-midnight calculations use Europe/Paris in Application. Book merges keep ISBN as the public key and use a direct `RedirectedToIsbn13` link to a canonical Books row; `BookMovements` retain their original ISBN for audit. An open Books fair is the half-open `[OpenAt, CloseAt)` interval derived from `AssoEvents` date/door fields, with overlap validation and no guessing when legacy events overlap.
-
-The first P1-4 application slice is local and tested: `ScanBook` accepts a final `Kept`/`Rejected` decision from the offline client, normalizes ISBN, resolves direct redirects, calculates the `RG-15` verdict without a bibliographic call, and commits the book projection, session counters, movement, and optional fair announcement atomically. `ClientGestureId` is unique on movements and copied to announcements; a replay returns an idempotent result. `OpenScanSession` enforces one active session per volunteer, and `CloseScanSession` is safe to call repeatedly. The internal cash and correction flows now record sales against one open Books fair, allow a traced inverse only while that fair is open, record physical quantity corrections, persist association settings, attach undated announcements, and update rare/catalog flags. `ReassignSessionMode` uses inverse correction movements and replay movements, and marks the closed session as `Resumed`; `BookMovement.ReversalOfMovementId` makes each inverse traceable and unique. Manual metadata patches update only selected fields and persist field locks; automatic bibliographic refreshes skip locked fields while retaining fetch/attempt data, including the work identifier used by work-scoped watchlists. The ISBN-queue discard path keeps ledger-backed candidates as hidden `Discarded` rows and records an available-stock withdrawal. The separate administration-catalogue permanent-delete operation removes an erroneous book and non-session stock movements, plus its selection, watchlist, not-found-report, alert-history, and recommendation rows. It is blocked when there are sales or checkout lines, announcements, scan/fair history, redirects, or a fulfilled manual request; this is the explicit exception to the append-only ledger for unused erroneous fiches. `Watchlist`/`WatchlistItem` persist edition or work requests, and `BookAlertOutbox` groups matching books by member at session close with cooldown, alert-status filtering, configurable delay, and no queue entry for an undated fair. `CancelBookAlerts` and `ForceBookAlerts` operate on pending `AlertEmail` rows; `ReassignSessionMode` cancels and rebuilds pending alerts inside its transaction without recreating already-sent messages. `Watchlist.RecordEmailBounce` counts consecutive failures, suspends alerts at the starting threshold of three, and `RecordSuccessfulEmailDelivery` resets that consecutive count without automatically reactivating a suspended list. `EmailBounceEvent` records the provider event identity, member, and UTC receipt time behind a unique provider-id index; a sequential Event Grid replay returns the current state without incrementing the watchlist again. The API now exposes a dedicated ACS/Event Grid delivery-report endpoint with typed Event Grid contracts, synchronous subscription validation, shared-secret authentication, recipient-to-member resolution, and safe acknowledgement of unknown recipients or members without a watchlist. P1-5 now adds typed Scan delta/session/gesture contracts and the local PWA path: a compact catalog projection with hidden-entry removals and watchlist-state reprojection, IndexedDB `catalog`/`outbox`/`session` stores, durable `Pending`/`Kept`/`Rejected` gestures, local `RG-15` verdicts, MSAL `Tri` authentication, service-worker shell caching, and sequential outbox replay with `ClientSessionId`/`ClientGestureId` idempotence. The P1-5 metadata queue and Worker integration are now deployed; remaining checks are operational rather than local implementation.
-
-P1-5 is externally deployed for the API/Worker/Scan path, and the metadata queue has retry/backoff fairness through `LastAttemptAt`. The Worker now runs the scheduled sweep/enrichment and alert delivery; ACS delivery is enabled in DEV after domain verification. Bibliographic enrichment now carries a normalized `Genre` from BnF, Open Library or Google Books, merges provider fallbacks when the first source has no genre, and the scheduled Worker sweep backfills resolved books missing a genre without overwriting manually locked fields. A resolved-book refresh records its own failed-attempt cooldown while preserving the existing metadata status. The new `Sweep`/`Enrich` heartbeat, an authorized-recipient email test, `QT-02`, and physical `QT-08` checks remain future work; the 300-book S0-4 campaign was reported successful without detailed sub-metrics.
-
-The ISBN import queue separates `Pending`, `Failed`, and `NotFound` from completed `Resolved`/`Manual` fiches. Provider failures carry a bounded `MetadataFailureReason`, use the one-hour failure retry path, and do not consume the `ResolveAttempts` counter used for not-found backoff. An administrator can retry immediately, correct a fiche manually, or discard an incomplete candidate. Discarding a candidate with movement history marks it `Discarded`, hides it, and records an available-stock withdrawal; it never deletes sale or announcement history. Public catalog projections and the primary admin book list require a completed metadata status and a non-empty title. Public search, ISBN detail, work editions, similar-book recommendations and the sitemap also exclude books linked to movements in an `InProgress` scan session; they become public after the session is completed.
-
-The account-deletion finalization removes member selection items and cards, anonymizes that
-member's checkout passages, and removes the pre-existing watchlist/alert projections in the
-same transaction before the identity is deleted or anonymized. Purchase line snapshots and
-book movements remain for audit without a usable member link. Volunteer attribution is
-cleared when it points at the deleted member; another buyer's association is preserved.
-Infrastructure regressions cover these cases.
-
-## Books administration — dead-stock query
-
-`GetDeadStockQuery` is the first P1-9 administration read: it returns canonical, currently
-available books whose current quantity is above the requested threshold, whose first positive
-availability movement is older than the requested age, and which have no sale movement. It
-derives the age from the append-only `BookMovements` ledger, excludes redirected fiches, sorts
-by quantity descending, then availability date and ISBN, and logs the query duration. The API
-surface is `GET /books/admin/dead-stock`, protected by the `Administration` policy; default
-filters are six months and more than three copies. The benchmark remains to be executed; the
-catalog administration screen is implemented in BackOffice and Catalog.
-
-## Books administration — P2/P3 completion (2026-09-06)
-
-The catalog administration slice now follows the existing layered CQRS boundaries:
-`Application/Books/Commands/Admin` contains manual book creation, metadata/quantity and
-announcement corrections, withdrawals, rare/visibility flags, canonical ISBN merges,
-fair revenue, session movement removal/cancellation/reassignment, alert message control,
-member alert blocking/deletion, and settings writes. `Application/Books/Queries/Admin`
-contains overview, paged books, fair statistics, scan sessions, outbox alerts, members,
-and settings reads. `BookAdministrationController` exposes the corresponding
-`/books/admin/*` surface under the `Administration` policy.
-
-Corrections remain append-only: session removal/cancellation creates reversal movements,
-skips movements already reversed, rejects a reversal when stock has already been consumed,
-and resolves a canonical target after a merge. Announcement correction/reversal notes are
-prefixed `Announcement.Correction` so they do not inflate available stock projections.
-`BookAlertOutbox.QueueForSessionAsync` also excludes an original movement with a reversal,
-preventing a corrected session from recreating its alert.
-
-The optional `AssoEvents.BookRevenue` field is persisted as nullable `decimal(12,2)` by
-`20260906101759_AddBookFairRevenue`; absence means “not entered”, never zero. Member alert
-preferences are persisted through `PATCH /catalog/me/alerts`; a member can suspend or
-reactivate their own alerts but cannot override an administrative `Blocked` state.
-
-The current administrator presentations are the Angular BackOffice route and the V2
-`src/Catalog` route `/administration`, both with responsive workspaces for overview,
-books/stock, fairs/statistics, sessions, alerts, members, and settings. The Catalog also
-owns the public member/watchlist flows; role assignment remains an Entra concern and
-physical cartons are not represented by the domain.
-
-## Books administration — scan alert state and journal projection (2026-09-16)
-
-Administrative scan-session reads now expose per-status AlertEmail counts in addition to
-the existing total/pending count: `SentCount`, `CancelledCount` and `FailedCount`. This
-lets the Catalog distinguish an alert that is actually sent from one that was cancelled or
-failed. `ForceBookAlerts` still makes pending outbox rows immediately due for the existing
-worker; the front presents that non-terminal interval as « Envoi immédiat demandé », removes
-the session from the correction queue, and disables further alert actions. No database
-migration is needed. The session detail already returned all append-only `BookMovements`;
-Catalog now renders that journal and calls the existing movement-removal endpoint per row,
-leaving reversal rows visible for audit.
-
-## Administration volunteer statistics (2026-09-12)
-
-The administrator volunteer projection is a read-only CQRS query at
-`Application/Books/Queries/Admin/GetAdminVolunteerStatisticsQueryHandler`. Its single
-typed response aggregates sessions, scan movements, effective sales, corrections, books and
-local user names for the selected UTC period and optional Books fair. It returns team totals,
-per-volunteer contribution, inferred `Tri`/`Caisse` activity roles, monthly session buckets,
-90-day renewal buckets and dominant genres. Sales are netted through
-`ReversalOfMovementId`; no schema change is needed. Time spent at the till and the
-contributor-level waiting-stock signal are reconstructed estimates, not a replacement for
-the inventory ledger or Entra role assignment.
-
-## Administration catalogue flow statistics (2026-10-22)
-
-The read-only `GetAdminCatalogueFlowStatsQueryHandler` backs Catalog
-`Statistiques` → `Livres`. Genre flow is sold quantity divided by kept quantity; its
-percentage keeps two decimal places so small non-zero rates are not rounded to `0 %`.
-The UI shows sold quantity beside the rate and labels a positive rate below the display
-precision as `< 0,01 %`. The funnel and time-to-sell percentages keep their existing precision.
-
-## Private volunteer statistics
-
-The private contribution projection is a read-only CQRS query at
-`Application/Books/Queries/GetVolunteerStatistics`. `GET /scan/me/statistics` accepts only
-the authenticated `oid` and is protected by `ScanVolunteer` (`Tri` or `Caisse`); it never
-accepts a client-supplied volunteer id. The query derives triage totals from the volunteer's
-`ScanSession` counters and entry/rejection movements, sales from signed `BookMovements`,
-genres/rare flags from `Book`, fairs and optional `BookRevenue` from `AssoEvents`, and sent
-alert quantities from the alert outbox. It returns twelve monthly buckets, local Paris
-time slots, recent sessions, a team median, and cash breakdowns in one typed response.
-
-No schema change is needed: duration/cadence, tri-cash overlap, found-reader linkage, and
-revenue share are explicitly estimated from the append-only records and marked in the
-response. Corrections are netted against the linked sale movement before cash totals and
-revenue-share estimates are calculated. The query currently materializes the relevant
-ledger/read models for the projection; if the real catalogue grows materially, its measured
-query duration should drive a later SQL projection/index optimization.
-
-## Scan session identity projection
-
-The Catalog scan-session opening endpoint ensures a local `User` projection from the
-authenticated external identity before creating the session. It stores the optional token
-display name as the domain `Name` value. Administrative session list/detail projections
-render only the formatted first and last name; they do not fall back to the volunteer email.
-A session whose volunteer ID has no local user or whose projection has no name therefore
-shows a neutral missing-name label in the UI, because `ScanSession` stores only that ID.
-
-## Conventions To Preserve
-
-- Keep commands and queries in their feature folders under `Application`.
-- Keep validators and MediatR handlers close to the feature they serve.
-- Keep domain rules in aggregates and domain types, not in controllers.
-- Keep transport DTOs in `Contracts`, not inside Angular or MAUI code.
-- When a shared contract changes, review both Angular apps and the MAUI client.
+- Private volunteer statistics derive the member from the authenticated `oid`; client-supplied volunteer IDs are not accepted. Duration, cadence, reader linkage, and revenue share reconstructed from timestamps/ledger are estimates and must be labeled.
+- Keep commands/queries and validators beside their feature. Review both Angular clients and MAUI when a shared contract changes.

@@ -1,259 +1,34 @@
 # 05 - Data And Storage
 
-## Primary Persistence
+## SQL persistence
 
-- `Infrastructure.DependencyInjection` wires `ProjectDbContext` with `UseSqlServer`.
-- The current runtime DI uses the `ProjectDatabase` connection string.
-- Repository interfaces live in `Application.Common.Interfaces.Persistence` and implementations live in `Infrastructure.Persistence.Repositories`.
-- `ProjectDbContext` is exposed back into the application layer through `IProjectDbContext`.
+- `Infrastructure.DependencyInjection` configures `ProjectDbContext` with SQL Server and `ProjectDatabase`; `IProjectDbContext` exposes it to Application. Persistence interfaces live in Application and EF/repository implementations in Infrastructure.
+- EF configuration owns strong-ID/ISBN conversions, UTC `datetime2` conversion, row versions, filtered unique indexes, and database-specific collation behavior. `Book.Id` maps to persisted `Books.Isbn13`; raw SQL must join on `Isbn13`, not `Id`.
+- Deployment workflows apply EF migrations before rolling out API/Worker revisions. API startup migrations run only in Development; do not assume a code change has updated a deployed schema.
+- Books ledger history is append-only. Corrections, reversals, and reassignment use signed linked movements. Hard delete is limited to unused erroneous catalogue records and removes dependent projections transactionally.
+- Books metadata separates `Pending`, `Failed`, `NotFound`, `Resolved`, `Manual`, and `Discarded`. `MetadataFailureReason` is bounded; discarded rows with movement history remain hidden and get a compensating withdrawal. Manual field locks survive enrichment.
+- SQLite-backed Application tests use a real in-memory EF transaction and are test-only; validate SQL Server-specific scripts/queries with the SQL Server provider before relying on translation or collation.
 
-### Actuality import persistence
+## Books and member records
 
-Migration `20260910191056_AddSocialActualityImport` adds `Actualities.Status`,
-`TitleNeedsReview`, and nullable `ImportedAt`; existing rows default to `Published`.
-It adds `SocialPostImports` with a unique `(Source, ExternalId)` index and a nullable
-`ActualityId` foreign key using `SetNull`, so deleting an imported actuality does not
-permit a re-import. `Infrastructure.Persistence.ActualityImportStore` writes the
-published actuality and its trace in one SQL transaction. Imported media reuse the
-`actuality-images` Blob container; `BlobService.DeleteFileAsync` only deletes URLs
-belonging to that container.
+- Ordinary `Book` rows and `RareBook` rows have separate persistence and contracts. `RareBooks`/`RareBookPhotos` use row-version concurrency, unique UUID/slug/ISBN constraints, and ordered unique photo positions. Rare-book firm prices are display-only; sale lines persist no price or total.
+- Rare-book photos accept JPEG, WebP, or PNG up to 8 MiB in `rare-book-photos`. Delete the blob before deleting its row; a failed blob delete must retain the database record.
+- `BookMovement` is the inventory source of truth. The dead-stock query combines current `Books` state with historical first-positive and sale movements; the `Isbn13 + Type + OccurredAt` index supports those checks.
+- Member selection, signed member cards, purchase passages, and not-found reports are separate member projections. Account deletion removes selection/cards, anonymizes passage identity, and detaches report identity/comment while retaining audit rows and purchase snapshots.
+- `BookNotFoundReports` has a filtered unique constraint for one open report per member/target. Its request has no location field; the default daily limit is 10 (configurable 1–100).
+- Manual request contact data is isolated from Scan catalog sync and diagnostics, and is erased 90 days after the last request closes; closed history remains anonymous. See `.github/memory/12-manual-book-requests.md`.
 
-## Books module persistence
+## Alerts and external services
 
-- Migration `20261020132445_AddBookMetadataFailureReason` persists nullable `Books.MetadataFailureReason` (`nvarchar(500)`) for ISBN enrichment failures. `BookMetadataStatus.Failed` and `Discarded` are appended enum values to preserve existing byte values; discarded candidates with ledger history remain as hidden rows and use a compensating withdrawal instead of deleting movement history.
-- Migration `20261021150950_AddBookBibliographicDetails` adds nullable `Books.Summary` (20,000-character domain limit), `BibliographicDetailsRefreshedAt`, and a `(MetadataStatus, BibliographicDetailsRefreshedAt)` index. `PhysicalFormat` and `Language` already belong to `Book`; BnF, Open Library, and Google Books now supply the fields they expose. The hourly enrichment worker backfills missing details for resolved/manual ISBNs in the existing bounded batch, fills only empty fields, and retries still-missing data after 30 days. The migration has not been applied to an environment.
+- Book alerts are inserted transactionally at scan-session close, grouped per member, delayed by `AssociationSettings`, and suppressed by recent delivery history. Cancellations affect only pending messages; force-send resets the lease/due time.
+- ACS Event Grid delivery reports enter through the typed `/integrations/acs/email-delivery-reports` contract. Provider event IDs are unique, bounce updates are transactional/idempotent, and recipient data must not be copied into ordinary app logs. ACS `202` means accepted for processing, not mailbox delivery.
+- Azure Blob connection configuration is centralized in Infrastructure. Named containers include `loto-images`, `actuality-images`, `event-images`, `product-images`, and `rare-book-photos`.
+- Bibliographic resolution currently falls back BnF SRU → Open Library → Google Books and returns validated HTTPS image URLs. BnF queries `bib.fuzzyISBN` so ISBN-13 searches can match older ISBN-10 notices; see `.github/memory/14-scan-metadata-latency.md` and `.github/memory/15-isbndb-migration.md` for current provider observations and planned ISBNdb-first rollout.
 
-- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `BookNotFoundReports`, `ScanSessions`, the singleton `AssociationSettings`, `Watchlists`, `WatchlistItems`, `UserAlertHistories`, and the `EmailBounceEvents` provider-event ledger sets.
-- Configurations live in `Infrastructure/Persistence/Configurations/`: ISBN-13 and strong-ID conversions, SQL Server `datetime2`, UTC read/write converters, `Books.RowVersion`, accent-insensitive `Title`/`Authors`, self-redirect and non-zero/positive quantity checks, and filtered unique indexes for `ClientGestureId` and one open scan session per volunteer.
-- Migrations `20260903173750_AddBookExchangeCore`, `20260903175445_AddClientGestureIdToBookAnnouncements`, `20260903181307_AddSaleReversalLink`, `20260903185500_AddBookWatchlistsAndAlerts`, `20260903192839_AddEmailBounceEventLedger`, `20260903211547_AddWatchlistUpdatedAt`, and `20260903230825_AddCancelledBookFair` create the Books foundation, complete the announcement gesture trace, add a filtered-unique self-link for movement inverses, add the watchlist/alert-history tables with target and cascade constraints, add the provider-event ledger with its unique provider identity, persist a UTC `UpdatedAt` watermark on watchlists (backfilled from `CreatedAt`), and persist cancelled-fair state. `20260904193041_AddDeadStockQueryIndex` adds `Isbn13 + Type + OccurredAt` for the administration dead-stock read, and `20260904213549_AddWatchlistItemUniqueness` protects one equivalent watchlist item. The pending migrations were applied to DEV Azure SQL by `Books runtime - deploy` `33922677695`; later application rollouts did not rerun them.
-- Migration `20260912214304_AddWatchlistItemCoverUrl` adds nullable `WatchlistItems.CoverUrl` (`nvarchar(2048)`). The Catalog follow command validates an absolute HTTPS URL and stores the external reference cover as a snapshot; existing watchlist rows remain null until a new follow supplies one.
-- The Books ledger is append-only by domain convention; cancellation, correction, and session reassignment are represented by signed inverse/replay movements rather than an update/delete of the original movement.
-- The administration-catalogue permanent delete is an explicit exception for erroneous unused fiches. It removes their non-session stock movements and catalogue/member-tracking projections in one transaction, but refuses sales or checkout lines, announcements, scan/fair history, redirects, and fulfilled manual requests. ISBN-queue discard keeps its separate audited withdrawal/archive behavior.
-- `BookAlertOutbox` runs inside the close-session transaction through `IBookAlertOutbox`: it matches active edition/work watchlist items, filters recent `UserAlertHistory`, groups one `AlertEmail` payload per member/session, and sets `DueAt` from `AssociationSettings.AlertDelayMinutes`. It deliberately creates no message for an undated next-fair session. In DEV, the Worker now claims these rows, sends through ACS with its managed identity, and writes the anti-repeat history after delivery.
-- `IBookAlertOutbox` also exposes transactional administration operations: cancellation changes only pending alert rows to `Cancelled`, while force-send clears a claim and sets `DueAt` to the supplied UTC instant. Session reassignment cancels and recalculates pending alert rows before commit; sent rows are left untouched.
-- `Watchlist` stores the consecutive `BounceCount`, `AlertStatus`, and UTC `UpdatedAt` watermark used by `RG-31` and Scan catalog reprojection; every alert-state transition updates the timestamp, and the migration backfills existing rows from `CreatedAt`. The domain suspends alerts at the starting threshold of three bounces, and a successful delivery resets the counter. The `RecordEmailBounce` handler updates the existing row and inserts `EmailBounceEvent` in one transaction; the unique provider-event index makes a sequential ACS/Event Grid replay return the current state without a second increment.
-- The API endpoint `POST /integrations/acs/email-delivery-reports` accepts the standard Event Grid array, responds synchronously to `SubscriptionValidationEvent`, and authenticates deliveries with the configured `EmailBounceWebhook:SharedSecret` sent as `X-Vpd-EventGrid-Secret`. Typed ACS delivery reports with a non-success status are resolved by recipient email and delegated to the application handler; delivered/expanded reports and unknown recipients are acknowledged without a write. DEV routes the `Microsoft.Communication.EmailDeliveryReportReceived` event from `vpd-acs-comm-dev` to this endpoint through `vpd-acs-email-delivery-reports-dev`.
-- Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
+## Client storage and operational data
 
-- Member selection persistence adds `ProjectDbContext.MemberSelectionItems` and
-  `MemberSelectionItemConfiguration`; migration `20260923191942_AddMemberSelection`
-  creates the member selection table and index constraints. The migration was generated
-  for PR1 and has not been applied to any environment.
-- `BookNotFoundReports` persists member-originated not-found reports, optional comment,
-  target, status, and closure data. Migration
-  `20260924135152_AddBookNotFoundReports` creates the table and filtered unique indexes
-  for one open report per member and target. DEV treated this migration as already applied
-  in Books runtime run `36059976334`, but the follow-up
-  `20260924140025_RetireSelectionPersonalStatuses` failed before API/Worker rollout: raw
-  SQL joined `Books` on `b.Id`, while `BookConfiguration` persists domain `Book.Id` as
-  `Books.Isbn13`. The migration now joins on `b.Isbn13`; rerun Books runtime with migrations
-  enabled after the fix is merged. Migration `20261001111037_RemoveNotFoundReportLocation`
-  aligns the report table with its final contract; its database rollout status was not
-  checked during this documentation update.
-  `AssociationSettings.NotFoundReportDailyLimit` defaults to 10 and is
-  validated from 1 to 100.
-
-- The private volunteer statistics query filters `ScanSessions` by `ScannedCount > 0` before calculating session count, duration, recent sessions, and scan-derived aggregates, so empty bootstrap/test sessions do not contribute time.
-
-### Rare books persistence
-
-- `ProjectDbContext` and `IProjectDbContext` expose `RareBooks` and `RareBookPhotos`. `RareBookConfiguration` and `RareBookPhotoConfiguration` convert the aggregate value objects, persist the firm price as SQL Server `decimal(10,2)`, use `RowVersion` for optimistic concurrency, keep slug and non-null ISBN unique, index `(Status, IsSold, Price)`, and enforce unique `(RareBookId, Position)` photo ordering.
-- Migration `20260916143408_AddRareBooks` creates `RareBooks` and `RareBookPhotos`, cascades only the photo rows when a rare-book row is deleted, and deliberately leaves `Books.IsRare` in place. Follow-up migration `20260924112034_RemoveRareBookEditorialDetails` removes six retired columns from `RareBooks` and their stored values; it does not remove ordinary-book `Books.IsRare`. The separate legacy `Books.IsRare` cleanup and non-converting ISBN export remain lot 6 work; a rare-book application handler must delete blobs explicitly before deleting rows.
-- The rare-book application slice provides create/update/publish/unpublish/delete/sell commands, photo upload/reorder/caption/delete commands, public/admin/cash queries, and contracts under `Application/RareBooks`, `Contracts/RareBooks`, and `Api/Controllers/RareBookController.cs`. Administration routes use the `RareBooks` policy (`LivresRares`, `Administration`, or legacy `Admin`); cash search uses `ScanVolunteer`.
-- Rare-book prices are firm display data only: they are stored on `RareBooks` and returned by the public, administration, and cash read models, but no basket, total, receipt amount, or sale-line price is persisted. The existing manual fair-revenue rule `RG-51` is unchanged.
-- Rare-book photos are validated as JPEG, WebP, or PNG up to 8 MiB and stored in the dedicated `rare-book-photos` Blob container. Photo deletion and rare-book deletion call the container-aware Blob service before removing database rows; failed blob deletion leaves the row intact.
-
-## External Services
-
-- Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
-- Azure Monitor OpenTelemetry is enabled in the API startup.
-- Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, `product-images`, and `rare-book-photos`.
-- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books
-  third; it validates provider image URLs before returning them. The anonymous metadata
-  probe does not persist books; authenticated Scan sessions and cash sales persist through
-  the Books endpoints.
-- Both BnF SRU clients call `BnfSruClient.IsbnQuery`, which queries `bib.fuzzyISBN`. This
-  index matches normalized ISBN-13 queries to pre-2007 notices recorded with ISBN-10;
-  reference-search results normalize the notice back to ISBN-13.
-
-## Authentication
-
-- Infrastructure supports the staged Entra bearer scheme alongside the legacy JWT scheme from `JwtSettings`.
-- The API exposes `IsAdmin` as a compatibility policy while the Entra role policies are rolled out.
-- Auth changes are multi-surface changes because they affect the API, the admin Angular app, and possibly the MAUI client.
-
-## Client-Side Storage
-
-- `MauiCashApp` registers `ProductDatabase` and ships `sqlite-net-pcl` for offline/local caching.
-- The MAUI app should be treated as having its own local persistence concerns in addition to backend storage.
-- `src/Scan` uses native IndexedDB database `vpd-scan` with separate `catalog`, `outbox`, `sales`, and `session` stores. The catalog is replaceable projection data; scan decisions, cash sales, and pending close requests are durable local work for sequential authenticated replay. Local decisions update the projection atomically and are never discarded by a catalog refresh; `CancelledLocal`, `Quarantined`, and `Orphaned` entries remain local audit state until explicitly purged or resolved by a future policy. Transient outbox errors record their failure kind and exponential retry timestamp; validation 4xx entries leave the blocking queue after five attempts. `navigator.storage.persist()` is requested at startup, while the Angular service worker caches only the app shell and public bibliographic metadata, never protected scan responses.
-- Scan IndexedDB opens on demand rather than caching a permanently failed promise. A `versionchange` closes and invalidates the current connection; blocked or unavailable opens can be retried by the next operation and surface a typed reason to the Scan UI. The workflow exposes deletion of a still-pending cash sale before transmission; transmitted or quarantined sale entries are not cancellable through that action.
-- Scan authentication is MSAL Browser/Angular with `Tri`/`Caisse` role boundaries and is deliberately separate from local persistence: synchronization waits until an authorized account and network are available. A cached account with a previously observed scan role may use local data and the camera in degraded mode, but only an authorized access token can flush the outbox; explicit logout or a server 401/403 removes the local authorization marker.
-
-## Notable Storage Detail
-
-- The legacy `AssoEvents` date fields are `DateTimeOffset` values passed through the API,
-  domain mapping, and SQL Server `datetimeoffset` storage without a backend timezone
-  conversion. Existing event data uses UTC wall-clock components (`00:00Z` for calendar
-  dates and `14:00Z` for a displayed 14:00 opening); frontend normalization is therefore
-  required when editing or rendering those values. Existing drifted rows need a controlled
-  data repair rather than an automatic schema migration.
-- PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
-- The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
-- The legacy mailing-list subscription flow and actuality email broadcast were removed; the application runtime no longer sends those messages.
-- The deployment infrastructure provisions the Azure Communication Services Email resource; the versioned ACS configuration workflow also creates/links the DEV Communication Service, stores the Event Grid webhook secret in Key Vault, grants the Worker managed identity access, enables Book alert delivery, and creates the delivery-report subscription. The legacy actuality mailing-list broadcast remains absent from the application runtime.
-- Account deletion is persisted through an outbox-backed local retention flow and completed against the Microsoft Graph directory by the private Worker.
-- The former OCR-specific Azure Vision integration and `OcrSettings` configuration were removed in May 2026.
-- Product website visibility is persisted as `Products.VisibleOnWebsite` by the `AddProductWebsiteVisibility` EF migration. Existing rows are backfilled to preserve the previous Website availability and legacy `euro`/`centime`/`€` exclusions.
-
-## Storage Risk Zones
-
-- Repository changes can impact multiple feature slices at once.
-- Blob/table naming and storage clients are centralized in Infrastructure.
-- Media upload flows depend on centralized Azure Blob configuration and should be validated carefully.
-
-## Books runtime update — 2026-09-04
-
-- The Books schema now includes cancelled-fair state (`AssoEvents.IsCancelled`) and the migration `20260903230825_AddCancelledBookFair`; cancelled Books fairs remain auditable but are excluded from release, opening, next-fair selection, announcements, sales, and alert delivery. Attached announcements are detached when the fair is cancelled.
-- `AccountDeletionStore` claims only `OutboxMessageKind.AccountDeletion`; its SQL Server claim uses update/read-past locks, while the provider query keeps the SQLite test harness executable. `AlertEmail` rows therefore cannot be deserialized by the account-deletion worker.
-- Account-deletion finalization removes member-only projections and pending/sent `AlertEmail` outbox rows for the resolved internal member ID before deleting or anonymizing `Users`. This cleanup is transactional and deliberately leaves retained `BookMovements`/`ScanSessions` available for audit; PR #61 also keeps the SQLite pending lookup free of SQL Server-only `JSON_VALUE`.
-- Account-deletion finalization also detaches all `BookNotFoundReports` for the member in that transaction. Open and closed rows remain, `UserId` and the member's free-text `Comment` are cleared, and closure decisions/notes remain for anonymous history.
-- The Books alert outbox has an exact claim lease token carried through revalidation, cancellation, success, and failure. Sent alerts write `UserAlertHistory` after ACS delivery so a retry cannot deliberately create another alert for the same book/member cooldown window.
-- Bibliographic enrichment is retryable and negative-caches not-found results. Transient provider/cover failures keep the current `Pending`/`NotFound` state, record `LastAttemptAt` without consuming the negative-cache attempt budget, and use a one-hour `Pending` cooldown so failed early rows cannot starve never-attempted books.
-- Azure SQL migrations are applied explicitly by deployment workflows. API startup migrations are limited to `Development`; the production/dev rollout workflow runs migrations before the new API/Worker revisions.
-
-## ACS email runtime update — 2026-09-06
-
-- `mail.volepapillondamour.fr` is verified in ACS for domain ownership, SPF, DKIM and DKIM2.
-  ACS still reports DMARC as `NotStarted`; OVH publishes the existing `v=DMARC1;p=none;`
-  policy, so this is a hardening/reputation follow-up rather than a deployment blocker.
-- Communication Service `vpd-acs-comm-dev` is linked to the verified Email domain and is the
-  Event Grid source. The Worker identity `vpd-worker-id-dev` has `Communication and Email
-  Service Owner` on that resource, and its ACS endpoint/sender/managed-identity settings are
-  enabled in the DEV Container App.
-- The API reads `email-bounce-webhook-secret` from `vpd-kv-dev` through a Key Vault reference.
-  Event Grid subscription `vpd-acs-email-delivery-reports-dev` targets the API delivery-report
-  route and sends the shared header `X-Vpd-EventGrid-Secret`. The normal owner is now
-  `infra/main.bicep`; `.github/workflows/acs-email-configure.yml` remains only as a
-  verification/compatibility helper.
-- Workflow `34046166674` completed successfully. It does not send a real test message; the
-  first end-to-end delivery and bounce check still require an explicitly approved recipient.
-
-## ACS email IaC correction — 2026-09-16
-
-- The force-send path created the expected `AlertEmail` outbox row, but the Worker was
-  disabled because `BookAlerts:Email:Enabled` was absent. The failed ACS workflow run
-  `35098468030` also showed that Event Grid validated the API while its new Key Vault
-  reference was still loading, so the webhook returned 503.
-- `infra/main.bicep` is now the normal source of truth for the full path: the
-  `email-bounce-webhook-secret` Key Vault secret, API secret reference, Worker
-  `BookAlerts__Email__*` settings, Communication Service, Worker ACS role and the ACS
-  Event Grid subscription. The GitHub environment must provide
-  `ACS_EMAIL_WEBHOOK_SECRET` to the infrastructure workflow.
-- The customer-managed Email service/domain module has an explicit one-time bootstrap
-  switch. Development keeps it false after DNS verification; subsequent Bicep runs emit
-  no Email domain PUT and therefore do not reset ACS-managed verification state.
-- The DEV parameter file adopts the role-assignment resource name created by the previous
-  ACS workflow. New environments leave that override empty and use the module's
-  deterministic role-assignment name, so repeated Bicep deployments remain idempotent.
-- A Bicep deployment script sends the same Event Grid subscription-validation request
-  until the API has loaded the Key Vault reference. Event Grid is created only after that
-  readiness gate, and the email runtime can be disabled during the placeholder-image
-  bootstrap with the infrastructure workflow option.
-
-## ACS email delivery diagnostics — 2026-09-16
-
-- `CommunicationService/communicationService.module.bicep` routes ACS
-  `EmailSendMailOperational` and `EmailStatusUpdateOperational` diagnostics to the shared
-  Log Analytics workspace. `EmailStatusUpdateOperational` is the source of recipient-level
-  terminal status and SMTP detail; an ACS `202`/`Succeeded` operation alone proves
-  acceptance for processing, not mailbox delivery.
-- There is no iCloud recipient allow-list or Azure-side switch. The sender domain needs
-  SPF/DKIM/DMARC, while the recipient must be checked for Junk, rules, and blocked senders.
-  Provider-generated status logs must not be copied into application traces or tickets when
-  they contain recipient identifiers.
-
-- Scan cash sales use a dedicated IndexedDB `sales` store and replay to `POST /scan/sales`
-  with `ClientGestureId`; the API records the sale against an open Books fair under `Caisse`.
-
-## Scan offline quality update — 2026-09-08
-
-- The Scan IndexedDB projection keeps catalog synchronization state under `catalog-sync`,
-  including the next non-cancelled Books fair and its opening/closing instants. The `/scan/catalog/delta`
-  response remains atomic with association settings and the catalog book projection.
-- Outbox counters distinguish `Pending` scan decisions from decided scan gestures and pending
-  cash sales awaiting transmission. `Quarantined`, `Orphaned`, and locally cancelled entries
-  do not block a session close; quarantined cash sales are never replayed.
-- Photo decode candidates are generated one at a time so the decoder can stop after the first
-  successful region without allocating all eight canvases up front.
-
-## Scanette reprise storage update - 2026-09-09
-
-- The Scan IndexedDB schema is now version 3. Scan outbox statuses are `Pending`, `Kept`,
-  `Rejected`, `CancelledLocal`, `NeedsDecision`, `NeedsReattach`, and `RejectedByServer`;
-  the migration preserves existing durable gestures and adds explicit set-aside reasons
-  (`no-session`, `other-volunteer`, `undecided`, `server-refused`).
-- Session close requests remain durable while a replacement local session can open. Account
-  switching isolates the prior session's pending and blocking gestures, and replay does not
-  create a second remote session when the client session identity is already known.
-- `src/Scan` sends `scan_gesture_set_aside` through the singleton Application Insights
-  adapter for every local set-aside path. Event properties are limited to the reason, ISBN-13,
-  and client gesture id; account identifiers are intentionally absent.
-- Backend administrator force-close delegates to the existing close-session transaction with
-  the `AdminForced` reason, so delayed alert outbox creation remains atomic with the close.
-
-## Books cover URL update — 2026-09-06
-
-- `Books` now persists `CoverUrl` (`nvarchar(2048)`), nullable `CoverSource` (`Bnf`,
-  `OpenLibrary`, `GoogleBooks`, `Manual`), and nullable UTC `CoverCheckedAt`. The migration
-  `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` renames the old column, clears
-  legacy blob references and their manual-field markers, and leaves the other Blob containers
-  unchanged.
-- The Worker validates HTTPS image responses and stores no book-cover bytes. It keeps a
-  resolved book eligible for cover-only backfill, records a cover check, and retries a
-  missing cover after 30 days. BnF HTTP 500 responses are treated as unusable URLs, followed
-  by Open Library and then exact-ISBN Google Books.
-- Google Books is optional and rate-limited; its API key is passed through the deployment
-  secret path when supplied. URLs remain reconstructible provider references, so book-cover
-  Blob capacity and upload code are no longer part of the Books runtime.
-- The direct-cover migration is present in the deployed `5601c2e` main line; the final rollout
-  did not rerun EF migrations because DEV was already current.
-
-## Dead-stock query persistence
-
-The dead-stock read deliberately keeps its aggregate filters on `Books` and its historical
-availability/sale checks on `BookMovements`. The movement index `Isbn13 + Type + OccurredAt`
-supports the correlated sale and first-availability subqueries; SQLite-backed application tests
-also exercise the translated query rather than evaluating it in memory.
-
-## Scan browser-retention update — 2026-09-12
-
-- `ScanLocalStoreService.requestPersistentStorage()` still checks IndexedDB availability and
-  `navigator.storage.persisted()`, then requests `navigator.storage.persist()` when needed.
-- `ScanWorkflowService.requestPersistentStorage()` serializes an explicit retry without creating
-  or replacing the local scan session, so the Scan modal can make the request from a user gesture.
-- A `false` result is a browser capability/permission limitation, not a failed server sync. The
-  Scan UI therefore keeps the warning and recommends regular synchronization; it does not claim
-  that local data is guaranteed.
-
-# Remise à zéro des données de livres
-
-La procédure répétable est dans `.agents/skills/book-data-reset/SKILL.md`, avec son script SQL en mode aperçu par défaut. Elle vise actuellement la base DEV `vole-papillon-damour-db`, protège `floriandrevet@icloud.com`, supprime uniquement les profils SQL dont l'identité Entra est désactivée, et conserve les autres profils actifs ou non associés. Elle protège les tables d'événements et d'actualités, les identités Entra et les blobs.
-
-## ISBN application intake — 2026-10-20
-
-The first planned import uses only the actual `ISBN_application.csv`, whose header is
-`ISBN;Nombre_de_photos` and which contains 7,748 valid unique canonical ISBN-13 values after
-normalization (7,747 source ISBN-13 and one ISBN-10 converted to `9782702112649`).
-`Nombre_de_photos` is source annotation only: it is not an inventory quantity, a book field,
-or an import request value. The user confirmed each scanned unique ISBN represents a physical
-book available for the fair, so each newly created `Book` receives quantity 1 and one
-`DirectEntry` movement attributed to the administrator performing the import. Already-present
-ISBNs remain unchanged for safe retries. This represents one copy per unique CSV row; the file
-does not encode extra copies for a repeated ISBN. Metadata stays pending and no prior scan
-sessions are recreated. The CSV is prepared for DEV, but no import has happened yet.
-
-Before applying the import, review the Worker health state in `NEXT.md`. Azure Container Apps
-showed successful `Functions.Enrich` and `Functions.Sweep` timer invocations despite startup
-probe alerts. The Worker processes pending enrichment in batches of 50 on its hourly schedule,
-so metadata resolution for the full candidate may take several days.
+- Scan uses IndexedDB `vpd-scan` for catalog, session, and outbox state. Requesting persistent browser storage is best-effort; a denied request means local retention is not guaranteed and is distinct from failed server synchronization.
+- Cash sales have a dedicated durable `sales` store and replay through `POST /scan/sales` with `ClientGestureId`; do not merge them into the triage session outbox.
+- As of 2026-10-20, the application CSV has 7,748 valid unique canonical ISBN-13 values; `Nombre_de_photos` is only source annotation. Each newly imported ISBN would add one copy, idempotently. No full-file import was recorded; check `NEXT.md` before any import.
+- Use `.agents/skills/book-data-reset/SKILL.md` for an explicitly requested deployed reset. `rg-vpd-dev`, `vpd-sql-dev`, `vole-papillon-damour-db`, and `vpdstdevfc` are production resources despite `dev` names. The reset protects active users/the named keeper and preserves events, news, Entra identities, and blobs.
+- Never place credentials, access tokens, or connection strings in memory. Use the production backup skill only for an explicitly requested backup; see `.agents/skills/vpd-prod-backup/SKILL.md`.
