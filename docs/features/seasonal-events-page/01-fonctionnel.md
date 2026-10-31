@@ -197,6 +197,7 @@ le bandeau du site et le tableau sur téléphone. La projection ne change pas. �
 | **RG-46** | La fermeture du bandeau est mémorisée sur l'appareil pour l'événement **et l'étape** : « avant » (J-14 à J-1), « jour J », « en direct ». Le bandeau réapparaît au changement d'étape. |
 | **RG-47** | « Ajouter à mon agenda » télécharge un fichier `.ics` de l'événement (titre, début, fin, lieu, lien vers la fiche), sans compte ni service tiers. |
 | **RG-48** | Les animations d'un thème suivent RG-34, RG-36 et RG-37 : elles respectent le réglage « réduire les animations » et le bouton Calmer, ne clignotent jamais plus de trois fois par seconde et s'arrêtent quand la page est cachée. Le fantôme court une fois par chargement de page, quel que soit l'endroit (bandeau ou à la une). |
+| **RG-50** | Chaque type d'événement a une **identité visuelle** utilisée dans l'agenda (et le calendrier) : la bourse aux livres a toujours « Papier et papillons » (papier ligné, papillon-livre) ; un loto sans thème a « Boules et carton » (nuit bleue, boule qui saute) ; un loto à thème prend l'identité de son thème (Halloween : « Nuit de citrouille »). Un événement « Autre » garde la charte du site. |
 | **RG-49** | Un thème est un **habillage** : palette, personnages, décor, animations. Il ne change jamais le contenu, l'ordre des informations ni les libellés. Ajouter un thème ne modifie ni la page ni ses règles. |
 
 ## 8. Critères d'acceptation
@@ -233,6 +234,11 @@ le bandeau du site et le tableau sur téléphone. La projection ne change pas. �
   texte ; tout décor porte `aria-hidden`.
 
 ## 10. Questions ouvertes
+
+- **Q3** — Retour du 2026-10-31 : l'agenda en lignes faisait « généré ». Deux pistes sont sur le
+  canvas : **agenda v2 en bandeaux** (chaque date dans l'identité de son événement, RG-50) et
+  **vrai calendrier** (trois mois, jours qui s'allument, bande continue pour une bourse sur
+  plusieurs jours). Laquelle retenir, ou les deux avec une bascule « Liste / Calendrier » ?
 
 - **Q1** — Le bandeau à J-14 pour **tous** les types : faut-il aussi l'afficher pour un
   événement « Autre » (par exemple une marche), ou seulement pour les lotos et les bourses ?
