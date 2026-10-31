@@ -1,20 +1,47 @@
 @if (vpdEvent(); as event) {
   <!-- Hero : le rendez-vous, ses horaires et son lieu sont visibles sans avoir à faire défiler. -->
-  <section class="relative isolate overflow-hidden bg-ink px-shell py-12 text-mist-2 lg:py-[78px]">
-    <div aria-hidden="true" class="pointer-events-none absolute -left-32 -top-40 h-[28rem] w-[28rem] rounded-full bg-blue-2/[.12] blur-3xl"></div>
-    <div aria-hidden="true" class="pointer-events-none absolute -bottom-40 right-[28%] h-80 w-80 rounded-full border border-orange-2/10"></div>
+  <section class="event-detail-hero relative isolate overflow-hidden bg-ink px-shell py-12 text-mist-2 lg:py-[78px]"
+           [class.event-detail-hero--halloween]="identity(event) === 'halloween'"
+           [class.calm]="calm()"
+           [class.paused]="!visible()"
+           [attr.data-zone]="identity(event) === 'halloween' ? 'E3-entete-halloween' : null">
+    @if (identity(event) === 'halloween') {
+      <div class="event-halloween-scene" aria-hidden="true" data-zone="E3-decor">
+        <div class="event-halloween-stars"><i></i><i></i><i></i><i></i><i></i></div>
+        <span class="event-halloween-moon"></span>
+        <svg class="event-halloween-cloud" viewBox="0 0 128 40"><path d="M10 34 C2 34 2 22 12 22 C12 12 26 8 34 16 C40 4 62 4 66 18 C74 10 92 14 92 24 C104 20 118 26 116 34 Z" /></svg>
+        <span class="event-halloween-spider">
+          <i></i>
+          <svg viewBox="0 0 24 22"><g stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M9 9 C5 6 3 4 1 5M9 11 C5 10 2 10 0 12M9 12.5 C6 14 4 16 2 19M15 9 C19 6 21 4 23 5M15 11 C19 10 22 10 24 12M15 12.5 C18 14 20 16 22 19" /></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#120a1c" stroke="currentColor" stroke-width=".9" /><circle cx="12" cy="6.6" r="3" fill="#120a1c" stroke="currentColor" stroke-width=".9" /></svg>
+        </span>
+        <span class="event-halloween-fog"></span>
+        <div class="event-halloween-pumpkins" data-zone="E3-citrouilles">
+          <vpd-citrouille class="event-pumpkin-small" [size]="116" mood="idle" />
+          <vpd-citrouille class="event-pumpkin-large" [size]="190" mood="idle" />
+        </div>
+      </div>
+      @if (runnerActive() && !calm()) {
+        <div class="event-halloween-runner" aria-hidden="true" data-zone="E3-fantome-course">
+          <vpd-fantome [size]="76" mood="course" />
+        </div>
+      }
+    } @else {
+      <div aria-hidden="true" class="pointer-events-none absolute -left-32 -top-40 h-[28rem] w-[28rem] rounded-full bg-blue-2/[.12] blur-3xl"></div>
+      <div aria-hidden="true" class="pointer-events-none absolute -bottom-40 right-[28%] h-80 w-80 rounded-full border border-orange-2/10"></div>
+    }
 
-    <div class="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-16">
+    <div class="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-16">
       <div class="flex min-w-0 flex-col gap-6">
-      <a routerLink="/evenement" class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white">
-        ← Tous les évènements
+      <a routerLink="/evenement" class="inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-cyan transition hover:text-white">
+        <svg viewBox="0 0 16 16" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+        Tous les événements
       </a>
 
       @if (liveLoto(); as loto) {
         <!-- E6 : maquettes preview/E6-Desktop.html, preview/E6-Mobile.html -->
         <div class="flex max-w-[650px] flex-col gap-3 rounded-xl border border-orange-2/45 bg-[#0b2438] p-4 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-[18px]">
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-            <span class="inline-flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.18em] text-orange-2 sm:text-[11px]">
+            <span class="inline-flex items-center gap-2 font-serif text-[16px] font-semibold italic text-orange-2 sm:text-[17px]">
               <span aria-hidden="true" class="h-2 w-2 rounded-full bg-orange shadow-[0_0_0_4px_rgba(240,128,28,.25)]"></span>Tableau en direct
             </span>
             <span class="text-base font-semibold text-white sm:text-[17px]">
@@ -32,20 +59,21 @@
           </div>
           <a [routerLink]="['/evenement', loto.id, 'tableau']"
              class="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full bg-white px-5 text-[15px] font-bold text-ink transition hover:bg-mist-2 sm:h-11">
-            {{ loto.liveStatus === 'Finished' ? 'Voir le tableau final' : 'Suivre le tableau' }} →
+            {{ loto.liveStatus === 'Finished' ? 'Voir le tableau final' : 'Suivre le tableau' }}
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
           </a>
         </div>
       }
 
       <div class="flex flex-wrap items-center gap-3">
-        <span class="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">
+        <span class="inline-flex items-center gap-2 font-serif text-[17px] font-semibold italic text-orange-2">
           <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-orange-2"></span>
           {{ kicker() }}
         </span>
         <span
-          class="rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[.14em]"
+          class="rounded-full border px-3 py-1 text-[12px] font-semibold"
           [class]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
-          {{ isPast() ? 'Édition passée' : 'À venir' }}
+          @if (countdown(event); as label) { {{ label }} } @else { Édition passée }
         </span>
       </div>
 
@@ -59,7 +87,7 @@
             <img src="icons/calendar-icon.svg" alt="" class="h-6 w-6 object-contain">
           </span>
           <div class="flex min-w-0 flex-col gap-1">
-            <span class="font-mono text-[10px] uppercase tracking-[.16em] text-cyan">Date</span>
+            <span class="font-serif text-[15px] italic text-cyan">Date</span>
             @if (event.dateEnd) {
               <strong class="font-serif text-[19px] font-medium leading-tight text-white">
                 Du {{ event.dateStart | date:'d MMM':'UTC' }} au {{ event.dateEnd | date:'d MMM yyyy':'UTC' }}
@@ -77,12 +105,12 @@
             <img src="icons/clock-icon.svg" alt="" class="h-6 w-6 object-contain">
           </span>
           <div class="flex min-w-0 flex-col gap-1">
-            <span class="font-mono text-[10px] uppercase tracking-[.16em] text-cyan">Horaires</span>
+            <span class="font-serif text-[15px] italic text-cyan">Ouverture</span>
             <div class="event-hero-time flex items-baseline gap-2 whitespace-nowrap font-serif text-[16px] leading-tight text-white">
-              <span><span class="font-mono text-[9px] uppercase tracking-[.12em] text-mist/70">Début</span> {{ eventStartTime() | date:'HH:mm':'UTC' }}</span>
+              <span>{{ eventStartTime() | date:'HH:mm':'UTC' }}</span>
               <span aria-hidden="true" class="text-mist/50">·</span>
               @if (event.hourCloseDoors) {
-                <span><span class="font-mono text-[9px] uppercase tracking-[.12em] text-mist/70">Fin</span> {{ event.hourCloseDoors | date:'HH:mm':'UTC' }}</span>
+                <span><span class="text-sm text-mist/70">Fin</span> {{ event.hourCloseDoors | date:'HH:mm':'UTC' }}</span>
               }
             </div>
           </div>
@@ -108,20 +136,22 @@
             [href]="mapsUrl()"
             target="_blank"
             rel="noopener noreferrer"
-            class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-2 font-mono text-[10px] font-medium uppercase tracking-[.1em] text-blue shadow-[0_8px_20px_-12px_rgba(7,43,69,.75)] transition hover:bg-orange-2 hover:text-ink-2">
-            Ouvrir dans Maps <span aria-hidden="true" class="text-sm leading-none">↗</span>
+            class="absolute left-4 top-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-blue shadow-[0_8px_20px_-12px_rgba(7,43,69,.75)] transition hover:bg-orange-2 hover:text-ink-2">
+            Ouvrir dans Maps
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h8v8M13 3 7 9M11 9v4H3V5h4" /></svg>
           </a>
         </div>
 
         <div class="flex flex-col gap-2 px-6 py-6 lg:px-7">
-          <span class="font-mono text-[10px] uppercase tracking-[.16em] text-blue">Lieu du rendez-vous</span>
+          <span class="font-serif text-[15px] italic text-blue">Lieu</span>
           <p class="event-location-address font-serif text-[24px] font-medium leading-tight text-ink-2">{{ address() }}</p>
           <a
             [href]="mapsUrl()"
             target="_blank"
             rel="noopener noreferrer"
-            class="mt-2 font-mono text-[11px] tracking-[.12em] text-blue transition hover:text-blue-2">
-            ITINÉRAIRE <span aria-hidden="true">→</span>
+            class="mt-2 inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-blue transition hover:text-blue-2">
+            Itinéraire
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
           </a>
         </div>
       </aside>
@@ -138,7 +168,7 @@
 
   <section class="flex flex-col items-start justify-between gap-5 border-t border-line-2 bg-white px-shell py-12 lg:flex-row lg:items-center">
     <div class="flex flex-col gap-1.5">
-      <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Et ensuite</span>
+      <span class="font-serif text-[15px] italic text-blue">Et ensuite</span>
       <p class="font-serif text-xl font-medium text-ink-2 lg:text-2xl">D'autres dates vous attendent.</p>
     </div>
     <div class="flex flex-wrap gap-3">
@@ -178,6 +208,6 @@
   <div class="mx-auto flex max-w-[680px] flex-col gap-3 px-6 py-16 text-slate-2 lg:px-0">
     <h1 class="font-serif text-2xl font-medium text-ink-2">Événement indisponible</h1>
     <p>Cet événement n'est pas disponible pour le moment.</p>
-    <a routerLink="/evenement" class="font-mono text-xs tracking-[.1em] text-blue">RETOUR AUX ÉVÉNEMENTS →</a>
+    <a routerLink="/evenement" class="inline-flex min-h-11 items-center text-sm font-semibold text-blue">Retour aux événements</a>
   </div>
 }

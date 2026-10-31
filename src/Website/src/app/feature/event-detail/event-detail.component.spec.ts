@@ -64,7 +64,7 @@ describe('EventDetailComponent', () => {
     expect(mapCard.textContent).not.toContain('Fin');
     expect(metadata?.querySelector('img[src="icons/calendar-icon.svg"]')).not.toBeNull();
     expect(metadata?.querySelector('img[src="icons/clock-icon.svg"]')).not.toBeNull();
-    expect(metadata?.textContent).toContain('Début');
+    expect(metadata?.textContent).toContain('Ouverture');
     expect(metadata?.textContent).toContain('14:00');
     expect(metadata?.textContent).toContain('Fin');
     expect(metadata?.textContent).toContain('18:00');
@@ -81,7 +81,8 @@ describe('EventDetailComponent', () => {
 
     const time = fixture.nativeElement.querySelector('.event-hero-time');
 
-    expect(time?.textContent).toContain('Début');
+    expect(time?.textContent).not.toContain('Début');
+    expect(fixture.nativeElement.querySelector('.event-hero-meta')?.textContent).toContain('Ouverture');
     expect(time?.textContent).toContain('14:00');
     expect(time?.textContent).not.toContain('Fin');
     expect(time?.textContent).not.toContain('À confirmer');
@@ -98,5 +99,48 @@ describe('EventDetailComponent', () => {
 
     expect(time?.textContent).toContain('14:00');
     expect(time?.textContent).not.toContain('06:00');
+  });
+
+  it('uses the Halloween scene and event wording for a themed loto', () => {
+    fixture.componentInstance.vpdEvent.set({
+      ...event,
+      id: 'halloween-loto',
+      name: 'Loto d’Halloween',
+      eventType: VpdEventEnum.Bingo,
+      liveTheme: 'Halloween',
+      dateStart: new Date('2026-11-01T12:00:00.000Z'),
+      dateEnd: null,
+    });
+    fixture.detectChanges();
+
+    const hero = fixture.nativeElement.querySelector('.event-detail-hero');
+    expect(hero.classList.contains('event-detail-hero--halloween')).toBeTrue();
+    expect(hero.querySelector('.event-halloween-scene')).not.toBeNull();
+    expect(hero.querySelectorAll('vpd-citrouille').length).toBe(2);
+    expect(hero.textContent).toContain('Loto');
+    expect(hero.textContent).toContain('Date');
+    expect(hero.textContent).toContain('Ouverture');
+    expect(hero.textContent).toContain('Lieu');
+    expect(hero.textContent).toContain('Demain');
+  });
+
+  it('does not add a Halloween scene to a classic loto', () => {
+    fixture.componentInstance.vpdEvent.set({
+      ...event,
+      eventType: VpdEventEnum.Bingo,
+      liveTheme: 'Classic',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.event-halloween-scene')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.event-detail-hero--halloween')).toBeNull();
+  });
+
+  it('keeps the classic detail free of text arrows and spaced uppercase labels', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).not.toContain('←');
+    expect(page.textContent).not.toContain('→');
+    expect([...page.querySelectorAll('[class]')]
+      .some(element => element.getAttribute('class')?.split(/\s+/).includes('uppercase'))).toBeFalse();
   });
 });
