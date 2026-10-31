@@ -63,6 +63,7 @@ import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
 import {MaladiesListComponent} from "./maxence/diseases/maladies-list/maladies-list.component";
 import {ActionsComponent} from "./actions/actions.component";
 import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
+import {TableauHalloweenComponent} from './tableau/halloween/tableau-halloween.component';
 
 
 @NgModule({
@@ -133,7 +134,8 @@ import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
     NgOptimizedImage,
     SharedModule,
     RouterLink,
-    CoreModule
+    CoreModule,
+    TableauHalloweenComponent
   ]
 })
 export class FeatureModule { }

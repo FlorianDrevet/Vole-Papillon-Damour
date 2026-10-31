@@ -1,0 +1,311 @@
+.hw {
+  --nuit: #120a1c;
+  --velours: #1d1229;
+  --ardoise: #2a1c3a;
+  --citrouille: #ff8c2e;
+  --braise: #ffb347;
+  --cire: #f4e8cf;
+  --sorciere: #9bd85a;
+  --lilas: #b8a5cf;
+  --prune: #5b3482;
+  --encre: #1a0b22;
+  --hero: #170e23;
+  --citrouille-rgb: 255, 140, 46;
+
+  box-sizing: border-box;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  margin: 0 auto;
+  padding: 8px 16px 140px;
+  background: var(--nuit);
+  color: var(--cire);
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+
+.hw *,
+.hw *::before,
+.hw *::after {
+  box-sizing: border-box;
+}
+
+.top {
+  display: flex;
+  height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.back {
+  display: flex;
+  min-width: 0;
+  height: 44px;
+  align-items: center;
+  gap: 4px;
+  color: var(--cire);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--braise);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  min-height: 252px;
+  flex-direction: column;
+  padding: 16px 58px 22px 18px;
+  border-radius: 26px;
+  background: var(--hero);
+}
+
+.hw-k {
+  color: var(--lilas);
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.num-wrap {
+  position: relative;
+  display: grid;
+  margin-top: 6px;
+  place-items: center;
+}
+
+.num {
+  grid-area: 1 / 1;
+  color: var(--citrouille);
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 184px;
+  font-variation-settings: 'opsz' 144;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 900;
+  letter-spacing: -.045em;
+  line-height: .9;
+  text-shadow: 0 0 30px rgba(var(--citrouille-rgb), .32);
+}
+
+.previous {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.tombs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tomb {
+  display: grid;
+  height: 54px;
+  place-items: center;
+  border-radius: 24px 24px 6px 6px;
+  background: var(--cire);
+  box-shadow: inset 0 -7px 0 rgba(26, 11, 34, .12);
+  color: var(--encre);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  transform: rotate(var(--t));
+}
+
+.ground {
+  height: 6px;
+  margin: 0 -4px;
+  border-radius: 999px;
+  background: var(--velours);
+}
+
+.board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.board-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.board-h b {
+  color: var(--lilas);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  height: 32px;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--ardoise);
+  color: var(--lilas);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.cell.on {
+  background: var(--cire);
+  color: var(--encre);
+  font-weight: 800;
+}
+
+.cell.nb {
+  box-shadow: inset 0 0 0 2px var(--sorciere);
+  color: #fff;
+}
+
+.cell.last {
+  background: var(--citrouille);
+  box-shadow: inset 0 0 0 2px #ffd08a, 0 0 16px rgba(var(--citrouille-rgb), .5);
+  color: var(--encre);
+  font-weight: 900;
+}
+
+.cell-flame {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  z-index: 1;
+  width: 11px;
+  height: 16px;
+  transform: translateX(-50%);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--velours);
+}
+
+.card-t {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1.08;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: var(--prune);
+  color: var(--cire);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.chip-a {
+  background: var(--citrouille);
+  color: var(--encre);
+}
+
+.chip-b {
+  background: var(--cire);
+  color: var(--encre);
+}
+
+.lots {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 12px;
+  border-top: 1px dashed #3a2950;
+}
+
+.lots .hw-k {
+  font-size: 16px;
+}
+
+.lot {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.lot-won {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--lilas);
+  font-size: 15px;
+}
+
+.lot-won s {
+  text-decoration-thickness: 2px;
+}
+
+.lot-won em {
+  color: var(--sorciere);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.bingo {
+  background: #21102b;
+  box-shadow: inset 0 0 0 2px var(--citrouille);
+}
+
+.bingo .hw-k {
+  color: var(--braise);
+}
+
+.bingo-n {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+@media (min-width: 540px) {
+  .hw {
+    max-width: 520px;
+  }
+}
