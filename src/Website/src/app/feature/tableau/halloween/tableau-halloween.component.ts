@@ -1,7 +1,7 @@
 import {AfterViewChecked, Component, effect, ElementRef, inject, Input, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {RouterLink} from '@angular/router';
-import {LotoEventSnapshot, LotoTableauView} from '@vpd/ui';
+import {LotoCell, LotoEventSnapshot, LotoTableauView} from '@vpd/ui';
 import {LiveTableauConnection} from '../../../shared/clients/sse-client.service';
 import {VpdEventModel} from '../../../shared/models/vpdEvent.model';
 import {HalloweenPreferences} from './halloween-preferences';
@@ -144,6 +144,28 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
   protected lineLotName(): string | null {
     const moment = this.fx.moment();
     return moment?.kind === 'line' ? moment.lotName : null;
+  }
+
+  protected isLineEndingPartie(): boolean {
+    const moment = this.fx.moment();
+    return moment?.kind === 'line' && moment.endsPartie;
+  }
+
+  protected displayCells(): LotoCell[] {
+    return this.fx.frozenCells() ?? this.view.cells;
+  }
+
+  protected shouldFadeCell(cell: LotoCell): boolean {
+    if (this.fx.frozenCells() === null || cell.state === 'idle') {
+      return false;
+    }
+    const moment = this.fx.moment();
+    return moment?.kind === 'partie'
+      || (moment?.kind === 'line' && moment.endsPartie && this.fx.momentPhase() === 'ghost');
+  }
+
+  protected cellOutDelay(value: number): string {
+    return `${.45 + .164 * ((value - 1) % 10)}s`;
   }
 
   private playBats(key: 'a' | 'b'): void {

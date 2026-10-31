@@ -370,6 +370,8 @@
 @keyframes hw-cell-ign { 0% { transform: scale(.7); background: var(--ardoise); } 40% { transform: scale(1.25); background: #ffd08a; box-shadow: 0 0 26px 8px rgba(255,170,80,.7); } 100% { transform: scale(1); } }
 .hw .cell.unlit-a, .hw .cell.unlit-b { animation: hw-cell-unlit .6s both; }
 @keyframes hw-cell-unlit { 0% { background: var(--cire); color: var(--encre); } 100% { background: var(--ardoise); color: var(--lilas); } }
+.hw .cell.out { animation: hw-cell-out .55s var(--d) both; }
+@keyframes hw-cell-out { 0% { background: var(--cire); color: var(--encre); } 35% { background: #fff6dd; color: var(--encre); transform: translateY(-2px); box-shadow: 0 -8px 16px rgba(255,236,190,.6); } 100% { background: var(--ardoise); color: var(--lilas); box-shadow: none; transform: none; } }
 .hw.calm .num { animation: hw-calm-in .3s both !important; }
 .hw.calm .num-old { animation: hw-calm-out .3s both !important; }
 @keyframes hw-calm-in { from { opacity: 0; } to { opacity: 1; } }
@@ -411,6 +413,13 @@
   86% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-10px); }
 }
+.fx .ghost-fly { position: absolute; top: 50.9vh; left: 0; animation: hw-ghost-cross 2.6s cubic-bezier(.45,.05,.55,.95) both; }
+@keyframes hw-ghost-cross { 0% { transform: translate(-150px,0); } 50% { transform: translate(140px,-26px); } 100% { transform: translate(440px,8px); } }
+.fx .announce { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(18,10,28,.78); animation: hw-announce 1.8s both; }
+.fx .announce-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 32px; text-align: center; }
+@keyframes hw-announce { 0% { opacity: 0; } 14% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+.fx .ann-k { color: var(--lilas); font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-style: italic; }
+.fx .ann-t { color: var(--cire); font-family: 'Fraunces', Georgia, serif; font-size: 40px; font-weight: 900; line-height: 1.02; }
 
 @media (min-width: 540px) {
   .hw {

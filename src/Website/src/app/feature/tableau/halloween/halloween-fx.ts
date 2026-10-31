@@ -1,5 +1,5 @@
 import {DestroyRef, inject, Injectable, signal} from '@angular/core';
-import {LotoCell, LotoEventSnapshot} from '@vpd/ui';
+import {buildLotoTableauView, LotoCell, LotoEventSnapshot} from '@vpd/ui';
 import {HalloweenPreferences} from './halloween-preferences';
 import {detectLotoMoment, LotoMoment} from './loto-moment';
 
@@ -14,6 +14,8 @@ export class HalloweenFx {
   private activeAnimations = new Set<Pick<Animation, 'cancel'>>();
   private momentTimeout: ReturnType<typeof setTimeout> | undefined;
   private interruptTimeout: ReturnType<typeof setTimeout> | undefined;
+  private phaseTimeout: ReturnType<typeof setTimeout> | undefined;
+  private freezeTimeout: ReturnType<typeof setTimeout> | undefined;
   private pendingMoment: LotoMoment | null = null;
 
   readonly moment = signal<LotoMoment | null>(null);
@@ -21,6 +23,7 @@ export class HalloweenFx {
   readonly animationKey = signal<'a' | 'b'>('a');
   readonly previousLastNumero = signal<number | null>(null);
   readonly interrupting = signal(false);
+  readonly momentPhase = signal<'main' | 'ghost' | 'announce'>('main');
 
   constructor() {
     this.destroyRef.onDestroy(() => this.cancelCurrent());
@@ -50,7 +53,9 @@ export class HalloweenFx {
 
     const moment = detectLotoMoment(previous, snapshot);
     if (moment !== null) {
-      this.play(moment);
+      const freezesPreviousGrid = moment.kind === 'partie' || (moment.kind === 'line' && moment.endsPartie);
+      const frozenCells = freezesPreviousGrid ? buildLotoTableauView(previous).cells : null;
+      this.play(moment, frozenCells);
     }
   }
 
@@ -77,8 +82,12 @@ export class HalloweenFx {
   cancelCurrent(): void {
     clearTimeout(this.momentTimeout);
     clearTimeout(this.interruptTimeout);
+    clearTimeout(this.phaseTimeout);
+    clearTimeout(this.freezeTimeout);
     this.momentTimeout = undefined;
     this.interruptTimeout = undefined;
+    this.phaseTimeout = undefined;
+    this.freezeTimeout = undefined;
     this.pendingMoment = null;
     for (const animation of this.activeAnimations) {
       animation.cancel();
@@ -87,11 +96,20 @@ export class HalloweenFx {
     this.moment.set(null);
     this.frozenCells.set(null);
     this.interrupting.set(false);
+    this.momentPhase.set('main');
   }
 
-  private play(next: LotoMoment): void {
+  private play(next: LotoMoment, frozenCells: LotoCell[] | null): void {
     const current = this.pendingMoment ?? this.moment();
-    if (current !== null && rank(next) < rank(current)) {
+    const newNumberReleasesGrid = next.kind === 'numero'
+      && (current?.kind === 'partie' || (current?.kind === 'line' && current.endsPartie));
+    if (current !== null && rank(next) < rank(current) && !newNumberReleasesGrid) {
+      return;
+    }
+
+    if (newNumberReleasesGrid) {
+      this.cancelCurrent();
+      this.start(next, null);
       return;
     }
 
@@ -103,26 +121,39 @@ export class HalloweenFx {
       this.moment.set(null);
       this.interrupting.set(true);
       this.pendingMoment = next;
+      this.frozenCells.set(frozenCells);
       this.interruptTimeout = setTimeout(() => {
         this.interruptTimeout = undefined;
         this.pendingMoment = null;
         this.interrupting.set(false);
-        this.start(next);
+        this.start(next, frozenCells);
       }, INTERRUPT_FADE_MS);
       return;
     }
 
-    this.start(next);
+    this.start(next, frozenCells);
   }
 
-  private start(moment: LotoMoment): void {
+  private start(moment: LotoMoment, frozenCells: LotoCell[] | null): void {
     this.animationKey.update(key => key === 'a' ? 'b' : 'a');
     this.moment.set(moment);
+    this.frozenCells.set(frozenCells);
+    this.momentPhase.set(moment.kind === 'partie' ? 'ghost' : 'main');
+
+    if (moment.kind === 'partie') {
+      this.freezeTimeout = setTimeout(() => this.frozenCells.set(null), 2000);
+      this.phaseTimeout = setTimeout(() => this.momentPhase.set('announce'), 2200);
+    } else if (moment.kind === 'line' && moment.endsPartie) {
+      this.freezeTimeout = setTimeout(() => this.frozenCells.set(null), 6500);
+      this.phaseTimeout = setTimeout(() => this.momentPhase.set('ghost'), 4200);
+    }
+
     this.momentTimeout = setTimeout(() => {
       this.momentTimeout = undefined;
       this.cancelAnimations();
       this.moment.set(null);
       this.frozenCells.set(null);
+      this.momentPhase.set('main');
     }, durationOf(moment));
   }
 
@@ -143,9 +174,9 @@ function durationOf(moment: LotoMoment): number {
   switch (moment.kind) {
     case 'numero': return 1600;
     case 'undo': return 800;
-    case 'line': return moment.endsPartie ? 6500 : 4200;
+    case 'line': return moment.endsPartie ? 6800 : 4200;
     case 'bingo': return 5200;
-    case 'partie': return 4400;
+    case 'partie': return 4000;
   }
 }
 

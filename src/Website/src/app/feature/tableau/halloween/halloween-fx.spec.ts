@@ -4,12 +4,12 @@ import {LotoEventSnapshot, LotoPartieSnapshot} from '@vpd/ui';
 import {HalloweenPreferences} from './halloween-preferences';
 import {HalloweenFx} from './halloween-fx';
 
-function partie(lastNumeros: number[] = [], isWon: boolean | null = null): LotoPartieSnapshot {
+function partie(lastNumeros: number[] = [], isWon: boolean | null = null, index = 0): LotoPartieSnapshot {
   return {
-    id: 'partie-1',
-    name: 'Partie 1',
+    id: `partie-${index + 1}`,
+    name: `Partie ${index + 1}`,
     partieType: 'Standard',
-    index: 0,
+    index,
     pauseAfter: false,
     lastNumeros,
     liveNumeros: lastNumeros,
@@ -30,6 +30,14 @@ function loto(lastNumeros: number[] = [], isWon: boolean | null = null): LotoEve
     currentPartieIndex: 0,
     bingoNumeros: [],
     bingoHasBeenWon: false,
+  };
+}
+
+function lotoWithTwoParties(currentPartieIndex: number, firstWon: boolean | null, secondNumeros: number[] = []): LotoEventSnapshot {
+  return {
+    ...loto(),
+    parties: [partie([18], firstWon, 0), partie(secondNumeros, null, 1)],
+    currentPartieIndex,
   };
 }
 
@@ -102,6 +110,61 @@ describe('HalloweenFx', () => {
 
       jasmine.clock().tick(150);
       expect(fx.moment()).toEqual({kind: 'line', lotName: 'Panier garni', endsPartie: false});
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('gèle les cases de la partie précédente puis les libère à deux secondes', () => {
+    jasmine.clock().install();
+    try {
+      fx.accept(loto([18], true));
+      fx.accept(lotoWithTwoParties(1, true));
+
+      expect(fx.moment()).toEqual({kind: 'partie'});
+      expect(fx.frozenCells()?.length).toBe(90);
+      expect(fx.frozenCells()?.find(cell => cell.value === 18)?.state).toBe('last');
+
+      jasmine.clock().tick(2000);
+      expect(fx.frozenCells()).toBeNull();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('enchaîne la ligne de fin de partie puis le fantôme sans figer la grille au-delà de 6,5 s', () => {
+    jasmine.clock().install();
+    try {
+      fx.accept(loto([18], null));
+      const next = {
+        ...lotoWithTwoParties(1, true),
+        parties: [partie([18], true, 0), partie([], null, 1)],
+      };
+      fx.accept(next);
+
+      expect(fx.moment()).toEqual({kind: 'line', lotName: 'Panier garni', endsPartie: true});
+      expect(fx.momentPhase()).toBe('main');
+      expect(fx.frozenCells()?.length).toBe(90);
+
+      jasmine.clock().tick(4200);
+      expect(fx.momentPhase()).toBe('ghost');
+      jasmine.clock().tick(2300);
+      expect(fx.frozenCells()).toBeNull();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('libère immédiatement une grille gelée si un numéro arrive dans la nouvelle partie', () => {
+    jasmine.clock().install();
+    try {
+      fx.accept(loto([18], true));
+      fx.accept(lotoWithTwoParties(1, true));
+      expect(fx.frozenCells()).not.toBeNull();
+
+      fx.accept(lotoWithTwoParties(1, true, [25]));
+      expect(fx.frozenCells()).toBeNull();
+      expect(fx.moment()).toEqual({kind: 'numero', value: 25});
     } finally {
       jasmine.clock().uninstall();
     }

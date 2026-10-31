@@ -76,8 +76,10 @@
     <svg class="web deco" viewBox="0 0 88 88" fill="none" stroke="rgba(232,220,245,.3)" stroke-width="1" aria-hidden="true"><path d="M88 0 20 0M88 0 34 34M88 0 60 62M88 0 88 74"/><path d="M70 0Q72 10 76 12T88 16M52 0Q56 18 64 24T88 32M36 0Q40 24 52 38T88 50M22 0Q26 30 42 46T88 66"/></svg>
     <div class="spider deco" aria-hidden="true"><span class="thread"></span><svg class="spider-b" viewBox="0 0 24 22"><g class="legs" stroke="#0c0612" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M9 9C5 6 3 4 1 5M9 11C5 10 2 10 0 12M9 12.5C6 14 4 16 2 19M10 14C8 17 7 19 6 21M15 9C19 6 21 4 23 5M15 11C19 10 22 10 24 12M15 12.5C18 14 20 16 22 19M14 14C16 17 17 19 18 21"/></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".8"/><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".8"/><circle cx="11" cy="6.2" r=".7" fill="#ff8c2e"/><circle cx="13" cy="6.2" r=".7" fill="#ff8c2e"/></svg></div>
     <div class="grid" role="img" aria-label="Grille des numéros 1 à 90">
-      @for (cell of view.cells; track cell.value) {
+      @for (cell of displayCells(); track cell.value) {
         <span class="cell"
+              [class.out]="shouldFadeCell(cell)"
+              [style.--d]="cellOutDelay(cell.value)"
               [class.on]="cell.state === 'drawn'"
               [class.last]="cell.state === 'last'"
               [class.nb]="cell.state === 'neighbour'"
@@ -127,14 +129,14 @@
 </main>
 
 @if (fx.moment() !== null || fx.interrupting()) {
-  <div class="fx" [class.interrupting]="fx.interrupting()" #fxLayer aria-hidden="true">
+  <div class="fx" [class.interrupting]="fx.interrupting()" #fxLayer>
     @if (fx.moment()?.kind === 'numero' || fx.moment()?.kind === 'bingo') {
       @for (size of batSizes; track $index) {
         <div class="bat"><vpd-chauve-souris [size]="size" mood="vol" /></div>
       }
     }
-    @if (fx.moment()?.kind === 'line' || fx.moment()?.kind === 'bingo') {
-      <div class="candy-rain">
+    @if ((fx.moment()?.kind === 'line' || fx.moment()?.kind === 'bingo') && fx.momentPhase() === 'main') {
+      <div class="candy-rain" aria-hidden="true">
         @for (candy of candies.slice(0, fx.moment()?.kind === 'bingo' ? 40 : 26); track candy.index) {
           <div class="candy" [style.left.vw]="candy.leftVw" [style.width.px]="candy.width"
                [style.animation-delay.s]="candy.delayRatio * (fx.moment()?.kind === 'bingo' ? 1.8 : 1.2)"
@@ -155,14 +157,25 @@
           </div>
         }
       </div>
-      <div class="pumpkin-party">
+      <div class="pumpkin-party" aria-hidden="true">
         <div class="pk-rise" style="left: -16px; animation-delay: 0s"><vpd-citrouille [size]="130" mood="rire" /></div>
         <div class="pk-rise" style="left: 118px; animation-delay: .12s"><vpd-citrouille [size]="156" mood="rire" /></div>
         <div class="pk-rise" style="right: -16px; animation-delay: .24s"><vpd-citrouille [size]="130" mood="rire" /></div>
       </div>
-      <div class="banner">
+      <div class="banner" role="status" aria-live="polite">
         <span class="banner-title">{{ fx.moment()?.kind === 'bingo' ? 'Bingo !' : 'Ligne gagnée !' }}</span>
         @if (lineLotName() !== null) { <span class="banner-lot">{{ lineLotName() }}</span> }
+      </div>
+    }
+    @if (fx.moment()?.kind === 'partie' || (isLineEndingPartie() && fx.momentPhase() === 'ghost')) {
+      <div class="ghost-fly" aria-hidden="true"><vpd-fantome [size]="120" mood="coucou" /></div>
+    }
+    @if (fx.moment()?.kind === 'partie' && fx.momentPhase() === 'announce') {
+      <div class="announce" role="status" aria-live="polite">
+        <div class="announce-card">
+          <span class="ann-k">Partie {{ view.partieNumber }} sur {{ view.partieCount }}</span>
+          <span class="ann-t">{{ view.partieName }}</span>
+        </div>
       </div>
     }
   </div>
