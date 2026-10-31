@@ -7,7 +7,7 @@ import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../shared/utils/event-address.util";
 import {eventIdentity, EventIdentity} from '../../shared/events/event-identity';
-import {countdownLabel} from '../../shared/events/countdown';
+import {countdownLabel, parisDay} from '../../shared/events/countdown';
 import {HalloweenPreferences} from '../../shared/components/mascots/halloween-preferences';
 import {TodayBannerHalloweenMotionService} from '../../core/layouts/today-banner/today-banner-halloween-motion.service';
 import {isPlatformBrowser} from '@angular/common';
@@ -34,6 +34,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     const today = this.todayEvent.today();
     const event = this.vpdEvent();
     return today !== null && event !== null && today.id === event.id && today.eventType === 'Bingo'
+      && parisDay(today.dateStart) === parisDay(new Date())
       ? today
       : null;
   });

@@ -149,7 +149,7 @@ export class AgendaCalendarComponent implements OnChanges {
     }).format(new Date(`${date}T12:00:00Z`));
     const place = event.city ? `, ${event.city}` : '';
     const opening = event.hourOpenDoors
-      ? `, ouverture à ${new Intl.DateTimeFormat('fr-FR', {timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit'}).format(new Date(event.hourOpenDoors))}`
+      ? `, ouverture à ${new Intl.DateTimeFormat('fr-FR', {timeZone: 'UTC', hour: '2-digit', minute: '2-digit'}).format(new Date(event.hourOpenDoors))}`
       : '';
     return `${label} : ${this.eventTypeLabel(event)}, ${event.name}${place}${opening}`;
   }

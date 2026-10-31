@@ -79,9 +79,9 @@ function parisDate(iso: string): string {
 }
 
 /** « 13 h 30 » à l'heure de Paris. */
-export function parisTime(iso: string): string {
+export function eventTime(iso: string): string {
   const parts = new Intl.DateTimeFormat('fr-FR', {
-    timeZone: 'Europe/Paris',
+    timeZone: 'UTC',
     hour: '2-digit',
     minute: '2-digit',
   }).formatToParts(new Date(iso));
@@ -98,18 +98,18 @@ export function todayBannerSchedule(
 ): string {
   const parts: string[] = [];
   if (stage === 'upcoming' && daysUntil(today, now) === 1 && today.hourOpenDoors) {
-    parts.push(`Ouverture des portes ${parisTime(today.hourOpenDoors)}`);
+    parts.push(`Ouverture des portes ${eventTime(today.hourOpenDoors)}`);
   } else if (stage === 'upcoming') {
     parts.push(parisDate(today.dateStart));
   } else if (stage === 'ongoing' && today.dateEnd !== null) {
     parts.push(`jusqu’au ${parisDate(today.dateEnd)}`);
   } else if (stage === 'today' && today.eventType === 'Bingo'
     && today.liveStatus === 'NotStarted' && today.hourOpenDoors) {
-    parts.push(`Ouverture des portes ${parisTime(today.hourOpenDoors)}`);
+    parts.push(`Ouverture des portes ${eventTime(today.hourOpenDoors)}`);
   } else if (today.hourOpenDoors && today.hourCloseDoors) {
-    parts.push(`${parisTime(today.hourOpenDoors)} – ${parisTime(today.hourCloseDoors)}`);
+    parts.push(`${eventTime(today.hourOpenDoors)} – ${eventTime(today.hourCloseDoors)}`);
   } else if (today.hourOpenDoors) {
-    parts.push(parisTime(today.hourOpenDoors));
+    parts.push(eventTime(today.hourOpenDoors));
   }
 
   if (today.city) {

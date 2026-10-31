@@ -66,7 +66,7 @@ export class AgendaListComponent {
     const parts = [event.city];
     if (event.hourOpenDoors) {
       const time = new Intl.DateTimeFormat('fr-FR', {
-        timeZone: 'Europe/Paris',
+        timeZone: 'UTC',
         hour: '2-digit',
         minute: '2-digit',
       }).format(new Date(event.hourOpenDoors)).replace(':', ' h ');

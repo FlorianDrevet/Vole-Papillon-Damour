@@ -102,7 +102,7 @@ export class FeaturedEventComponent implements OnChanges, OnDestroy {
 
   private parisTime(date: Date): string {
     const parts = new Intl.DateTimeFormat('fr-FR', {
-      timeZone: 'Europe/Paris',
+      timeZone: 'UTC',
       hour: '2-digit',
       minute: '2-digit',
     }).formatToParts(date);

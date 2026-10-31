@@ -89,11 +89,12 @@ describe('TableauHalloweenComponent', () => {
     expect(neighbourCells).toEqual(['20', '22']);
   });
 
-  it('barre le lot gagné et affiche son libellé', async () => {
+  it('garde le lot gagné lisible, sans barre, avec son libellé', async () => {
     const element = await render();
 
     const wonLot = element.querySelector('.lot-won');
-    expect(wonLot?.querySelector('s')?.textContent).toBe('Bon d’achat');
+    expect(wonLot?.querySelector('s')).toBeNull();
+    expect(wonLot?.querySelector('span')?.textContent).toBe('Bon d’achat');
     expect(wonLot?.textContent).toContain('gagné');
     expect(element.textContent).toContain('À gagner sur cette ligne');
   });
