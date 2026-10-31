@@ -15,11 +15,12 @@ const string BackOfficeResourceName = "backoffice";
 const string CatalogResourceName = "catalog";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
+const string KeycloakAdminPasswordParameterName = "keycloak-admin-password";
 const string KeycloakAudienceEnvironmentName = "Authentication__Keycloak__Audience";
 const string KeycloakAuthorityEnvironmentName = "Authentication__Keycloak__Authority";
 const string KeycloakResourceName = "keycloak";
-const string KeycloakRealmAuthority = "http://localhost:8080/realms/vpd";
 const string KeycloakApiAudience = "vpd-api";
+const string KeycloakRealmPath = "/realms/vpd";
 const string ScanResourceName = "scan";
 const string SqlServerName = "sql-server";
 const string SqlServerPasswordParameterName = "sql-server-password";
@@ -33,6 +34,7 @@ const int WebsitePort = 4201;
 var builder = DistributedApplication.CreateBuilder(args);
 
 var sqlServerPassword = builder.AddParameter(SqlServerPasswordParameterName, secret: true);
+var keycloakAdminPassword = builder.AddParameter(KeycloakAdminPasswordParameterName, secret: true);
 
 var projectDatabase = builder.AddSqlServer(SqlServerName, password: sqlServerPassword)
     .WithDataVolume()
@@ -44,8 +46,10 @@ storage.RunAsEmulator(container => container.WithLifetime(ContainerLifetime.Pers
 var blobs = storage.AddBlobs("blobs");
 
 var keycloak = builder
-    .AddKeycloak(KeycloakResourceName, port: 8080)
-    .WithRealmImport("./Realms");
+    .AddKeycloak(KeycloakResourceName, port: 8080, adminPassword: keycloakAdminPassword)
+    .WithRealmImport("./Realms")
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithReference(projectDatabase)
@@ -61,11 +65,14 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
     .WithEnvironment(BlobContainerBookCoversEnvironmentName, "book-covers")
     .WithEnvironment(AuthenticationProviderEnvironmentName, "Keycloak")
-    .WithEnvironment(KeycloakAuthorityEnvironmentName, KeycloakRealmAuthority)
+    .WithEnvironment(
+        KeycloakAuthorityEnvironmentName,
+        ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}{KeycloakRealmPath}"))
     .WithEnvironment(KeycloakAudienceEnvironmentName, KeycloakApiAudience)
     .WithReference(keycloak)
     .WaitFor(keycloak)
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithHttpHealthCheck("/health");
 
 builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithReference(projectDatabase)

@@ -9,9 +9,17 @@ Le realm fournit des identités et des rôles déterministes pour les tests de l
 Docker Desktop doit exposer son moteur Linux pour que les conteneurs Aspire démarrent.
 Vérifie-le avec `rtk docker ps` avant d'attendre Keycloak.
 
-Démarre l'AppHost depuis la racine du dépôt. Aspire génère et conserve un mot de passe
-administrateur local si l'Admin Console est nécessaire ; les personas de test et le helper
-ci-dessous n'en ont pas besoin. En worktree, garde le mode isolé :
+Avant le premier démarrage, définis le mot de passe local de la console Keycloak dans les
+.NET User Secrets de l'AppHost. Il n'est pas nécessaire pour obtenir un jeton persona, mais
+Aspire en a besoin pour configurer son compte d'administration :
+
+```powershell
+dotnet user-secrets set "Parameters:keycloak-admin-password" "<mot de passe local fort>" --project src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj
+```
+
+Cette valeur reste hors du dépôt. Le conteneur Keycloak et son volume sont persistants : le
+realm est importé lorsque le volume est vide, puis ses données survivent aux arrêts d'Aspire.
+En worktree, garde le mode isolé :
 
 ```powershell
 rtk aspire start --isolated --non-interactive
@@ -20,10 +28,27 @@ rtk aspire wait api --timeout 300 --apphost src/Backend/Vole_Papillon_Damour.App
 rtk aspire describe --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj --non-interactive
 ```
 
-L'API locale utilise `Authentication:Provider=Keycloak`, l'autorité
-`http://localhost:8080/realms/vpd` et l'audience `vpd-api`. Le code n'autorise HTTP que
-pour une autorité loopback; toute autorité Keycloak distante doit utiliser HTTPS. Bicep fixe explicitement
-`Authentication__Provider=Entra` pour les Container Apps Azure.
+L'API locale utilise `Authentication:Provider=Keycloak`, l'autorité HTTPS du realm `vpd`
+publiée par Aspire et l'audience `vpd-api`. En mode isolé, Aspire choisit un port local
+aléatoire et transmet le même endpoint à l'API; `Get-LocalApiToken.ps1` le découvre avec
+`aspire describe`. Le helper accepte aussi `-KeycloakBaseUrl` pour un endpoint fourni à la main.
+Le code ne tolère HTTP que pour une autorité loopback; une autorité Keycloak distante doit
+utiliser HTTPS. Bicep fixe explicitement `Authentication__Provider=Entra` pour les Container
+Apps Azure.
+
+L'AppHost expose aussi le contrôle de santé API `/health` au dashboard Aspire. Une modification
+de `vpd-realm.json` n'est importée qu'après réinitialisation du volume Keycloak. Pour la charger
+à nouveau sans effacer SQL :
+
+```powershell
+rtk aspire stop --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj --force
+rtk docker volume ls --filter name=keycloak-data
+rtk docker volume rm <nom-exact-du-volume-keycloak>
+```
+
+Choisis uniquement le volume dont le nom commence par `vole_papillon_damour.apphost-` et
+remplace le dernier argument par son nom exact. Ne supprime pas le volume `sql-server-data`
+si tu veux garder les données SQL locales, puis redémarre Aspire.
 
 ## Personas disponibles
 
@@ -38,7 +63,7 @@ leurs mots de passe et le client à accès direct ne sont que des données de te
 | Adhérente | `local-member` | aucun |
 
 Pour obtenir un jeton sans interaction navigateur, utilise le helper qui lit le compte et
-son mot de passe directement depuis le realm importé :
+son mot de passe directement depuis le realm importé et résout l'endpoint Keycloak Aspire :
 
 ```powershell
 $token = rtk powershell -NoProfile -File .\tools\Get-LocalApiToken.ps1 -Persona tri-volunteer
@@ -51,9 +76,10 @@ persona qui ne porte pas le rôle exigé.
 
 Le client `vpd-local-test` utilise le flux OAuth2 Direct Access Grant pour rendre cette
 récupération non interactive. Ce flux est réservé à cet environnement local; il n'est pas
-configuré dans Bicep. La validation des jetons garde l'audience et les rôles. Le mapper
-Keycloak expose les rôles VPD dans `roles`, l'adresse courriel dans `email` et l'identifiant
-externe stable (UUID) dans `oid`, comme attendus par l'API.
+configuré dans Bicep. La validation des jetons garde l'audience et les rôles. Le scope
+`vpd-api-access` expose les rôles VPD dans `roles`, le courriel dans `email`, les noms dans
+`given_name` et `family_name`, et l'identifiant externe stable (UUID) dans `oid`, comme
+attendus par l'API.
 
 Keycloak précise que Direct Access Grant ne fait pas partie d'OpenID Connect et qu'il est
 retiré d'OAuth 2.1; ce client local ne doit pas devenir un flux de connexion applicatif
@@ -64,9 +90,9 @@ retiré d'OAuth 2.1; ce client local ne doit pas devenir un flux de connexion ap
 Ajoute l'utilisateur dans `vpd-realm.json` avec un UUID `oid` unique, une adresse courriel,
 un prénom, un nom, un mot de passe local et les rôles client de `vpd-api` voulus. Ajoute
 ensuite son nom dans `tools/Get-LocalApiToken.ps1` si le helper doit l'exposer comme choix.
-Redémarre Aspire pour importer le realm modifié. Ne donne pas à une persona les rôles
-d'administration Keycloak : les rôles `Administration`, `Tri`, `Caisse` et `LivresRares`
-sont des rôles métier de l'API.
+Réinitialise le seul volume Keycloak pour importer le realm modifié. Ne donne pas à une
+persona les rôles d'administration Keycloak : les rôles `Administration`, `Tri`, `Caisse`
+et `LivresRares` sont des rôles métier de l'API.
 
 Les frontends Angular conservent leur configuration MSAL/Entra locale. Les jetons Keycloak
 de ce dispositif servent aux appels de test directs vers l'API.

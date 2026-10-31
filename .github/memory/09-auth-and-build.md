@@ -26,19 +26,25 @@
 
 ## Local Keycloak API Test Identities
 
-- The Aspire AppHost adds `Aspire.Hosting.Keycloak` on stable local port `8080` and imports
+- The Aspire AppHost adds `Aspire.Hosting.Keycloak` with nominal local port `8080` and imports
   `src/Backend/Vole_Papillon_Damour.AppHost/Realms/vpd-realm.json`. In Development,
-  `Authentication:Provider=Keycloak`, authority `http://localhost:8080/realms/vpd`, and
-  audience `vpd-api` select the local `JwtBearer` handler. HTTP metadata is accepted only
-  for loopback authorities; other Keycloak authorities must use HTTPS.
+  `Authentication:Provider=Keycloak`, the dynamic HTTPS endpoint for realm `vpd`, and audience
+  `vpd-api` select the local `JwtBearer` handler. Aspire can randomize ports in isolated
+  worktrees, so AppHost passes the live endpoint to the API and the token helper resolves it
+  with `aspire describe`. HTTP metadata is accepted only for loopback authorities.
 - The Keycloak token handler leaves claim names unmapped, reads the `name` claim, and reads
   application roles from a top-level `roles` claim. Realm personas carry a stable `oid` UUID,
   email, and API client roles matching the VPD policies: `Administration`, `LivresRares`,
-  `Tri`, and `Caisse`.
+  `Tri`, and `Caisse`. The `vpd-api-access` client scope explicitly maps `email`, `given_name`,
+  and `family_name`; member API routes require these profile claims in addition to a valid `oid`.
 - `tools/Get-LocalApiToken.ps1 -Persona admin|tri-volunteer|cashier|member` retrieves a
   non-interactive token using the local-only `vpd-local-test` Direct Access Grant client.
   Seeded users/passwords are fixtures; use this client only for local API tests. Direct
   account administration/Graph paths still need mocks or a dedicated test seam.
+- The Keycloak AppHost admin password comes from the `Parameters:keycloak-admin-password`
+  .NET User Secret. Its persistent data volume retains console changes; Keycloak imports the
+  realm fixture only into an empty volume, so reset only its `keycloak-data` volume to load
+  fixture changes. Aspire also probes API readiness through `/health`.
 - `infra/main.bicep` explicitly sets `Authentication__Provider=Entra`. BackOffice, Website,
   Catalog, and Scan browser sign-in still use their Entra/MSAL configuration; these
   Keycloak identities are for direct API testing.
