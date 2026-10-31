@@ -106,11 +106,15 @@
             <img src="icons/clock-icon.svg" alt="" class="h-6 w-6 object-contain">
           </span>
           <div class="flex min-w-0 flex-col gap-1">
-            <span class="font-serif text-[15px] italic text-cyan">Ouverture</span>
+            <span class="font-serif text-[15px] italic text-cyan">{{ event.eventType === VpdEventEnum.Bingo ? 'Ouverture · Début' : 'Ouverture' }}</span>
             <div class="event-hero-time flex items-baseline gap-2 whitespace-nowrap font-serif text-[16px] leading-tight text-white">
               <span>{{ eventStartTime() | date:'HH:mm':'UTC' }}</span>
-              <span aria-hidden="true" class="text-mist/50">·</span>
+              @if (event.eventType === VpdEventEnum.Bingo) {
+                <span aria-hidden="true" class="text-mist/50">·</span>
+                <span>{{ event.dateStart | date:'HH:mm':'UTC' }}</span>
+              }
               @if (event.hourCloseDoors) {
+                <span aria-hidden="true" class="text-mist/50">·</span>
                 <span><span class="text-sm text-mist/70">Fin</span> {{ event.hourCloseDoors | date:'HH:mm':'UTC' }}</span>
               }
             </div>
