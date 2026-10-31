@@ -23,8 +23,8 @@ describe('CaisseComponent', () => {
   it('shows a labeled APK download link on the product management screen', () => {
     const downloadLink = fixture.nativeElement.querySelector('a[download]') as HTMLAnchorElement | null;
 
-    expect(downloadLink?.getAttribute('href')).toBe('/apks/app-debug.apk');
-    expect(downloadLink?.getAttribute('download')).toBe('caisse-app.apk');
+    expect(downloadLink?.getAttribute('href')).toBe('/apks/caisse-app-v1.2.apk');
+    expect(downloadLink?.getAttribute('download')).toBe('caisse-app-v1.2.apk');
     expect(downloadLink?.textContent).toContain('Télécharger l’APK');
   });
 });

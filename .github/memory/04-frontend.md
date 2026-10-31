@@ -750,9 +750,11 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
 - The cashier shows only available `Bar` and `Bingo` products. `CashierProductFilter` applies
   that rule to API and SQLite data, and `Categories.All` exposes only Buvette and Loto; the
   book section is not part of this app. Website visibility remains an independent filter.
-- BackOffice distributes `src/BackOffice/public/apks/app-debug.apk` at `/apks/app-debug.apk`.
-  Both the public login page and the authenticated `/caisse` page link to this static asset;
-  replace it with a freshly built standalone APK when updating the app. The MAUI project sets `EmbedAssembliesIntoApk=true` so direct installation does not depend on ADB Fast Deployment. Its display version is 1.2 / Android version code 3.
+- BackOffice distributes a versioned standalone APK from `src/BackOffice/public/apks/`.
+  Both the public login page and authenticated `/caisse` page link to the same asset. Keep
+  the filename aligned with `ApplicationDisplayVersion` (currently
+  `caisse-app-v1.2.apk`) so Cloudflare cannot serve a cached APK from the previous release.
+  The MAUI project sets `EmbedAssembliesIntoApk=true`; its current Android version code is 3.
 
 
 ## Website canonical URLs (2026-10-04)
