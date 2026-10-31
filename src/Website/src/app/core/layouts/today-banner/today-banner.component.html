@@ -1,4 +1,7 @@
 @if (visible() && today(); as today) {
+  @if (halloween()) {
+    <app-today-banner-halloween [today]="today" [variant]="variant() ?? 'other'" [schedule]="schedule()" (close)="close()" />
+  } @else {
   <!-- E5 : maquettes preview/E5-Desktop.html, preview/E5-Mobile.html, preview/E5-Etats.html -->
   <div role="region" aria-label="Événement du jour"
        class="flex flex-col gap-2 bg-ink py-2.5 pl-4 pr-2 text-white lg:h-[52px] lg:flex-row lg:items-center lg:gap-5 lg:py-0 lg:pl-shell lg:pr-3">
@@ -56,4 +59,5 @@
       </button>
     </div>
   </div>
+  }
 }

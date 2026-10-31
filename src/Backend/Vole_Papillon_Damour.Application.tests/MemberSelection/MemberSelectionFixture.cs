@@ -438,6 +438,11 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
             builder.Property(assoEvent => assoEvent.EventsType)
                 .HasConversion(type => (int)type.Value,
                     value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Property(assoEvent => assoEvent.LiveTheme)
+                .HasConversion(
+                    theme => (int)theme.Value,
+                    value => new LiveTheme((LiveTheme.LiveThemeEnum)value))
+                .HasDefaultValueSql("0");
             builder.Ignore(assoEvent => assoEvent.UrlImage);
             builder.Ignore(assoEvent => assoEvent.UrlRegistration);
             builder.Ignore(assoEvent => assoEvent.UrlImageMap);

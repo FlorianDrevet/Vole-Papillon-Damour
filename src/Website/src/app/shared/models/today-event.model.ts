@@ -11,4 +11,5 @@ export interface TodayEventModel {
   /** Pour un loto seulement. */
   liveStatus: 'NotStarted' | 'Live' | 'Finished' | null;
   lastNumero: number | null;
+  liveTheme?: 'Classic' | 'Halloween' | null;
 }

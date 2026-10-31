@@ -8,6 +8,7 @@ public class UpdateEventRequest
     public IFormFile? Image { get; set; }
     public Uri? ImageUri { get; set; }
     public string? EventType { get; set; }
+    public string? LiveTheme { get; set; }
     public DateTimeOffset? DateStart { get; set; }
     public DateTimeOffset? DateEnd { get; set; }
     public DateTimeOffset? HourOpenDoors { get; set; }

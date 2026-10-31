@@ -5,6 +5,7 @@ import {MyDate} from "../extensions/MyDate";
 
 export interface VpdEventModel {
   eventType: VpdEventEnum,
+  liveTheme?: 'Classic' | 'Halloween',
   id: string,
   name: string,
   description: string,

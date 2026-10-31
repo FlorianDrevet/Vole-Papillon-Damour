@@ -4,8 +4,7 @@ using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 namespace Vole_Papillon_Damour.Application.Events.Common;
 
 /// <summary>
-/// The event shown in the site's "today" banner. <see cref="LiveStatus"/> and
-/// <see cref="LastNumero"/> are only set for a loto.
+/// The event shown in the site's "today" banner. Live tableau fields are only set for a loto.
 /// </summary>
 public record TodayEventResult(
     AssoEventsId Id,
@@ -17,4 +16,5 @@ public record TodayEventResult(
     DateTimeOffset? HourCloseDoors,
     string City,
     LiveTableauStatus? LiveStatus,
-    int? LastNumero);
+    int? LastNumero,
+    LiveTheme? LiveTheme);

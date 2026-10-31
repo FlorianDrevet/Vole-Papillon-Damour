@@ -1,0 +1,281 @@
+<main class="hw" [class.calm]="preferences.calm()" [class.paused]="!preferences.visible()"
+      [class.state-screen]="view.phase !== 'playing' || view.intermission || connection === 'not-found'">
+  @if (view.phase === 'playing' && connection !== 'not-found') {
+    <div class="deco wisps" aria-hidden="true"><span class="ff ff-1"></span><span class="ff ff-2"></span><span class="ff ff-3"></span></div>
+  }
+  <header class="top">
+    <a class="back" [routerLink]="connection === 'not-found' || !event ? ['/evenement'] : ['/evenement', event.id]">
+      <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10 3 5 8l5 5"></path>
+      </svg>
+      <span>{{ connection === 'not-found' ? 'Événements' : (event?.name || view.eventName || 'Événements') }}</span>
+    </a>
+    <div class="top-r">
+      @if (connection !== 'not-found') {
+        <span class="status" role="status">
+          @if (view.intermission && !shouldDeferIntermission()) { Pause }
+          @else {
+            @switch (connection) {
+              @case ('live') {
+                @if (view.phase === 'finished') { Terminé }
+                @else if (view.phase === 'before') { Connecté }
+                @else { <svg class="deco live-flame" viewBox="0 0 12 18" aria-hidden="true"><path d="M6 .5 C7.4 4 11.5 7.2 11.5 11.6 C11.5 15 9 17.5 6 17.5 C3 17.5 .5 15 .5 11.6 C.5 9 2 7.6 3 6.2 C3.4 8 4.2 9 5.2 9.4 C4.6 6.6 5 3.4 6 .5Z" fill="#ffb347"/></svg> En direct }
+              }
+              @case ('reconnecting') {
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 3v2.5h-2.5"></path></svg>
+                Reconnexion…
+              }
+              @case ('offline') { Hors ligne }
+              @default { Connexion… }
+            }
+          }
+        </span>
+        <button class="calm-btn" type="button" [attr.aria-pressed]="preferences.calm()" [attr.aria-label]="preferences.calm() ? 'Remettre les animations' : 'Calmer les animations'" (click)="toggleCalm()">
+          <svg viewBox="0 0 18 18" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M11.5 2.2A7 7 0 1 0 15.8 12.4a5.6 5.6 0 0 1-4.3-10.2Z"/></svg>
+          <span>{{ preferences.calm() ? 'Animer' : 'Calmer' }}</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (connection === 'not-found') {
+    <section class="state-not-found">
+      <div class="not-found-ghost" aria-hidden="true"><vpd-fantome [size]="180" mood="lanterne" /></div>
+      <h1>Ce tableau n'existe pas ou n'est plus disponible.</h1>
+      <p>Vérifiez le lien, ou retrouvez le loto du jour depuis la page des événements.</p>
+      <a class="state-cta" routerLink="/evenement">Voir les événements</a>
+    </section>
+  } @else {
+    @if (connection === 'reconnecting' || connection === 'offline') {
+      <div class="connection-alert">
+        <div class="sleeping-bat deco" aria-hidden="true"><vpd-chauve-souris [size]="44" mood="dort" /></div>
+        <p>Connexion perdue. Le tableau se remettra à jour tout seul dès le retour du réseau.</p>
+      </div>
+    }
+
+    @if (view.phase === 'loading') {
+      <section class="state-loading" role="status" aria-label="Chargement du tableau de loto">
+        <span class="sr-only">Chargement du tableau de loto</span>
+        <div class="loading-hero loading-silhouette" aria-hidden="true">
+          <span class="loading-moon"></span><span class="loading-pumpkin"></span>
+        </div>
+        <div class="loading-tombs" aria-hidden="true"><span class="loading-silhouette"></span><span class="loading-silhouette"></span><span class="loading-silhouette"></span><span class="loading-silhouette"></span><span class="loading-silhouette"></span></div>
+        <div class="loading-grid" aria-hidden="true">@for (cell of view.cells; track cell.value) { <span class="loading-silhouette"></span> }</div>
+      </section>
+    } @else if (view.phase === 'before') {
+      <section class="state-before">
+        <div class="state-sky cemetery deco" aria-hidden="true">
+          <div class="state-moon"><i></i><i></i><i></i></div>
+          <span class="state-star star-1"></span><span class="state-star star-2"></span><span class="state-star star-3"></span><span class="state-star star-4"></span>
+          <svg class="graveyard" viewBox="0 0 390 110" preserveAspectRatio="none"><path d="M0 80 C80 66 160 74 230 70 C300 66 350 74 390 70 L390 110 L0 110 Z"/><path d="M30 82 L30 54 C30 42 54 42 54 54 L54 82 Z M250 74 L252 54 C254 44 272 46 271 57 L268 76 Z M298 74 L298 42 M288 52 L308 52 M110 78V50M120 78V50M130 78V50M140 78V50M150 78V50M160 78V50M170 78V50M180 78V50M104 58H186M104 72H186"/><path d="M352 74 C354 52 348 38 340 24 M349 48 C358 42 364 34 374 30 M345 38 C336 32 332 24 328 14 M354 60 C362 58 368 52 372 46"/></svg>
+          <div class="sleeping-pumpkin"><vpd-citrouille [size]="150" mood="dort" /></div>
+        </div>
+        <span class="hw-k">{{ view.eventName || event?.name || 'Loto' }} · aujourd'hui</span>
+        <h1>Le loto va commencer</h1>
+        <p>Gardez cette page ouverte : les numéros s'afficheront ici dès le premier tirage.</p>
+        @if (view.firstPartie; as first) {
+          <div class="card first-partie">
+            <span class="hw-k">Première partie</span>
+            <span class="partie-kicker">Partie 1</span>
+            <h2>{{ first.name }}</h2>
+            @for (line of first.lines; track line.label) { <span class="state-line">{{ line.label }} · {{ line.lots.join(', ') }}</span> }
+          </div>
+        }
+      </section>
+    } @else if (view.intermission && !shouldDeferIntermission()) {
+      <section class="state-pause">
+        <div class="state-sky pause-sky deco" aria-hidden="true">
+          <div class="state-moon large-moon"><i></i><i></i><i></i></div>
+          <span class="state-star star-1"></span><span class="state-star star-3"></span><span class="state-star star-4"></span>
+          <svg class="witch" viewBox="0 0 100 46"><path d="M2 34 L74 24 L75 27 L3 37 Z M70 21 L96 14 L98 22 L99 34 L72 30 Z M38 4 L28 22 L46 22 Z M24 22 L50 22 L48 25 L26 25 Z M30 25 C26 30 28 36 36 33 L50 28 C48 25 42 24 30 25 Z M31 27 C20 28 12 32 8 38 C18 34 24 33 32 33 Z"/></svg>
+          <div class="pause-cauldron"><vpd-chaudron [size]="190" mood="bouillonne" /></div>
+        </div>
+        <h1>Pause</h1>
+        <p>On reprend dans quelques minutes. Gardez la page ouverte, le tableau repartira tout seul.</p>
+        <div class="card pause-bingo">
+          <span class="hw-k">Bingo</span>
+          <strong>{{ view.bingoWon ? 'Gagné !' : (view.bingoNumeros.join(' · ') || '—') }}</strong>
+        </div>
+        <div class="card next-partie">
+          <span class="hw-k">Ensuite, partie {{ view.partieNumber }} sur {{ view.partieCount }}</span>
+          <h2>{{ view.partieName }}</h2>
+          @if (view.lineLabel) { <span class="state-line">{{ view.lineLabel }}@if (view.lots.length) { · }</span> }
+          @for (lot of view.lots; track lot.id; let last = $last) { <span class="state-line">{{ lot.name }}@if (!last) {, }</span> }
+        </div>
+      </section>
+    } @else if (view.phase === 'finished') {
+      <section class="state-finished">
+        @if (!finishedCandyPlayed) {
+          <div class="end-candies" aria-hidden="true">
+            @for (candy of endCandies; track candy.index) {
+              <div class="end-candy" [style.left.%]="candy.left" [style.--delay]="candy.delay + 's'" [style.--turn]="candy.turn + 'deg'"
+                   (animationend)="candy.index === 4 && markFinishedCandyPlayed()">
+                <svg viewBox="0 0 30 16"><path d="M1 2 9 8 1 14Q3 8 1 2Z M29 2 21 8 29 14Q27 8 29 2Z" [attr.fill]="candy.color"/><ellipse cx="15" cy="8" rx="7.5" ry="6.5" [attr.fill]="candy.color"/></svg>
+              </div>
+            }
+          </div>
+        }
+        <div class="farewell-characters" aria-hidden="true">
+          <div class="farewell-pumpkin pumpkin-one"><vpd-citrouille [size]="110" mood="salut" /></div>
+          <div class="farewell-ghost"><vpd-fantome [size]="120" mood="coucou" /></div>
+          <div class="farewell-pumpkin pumpkin-two"><vpd-citrouille [size]="130" mood="salut" /></div>
+        </div>
+        <h1>Loto terminé</h1>
+        <strong class="thank-you">Merci à tous !</strong>
+        <p>Les bénéfices de cet après-midi soutiennent Maxence et sa famille.</p>
+        <div class="card finished-bingo"><span class="hw-k">Bingo</span><strong>{{ view.bingoWon ? 'Gagné !' : (view.bingoNumeros.join(' · ') || '—') }}</strong></div>
+        <a class="state-cta" routerLink="/evenement">Voir les prochains événements</a>
+      </section>
+    } @else {
+  <section class="hero" aria-live="polite">
+    <div class="hero-sky deco" aria-hidden="true">
+      <span class="star" style="left: 30px; top: 30px"></span><span class="star" style="left: 140px; top: 18px; animation-delay: -2s"></span>
+      <span class="star" style="left: 212px; top: 54px; animation-delay: -3.4s"></span><span class="star" style="left: 96px; top: 74px; animation-delay: -1.2s"></span>
+      <span class="star" style="left: 262px; top: 22px; animation-delay: -4.1s"></span><span class="star" style="left: 330px; top: 120px; animation-delay: -2.6s"></span>
+      <div class="moon"><i></i><i></i><i></i></div>
+      <svg class="cloud cloud-1" viewBox="0 0 128 40"><path d="M10 34C2 34 2 22 12 22C12 12 26 8 34 16C40 4 62 4 66 18C74 10 92 14 92 24C104 20 118 26 116 34Z"/></svg>
+      <svg class="cloud cloud-2" viewBox="0 0 128 40"><path d="M10 34C2 34 2 22 12 22C12 12 26 8 34 16C40 4 62 4 66 18C74 10 92 14 92 24C104 20 118 26 116 34Z"/></svg>
+      <div class="num-glow"></div>
+    </div>
+    <span class="hw-k">Dernier numéro</span>
+    <div class="num-wrap">
+      @if ((fx.moment()?.kind === 'numero' || fx.moment()?.kind === 'undo') && fx.previousLastNumero() !== null) {
+        <span class="num-old" aria-hidden="true"
+              [class.num-smoke-a]="fx.animationKey() === 'a'"
+              [class.num-smoke-b]="fx.animationKey() === 'b'">{{ fx.previousLastNumero() }}</span>
+      }
+      <span class="num"
+            [class.num-ign-a]="fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+            [class.num-ign-b]="fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'"
+            [class.num-back-a]="fx.moment()?.kind === 'undo' && fx.animationKey() === 'a'"
+            [class.num-back-b]="fx.moment()?.kind === 'undo' && fx.animationKey() === 'b'">{{ view.lastNumero ?? '—' }}</span>
+    </div>
+    <div class="hero-pk deco" aria-hidden="true"><vpd-citrouille [size]="104" [mood]="fx.moment()?.kind === 'numero' ? 'sourire' : 'idle'" /></div>
+  </section>
+
+  <section class="previous" aria-label="Les cinq derniers numéros précédents">
+    <span class="hw-k">Les cinq d'avant</span>
+    <div class="tombs">
+      @for (numero of view.previousNumeros; track $index) {
+        <span class="tomb" [style.--t]="tombTilts[$index] + 'deg'"
+              [class.tomb-in-a]="$index === 0 && fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+              [class.tomb-in-b]="$index === 0 && fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'">{{ numero }}</span>
+      }
+    </div>
+    <div class="ground" aria-hidden="true"></div>
+  </section>
+
+  <section class="board">
+    <div class="board-h">
+      <span class="hw-k">Tous les numéros</span>
+      <b>{{ view.drawnCount }} sortis</b>
+    </div>
+    <svg class="web deco" viewBox="0 0 88 88" fill="none" stroke="rgba(232,220,245,.3)" stroke-width="1" aria-hidden="true"><path d="M88 0 20 0M88 0 34 34M88 0 60 62M88 0 88 74"/><path d="M70 0Q72 10 76 12T88 16M52 0Q56 18 64 24T88 32M36 0Q40 24 52 38T88 50M22 0Q26 30 42 46T88 66"/></svg>
+    <div class="spider deco" aria-hidden="true"><span class="thread"></span><svg class="spider-b" viewBox="0 0 24 22"><g class="legs" stroke="#0c0612" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M9 9C5 6 3 4 1 5M9 11C5 10 2 10 0 12M9 12.5C6 14 4 16 2 19M10 14C8 17 7 19 6 21M15 9C19 6 21 4 23 5M15 11C19 10 22 10 24 12M15 12.5C18 14 20 16 22 19M14 14C16 17 17 19 18 21"/></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".8"/><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".8"/><circle cx="11" cy="6.2" r=".7" fill="#ff8c2e"/><circle cx="13" cy="6.2" r=".7" fill="#ff8c2e"/></svg></div>
+    <div class="grid" role="img" aria-label="Grille des numéros 1 à 90">
+      @for (cell of displayCells(); track cell.value) {
+        <span class="cell"
+              [class.out]="shouldFadeCell(cell)"
+              [style.--d]="cellOutDelay(cell.value)"
+              [class.on]="cell.state === 'drawn'"
+              [class.last]="cell.state === 'last'"
+              [class.nb]="cell.state === 'neighbour'"
+              [class.ign-a]="cell.state === 'last' && fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+              [class.ign-b]="cell.state === 'last' && fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'"
+              [class.unlit-a]="isUndoCell(cell.value, 'a')"
+              [class.unlit-b]="isUndoCell(cell.value, 'b')">
+          {{ cell.value }}
+          @if (cell.state === 'last') {
+            <svg class="cell-flame" viewBox="0 0 12 18" aria-hidden="true">
+              <path d="M6 .5c1.4 3.5 5.5 6.7 5.5 11.1C11.5 15 9 17.5 6 17.5S.5 15 .5 11.6c0-2.6 1.5-4 2.5-5.4C3.4 8 4.2 9 5.2 9.4 4.6 6.6 5 3.4 6 .5Z" fill="var(--braise)"></path>
+              <path d="M6 9.4c1.2 1.6 2.4 3 2.4 4.8 0 1.5-1.1 2.5-2.4 2.5s-2.4-1-2.4-2.5c0-1.6 1.2-2.8 2.4-4.8Z" fill="var(--cire)"></path>
+            </svg>
+          }
+        </span>
+      }
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="hw-k">Partie {{ view.partieNumber }} sur {{ view.partieCount }}</span>
+    <h1 class="card-t">{{ view.partieName }}</h1>
+    <div class="chips">
+      @if (view.lineLabel) { <span class="chip">{{ view.lineLabel }}</span> }
+      @if (view.timesLabel) { <span class="chip chip-a">{{ view.timesLabel }}</span> }
+      @if (view.typeLabel) { <span class="chip chip-b">{{ view.typeLabel }}</span> }
+    </div>
+    <div class="lots">
+      <span class="hw-k">À gagner sur cette ligne</span>
+      @for (lot of view.lots; track lot.id) {
+        @if (lot.won) {
+          <span class="lot-won"><s>{{ lot.name }}</s><em>gagné</em></span>
+        } @else {
+          <span class="lot">{{ lot.name }}</span>
+        }
+      }
+    </div>
+  </section>
+
+  @if (view.showBingo) {
+    <section class="card bingo">
+      <span class="hw-k">Bingo</span>
+      <span class="bingo-n">{{ view.bingoWon ? 'Gagné !' : (view.bingoNumeros.join(' · ') || '—') }}</span>
+    </section>
+  }
+  <div class="fog deco" aria-hidden="true"><div class="fog-a"></div><div class="fog-b"></div></div>
+    }
+  }
+</main>
+
+@if (shouldShowFx()) {
+  <div class="fx" [class.interrupting]="fx.interrupting()" #fxLayer>
+    @if (fx.moment()?.kind === 'numero' || fx.moment()?.kind === 'bingo') {
+      @for (size of batSizes; track $index) {
+        <div class="bat"><vpd-chauve-souris [size]="size" mood="vol" /></div>
+      }
+    }
+    @if ((fx.moment()?.kind === 'line' || fx.moment()?.kind === 'bingo') && fx.momentPhase() === 'main') {
+      <div class="candy-rain" aria-hidden="true">
+        @for (candy of candies.slice(0, fx.moment()?.kind === 'bingo' ? 40 : 26); track candy.index) {
+          <div class="candy" [style.left.vw]="candy.leftVw" [style.width.px]="candy.width"
+               [style.animation-delay.s]="candy.delayRatio * (fx.moment()?.kind === 'bingo' ? 1.8 : 1.2)"
+               [style.animation-duration.s]="candy.duration">
+            <div class="candy-spin" [style.animation-duration.s]="candy.spin">
+              @switch (candy.kind) {
+                @case ('wrapped') {
+                  <svg viewBox="0 0 30 16" aria-hidden="true"><path d="M1 2 9 8 1 14Q3 8 1 2Z" [attr.fill]="candy.secondary"/><path d="M29 2 21 8 29 14Q27 8 29 2Z" [attr.fill]="candy.secondary"/><ellipse cx="15" cy="8" rx="7.5" ry="6.5" [attr.fill]="candy.primary"/><path d="M11.5 3.2Q15.5 8 12.5 12.8" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+                }
+                @case ('corn') {
+                  <svg viewBox="0 0 18 22" aria-hidden="true"><path d="M9 1 12.2 8H5.8Z" fill="#fff5e1"/><path d="M5.8 8h6.4L15 15H3Z" fill="#ff8c2e"/><path d="M3 15h12l2 4.5q-8 3-16 0Z" fill="#ffc94d"/></svg>
+                }
+                @case ('lollipop') {
+                  <svg viewBox="0 0 24 34" aria-hidden="true"><rect x="11" y="18" width="2" height="16" rx="1" fill="#f4e8cf"/><circle cx="12" cy="11" r="10" [attr.fill]="candy.primary"/><path d="M12 11m-1 0a1 1 0 1 1 2 0a3 3 0 1 1-5-1a5.5 5.5 0 1 1 9 4a8 8 0 1 1-14-4" [attr.stroke]="candy.secondary" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="pumpkin-party" aria-hidden="true">
+        <div class="pk-rise" style="left: -16px; animation-delay: 0s"><vpd-citrouille [size]="130" mood="rire" /></div>
+        <div class="pk-rise" style="left: 118px; animation-delay: .12s"><vpd-citrouille [size]="156" mood="rire" /></div>
+        <div class="pk-rise" style="right: -16px; animation-delay: .24s"><vpd-citrouille [size]="130" mood="rire" /></div>
+      </div>
+      <div class="banner" role="status" aria-live="polite">
+        <span class="banner-title">{{ fx.moment()?.kind === 'bingo' ? 'Bingo !' : 'Ligne gagnée !' }}</span>
+        @if (lineLotName() !== null) { <span class="banner-lot">{{ lineLotName() }}</span> }
+      </div>
+    }
+    @if (fx.moment()?.kind === 'partie' || (isLineEndingPartie() && fx.momentPhase() === 'ghost')) {
+      <div class="ghost-fly" aria-hidden="true"><vpd-fantome [size]="120" mood="coucou" /></div>
+    }
+    @if (fx.moment()?.kind === 'partie' && fx.momentPhase() === 'announce') {
+      <div class="announce" role="status" aria-live="polite">
+        <div class="announce-card">
+          <span class="ann-k">Partie {{ view.partieNumber }} sur {{ view.partieCount }}</span>
+          <span class="ann-t">{{ view.partieName }}</span>
+        </div>
+      </div>
+    }
+  </div>
+}

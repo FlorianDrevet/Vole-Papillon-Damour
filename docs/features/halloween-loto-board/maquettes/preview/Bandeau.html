@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bandeau du jour Halloween</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800;900&amp;family=Newsreader:opsz,wght@6..72,500&amp;display=swap">
+<style>
+body{margin:0}
+.bd{font-family:"Libre Franklin",system-ui,sans-serif;color:#f4e8cf}
+.cap{font-size:14px;font-weight:600;color:#b8a5cf;margin:0 0 10px}
+.hb{position:relative;overflow:hidden;background:#120a1c;color:#f4e8cf}
+.hb-d{height:56px;display:flex;align-items:center;gap:20px;padding:0 12px 0 40px}
+.hb-m{display:flex;flex-direction:column;gap:6px;padding:10px 8px 12px 14px}
+.hb-row{display:flex;align-items:center;gap:10px;min-width:0}
+.hb-k{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:600;font-size:17px;white-space:nowrap}
+.hb-k-live{color:#ffb347}
+.hb-k-day{color:#b8a5cf}
+.hb-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hb-last{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#b8a5cf;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;padding:0 6px;border-radius:9px;background:#ff8c2e;color:#1a0b22;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:21px;font-variant-numeric:lining-nums tabular-nums;box-shadow:0 0 14px rgba(255,140,46,.45)}
+.chip-a{animation:chip-a .7s .15s cubic-bezier(.3,1.5,.5,1) both}
+.chip-b{animation:chip-b .7s .15s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes chip-a{0%{transform:scale(.6);background:#2a1c3a}40%{transform:scale(1.25);background:#ffd08a;box-shadow:0 0 24px 6px rgba(255,170,80,.7)}100%{transform:scale(1)}}
+@keyframes chip-b{0%{transform:scale(.6);background:#2a1c3a}40%{transform:scale(1.25);background:#ffd08a;box-shadow:0 0 24px 6px rgba(255,170,80,.7)}100%{transform:scale(1)}}
+.cta{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;background:#f4e8cf;color:#1a0b22;font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap;position:relative;z-index:3}
+.hb-m .cta{height:44px;margin-left:auto}
+.lnk{font-size:14px;font-weight:700;color:#f4e8cf;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.close{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:999px;background:transparent;color:#b8a5cf;flex-shrink:0;position:relative;z-index:3}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.8}50%{opacity:.15}}
+.moon{position:absolute;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 22px 6px rgba(246,232,190,.14)}
+.fog{position:absolute;left:0;bottom:-8px;width:200%;height:22px;background:radial-gradient(60px 12px at 10% 60%,rgba(200,180,235,.16),transparent),radial-gradient(90px 14px at 35% 60%,rgba(200,180,235,.12),transparent),radial-gradient(70px 12px at 62% 60%,rgba(200,180,235,.15),transparent),radial-gradient(100px 14px at 85% 60%,rgba(200,180,235,.12),transparent);animation:fog 30s linear infinite;pointer-events:none}
+@keyframes fog{to{transform:translateX(-50%)}}
+.web{position:absolute;top:0;left:0;width:34px;height:34px;pointer-events:none}
+.spider{position:absolute;top:0;width:12px;pointer-events:none;z-index:2}
+.spider i{position:absolute;left:5.5px;top:0;width:1px;height:30px;background:rgba(232,220,245,.5);transform-origin:50% 0;animation:sp-thread 18s ease-in-out infinite}
+.spider svg{position:absolute;left:0;top:0;width:12px;animation:sp-drop 18s ease-in-out infinite}
+@keyframes sp-drop{0%,70%{transform:translateY(-10px)}78%{transform:translateY(22px)}80%{transform:translateY(19px)}82%,88%{transform:translateY(22px)}96%,100%{transform:translateY(-10px)}}
+@keyframes sp-thread{0%,70%{transform:scaleY(0)}78%{transform:scaleY(1)}80%{transform:scaleY(.9)}82%,88%{transform:scaleY(1)}96%,100%{transform:scaleY(0)}}
+.runner{position:absolute;top:2px;left:0;width:46px;z-index:2;pointer-events:none}
+.run-d{animation:run-d 2.8s cubic-bezier(.4,0,.7,1) both}
+.run-m{top:20px;animation:run-m 2.2s cubic-bezier(.4,0,.7,1) both}
+@keyframes run-d{0%{transform:translate(-80px,0)}30%{transform:translate(420px,-2px)}60%{transform:translate(900px,3px)}100%{transform:translate(1500px,0)}}
+@keyframes run-m{0%{transform:translate(-80px,0)}50%{transform:translate(180px,4px)}100%{transform:translate(460px,-2px)}}
+.puff{position:absolute;top:22px;border-radius:50%;background:rgba(232,222,250,.55);animation:puff .32s ease-out infinite}
+.puff-1{left:-10px;width:12px;height:12px}
+.puff-2{left:-24px;width:9px;height:9px;opacity:.6;animation-delay:.1s}
+.puff-3{left:-36px;width:6px;height:6px;opacity:.4;animation-delay:.2s}
+@keyframes puff{0%{transform:scale(1);opacity:.6}100%{transform:scale(.3) translateX(-8px);opacity:0}}
+.hbat{position:absolute;top:0;left:0;z-index:2;pointer-events:none}
+.hbat-1{width:30px;animation:hbat-1 1.3s ease-in-out both}
+.hbat-2{width:22px;animation:hbat-2 1.5s .15s ease-in-out both}
+@keyframes hbat-1{0%{transform:translate(1480px,30px) scaleX(-1)}50%{transform:translate(800px,4px) scaleX(-1)}100%{transform:translate(-60px,22px) scaleX(-1)}}
+@keyframes hbat-2{0%{transform:translate(-40px,26px)}50%{transform:translate(600px,2px)}100%{transform:translate(1480px,20px)}}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px}
+.btn{height:44px;padding:0 16px;border:0;border-radius:12px;background:#26173a;color:#f4e8cf;font:700 14px "Libre Franklin",system-ui,sans-serif;cursor:pointer}
+.btn-on{background:#ff8c2e;color:#1a0b22}
+.site{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:#f7fbfe;color:#072b45;font-family:Newsreader,Georgia,serif;font-size:22px}
+.site span{font-family:"Libre Franklin",sans-serif;font-size:14px;font-weight:600;color:#33536e}
+</style>
+</head>
+<body>
+<div class="bd" style="width: 1440px; height: 720px; box-sizing: border-box; padding: 40px; background: #0d0812; display: flex; flex-direction: column; gap: 34px;">
+  <div>
+    <p class="cap">Ordinateur, 1440 px · arrivée sur le site, le fantôme traverse le bandeau une fois</p>
+    <div style="border-radius: 14px; overflow: hidden; width: 1360px;">
+      <div class="hb hb-d" role="region" aria-label="Événement du jour" data-zone="E6-bandeau">
+        <div class="deco" aria-hidden="true">
+          <svg class="web" viewBox="0 0 34 34" fill="none" stroke="rgba(232,220,245,.3)" stroke-width=".8"><path d="M0 0 L34 0 M0 0 L28 20 M0 0 L14 34 M0 0 L0 34"></path><path d="M10 0 Q9 6 6 8 Q3 10 0 10"></path><path d="M20 0 Q19 11 13 16 Q7 20 0 20"></path><path d="M30 0 Q28 16 20 24 Q11 31 0 30"></path></svg>
+          <span class="star" style="left: 220px; top: 10px;"></span><span class="star" style="left: 520px; top: 38px; animation-delay: -2s;"></span><span class="star" style="left: 760px; top: 12px; animation-delay: -3s;"></span><span class="star" style="left: 1010px; top: 40px; animation-delay: -1s;"></span>
+          <div class="moon" style="left: 900px; top: 15px;"></div>
+          <div class="fog"></div>
+          <div class="spider" style="left: 1290px;" data-zone="E6-araignee"><i></i><svg viewBox="0 0 24 22"><g stroke="#0c0612" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M9 9 C5 6 3 4 1 5"></path><path d="M9 11 C5 10 2 10 0 12"></path><path d="M9 12.5 C6 14 4 16 2 19"></path><path d="M15 9 C19 6 21 4 23 5"></path><path d="M15 11 C19 10 22 10 24 12"></path><path d="M15 12.5 C18 14 20 16 22 19"></path></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".9"></ellipse><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".9"></circle></svg></div>
+        </div>
+        <div style="flex-shrink: 0; margin-top: 4px;" aria-hidden="true" data-zone="E6-citrouille"><dc-import name="Citrouille" size="34" mood="idle" hint-size="34px,31px"></dc-import></div>
+        <sc-if value="{{isLive}}" hint-placeholder-val="{{ true }}"><span class="hb-k hb-k-live" data-zone="E6-etat">En direct</span></sc-if>
+        <sc-if value="{{isBefore}}" hint-placeholder-val="{{ false }}"><span class="hb-k hb-k-day">Aujourd'hui</span></sc-if>
+        <span class="hb-name">{{nameText}}</span>
+        <sc-if value="{{isLive}}" hint-placeholder-val="{{ true }}">
+          <span class="hb-last" data-zone="E6-dernier-numero">Dernier numéro <span class="{{chipCls}}">{{last}}</span></span>
+          <a class="cta" href="#" style="margin-left: auto;" data-zone="E6-bouton-suivre">Suivre le tableau <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+        </sc-if>
+        <sc-if value="{{isBefore}}" hint-placeholder-val="{{ false }}">
+          <span style="font-size: 14px; color: #b8a5cf; white-space: nowrap;">portes 13 h 30 · [Ville]</span>
+          <a class="lnk" href="#" style="margin-left: auto;">Voir l'événement</a>
+        </sc-if>
+        <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+          <a class="lnk" href="#" style="margin-left: auto;">Voir le tableau final</a>
+        </sc-if>
+        <button class="close" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+
+        <sc-if value="{{run}}" hint-placeholder-val="{{ false }}">
+          <div class="runner run-d" aria-hidden="true" data-zone="E6-fantome-course"><span class="puff puff-1"></span><span class="puff puff-2"></span><span class="puff puff-3"></span><dc-import name="Fantome" size="46" mood="course" hint-size="46px,52px"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{bats}}" hint-placeholder-val="{{ false }}">
+          <div aria-hidden="true" data-zone="E6-chauves-souris"><div class="hbat hbat-1"><dc-import name="ChauveSouris" size="30" hint-size="30px,15px"></dc-import></div><div class="hbat hbat-2"><dc-import name="ChauveSouris" size="22" hint-size="22px,11px"></dc-import></div></div>
+        </sc-if>
+      </div>
+      <div class="site">Vole Papillon d'Amour <span>Événements · Actualités · Bourse aux livres · Nous soutenir</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 60px; align-items: flex-start;">
+    <div>
+      <p class="cap">Téléphone, 390 px</p>
+      <div style="width: 390px; border-radius: 14px; overflow: hidden;">
+        <div class="hb hb-m" role="region" aria-label="Événement du jour" data-zone="E6-bandeau-mobile">
+          <div aria-hidden="true"><span class="star" style="left: 160px; top: 8px;"></span><span class="star" style="left: 300px; top: 50px; animation-delay: -2.5s;"></span><div class="fog"></div></div>
+          <div class="hb-row">
+            <div style="flex-shrink: 0;" aria-hidden="true"><dc-import name="Citrouille" size="30" mood="idle" hint-size="30px,27px"></dc-import></div>
+            <sc-if value="{{isLive}}" hint-placeholder-val="{{ true }}"><span class="hb-k hb-k-live">En direct</span></sc-if>
+            <sc-if value="{{isBefore}}" hint-placeholder-val="{{ false }}"><span class="hb-k hb-k-day">Aujourd'hui</span></sc-if>
+            <span class="hb-name">{{nameText}}</span>
+            <button class="close" type="button" aria-label="Masquer le bandeau" style="margin-left: auto;"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+          </div>
+          <sc-if value="{{isLive}}" hint-placeholder-val="{{ true }}">
+            <div class="hb-row" style="padding-right: 6px;">
+              <span class="hb-last">Dernier numéro <span class="{{chipCls}}">{{last}}</span></span>
+              <a class="cta" href="#">Suivre le tableau <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+            </div>
+          </sc-if>
+          <sc-if value="{{isBefore}}" hint-placeholder-val="{{ false }}">
+            <div class="hb-row" style="padding-right: 6px;"><span style="font-size: 13px; color: #b8a5cf;">portes 13 h 30 · [Ville]</span><a class="lnk" href="#" style="margin-left: auto;">Voir l'événement</a></div>
+          </sc-if>
+          <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+            <div class="hb-row"><a class="lnk" href="#">Voir le tableau final</a></div>
+          </sc-if>
+          <sc-if value="{{run}}" hint-placeholder-val="{{ false }}">
+            <div class="runner run-m" aria-hidden="true"><span class="puff puff-1"></span><span class="puff puff-2"></span><span class="puff puff-3"></span><dc-import name="Fantome" size="40" mood="course" hint-size="40px,45px"></dc-import></div>
+          </sc-if>
+        </div>
+        <div class="site" style="padding: 0 16px; font-size: 19px;">Vole Papillon d'Amour <span>Menu</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 640px; padding-top: 30px;">
+      <p style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 34px; line-height: 1.05; color: #f4e8cf;">Le bandeau du jour, en habit d'Halloween</p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #c9b9dc;">Même contenu et mêmes états que le bandeau actuel. À l'arrivée sur le site, un fantôme le traverse en courant, une seule fois par page. Ensuite, seul le décor bouge : la petite citrouille cligne des yeux, l'araignée descend de temps en temps, la brume glisse. À chaque nouveau numéro, deux chauves-souris passent et le numéro s'embrase.</p>
+      <div class="ctrl">
+        <button class="btn" type="button" onClick="{{replay}}">Rejouer l'arrivée</button>
+        <button class="btn" type="button" onClick="{{draw}}">Nouveau numéro</button>
+      </div>
+      <div class="ctrl">
+        <button class="{{btnBefore}}" type="button" onClick="{{toBefore}}">Avant le loto</button>
+        <button class="{{btnLive}}" type="button" onClick="{{toLive}}">En direct</button>
+        <button class="{{btnDone}}" type="button" onClick="{{toDone}}">Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

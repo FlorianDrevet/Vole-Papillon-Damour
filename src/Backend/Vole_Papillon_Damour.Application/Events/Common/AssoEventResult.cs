@@ -21,7 +21,8 @@ public record AssoEventResult(
     IReadOnlyList<PartieResult> Parties,
     int CurrentPartieIndex,
     bool IsCancelled,
-    int LiveRevision
+    int LiveRevision,
+    LiveTheme LiveTheme
     );
 
 public record PartieResult(

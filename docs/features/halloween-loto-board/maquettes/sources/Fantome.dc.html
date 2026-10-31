@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fantôme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.gh svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 16px rgba(205,185,255,.42))}
+.gh .float{animation:gh-bob 2.4s ease-in-out infinite}
+@keyframes gh-bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+.gh .skirt{transform-origin:60px 70px;animation:gh-skirt 1.2s ease-in-out infinite alternate}
+@keyframes gh-skirt{from{transform:skewX(-5deg)}to{transform:skewX(5deg)}}
+.gh .eye{transform-box:fill-box;transform-origin:center;animation:gh-blink 4.8s infinite}
+@keyframes gh-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+.gh .pupils{animation:gh-look 6s ease-in-out infinite}
+@keyframes gh-look{0%,25%{transform:translate(0,0)}35%,55%{transform:translate(3px,0)}65%,85%{transform:translate(-3px,1px)}95%,100%{transform:translate(0,0)}}
+.gh .mouth{transform-box:fill-box;transform-origin:center;animation:gh-oh 2.4s ease-in-out infinite}
+@keyframes gh-oh{50%{transform:scale(.8,1.15)}}
+.gh .wave{transform-origin:100px 66px;animation:gh-wave .5s ease-in-out infinite alternate}
+@keyframes gh-wave{from{transform:rotate(-8deg)}to{transform:rotate(26deg)}}
+.gh .lantern{transform-origin:110px 58px;animation:gh-swing 2.4s ease-in-out infinite}
+@keyframes gh-swing{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+.gh .lamp{animation:gh-lamp 2s linear infinite}
+@keyframes gh-lamp{0%,100%{opacity:1}23%{opacity:.82}41%{opacity:.96}64%{opacity:.78}82%{opacity:.95}}
+.gh-course .float{animation:gh-run .3s ease-in-out infinite alternate}
+@keyframes gh-run{from{transform:translateY(-2px) rotate(8deg)}to{transform:translateY(2px) rotate(12deg)}}
+.gh-course .skirt{animation:gh-flutter .18s linear infinite alternate}
+@keyframes gh-flutter{from{transform:skewX(-18deg)}to{transform:skewX(-10deg)}}
+.gh-course .pupils{animation:none;transform:translate(3px,0)}
+.gh-course .mouth{animation:gh-oh .3s ease-in-out infinite}
+.gh .wave,.gh .lantern,.gh .lantern-arm{display:none}
+.gh-course .wave{display:inline;animation:gh-wave .2s ease-in-out infinite alternate}
+.gh-coucou .wave{display:inline}
+.gh-lanterne .lantern,.gh-lanterne .lantern-arm{display:inline}
+</style>
+</helmet>
+<div class="{{cls}}" style="position: relative; width: {{w}}px; height: {{h}}px;">
+  <svg viewBox="0 0 130 146" aria-hidden="true">
+    <defs>
+      <radialGradient id="ghLamp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff3b8"></stop><stop offset=".6" stop-color="#ffc35c"></stop><stop offset="1" stop-color="#ff8c2e"></stop></radialGradient>
+    </defs>
+    <g class="float">
+      <path d="M18 70 C8 72 4 80 8 86 C14 82 18 80 22 78 Z" fill="#e4dcf3"></path>
+      <g class="skirt">
+        <path d="M60 8 C30 8 16 32 16 62 L16 118 C22 112 28 112 34 120 C40 128 46 128 52 120 C58 112 64 112 70 120 C76 128 82 128 88 120 C94 112 100 112 104 118 L104 62 C104 32 90 8 60 8 Z" fill="#f3eefb"></path>
+        <path d="M84 16 C98 28 104 44 104 62 L104 118 C100 112 94 112 88 120 C92 100 94 70 84 16 Z" fill="#d8cdee" opacity=".7"></path>
+      </g>
+      <circle cx="40" cy="70" r="5" fill="#ffb3c7" opacity=".5"></circle>
+      <circle cx="80" cy="70" r="5" fill="#ffb3c7" opacity=".5"></circle>
+      <g class="eye"><ellipse cx="46" cy="54" rx="6.5" ry="9" fill="#1a0b22"></ellipse></g>
+      <g class="eye"><ellipse cx="74" cy="54" rx="6.5" ry="9" fill="#1a0b22"></ellipse></g>
+      <g class="pupils"><circle cx="48" cy="50" r="2.2" fill="#ffffff"></circle><circle cx="76" cy="50" r="2.2" fill="#ffffff"></circle></g>
+      <ellipse class="mouth" cx="60" cy="76" rx="5.5" ry="7" fill="#1a0b22"></ellipse>
+      <path class="wave" d="M100 66 C110 62 118 52 116 44 C110 48 106 54 98 60 Z" fill="#f3eefb"></path>
+      <path class="lantern-arm" d="M100 60 C106 58 110 56 112 56 L110 62 C106 63 103 64 100 66 Z" fill="#f3eefb"></path>
+      <g class="lantern">
+        <path d="M110 58 L110 66" stroke="#3a2950" stroke-width="1.5"></path>
+        <circle cx="110" cy="84" r="16" fill="#ffc35c" opacity=".16" class="lamp"></circle>
+        <rect x="102" y="66" width="16" height="4" rx="1.5" fill="#3a2950"></rect>
+        <rect x="103" y="70" width="14" height="18" rx="3" fill="url(#ghLamp)" class="lamp"></rect>
+        <path d="M103 74 L117 74 M103 84 L117 84 M110 70 L110 88" stroke="#3a2950" stroke-width="1.2"></path>
+        <rect x="101" y="88" width="18" height="4" rx="1.5" fill="#3a2950"></rect>
+      </g>
+    </g>
+  </svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"size":{"editor":"int","default":180,"min":40,"max":400},"mood":{"editor":"enum","default":"coucou","options":["flotte","coucou","lanterne","course"]},"$preview":{"width":180,"height":220}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var size = Number(this.props.size ?? 180);
+    return { cls: "gh gh-" + (this.props.mood ?? "coucou"), w: size, h: Math.round(size * 146 / 130) };
+  }
+}
+</script>
+</body>
+</html>

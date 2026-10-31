@@ -7,6 +7,7 @@ import { NavigationMobileComponent } from './layouts/navigation/navigation-mobil
 import { CarouselComponent } from './layouts/footer/components/carousel/carousel.component';
 import {SharedModule} from "../shared/shared.module";
 import { TodayBannerComponent } from './layouts/today-banner/today-banner.component';
+import { TodayBannerHalloweenComponent } from './layouts/today-banner/today-banner-halloween.component';
 
 
 
@@ -28,6 +29,7 @@ import { TodayBannerComponent } from './layouts/today-banner/today-banner.compon
     RouterLink,
     RouterLinkActive,
     NgOptimizedImage,
+    TodayBannerHalloweenComponent,
     SharedModule
   ]
 })

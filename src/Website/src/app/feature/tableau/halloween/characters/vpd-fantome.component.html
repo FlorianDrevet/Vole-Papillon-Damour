@@ -1,0 +1,16 @@
+<div class="gh" [class.gh-coucou]="mood === 'coucou'" [class.gh-lanterne]="mood === 'lanterne'" [class.gh-flotte]="mood === 'flotte'" [class.gh-course]="mood === 'course'" [style.width.px]="size" [style.height.px]="size * 146 / 130" aria-hidden="true">
+  <svg viewBox="0 0 130 146" aria-hidden="true">
+    <defs><radialGradient [attr.id]="'ghLamp-' + instanceId" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff3b8"/><stop offset=".6" stop-color="#ffc35c"/><stop offset="1" stop-color="#ff8c2e"/></radialGradient></defs>
+    <g class="float">
+      <path d="M18 70 C8 72 4 80 8 86 C14 82 18 80 22 78 Z" fill="#e4dcf3"/>
+      <g class="skirt"><path d="M60 8 C30 8 16 32 16 62 L16 118 C22 112 28 112 34 120 C40 128 46 128 52 120 C58 112 64 112 70 120 C76 128 82 128 88 120 C94 112 100 112 104 118 L104 62 C104 32 90 8 60 8 Z" fill="#f3eefb"/><path d="M84 16 C98 28 104 44 104 62 L104 118 C100 112 94 112 88 120 C92 100 94 70 84 16 Z" fill="#d8cdee" opacity=".7"/></g>
+      <circle cx="40" cy="70" r="5" fill="#ffb3c7" opacity=".5"/><circle cx="80" cy="70" r="5" fill="#ffb3c7" opacity=".5"/>
+      <g class="eye"><ellipse cx="46" cy="54" rx="6.5" ry="9" fill="#1a0b22"/></g><g class="eye"><ellipse cx="74" cy="54" rx="6.5" ry="9" fill="#1a0b22"/></g>
+      <g class="pupils"><circle cx="48" cy="50" r="2.2" fill="#fff"/><circle cx="76" cy="50" r="2.2" fill="#fff"/></g>
+      <ellipse class="mouth" cx="60" cy="76" rx="5.5" ry="7" fill="#1a0b22"/>
+      <path class="wave" d="M100 66 C110 62 118 52 116 44 C110 48 106 54 98 60 Z" fill="#f3eefb"/>
+      <path class="lantern-arm" d="M100 60 C106 58 110 56 112 56 L110 62 C106 63 103 64 100 66 Z" fill="#f3eefb"/>
+      <g class="lantern"><path d="M110 58 L110 66" stroke="#3a2950" stroke-width="1.5"/><circle cx="110" cy="84" r="16" fill="#ffc35c" opacity=".16" class="lamp"/><rect x="102" y="66" width="16" height="4" rx="1.5" fill="#3a2950"/><rect x="103" y="70" width="14" height="18" rx="3" [attr.fill]="'url(#ghLamp-' + instanceId + ')'" class="lamp"/><path d="M103 74 L117 74 M103 84 L117 84 M110 70 L110 88" stroke="#3a2950" stroke-width="1.2"/><rect x="101" y="88" width="18" height="4" rx="1.5" fill="#3a2950"/></g>
+    </g>
+  </svg>
+</div>

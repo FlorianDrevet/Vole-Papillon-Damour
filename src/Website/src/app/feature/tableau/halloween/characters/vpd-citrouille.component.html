@@ -1,0 +1,33 @@
+<div class="pk" [class.pk-sourire]="mood === 'sourire'" [class.pk-rire]="mood === 'rire'" [class.pk-dort]="mood === 'dort'" [class.pk-salut]="mood === 'salut'" [style.width.px]="size" [style.height.px]="size * 146 / 160" aria-hidden="true">
+  <svg viewBox="0 0 160 146" aria-hidden="true">
+    <defs>
+      <radialGradient [attr.id]="'pkSkin-' + instanceId" cx="42%" cy="34%" r="70%"><stop offset="0" stop-color="#ffab5c"/><stop offset=".55" stop-color="#ff7b1c"/><stop offset="1" stop-color="#b9440a"/></radialGradient>
+      <radialGradient [attr.id]="'pkSkinBack-' + instanceId" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#e2620f"/><stop offset="1" stop-color="#8f3306"/></radialGradient>
+      <radialGradient [attr.id]="'pkFire-' + instanceId" cx="50%" cy="45%" r="65%"><stop offset="0" stop-color="#fff6c4"/><stop offset=".5" stop-color="#ffcf5a"/><stop offset="1" stop-color="#ff8a1c"/></radialGradient>
+    </defs>
+    <ellipse class="halo" cx="80" cy="140" rx="56" ry="6" fill="#ff9a2e"/>
+    <g class="body">
+      <ellipse cx="40" cy="88" rx="36" ry="48" [attr.fill]="'url(#pkSkinBack-' + instanceId + ')'"/>
+      <ellipse cx="120" cy="88" rx="36" ry="48" [attr.fill]="'url(#pkSkinBack-' + instanceId + ')'"/>
+      <ellipse cx="57" cy="88" rx="34" ry="52" [attr.fill]="'url(#pkSkin-' + instanceId + ')'"/>
+      <ellipse cx="103" cy="88" rx="34" ry="52" [attr.fill]="'url(#pkSkin-' + instanceId + ')'"/>
+      <ellipse cx="80" cy="88" rx="33" ry="54" [attr.fill]="'url(#pkSkin-' + instanceId + ')'"/>
+      <path d="M64 40 C55 66 55 112 64 138" stroke="#b5450b" stroke-opacity=".45" stroke-width="2" fill="none"/>
+      <path d="M96 40 C105 66 105 112 96 138" stroke="#b5450b" stroke-opacity=".45" stroke-width="2" fill="none"/>
+      <path d="M72 42 C66 54 64 68 66 80 C69 66 72 54 78 44 Z" fill="#ffe0b5" opacity=".35"/>
+      <path d="M74 38 C72 26 75 16 84 10 L90 14 C84 19 82 27 84 38 Z" fill="#56652a"/>
+      <path d="M84 10 L90 14 L88 16 L83 12 Z" fill="#3e4a1c"/>
+      <path d="M88 15 C98 8 108 14 104 21 C101 26 95 22 98 18" stroke="#7d963a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <g class="fire">
+        <g class="eyes-open">
+          <g class="eye eye-l"><path d="M44 76 Q56 56 70 72 Q58 80 44 76 Z" [attr.fill]="'url(#pkFire-' + instanceId + ')'"/><circle class="pupil" cx="59" cy="72" r="3.6" fill="#4a1a05"/></g>
+          <g class="eye eye-r"><path d="M116 76 Q104 56 90 72 Q102 80 116 76 Z" [attr.fill]="'url(#pkFire-' + instanceId + ')'"/><circle class="pupil" cx="101" cy="72" r="3.6" fill="#4a1a05"/></g>
+        </g>
+        <g class="eyes-shut"><path d="M46 72 Q57 79 68 72" stroke="#ffcf5a" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M92 72 Q103 79 114 72" stroke="#ffcf5a" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>
+        <path d="M75 90 L80 81 L85 90 Z" [attr.fill]="'url(#pkFire-' + instanceId + ')'"/>
+        <g class="mouth"><path d="M42 98 L52 104 L58 99 L66 106 L74 100 L80 107 L86 100 L94 106 L102 99 L108 104 L118 98 Q112 124 80 126 Q48 124 42 98 Z" [attr.fill]="'url(#pkFire-' + instanceId + ')'"/><path d="M75 126 L80 117 L85 126 Z" fill="#e8660f"/></g>
+      </g>
+    </g>
+    <g class="zz" font-family="Fraunces, Georgia, serif" font-style="italic" font-weight="700" fill="#b8a5cf"><text x="116" y="42" font-size="15">z</text><text x="116" y="42" font-size="18">z</text><text x="116" y="42" font-size="21">z</text></g>
+  </svg>
+</div>

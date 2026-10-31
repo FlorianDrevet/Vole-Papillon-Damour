@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { SharedModule } from '../../../shared.module';
 import { VpdEventsFacadeService } from '../../../facades/vpd-events.facade.service';
 import { VpdEventEnum } from '../../../enums/vpdEvent.enum';
 import { MyDate } from '../../../extensions/MyDate';
@@ -37,8 +39,7 @@ describe('CreateUpdateEventDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CreateUpdateEventDialogComponent],
-      imports: [ReactiveFormsModule],
+      imports: [SharedModule, ReactiveFormsModule, MatNativeDateModule],
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: event },
         { provide: MatDialogRef, useValue: { close: jasmine.createSpy('close') } },
@@ -46,11 +47,11 @@ describe('CreateUpdateEventDialogComponent', () => {
         { provide: VpdEventsFacadeService, useValue: {} },
       ],
     })
-      .overrideComponent(CreateUpdateEventDialogComponent, { set: { template: '' } })
       .compileComponents();
 
     fixture = TestBed.createComponent(CreateUpdateEventDialogComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   it('hydrates date and time pickers with the values displayed by the API', () => {
@@ -64,5 +65,36 @@ describe('CreateUpdateEventDialogComponent', () => {
     expect(dateStart.getHours()).toBe(0);
     expect(hourOpenDoors.getHours()).toBe(14);
     expect(hourCloseDoors.getHours()).toBe(18);
+  });
+
+  it('shows the live theme selector only for a loto', () => {
+    const label = 'Thème du tableau en direct';
+    expect(fixture.nativeElement.textContent).not.toContain(label);
+
+    component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Bingo);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(label);
+
+    component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Books);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain(label);
+  });
+
+  it('sends the selected Halloween theme only for a loto', () => {
+    expect(component.newEventForm.contains('liveTheme')).toBeTrue();
+    expect(component.newEventForm.get('liveTheme')?.value).toBe('Classic');
+    component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Bingo);
+    component.newEventForm.get('liveTheme')?.setValue('Halloween');
+    const consoleLog = spyOn(console, 'log');
+
+    const lotoFormData = (component as any).createFormData() as FormData;
+
+    expect(lotoFormData.get('LiveTheme')).toBe('Halloween');
+
+    component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Books);
+    const booksFormData = (component as any).createFormData() as FormData;
+
+    expect(booksFormData.has('LiveTheme')).toBeFalse();
+    consoleLog.and.stub();
   });
 });

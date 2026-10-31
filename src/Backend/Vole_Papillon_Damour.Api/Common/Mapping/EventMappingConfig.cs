@@ -29,10 +29,12 @@ public class EventMappingConfig : IRegister
         TypeAdapterConfig<string, NumberLine>.ForType().MapWith(src => NumberLine.CreateFromString(src));
         TypeAdapterConfig<string, PartieType>.ForType().MapWith(src => PartieType.CreateFromString(src));
         TypeAdapterConfig<string, EventsType>.ForType().MapWith(src => EventsType.CreateFromString(src));
+        TypeAdapterConfig<string, LiveTheme>.ForType().MapWith(src => LiveTheme.CreateFromString(src));
         
         TypeAdapterConfig<NumberLine, string>.ForType().MapWith(src => src.Value.ToString());
         TypeAdapterConfig<PartieType, string>.ForType().MapWith(src => src.Value.ToString());
         TypeAdapterConfig<EventsType, string>.ForType().MapWith(src => src.Value.ToString());
+        TypeAdapterConfig<LiveTheme, string>.ForType().MapWith(src => src.Value.ToString());
         
         TypeAdapterConfig<LotId, Guid>.ForType().MapWith(src => src.Value);
         TypeAdapterConfig<PartieId, Guid>.ForType().MapWith(src => src.Value);
@@ -58,6 +60,7 @@ public class EventMappingConfig : IRegister
 
         config.NewConfig<AssoEventResult, EventResponse>()
             .Map(dest => dest.EventType, src => src.EventsType.Value.ToString())
+            .Map(dest => dest.LiveTheme, src => src.LiveTheme.Value.ToString())
             .Map(dest =>dest.Id, src => src.Id.Value)
             .Map(dest => dest.Road, src => src.Adresse.Road)
             .Map(dest => dest.City, src => src.Adresse.City)
@@ -67,7 +70,8 @@ public class EventMappingConfig : IRegister
         config.NewConfig<TodayEventResult, TodayEventResponse>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.EventType, src => src.EventsType.Value.ToString())
-            .Map(dest => dest.LiveStatus, src => src.LiveStatus == null ? null : src.LiveStatus.Value.ToString());
+            .Map(dest => dest.LiveStatus, src => src.LiveStatus == null ? null : src.LiveStatus.Value.ToString())
+            .Map(dest => dest.LiveTheme, src => src.LiveTheme == null ? null : src.LiveTheme.Value.ToString());
 
         config.NewConfig<AddPartieToEventRequest, AddPartieToEventCommand>()
             .Map(dest => dest.PartiesCommand, src => src.Partie);

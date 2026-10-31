@@ -4,6 +4,7 @@ import {PartieTypeEnum} from "../enums/partieType.enum";
 
 export interface VpdEventModel {
   eventType: VpdEventEnum,
+  liveTheme?: 'Classic' | 'Halloween',
   id: string,
   name: string,
   description: string,

@@ -50,6 +50,18 @@ public class GetTodayEventQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ForALotoWithHalloweenTheme_ReturnsItsTheme()
+    {
+        var loto = CreateEvent("Grand loto", EventsType.EventsTypeEnum.Bingo, "2026-11-15T13:00:00Z");
+        var halloween = new LiveTheme(LiveTheme.LiveThemeEnum.Halloween);
+        loto.SetLiveTheme(halloween);
+
+        var result = await Handle(Now, loto);
+
+        result!.LiveTheme.Should().Be(halloween);
+    }
+
+    [Fact]
     public async Task Handle_ForAnotherEventType_HasNoLiveStatus()
     {
         var result = await Handle(Now, CreateEvent("Bourse", EventsType.EventsTypeEnum.Books, "2026-11-15T07:00:00Z"));
@@ -57,6 +69,7 @@ public class GetTodayEventQueryHandlerTests
         result!.Name.Should().Be("Bourse");
         result.LiveStatus.Should().BeNull();
         result.LastNumero.Should().BeNull();
+        result.LiveTheme.Should().BeNull();
     }
 
     [Fact]

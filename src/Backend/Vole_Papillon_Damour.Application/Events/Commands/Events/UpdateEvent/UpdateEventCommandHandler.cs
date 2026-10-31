@@ -48,6 +48,7 @@ public class UpdateEventCommandHandler(IEventRepository eventRepository, IBlobSe
             command.Description,
             command.UrlRegistration
         );
+        vpdEvent.SetLiveTheme(command.LiveTheme);
 
         vpdEvent = await eventRepository.UpdateAsync(vpdEvent);
         return mapper.Map<AssoEventResult>(vpdEvent);

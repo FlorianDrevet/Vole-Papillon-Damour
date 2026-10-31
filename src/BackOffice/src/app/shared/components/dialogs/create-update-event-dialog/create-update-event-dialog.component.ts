@@ -37,6 +37,7 @@ export class CreateUpdateEventDialogComponent implements OnInit {
 
     this.newEventForm = this.fb.group({
       eventType: [VpdEventEnum.Bingo, Validators.required],
+      liveTheme: [this.updateEvent()?.liveTheme ?? 'Classic'],
       name: ['', Validators.required],
       description: ['', Validators.required],
       dateStart: ['', Validators.required],
@@ -175,6 +176,9 @@ export class CreateUpdateEventDialogComponent implements OnInit {
     }
 
     formData.append("EventType", this.newEventForm.get('eventType')?.value);
+    if (this.type() === VpdEventEnum.Bingo) {
+      formData.append("LiveTheme", this.newEventForm.get('liveTheme')?.value ?? 'Classic');
+    }
     formData.append("Name", this.newEventForm.get('name')?.value);
     formData.append("Description", this.newEventForm.get('description')?.value);
     formData.append("City", this.newEventForm.get('city')?.value);

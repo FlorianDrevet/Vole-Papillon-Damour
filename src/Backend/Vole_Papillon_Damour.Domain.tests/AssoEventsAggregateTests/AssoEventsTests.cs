@@ -9,6 +9,52 @@ namespace Vole_Papillon_Damour.Domain.tests.AssoEventsAggregateTests;
 public class AssoEventsTests
 {
     [Fact]
+    public void Create_InitializesLiveThemeToClassic()
+    {
+        var assoEvent = CreateEvent();
+
+        assoEvent.LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Classic));
+    }
+
+    [Fact]
+    public void ParameterlessConstructor_InitializesLiveThemeToClassic()
+    {
+        new AssoEvents().LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Classic));
+    }
+
+    [Fact]
+    public void SetLiveTheme_WhenThemeChanges_UpdatesThemeAndLiveRevision()
+    {
+        var assoEvent = CreateEvent();
+        var initialRevision = assoEvent.LiveRevision;
+
+        var changed = assoEvent.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+
+        changed.Should().BeTrue();
+        assoEvent.LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+        assoEvent.LiveRevision.Should().Be(initialRevision + 1);
+    }
+
+    [Fact]
+    public void SetLiveTheme_WhenThemeIsUnchanged_DoesNotIncrementLiveRevision()
+    {
+        var assoEvent = CreateEvent();
+        assoEvent.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+        var changedRevision = assoEvent.LiveRevision;
+
+        var changed = assoEvent.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+
+        changed.Should().BeFalse();
+        assoEvent.LiveRevision.Should().Be(changedRevision);
+    }
+
+    [Fact]
+    public void CreateFromString_WhenValueIsUnknown_ReturnsClassic()
+    {
+        LiveTheme.CreateFromString("inconnu").Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Classic));
+    }
+
+    [Fact]
     public void AddBingoNumero_WhenNumeroIsNewAndBingoIsNotWon_AddsNumeroAndReturnsTrue()
     {
         var assoEvent = CreateEvent();

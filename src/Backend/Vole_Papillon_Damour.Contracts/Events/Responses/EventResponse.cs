@@ -6,6 +6,7 @@ public class EventResponse
     public string Name { get; set; }
     public Uri? UrlImage { get; set; }
     public string EventType { get; set; }
+    public string LiveTheme { get; set; } = "Classic";
     public DateTimeOffset DateStart { get; set; }
     public DateTimeOffset? DateEnd { get; set; }
     public DateTimeOffset? HourOpenDoors { get; set; }

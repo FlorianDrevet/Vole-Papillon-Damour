@@ -1,0 +1,62 @@
+vpd-citrouille .pk { position: relative; }
+vpd-citrouille .pk svg { display: block; width: 100%; height: 100%; overflow: visible; }
+vpd-citrouille .pk .body { transform-origin: 80px 140px; animation: pk-breathe 4.2s ease-in-out infinite; }
+@keyframes pk-breathe { 50% { transform: scale(1.018, .985); } }
+vpd-citrouille .pk .eye { transform-box: fill-box; transform-origin: center; animation: pk-blink 5.6s infinite; }
+vpd-citrouille .pk .eye-r { animation-delay: .04s; }
+@keyframes pk-blink { 0%, 91%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } 97% { transform: scaleY(1); } }
+vpd-citrouille .pk .pupil { animation: pk-glance 9s ease-in-out infinite; }
+@keyframes pk-glance { 0%, 28% { transform: translate(0,0); } 34%, 50% { transform: translate(-3.5px,.5px); } 56%, 72% { transform: translate(3.5px,.5px); } 78%, 100% { transform: translate(0,0); } }
+vpd-citrouille .pk .fire, vpd-citrouille .pk .halo { animation: pk-flicker 2.4s linear infinite; }
+@keyframes pk-flicker { 0%,100% { opacity: 1; } 11% { opacity: .84; } 19% { opacity: .97; } 33% { opacity: .8; } 46% { opacity: 1; } 58% { opacity: .88; } 71% { opacity: .98; } 84% { opacity: .82; } }
+vpd-citrouille .pk .halo { opacity: .22; }
+vpd-citrouille .pk .mouth { transform-box: fill-box; transform-origin: 50% 0; }
+vpd-citrouille .pk-sourire .mouth { animation: pk-smile 1.3s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes pk-smile { 0% { transform: scale(1,1); } 30% { transform: scale(1.12,1.3); } 100% { transform: scale(1,1); } }
+vpd-citrouille .pk-sourire .eye { animation: pk-happy 1.3s both; }
+@keyframes pk-happy { 0%,100% { transform: scaleY(1); } 30%,70% { transform: scaleY(.55); } }
+vpd-citrouille .pk-rire .mouth { animation: pk-laugh .3s ease-in-out infinite alternate; }
+@keyframes pk-laugh { from { transform: scale(1,1); } to { transform: scale(1.08,1.5); } }
+vpd-citrouille .pk-rire .eye { animation: none; transform: scaleY(.42); }
+vpd-citrouille .pk-rire .body { animation: pk-shake .3s ease-in-out infinite alternate; }
+@keyframes pk-shake { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg) translateY(-2px); } }
+vpd-citrouille .pk .eyes-shut, vpd-citrouille .pk .zz { display: none; }
+vpd-citrouille .pk-dort .eyes-open { display: none; }
+vpd-citrouille .pk-dort .eyes-shut, vpd-citrouille .pk-dort .zz { display: inline; }
+vpd-citrouille .pk-dort .fire { opacity: .6; animation-duration: 4.5s; }
+vpd-citrouille .pk-dort .body { animation-duration: 5.5s; }
+vpd-citrouille .pk-dort .mouth { transform: scale(.5,.38); }
+vpd-citrouille .pk .zz text { transform-box: fill-box; opacity: 0; animation: z-rise 4.5s ease-out infinite; }
+vpd-citrouille .pk .zz text:nth-child(2) { animation-delay: 1.5s; }
+vpd-citrouille .pk .zz text:nth-child(3) { animation-delay: 3s; }
+@keyframes z-rise { 0% { opacity: 0; transform: translate(0,0) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(16px,-42px) scale(1.25); } }
+vpd-citrouille .pk-salut .body { animation: pk-hop 1.1s infinite; }
+@keyframes pk-hop { 0%,60%,100% { transform: translateY(0) scale(1); } 20% { transform: translateY(-12px) scale(.97,1.04); animation-timing-function: ease-in; } 40% { transform: translateY(0) scale(1.05,.95); } }
+
+vpd-fantome .gh svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 16px rgba(205,185,255,.42)); }
+vpd-fantome .gh .float { animation: gh-bob 2.4s ease-in-out infinite; }
+@keyframes gh-bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+vpd-fantome .gh .skirt { transform-origin: 60px 70px; animation: gh-skirt 1.2s ease-in-out infinite alternate; }
+@keyframes gh-skirt { from { transform: skewX(-5deg); } to { transform: skewX(5deg); } }
+vpd-fantome .gh .eye { transform-box: fill-box; transform-origin: center; animation: gh-blink 4.8s infinite; }
+@keyframes gh-blink { 0%,90%,100% { transform: scaleY(1); } 94% { transform: scaleY(.1); } }
+vpd-fantome .gh .pupils { animation: gh-look 6s ease-in-out infinite; }
+@keyframes gh-look { 0%,25% { transform: translate(0,0); } 35%,55% { transform: translate(3px,0); } 65%,85% { transform: translate(-3px,1px); } 95%,100% { transform: translate(0,0); } }
+vpd-fantome .gh .mouth { transform-box: fill-box; transform-origin: center; animation: gh-oh 2.4s ease-in-out infinite; }
+@keyframes gh-oh { 50% { transform: scale(.8,1.15); } }
+vpd-fantome .gh .wave { transform-origin: 100px 66px; animation: gh-wave .5s ease-in-out infinite alternate; }
+@keyframes gh-wave { from { transform: rotate(-8deg); } to { transform: rotate(26deg); } }
+vpd-fantome .gh .lantern { transform-origin: 110px 58px; animation: gh-swing 2.4s ease-in-out infinite; }
+@keyframes gh-swing { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+vpd-fantome .gh .lamp { animation: gh-lamp 2s linear infinite; }
+@keyframes gh-lamp { 0%,100% { opacity: 1; } 23% { opacity: .82; } 41% { opacity: .96; } 64% { opacity: .78; } 82% { opacity: .95; } }
+vpd-fantome .gh .wave, vpd-fantome .gh .lantern, vpd-fantome .gh .lantern-arm { display: none; }
+vpd-fantome .gh-course .float { animation: gh-run .3s ease-in-out infinite alternate; }
+@keyframes gh-run { from { transform: translateY(-2px) rotate(8deg); } to { transform: translateY(2px) rotate(12deg); } }
+vpd-fantome .gh-course .skirt { animation: gh-flutter .18s linear infinite alternate; }
+@keyframes gh-flutter { from { transform: skewX(-18deg); } to { transform: skewX(-10deg); } }
+vpd-fantome .gh-course .pupils { animation: none; transform: translate(3px,0); }
+vpd-fantome .gh-course .mouth { animation: gh-oh .3s ease-in-out infinite; }
+vpd-fantome .gh-course .wave { display: inline; animation: gh-wave .2s ease-in-out infinite alternate; }
+vpd-fantome .gh-coucou .wave { display: inline; }
+vpd-fantome .gh-lanterne .lantern, vpd-fantome .gh-lanterne .lantern-arm { display: inline; }
