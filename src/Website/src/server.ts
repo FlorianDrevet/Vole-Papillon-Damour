@@ -7,6 +7,7 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import { WEBSITE_ORIGIN } from './website-origin';
+import { createSsrRequestDiagnosticsMiddleware } from './ssr-diagnostics';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -69,6 +70,11 @@ app.use(
     redirect: false,
   }),
 );
+
+// Track requests handled by Angular's server engine. Static assets are served
+// above and are not included. Query strings and headers are omitted so logs
+// cannot record tokens or other query data.
+app.use(createSsrRequestDiagnosticsMiddleware());
 
 /**
  * Handle all other requests by rendering the Angular application.
