@@ -102,17 +102,13 @@
   }
 
   .k {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    letter-spacing: .16em;
-    text-transform: uppercase;
     color: var(--muted);
   }
 
   .k-lg {
-    font-size: 30px;
-    letter-spacing: .2em;
+    font-size: 28px;
   }
 
   .k-accent {
@@ -126,7 +122,7 @@
 
   .lead {
     font-size: 44px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--muted);
   }
 
@@ -153,11 +149,11 @@
     align-items: center;
     justify-content: center;
     border: 0;
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 0;
     background: var(--cell);
     color: var(--cell-num);
-    font: 800 76px/1 'Libre Franklin', system-ui, sans-serif;
+    font: 700 76px/1 'Libre Franklin', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
     letter-spacing: -.02em;
     cursor: pointer;
@@ -174,7 +170,7 @@
     &.last {
       background: var(--last);
       color: var(--last-num);
-      font-weight: 900;
+      font-weight: 800;
     }
 
     &.nb {
@@ -199,15 +195,14 @@
   }
 
   .side-rule {
-    border-top: 2px solid var(--line);
-    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
   }
 
   .partie-name {
-    font-size: 44px;
-    font-weight: 800;
+    font-size: 42px;
+    font-weight: 700;
     line-height: 1.05;
-    letter-spacing: -.02em;
   }
 
   .chips {
@@ -219,18 +214,18 @@
   .chip {
     display: inline-flex;
     align-items: center;
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 999px;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 6px;
     background: var(--chip);
-    font-size: 26px;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 600;
   }
 
   .chip-lg {
-    height: 52px;
-    padding: 0 20px;
-    font-size: 28px;
+    height: 48px;
+    padding: 0 18px;
+    font-size: 26px;
   }
 
   .chip-accent {
@@ -247,14 +242,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 300px;
-    border-radius: 20px;
+    height: 240px;
+    border-radius: 8px;
     background: var(--last-big-bg);
     color: var(--last-big-color);
-    font-size: 300px;
-    font-weight: 900;
+    font-size: 240px;
+    font-weight: 800;
     line-height: 1;
-    letter-spacing: -.06em;
+    letter-spacing: -.03em;
   }
 
   .neighbours {
@@ -263,32 +258,27 @@
     color: var(--muted);
   }
 
-  .prev-row {
-    display: flex;
-    gap: 10px;
-  }
-
   .prev {
     flex: 1;
     height: 72px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 6px;
     background: var(--on);
     color: var(--on-num);
-    font-size: 44px;
-    font-weight: 800;
+    font-size: 42px;
+    font-weight: 700;
   }
 
   .lot {
-    font-size: 34px;
-    font-weight: 800;
+    font-size: 32px;
+    font-weight: 700;
   }
 
   .lot-won {
-    font-size: 30px;
-    font-weight: 600;
+    font-size: 28px;
+    font-weight: 500;
     color: var(--won);
     text-decoration: line-through;
   }
@@ -297,16 +287,24 @@
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 18px 20px;
-    border-radius: 14px;
-    background: var(--panel);
-    border: 2px solid var(--accent);
+    gap: 10px;
   }
 
   .bingo-numbers {
-    font-size: 42px;
-    font-weight: 800;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .bingo-won {
+    font-size: 34px;
+    font-weight: 700;
+  }
+
+  .bingo-empty {
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--muted);
   }
 
   // E2 ---------------------------------------------------------------------------
@@ -316,13 +314,13 @@
     justify-content: center;
     min-width: 1240px;
     height: 780px;
-    border-radius: 48px;
+    border-radius: 16px;
     background: var(--last-big-bg);
     color: var(--last-big-color);
-    font-size: 780px; // RG-03 : ≥ 60 % de la hauteur.
-    font-weight: 900;
+    font-size: 740px; // RG-03 : ≥ 60 % de la hauteur.
+    font-weight: 800;
     line-height: 1;
-    letter-spacing: -.06em;
+    letter-spacing: -.03em;
   }
 
   .announce-caption {
@@ -332,23 +330,43 @@
   }
 
   .pause-title {
-    font-size: 240px;
-    font-weight: 900;
+    font-size: 224px;
+    font-weight: 800;
     line-height: .85;
-    letter-spacing: -.05em;
+    letter-spacing: -.03em;
   }
 
   .bingo-panel-lg {
     margin-top: 0;
-    padding: 28px 32px;
-    border-width: 3px;
-    border-radius: 20px;
+    align-items: flex-start;
   }
 
   .bingo-numbers-lg {
-    font-size: 96px;
-    font-weight: 900;
-    letter-spacing: -.02em;
+    gap: 14px;
+  }
+
+  .bingo-number-lg {
+    min-width: 96px;
+    height: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border-radius: 8px;
+    background: var(--on);
+    color: var(--on-num);
+    font-size: 64px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bingo-won-lg {
+    font-size: 80px;
+  }
+
+  .bingo-panel-finished {
+    margin-top: 0;
+    align-items: center;
   }
 
   .next-partie {
@@ -358,55 +376,45 @@
   }
 
   .next-partie-name {
-    font-size: 48px;
-    font-weight: 800;
+    font-size: 46px;
+    font-weight: 700;
   }
 
   .before-title {
-    font-size: 132px;
-    font-weight: 900;
+    font-size: 124px;
+    font-weight: 800;
     line-height: .95;
-    letter-spacing: -.035em;
+    letter-spacing: -.025em;
   }
 
   .first-partie {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    border-top: 3px solid var(--line);
-    padding-top: 32px;
+    gap: 12px;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
   }
 
   .first-partie-name {
-    font-size: 60px;
-    font-weight: 800;
-    letter-spacing: -.02em;
+    font-size: 56px;
+    font-weight: 700;
   }
 
   .finished-title {
-    font-size: 170px;
-    font-weight: 900;
+    font-size: 154px;
+    font-weight: 800;
     line-height: .92;
-    letter-spacing: -.04em;
+    letter-spacing: -.03em;
   }
 
   .finished-thanks {
-    font-size: 96px;
-    font-weight: 800;
+    font-size: 88px;
+    font-weight: 700;
     color: var(--last);
-    letter-spacing: -.02em;
   }
 
-  .bingo-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 30px;
-    border-radius: 999px;
-    background: var(--panel);
-    border: 3px solid var(--accent);
-    font-size: 40px;
-    font-weight: 800;
+  .bingo-panel-finished .bingo-numbers-lg {
+    justify-content: center;
   }
 
   .qr-card {
@@ -414,11 +422,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 22px;
-    padding: 36px;
-    border-radius: 28px;
+    gap: 20px;
+    padding: 32px;
+    border-radius: 16px;
     background: #ffffff;
-    border: 4px solid var(--qr-border);
+    border: 1px solid var(--qr-border);
     color: #041d30;
 
     img {
@@ -427,15 +435,15 @@
   }
 
   .qr-title {
-    font-size: 32px;
-    font-weight: 800;
+    font-size: 30px;
+    font-weight: 700;
     text-align: center;
     line-height: 1.15;
   }
 
   .qr-url {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 600;
     color: #0c6ea6;
   }
@@ -444,7 +452,7 @@
   kbd {
     font: 600 12px 'IBM Plex Mono', monospace;
     padding: 3px 7px;
-    border-radius: 5px;
+    border-radius: 4px;
     border: 1px solid #33536e;
     color: #9dc2da;
     background: #041d30;
@@ -459,7 +467,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px;
-    border-radius: 16px;
+    border-radius: 10px;
     background: rgba(7, 27, 43, .94);
     border: 1px solid #1b3c57;
     box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .8);
@@ -471,7 +479,7 @@
     gap: 10px;
     height: 52px;
     padding: 0 16px;
-    border-radius: 10px;
+    border-radius: 6px;
     border: 1px solid #1b3c57;
     background: #0b2438;
     color: #dcecf7;
@@ -493,7 +501,7 @@
 
   .hint {
     padding: 0 6px;
-    font: 500 13px 'IBM Plex Mono', monospace;
+    font: 500 14px 'Libre Franklin', sans-serif;
     color: #9dc2da;
   }
 
@@ -505,15 +513,13 @@
     align-items: center;
     gap: 12px;
     padding: 8px 14px;
-    border-radius: 10px;
+    border-radius: 6px;
     background: rgba(7, 27, 43, .94);
     border: 1px solid #1b3c57;
   }
 
   .kbd-label {
-    font: 600 12px 'IBM Plex Mono', monospace;
-    letter-spacing: .14em;
-    text-transform: uppercase;
+    font: 600 13px 'Libre Franklin', sans-serif;
     color: #9dc2da;
   }
 
@@ -532,7 +538,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 18px;
-    border-radius: 12px;
+    border-radius: 6px;
     background: #3a1406;
     border: 1px solid #dc6412;
     color: #ffd9bf;
