@@ -63,5 +63,8 @@ role names as Entra: `Administration`, `LivresRares`, `Tri`, and `Caisse`.
   Never use them as a production login flow or put their values in deployment settings.
 - Tests that call Microsoft Graph, such as account provisioning/deletion, still need a
   dedicated test seam or mocks; Keycloak does not emulate Entra Graph.
-- The Angular apps still authenticate through MSAL/Entra. Use these personas for direct API
-  tests, not as a claim that the browser apps support Keycloak login.
+- BackOffice local browser sign-in uses `vpd-backoffice-local` with Authorization Code +
+  PKCE S256; do not use the `vpd-local-test` direct-grant client for browser login. Website,
+  Catalog, and Scan still use MSAL/Entra locally, and every production frontend uses Entra.
+- These personas and the `vpd-local-test` client also support direct API tests. Keycloak does
+  not replace Entra for account provisioning or Microsoft Graph operations.

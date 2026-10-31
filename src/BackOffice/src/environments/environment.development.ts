@@ -3,7 +3,8 @@ import {EnvironmentInterface} from "../app/shared/interfaces/environment.interfa
 export const environment : EnvironmentInterface =
   {
     production: false,
-    api_url: "http://localhost:5257",
+    auth_provider: 'keycloak',
+    api_url: "https://localhost:7246",
     url_vpd_web_site: "https://vole-papillon-damour-website.onrender.com/accueil",
     time_numero_modal: 300,
     appinsights_connection_string: "",
@@ -14,5 +15,10 @@ export const environment : EnvironmentInterface =
       redirectUri: "http://localhost:4200",
       postLogoutRedirectUri: "http://localhost:4200/login",
       apiScope: "api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user"
+    },
+    keycloak: {
+      url: "https://localhost:8080",
+      realm: "vpd",
+      clientId: "vpd-backoffice-local"
     }
   };

@@ -1,11 +1,12 @@
 import {Injectable} from '@angular/core';
 import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
 import {AccountInfo, InteractionRequiredAuthError, InteractionStatus} from '@azure/msal-browser';
-import {catchError, filter, Observable, switchMap, take, throwError} from 'rxjs';
+import {catchError, filter, from, Observable, switchMap, take, throwError} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 import {environment} from '../../../environments/environment';
 import {loginRequest} from '../auth/msal-config';
+import {KeycloakAuthService} from '../auth/keycloak-auth.service';
 
 const INTERACTION_REQUIRED_ERROR_CODES = new Set([
   'interaction_required',
@@ -42,9 +43,14 @@ export class ApiAccessTokenService {
   constructor(
     private readonly msalService: MsalService,
     private readonly msalBroadcastService: MsalBroadcastService,
+    private readonly keycloakAuthService: KeycloakAuthService,
   ) {}
 
   public getApiAccessToken$(forceRefresh = false): Observable<string> {
+    if (environment.auth_provider === 'keycloak') {
+      return from(this.keycloakAuthService.getApiAccessToken(forceRefresh));
+    }
+
     return this.msalBroadcastService.inProgress$.pipe(
       filter(status => status === InteractionStatus.None),
       take(1),

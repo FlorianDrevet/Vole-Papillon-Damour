@@ -45,9 +45,12 @@
   .NET User Secret. Its persistent data volume retains console changes; Keycloak imports the
   realm fixture only into an empty volume, so reset only its `keycloak-data` volume to load
   fixture changes. Aspire also probes API readiness through `/health`.
-- `infra/main.bicep` explicitly sets `Authentication__Provider=Entra`. BackOffice, Website,
-  Catalog, and Scan browser sign-in still use their Entra/MSAL configuration; these
-  Keycloak identities are for direct API testing.
+- `infra/main.bicep` explicitly sets `Authentication__Provider=Entra`. Production browser
+  sign-in remains Entra/MSAL. In BackOffice development, `environment.development.ts` selects
+  Keycloak and the `vpd-backoffice-local` public client uses Authorization Code + PKCE S256;
+  its allow-listed callback is `http://localhost:4200/*` and its `vpd-api-access` default
+  scope supplies API audience, role, and identity claims. Website, Catalog, and Scan still use Entra
+  locally. The `vpd-local-test` direct-grant client remains for API test tooling only.
 
 - Account administration keeps Entra app roles as the source of truth. The BackOffice
   uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
@@ -213,7 +216,8 @@
   `AzureWebJobsStorage` to the Functions integration; forcing `UseDevelopmentStorage=true`
   breaks the dynamic Azurite ports.
 - `BackOffice` config contains API/site URLs and Entra tenant, client, authority, redirect, and
-  scope values. `Website` contains its API URL. Scan derives its LAN API host from port `5257`
+  scope values; its development environment selects the local Keycloak issuer and HTTPS API URL.
+  `Website` contains its API URL. Scan derives its LAN API host from port `5257`
   in development and uses the tenant-scoped CIAM authority in both environments.
 - `Configure-EntraApps.ps1` merges SPA redirect URIs. The public Catalog and Scan redirects are
   registered while existing local/technical URIs remain; the public Scan role gate was verified.

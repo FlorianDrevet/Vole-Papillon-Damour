@@ -24,6 +24,7 @@ export class LoginComponent {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly homeRoute = HOME_ROUTE;
+  protected readonly isKeycloak = this.authSession.isKeycloak;
   protected readonly websiteUrl = environment.url_vpd_web_site;
   protected readonly isAuthenticated = this.authSession.isAuthenticated;
   protected readonly displayName = this.authSession.displayName;
@@ -40,11 +41,10 @@ export class LoginComponent {
   protected onLoginClick(): void {
     this.hasFailed.set(false);
 
-    // `loginRedirect` échoue quand MSAL considère qu'une interaction est déjà en
-    // cours — typiquement après une redirection interrompue. L'ancienne version
-    // affichait une notification qui disparaissait toute seule ; le message reste
-    // maintenant affiché et renvoie vers la seule action qui débloque vraiment.
-    this.authSession.login().subscribe({
+    // Une erreur du fournisseur local ou une redirection interrompue reste
+    // visible et propose une action de récupération sur l'écran de connexion.
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? this.homeRoute;
+    this.authSession.login(returnUrl).subscribe({
       error: () => this.hasFailed.set(true),
     });
   }

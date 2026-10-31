@@ -5,6 +5,7 @@ import {MsalBroadcastService} from '@azure/msal-angular';
 import {InteractionStatus} from '@azure/msal-browser';
 import {filter, take, timer} from 'rxjs';
 
+import {environment} from '../../../environments/environment';
 import {AuthSessionService} from '../../shared/auth/auth-session.service';
 import {HOME_ROUTE, LOGIN_ROUTE} from '../../shared/auth/msal-config';
 
@@ -38,6 +39,11 @@ export class AuthLandingComponent implements OnInit {
   protected readonly isStalled = signal(false);
 
   ngOnInit(): void {
+    if (environment.auth_provider === 'keycloak') {
+      this.routeOnward();
+      return;
+    }
+
     this.msalBroadcastService.inProgress$
       .pipe(
         filter(status => status === InteractionStatus.None),
@@ -56,8 +62,9 @@ export class AuthLandingComponent implements OnInit {
   }
 
   private routeOnward(): void {
+    const returnUrl = this.authSession.consumeReturnUrl();
     void this.router.navigateByUrl(
-      this.authSession.isAuthenticated() ? HOME_ROUTE : LOGIN_ROUTE,
+      returnUrl ?? (this.authSession.isAuthenticated() ? HOME_ROUTE : LOGIN_ROUTE),
     );
   }
 }

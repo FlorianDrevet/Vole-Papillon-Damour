@@ -53,11 +53,18 @@
       @if (hasFailed()) {
         <div class="flex flex-col gap-3 rounded-sm border border-danger/30 bg-danger-soft px-4 py-4">
           <p class="text-sm font-semibold text-danger">La connexion n'a pas pu démarrer.</p>
-          <p class="text-sm leading-relaxed text-slate">
-            Une tentative précédente est peut-être restée en suspens. Réinitialiser
-            la connexion efface les informations de session enregistrées dans ce
-            navigateur, puis recharge la page.
-          </p>
+          @if (isKeycloak) {
+            <p class="text-sm leading-relaxed text-slate">
+              Impossible d'initialiser Keycloak local. Vérifiez qu'il tourne dans Aspire,
+              puis réinitialisez la connexion et rechargez cette page.
+            </p>
+          } @else {
+            <p class="text-sm leading-relaxed text-slate">
+              Une tentative précédente est peut-être restée en suspens. Réinitialiser
+              la connexion efface les informations de session enregistrées dans ce
+              navigateur, puis recharge la page.
+            </p>
+          }
           <button
             type="button"
             (click)="resetSession()"
@@ -93,6 +100,12 @@
           L'accès est réservé aux bénévoles de l'association. Utilisez le compte
           qui vous a été fourni.
         </p>
+
+        @if (isKeycloak) {
+          <p class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">
+            Environnement local · Keycloak
+          </p>
+        }
 
         <button
           type="button"

@@ -1,12 +1,12 @@
 import {inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
-import {MsalService} from '@azure/msal-angular';
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 
 import {environment} from '../../../environments/environment';
 import {MethodEnum} from '../enums/method.enum';
 import {LOGIN_ROUTE} from '../auth/msal-config';
+import {AuthSessionService} from '../auth/auth-session.service';
 import {ApiAccessTokenService} from './api-access-token.service';
 
 @Injectable({
@@ -14,7 +14,7 @@ import {ApiAccessTokenService} from './api-access-token.service';
 })
 export class AxiosService {
   private readonly apiAccessTokenService = inject(ApiAccessTokenService);
-  private readonly msalService = inject(MsalService);
+  private readonly authSession = inject(AuthSessionService);
   private readonly router = inject(Router);
 
   constructor() {
@@ -92,17 +92,13 @@ export class AxiosService {
   }
 
   private redirectIfAccountUnavailable(): void {
-    const instance = this.msalService.instance;
-    if (instance.getActiveAccount()) {
+    if (this.authSession.isAuthenticated()) {
       return;
     }
 
-    const accounts = instance.getAllAccounts();
-    if (accounts.length === 0) {
-      void this.router.navigate([LOGIN_ROUTE]);
-    } else if (accounts.length > 1) {
-      void this.router.navigate([LOGIN_ROUTE], {queryParams: {raison: 'compte'}});
-    }
+    void this.router.navigate([LOGIN_ROUTE], {
+      ...(this.authSession.requiresAccountSelection() ? {queryParams: {raison: 'compte'}} : {}),
+    });
   }
 }
 

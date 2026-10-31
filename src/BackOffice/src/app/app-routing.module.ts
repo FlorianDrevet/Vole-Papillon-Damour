@@ -1,8 +1,8 @@
 import {Injectable, NgModule} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {RouterModule, RouterStateSnapshot, Routes, TitleStrategy} from '@angular/router';
-import {MsalGuard} from '@azure/msal-angular';
 
+import {BackOfficeAuthGuard} from './shared/auth/auth-guard';
 import {AuthLandingComponent} from "./core/auth-landing/auth-landing.component";
 import {LoginComponent} from "./core/login/login.component";
 import {ActualitiesComponent} from "./feature/actualities/actualities.component";
@@ -34,8 +34,8 @@ export class BackOfficeTitleStrategy extends TitleStrategy {
 
 const routes: Routes = [
   {
-    // Page d'atterrissage d'Entra : elle ne porte volontairement pas de MsalGuard,
-    // sans quoi le guard traite la redirection en même temps que MsalRedirectComponent
+    // Page d'atterrissage de la redirection : elle ne porte volontairement pas de garde,
+    // sans quoi le guard traite la réponse en même temps que le fournisseur d'identité
     // et la navigation reste suspendue sur un cadre vide.
     path: '',
     component: AuthLandingComponent,
@@ -52,44 +52,44 @@ const routes: Routes = [
   {
     path: 'actualites',
     component: ActualitiesComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Actualités',
   },
   {
     path: 'actualite/:id',
     component: ActualityDetailComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Actualité',
   },
   {
     path: 'evenements',
     component: VpdEventsComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Évènements',
   },
   {
     path: 'evenement/:id',
     component: EventDetailComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Évènement',
   },
   {
     path: 'evenement/:id/loto-tableau',
     component: TableauComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     data: {chrome: false},
     title: 'Tableau du loto',
   },
   {
     path: 'caisse',
     component: CaisseComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Caisse',
   },
   {
     path: 'administration',
     component: CatalogAdministrationComponent,
-    canActivate: [MsalGuard],
+    canActivate: [BackOfficeAuthGuard],
     title: 'Administration catalogue',
   },
   {path: '**', redirectTo: '/actualites'}

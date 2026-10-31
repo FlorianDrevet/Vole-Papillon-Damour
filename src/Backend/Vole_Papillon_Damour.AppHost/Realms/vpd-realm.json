@@ -27,6 +27,23 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "defaultClientScopes": ["profile", "email", "vpd-api-access"]
+    },
+    {
+      "clientId": "vpd-backoffice-local",
+      "name": "VPD BackOffice local browser",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": ["vpd-api-access"]
     }
   ],
   "clientScopes": [
