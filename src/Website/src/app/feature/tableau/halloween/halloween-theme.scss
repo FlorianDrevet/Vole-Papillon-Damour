@@ -506,3 +506,13 @@
   .hw .state-pause h1 { font-size: 50px; }
   .hw .state-finished h1 { font-size: 42px; }
 }
+
+/* Bouton « remonter en haut » aux couleurs de la nuit d'Halloween, uniquement sur le tableau. */
+body:has(.hw) app-go-up button {
+  background: #1d1229;
+  box-shadow: inset 0 0 0 2px rgba(255, 140, 46, .55), 0 18px 34px -18px rgba(0, 0, 0, .7);
+}
+
+body:has(.hw) app-go-up button:hover {
+  background: #ff8c2e;
+}

@@ -119,7 +119,7 @@ describe('EventDetailComponent', () => {
     expect(hero.querySelectorAll('vpd-citrouille').length).toBe(2);
     expect(hero.textContent).toContain('Loto');
     expect(hero.textContent).toContain('Date');
-    expect(hero.textContent).toContain('Ouverture');
+    expect(hero.textContent).toContain('Ouverture · Début');
     expect(hero.textContent).toContain('Lieu');
     expect(hero.textContent).toContain('Demain');
   });

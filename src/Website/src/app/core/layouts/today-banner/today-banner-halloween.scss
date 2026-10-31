@@ -98,7 +98,7 @@ app-today-banner-halloween { display: block; }
   .close { margin-left: auto; }
   .spider { right: 10px; }
   .run-desktop { display: none; }
-  .run-mobile { top: 20px; display: block; width: 40px; animation: hb-run-mobile 2.2s cubic-bezier(.4,0,.7,1) both; }
+  .run-mobile { top: 10px; display: block; width: 40px; animation: hb-run-mobile 2.2s cubic-bezier(.4,0,.7,1) both; }
   @keyframes hb-run-mobile { 0% { transform: translate(-80px,0); } 50% { transform: translate(180px,4px); } 100% { transform: translate(460px,-2px); } }
 }
 
