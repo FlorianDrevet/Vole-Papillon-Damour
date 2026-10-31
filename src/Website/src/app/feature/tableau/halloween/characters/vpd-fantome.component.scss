@@ -1,0 +1,20 @@
+.gh svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 16px rgba(205,185,255,.42)); }
+.gh .float { animation: gh-bob 2.4s ease-in-out infinite; }
+@keyframes gh-bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(2deg); } }
+.gh .skirt { transform-origin: 60px 70px; animation: gh-skirt 1.2s ease-in-out infinite alternate; }
+@keyframes gh-skirt { from { transform: skewX(-5deg); } to { transform: skewX(5deg); } }
+.gh .eye { transform-box: fill-box; transform-origin: center; animation: gh-blink 4.8s infinite; }
+@keyframes gh-blink { 0%,90%,100% { transform: scaleY(1); } 94% { transform: scaleY(.1); } }
+.gh .pupils { animation: gh-look 6s ease-in-out infinite; }
+@keyframes gh-look { 0%,25% { transform: translate(0,0); } 35%,55% { transform: translate(3px,0); } 65%,85% { transform: translate(-3px,1px); } 95%,100% { transform: translate(0,0); } }
+.gh .mouth { transform-box: fill-box; transform-origin: center; animation: gh-oh 2.4s ease-in-out infinite; }
+@keyframes gh-oh { 50% { transform: scale(.8,1.15); } }
+.gh .wave { transform-origin: 100px 66px; animation: gh-wave .5s ease-in-out infinite alternate; }
+@keyframes gh-wave { from { transform: rotate(-8deg); } to { transform: rotate(26deg); } }
+.gh .lantern { transform-origin: 110px 58px; animation: gh-swing 2.4s ease-in-out infinite; }
+@keyframes gh-swing { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+.gh .lamp { animation: gh-lamp 2s linear infinite; }
+@keyframes gh-lamp { 0%,100% { opacity: 1; } 23% { opacity: .82; } 41% { opacity: .96; } 64% { opacity: .78; } 82% { opacity: .95; } }
+.gh .wave, .gh .lantern, .gh .lantern-arm { display: none; }
+.gh-coucou .wave { display: inline; }
+.gh-lanterne .lantern, .gh-lanterne .lantern-arm { display: inline; }

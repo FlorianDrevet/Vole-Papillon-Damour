@@ -1,0 +1,34 @@
+.pk { position: relative; }
+.pk svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pk .body { transform-origin: 80px 140px; animation: pk-breathe 4.2s ease-in-out infinite; }
+@keyframes pk-breathe { 50% { transform: scale(1.018, .985); } }
+.pk .eye { transform-box: fill-box; transform-origin: center; animation: pk-blink 5.6s infinite; }
+.pk .eye-r { animation-delay: .04s; }
+@keyframes pk-blink { 0%, 91%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } 97% { transform: scaleY(1); } }
+.pk .pupil { animation: pk-glance 9s ease-in-out infinite; }
+@keyframes pk-glance { 0%, 28% { transform: translate(0,0); } 34%, 50% { transform: translate(-3.5px,.5px); } 56%, 72% { transform: translate(3.5px,.5px); } 78%, 100% { transform: translate(0,0); } }
+.pk .fire, .pk .halo { animation: pk-flicker 2.4s linear infinite; }
+@keyframes pk-flicker { 0%,100% { opacity: 1; } 11% { opacity: .84; } 19% { opacity: .97; } 33% { opacity: .8; } 46% { opacity: 1; } 58% { opacity: .88; } 71% { opacity: .98; } 84% { opacity: .82; } }
+.pk .halo { opacity: .22; }
+.pk .mouth { transform-box: fill-box; transform-origin: 50% 0; }
+.pk-sourire .mouth { animation: pk-smile 1.3s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes pk-smile { 0% { transform: scale(1,1); } 30% { transform: scale(1.12,1.3); } 100% { transform: scale(1,1); } }
+.pk-sourire .eye { animation: pk-happy 1.3s both; }
+@keyframes pk-happy { 0%,100% { transform: scaleY(1); } 30%,70% { transform: scaleY(.55); } }
+.pk-rire .mouth { animation: pk-laugh .3s ease-in-out infinite alternate; }
+@keyframes pk-laugh { from { transform: scale(1,1); } to { transform: scale(1.08,1.5); } }
+.pk-rire .eye { animation: none; transform: scaleY(.42); }
+.pk-rire .body { animation: pk-shake .3s ease-in-out infinite alternate; }
+@keyframes pk-shake { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg) translateY(-2px); } }
+.pk .eyes-shut, .pk .zz { display: none; }
+.pk-dort .eyes-open { display: none; }
+.pk-dort .eyes-shut, .pk-dort .zz { display: inline; }
+.pk-dort .fire { opacity: .6; animation-duration: 4.5s; }
+.pk-dort .body { animation-duration: 5.5s; }
+.pk-dort .mouth { transform: scale(.5,.38); }
+.pk .zz text { transform-box: fill-box; opacity: 0; animation: z-rise 4.5s ease-out infinite; }
+.pk .zz text:nth-child(2) { animation-delay: 1.5s; }
+.pk .zz text:nth-child(3) { animation-delay: 3s; }
+@keyframes z-rise { 0% { opacity: 0; transform: translate(0,0) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(16px,-42px) scale(1.25); } }
+.pk-salut .body { animation: pk-hop 1.1s infinite; }
+@keyframes pk-hop { 0%,60%,100% { transform: translateY(0) scale(1); } 20% { transform: translateY(-12px) scale(.97,1.04); animation-timing-function: ease-in; } 40% { transform: translateY(0) scale(1.05,.95); } }

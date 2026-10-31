@@ -1,0 +1,13 @@
+.cd svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cd .bub { transform-box: fill-box; transform-origin: center; opacity: 0; animation: cd-bub 2.6s ease-in infinite; }
+.cd .b2 { animation-delay: .7s; } .cd .b3 { animation-delay: 1.3s; } .cd .b4 { animation-delay: 1.9s; } .cd .b5 { animation-delay: .35s; }
+@keyframes cd-bub { 0% { opacity: 0; transform: translateY(6px) scale(.4); } 15% { opacity: 1; } 80% { opacity: 1; transform: translateY(-34px) scale(1); } 100% { opacity: 0; transform: translateY(-40px) scale(1.5); } }
+.cd .surface { transform-box: fill-box; transform-origin: center; animation: cd-boil 1.4s ease-in-out infinite alternate; }
+@keyframes cd-boil { from { transform: scaleY(1); } to { transform: scaleY(1.35); } }
+.cd .steam { transform-box: fill-box; transform-origin: 50% 100%; opacity: 0; animation: cd-steam 5s ease-out infinite; }
+.cd .s2 { animation-delay: 1.7s; } .cd .s3 { animation-delay: 3.3s; }
+@keyframes cd-steam { 0% { opacity: 0; transform: translateY(0) scale(.7); } 25% { opacity: .5; } 100% { opacity: 0; transform: translateY(-46px) scale(1.4) skewX(12deg); } }
+.cd .flames { transform-box: fill-box; transform-origin: 50% 100%; animation: cd-fire .9s ease-in-out infinite alternate; }
+@keyframes cd-fire { from { transform: scale(1,1); } to { transform: scale(1.06,.82); } }
+.cd .pot { transform-origin: 80px 120px; animation: cd-rock 3.6s ease-in-out infinite; }
+@keyframes cd-rock { 0%,100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }

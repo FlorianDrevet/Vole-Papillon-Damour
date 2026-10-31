@@ -1,8 +1,10 @@
+import {signal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from '@angular/router';
 import {buildLotoTableauView, LotoEventSnapshot, LotoPartieSnapshot} from '@vpd/ui';
 import {LiveTableauConnection} from '../../../shared/clients/sse-client.service';
 import {VpdEventModel} from '../../../shared/models/vpdEvent.model';
+import {HalloweenPreferences} from './halloween-preferences';
 import {TableauHalloweenComponent} from './tableau-halloween.component';
 
 function loto(partieType = 'Standard'): LotoEventSnapshot {
@@ -39,6 +41,11 @@ function loto(partieType = 'Standard'): LotoEventSnapshot {
 
 describe('TableauHalloweenComponent', () => {
   let fixture: ComponentFixture<TableauHalloweenComponent>;
+  let preferences: {
+    calm: ReturnType<typeof signal<boolean>>;
+    visible: ReturnType<typeof signal<boolean>>;
+    toggleCalm: jasmine.Spy;
+  };
 
   async function render(partieType = 'Standard'): Promise<HTMLElement> {
     fixture = TestBed.createComponent(TableauHalloweenComponent);
@@ -50,10 +57,16 @@ describe('TableauHalloweenComponent', () => {
   }
 
   beforeEach(async () => {
+    preferences = {
+      calm: signal(false),
+      visible: signal(true),
+      toggleCalm: jasmine.createSpy('toggleCalm').and.callFake(() => preferences.calm.update(value => !value)),
+    };
     await TestBed.configureTestingModule({
       imports: [TableauHalloweenComponent],
       providers: [provideRouter([])],
-    }).compileComponents();
+    }).overrideProvider(HalloweenPreferences, {useValue: preferences as unknown as HalloweenPreferences})
+      .compileComponents();
   });
 
   it('affiche le dernier numéro, cinq précédents et les 90 cases', async () => {
@@ -88,5 +101,31 @@ describe('TableauHalloweenComponent', () => {
 
     expect(element.textContent).toContain('En direct');
     expect(element.textContent).not.toContain('EN DIRECT');
+  });
+
+  it('suit la préférence calme et permet de l’inverser au clavier ou au toucher', async () => {
+    const element = await render();
+
+    expect(element.querySelector('.hw')?.classList.contains('calm')).toBeFalse();
+    const button = element.querySelector<HTMLButtonElement>('[aria-label="Calmer les animations"]');
+    expect(button?.textContent?.trim()).toBe('Calmer');
+    expect(button?.getAttribute('aria-pressed')).toBe('false');
+
+    button?.click();
+    fixture.detectChanges();
+
+    expect(preferences.toggleCalm).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.hw')?.classList.contains('calm')).toBeTrue();
+    const activeButton = element.querySelector<HTMLButtonElement>('[aria-label="Remettre les animations"]');
+    expect(activeButton?.textContent?.trim()).toBe('Animer');
+    expect(activeButton?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('met les animations en pause quand l’onglet est caché', async () => {
+    const element = await render();
+    preferences.visible.set(false);
+    fixture.detectChanges();
+
+    expect(element.querySelector('.hw')?.classList.contains('paused')).toBeTrue();
   });
 });
