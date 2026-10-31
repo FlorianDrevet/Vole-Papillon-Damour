@@ -82,7 +82,9 @@ app-today-banner-halloween { display: block; }
 @keyframes hbat-two-mobile-b { 0% { transform: translate(-40px,26px); } 50% { transform: translate(55vw,2px); } 100% { transform: translate(calc(100vw + 30px),20px); } }
 
 @media (max-width: 767.98px) {
-  .hb { height: auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 8px 12px 14px; }
+  .hb { height: auto; min-height: 0; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; }
+  .hb-first { flex: 1 1 auto; }
+  .hb-schedule { display: none; }
   .hb-first, .hb-second { display: flex; min-width: 0; align-items: center; gap: 10px; }
   .hb-second { min-height: 44px; padding-right: 6px; }
   .hb-pumpkin { flex-basis: 30px; width: 30px; height: 28px; margin: 0; overflow: hidden; }

@@ -208,7 +208,7 @@
       <span class="hw-k">À gagner sur cette ligne</span>
       @for (lot of view.lots; track lot.id) {
         @if (lot.won) {
-          <span class="lot-won"><s>{{ lot.name }}</s><em>gagné</em></span>
+          <span class="lot-won"><span>{{ lot.name }}</span><em>gagné</em></span>
         } @else {
           <span class="lot">{{ lot.name }}</span>
         }

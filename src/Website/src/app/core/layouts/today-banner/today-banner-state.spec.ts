@@ -1,6 +1,6 @@
 import {
   isTodayBannerDismissed,
-  parisTime,
+  eventTime,
   todayBannerLabel,
   todayBannerSchedule,
   todayBannerStage,
@@ -66,15 +66,15 @@ describe('today banner state', () => {
 
   it('shows the date before the event and opening hours tomorrow or today', () => {
     const now = new Date('2026-10-31T12:00:00Z');
-    expect(todayBannerSchedule(loto, 'upcoming', now)).toBe('Ouverture des portes 13 h 30 · Arras');
+    expect(todayBannerSchedule(loto, 'upcoming', now)).toBe('Ouverture des portes 12 h 30 · Arras');
     expect(todayBannerSchedule({...loto, dateStart: '2026-11-07T12:00:00Z'}, 'upcoming', now))
       .toBe('samedi 7 novembre · Arras');
     expect(todayBannerSchedule(
       {...loto, dateStart: '2026-10-31T12:00:00Z'},
       'today',
       now,
-    )).toBe('Ouverture des portes 13 h 30 · Arras');
-    expect(parisTime('2026-11-01T12:30:00Z')).toBe('13 h 30');
+    )).toBe('Ouverture des portes 12 h 30 · Arras');
+    expect(eventTime('2026-11-01T12:30:00Z')).toBe('12 h 30');
   });
 
   it('uses live and finished as distinct dismissal steps', () => {

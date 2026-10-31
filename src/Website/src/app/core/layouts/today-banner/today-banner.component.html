@@ -4,7 +4,7 @@
   } @else {
   <!-- E5 : maquettes preview/E5-Desktop.html, preview/E5-Mobile.html, preview/E5-Etats.html -->
   <div role="region" [attr.aria-label]="stage() === 'upcoming' ? 'Prochain rendez-vous' : stage() === 'ongoing' ? 'Événement en cours' : 'Événement du jour'"
-       class="flex flex-col gap-2 bg-ink py-2.5 pl-4 pr-2 text-white lg:h-[52px] lg:flex-row lg:items-center lg:gap-5 lg:py-0 lg:pl-shell lg:pr-3">
+       class="flex flex-row items-center gap-2 bg-ink py-2.5 pl-4 pr-2 text-white lg:h-[52px] lg:flex-row lg:items-center lg:gap-5 lg:py-0 lg:pl-shell lg:pr-3">
     <div class="flex min-w-0 items-center gap-2.5 lg:gap-5">
       <span class="stage-label shrink-0 font-serif text-sm italic text-cyan lg:text-base">{{ label() }}</span>
 
@@ -39,10 +39,10 @@
         }
         @default {
           @if (schedule()) {
-            <span class="text-[13px] text-mist-2 lg:text-sm">{{ schedule() }}</span>
+            <span class="hidden text-[13px] text-mist-2 lg:inline lg:text-sm">{{ schedule() }}</span>
           }
           <a [routerLink]="['/evenement', today.id]"
-             class="ml-auto shrink-0 text-sm font-bold text-white underline underline-offset-[3px] hover:text-cyan">Voir l'événement</a>
+             class="ml-auto shrink-0 text-sm font-bold text-white underline underline-offset-[3px] hover:text-cyan">Voir</a>
         }
       }
 
