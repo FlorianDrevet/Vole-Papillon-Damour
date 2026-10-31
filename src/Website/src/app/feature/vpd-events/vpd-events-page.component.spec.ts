@@ -77,10 +77,15 @@ describe('VpdEventsPageComponent', () => {
   });
 
   async function render(events: object[]): Promise<void> {
-    eventsFacadeSpy.getAllEvents$.and.resolveTo(events as never);
+    const response = Promise.resolve(events as never);
+    eventsFacadeSpy.getAllEvents$.and.returnValue(response);
     fixture = TestBed.createComponent(VpdEventsPageComponent);
     fixture.detectChanges();
+    await response;
     await fixture.whenStable();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
     fixture.detectChanges();
   }
 
@@ -225,5 +230,15 @@ describe('VpdEventsPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.hero-skeleton')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain('Chargement des rendez-vous');
+  });
+
+  it('explains when no new event has been scheduled and links to past editions', async () => {
+    await render([]);
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).toContain("Pas de nouvelle date pour l'instant.");
+    expect(page.textContent).toContain("Les prochains rendez-vous apparaîtront ici dès qu'ils seront fixés.");
+    expect([...page.querySelectorAll('a')].some(link => link.textContent?.trim() === 'Voir les éditions passées')).toBeTrue();
   });
 });
