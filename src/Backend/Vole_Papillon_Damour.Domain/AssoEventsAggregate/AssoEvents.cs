@@ -10,6 +10,7 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
     public string Name { get; private set; } = null!;
     public Uri? UrlImage { get; set; } = null!;
     public EventsType EventsType { get; set; } = null!;
+    public LiveTheme LiveTheme { get; private set; } = new(LiveTheme.LiveThemeEnum.Classic);
     public DateTimeOffset DateStart { get; set; }
     public DateTimeOffset? DateEnd { get; set; }
     public DateTimeOffset? HourOpenDoors { get; set; }
@@ -157,6 +158,18 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
     public void MarkLiveChange()
     {
         LiveRevision++;
+    }
+
+    public bool SetLiveTheme(LiveTheme theme)
+    {
+        if (LiveTheme.Equals(theme))
+        {
+            return false;
+        }
+
+        LiveTheme = theme;
+        MarkLiveChange();
+        return true;
     }
 
     public LiveTableauStatus GetLiveStatus()
