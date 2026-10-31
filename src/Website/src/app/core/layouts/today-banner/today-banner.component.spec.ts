@@ -3,7 +3,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter, RouterLink} from '@angular/router';
 import {TodayEventModel} from '../../../shared/models/today-event.model';
 import {TodayEventService} from '../../../shared/services/today-event.service';
-import {HalloweenPreferences} from '../../../feature/tableau/halloween/halloween-preferences';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {TodayBannerHalloweenComponent} from './today-banner-halloween.component';
 import {TodayBannerComponent} from './today-banner.component';
 

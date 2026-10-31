@@ -60,3 +60,44 @@ vpd-fantome .gh-course .mouth { animation: gh-oh .3s ease-in-out infinite; }
 vpd-fantome .gh-course .wave { display: inline; animation: gh-wave .2s ease-in-out infinite alternate; }
 vpd-fantome .gh-coucou .wave { display: inline; }
 vpd-fantome .gh-lanterne .lantern, vpd-fantome .gh-lanterne .lantern-arm { display: inline; }
+
+vpd-papillon .pa { position: relative; }
+vpd-papillon .pa svg { display: block; width: 100%; height: 100%; overflow: visible; }
+vpd-papillon .pa .float { transform-origin: 80px 60px; animation: pa-float 4.2s ease-in-out infinite; }
+@keyframes pa-float { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
+vpd-papillon .pa .wings { transform-origin: 80px 60px; animation: pa-flap 1.9s ease-in-out infinite; }
+@keyframes pa-flap { 0% { transform: scaleX(1); } 16% { transform: scaleX(.26); } 32% { transform: scaleX(1); } 48% { transform: scaleX(.3); } 64%,100% { transform: scaleX(1); } }
+vpd-papillon .pa .ant { transform-origin: 80px 40px; animation: pa-ant 2.6s ease-in-out infinite; }
+@keyframes pa-ant { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+vpd-papillon .pa-pose .wings { animation: none; transform: scaleX(.92); }
+
+vpd-boule-bingo .bb { position: relative; }
+vpd-boule-bingo .bb svg { display: block; width: 100%; height: 100%; overflow: visible; }
+vpd-boule-bingo .bb-shadow { position: absolute; left: 24%; right: 24%; bottom: 1%; height: 7%; border-radius: 50%; background: #000; opacity: .26; animation: bb-shadow 2.8s cubic-bezier(.3,0,.5,1) infinite; }
+@keyframes bb-shadow { 0%,58%,100% { transform: scaleX(1); opacity: .26; } 76% { transform: scaleX(.7); opacity: .13; } }
+vpd-boule-bingo .bb-body { position: absolute; inset: 0; transform-origin: 50% 92%; animation: bb-hop 2.8s cubic-bezier(.3,0,.5,1) infinite; }
+@keyframes bb-hop { 0%,58%,100% { transform: translateY(0) scale(1); } 66% { transform: translateY(0) scale(1.06,.92); } 76% { transform: translateY(-14%) scale(.97,1.04); } 86% { transform: translateY(0) scale(1.05,.94); } 92% { transform: translateY(0) scale(1); } }
+vpd-boule-bingo .bb-num { position: absolute; left: 0; right: 0; top: 56%; transform: translateY(-50%); text-align: center; font-family: 'Libre Franklin', Arial, sans-serif; font-weight: 900; line-height: 1; letter-spacing: -.04em; color: #041d30; font-variant-numeric: tabular-nums; }
+vpd-boule-bingo .eye { transform-box: fill-box; transform-origin: center; animation: bb-blink 4.6s infinite; }
+vpd-boule-bingo .eye-r { animation: bb-wink 9s infinite; }
+@keyframes bb-blink { 0%,90%,100% { transform: scaleY(1); } 94% { transform: scaleY(.1); } }
+@keyframes bb-wink { 0%,40%,52%,90%,100% { transform: scaleY(1); } 44%,48%,94% { transform: scaleY(.1); } }
+vpd-boule-bingo .bb-pose .bb-body, vpd-boule-bingo .bb-pose .bb-shadow { animation: none; }
+
+.calm vpd-papillon *, .calm vpd-boule-bingo *, .calm vpd-citrouille *, .calm vpd-fantome *, .calm vpd-chauve-souris *,
+:root.calm vpd-papillon *, :root.calm vpd-boule-bingo *, :root.calm vpd-citrouille *, :root.calm vpd-fantome *, :root.calm vpd-chauve-souris * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.paused vpd-papillon *, .paused vpd-boule-bingo *, .paused vpd-citrouille *, .paused vpd-fantome *, .paused vpd-chauve-souris *,
+:root.paused vpd-papillon *, :root.paused vpd-boule-bingo *, :root.paused vpd-citrouille *, :root.paused vpd-fantome *, :root.paused vpd-chauve-souris * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  vpd-papillon *, vpd-boule-bingo *, vpd-citrouille *, vpd-fantome *, vpd-chauve-souris * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

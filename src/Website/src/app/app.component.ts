@@ -1,8 +1,9 @@
 import {DOCUMENT} from '@angular/common';
-import {Component, Inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, HostBinding, Inject, OnDestroy, OnInit, signal} from '@angular/core';
 import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router} from '@angular/router';
 import {Subject, filter, takeUntil} from 'rxjs';
 import {WEBSITE_ORIGIN} from '../website-origin';
+import {HalloweenPreferences} from './shared/components/mascots/halloween-preferences';
 
 @Component({
     selector: 'app-root',
@@ -14,11 +15,22 @@ export class AppComponent implements OnInit, OnDestroy {
   title = "Vole Papillon d'Amour";
   readonly isNavigating = signal(false);
 
+  @HostBinding('class.calm')
+  get calm(): boolean {
+    return this.mascotPreferences.calm();
+  }
+
+  @HostBinding('class.paused')
+  get paused(): boolean {
+    return !this.mascotPreferences.visible();
+  }
+
   private readonly destroyed = new Subject<void>();
 
   constructor(
     private readonly router: Router,
     @Inject(DOCUMENT) private readonly document: Document,
+    private readonly mascotPreferences: HalloweenPreferences,
   ) {}
 
   ngOnInit(): void {

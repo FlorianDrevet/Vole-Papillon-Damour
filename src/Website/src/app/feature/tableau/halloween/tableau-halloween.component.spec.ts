@@ -4,7 +4,7 @@ import {provideRouter} from '@angular/router';
 import {buildLotoTableauView, LotoEventSnapshot, LotoPartieSnapshot} from '@vpd/ui';
 import {LiveTableauConnection} from '../../../shared/clients/sse-client.service';
 import {VpdEventModel} from '../../../shared/models/vpdEvent.model';
-import {HalloweenPreferences} from './halloween-preferences';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {TableauHalloweenComponent} from './tableau-halloween.component';
 
 function loto(partieType = 'Standard', lotWon = true, bingoWon = false): LotoEventSnapshot {

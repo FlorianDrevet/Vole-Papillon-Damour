@@ -1,10 +1,10 @@
 import {isPlatformBrowser} from '@angular/common';
 import {Component, DestroyRef, effect, EventEmitter, inject, Input, OnChanges, Output, PLATFORM_ID, SimpleChanges, signal} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {HalloweenPreferences} from '../../../feature/tableau/halloween/halloween-preferences';
-import {VpdChauveSourisComponent} from '../../../feature/tableau/halloween/characters/vpd-chauve-souris.component';
-import {VpdCitrouilleComponent} from '../../../feature/tableau/halloween/characters/vpd-citrouille.component';
-import {VpdFantomeComponent} from '../../../feature/tableau/halloween/characters/vpd-fantome.component';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
+import {VpdChauveSourisComponent} from '../../../shared/components/mascots/vpd-chauve-souris.component';
+import {VpdCitrouilleComponent} from '../../../shared/components/mascots/vpd-citrouille.component';
+import {VpdFantomeComponent} from '../../../shared/components/mascots/vpd-fantome.component';
 import {TodayEventModel} from '../../../shared/models/today-event.model';
 import {TodayBannerVariant} from './today-banner-state';
 import {TodayBannerHalloweenMotionService} from './today-banner-halloween-motion.service';

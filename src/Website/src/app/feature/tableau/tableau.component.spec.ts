@@ -3,7 +3,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
 import {of} from 'rxjs';
 import {VpdEventModel} from '../../shared/models/vpdEvent.model';
-import {HalloweenPreferences} from './halloween/halloween-preferences';
+import {HalloweenPreferences} from '../../shared/components/mascots/halloween-preferences';
 import {SseClientService} from '../../shared/clients/sse-client.service';
 import {TableauComponent} from './tableau.component';
 
