@@ -8,12 +8,12 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-halloween-loto-board`
 - Branche : `feat/halloween-loto-board`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/TPeyvSzwE6VHyT3ARtTUC5
 - S'appuie sur : [`docs/features/loto-live-board/`](../loto-live-board/README.md) (écran E4 d'origine, RG-01 à RG-24)
 
 ## Statut
 
-- [ ] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
+- [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
 - [ ] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
 - [ ] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md)
 - [ ] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
