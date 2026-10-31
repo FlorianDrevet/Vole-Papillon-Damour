@@ -35,6 +35,11 @@ dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android --c
 
 `EmbedAssembliesIntoApk=true` is set in the project because BackOffice serves the APK as a direct download. This disables Fast Deployment and packages the managed assemblies inside the APK. The generated APK is available under `src/MauiCashApp/bin/Release/net10.0-android/`.
 
+Copy each release to a versioned BackOffice asset such as
+`src/BackOffice/public/apks/caisse-app-v1.2.apk`, then update the login and `/caisse`
+download links to that same filename. A new path avoids Cloudflare serving the previous APK
+from the stable URL's cache.
+
 The durable signing keystore and the organized APK redistribution channel are intentionally deferred. The current workflow uses the direct application build.
 
 # 📸 Screenshots

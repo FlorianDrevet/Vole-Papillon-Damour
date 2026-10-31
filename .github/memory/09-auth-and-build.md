@@ -225,8 +225,10 @@
   the HTTPS ACA deployment satisfies the secure-context camera requirement.
 - MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; it has no MSAL settings. Its Android
   APK uses `ApplicationDisplayVersion` / `ApplicationVersion` from `ShopAppVpd.csproj`.
-  BackOffice serves `public/apks/app-debug.apk` from `/apks/app-debug.apk` on the login and
-  product-management screens. Build a standalone Release APK with
+  BackOffice serves a versioned standalone APK from `/apks/caisse-app-v1.2.apk` on the login
+  and product-management screens. When releasing a new app version, name the static APK
+  `caisse-app-v{ApplicationDisplayVersion}.apk` and update both links; the stable old path
+  was cached by Cloudflare for four hours. Build a standalone Release APK with
   `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk`.
   Standalone BackOffice APKs must embed assemblies; Fast Deployment artifacts abort at launch
   when installed outside ADB deployment. This was reproduced from the distributed APK with
