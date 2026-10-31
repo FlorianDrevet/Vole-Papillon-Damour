@@ -30,12 +30,13 @@
       <div aria-hidden="true" class="pointer-events-none absolute -bottom-40 right-[28%] h-80 w-80 rounded-full border border-orange-2/10"></div>
     }
 
+    <a routerLink="/evenement" class="event-back relative z-10 mb-8 inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-cyan transition hover:text-white">
+      <svg viewBox="0 0 16 16" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+      Tous les événements
+    </a>
+
     <div class="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-16">
       <div class="flex min-w-0 flex-col gap-6">
-      <a routerLink="/evenement" class="inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-cyan transition hover:text-white">
-        <svg viewBox="0 0 16 16" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
-        Tous les événements
-      </a>
 
       @if (liveLoto(); as loto) {
         <!-- E6 : maquettes preview/E6-Desktop.html, preview/E6-Mobile.html -->
