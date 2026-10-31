@@ -14,9 +14,14 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 ### Live loto board
 
 The BackOffice projection lives in `src/BackOffice/src/app/feature/event-detail/components/tableau/`;
-number cells are buttons that call the same draw action as keyboard entry. The keyboard help bar is
-opened by key presses and times out after 3 seconds without keyboard activity; mouse movement only
-reveals the cursor. The public Website route uses `src/Website/src/app/feature/tableau/` and the
+number cells are buttons that call the same draw action as keyboard entry. Its wide keyboard help bar
+appears only after an unrecognized key and closes when a known shortcut is pressed; pending number
+entry remains visible independently. The bar times out after 3 seconds without another unknown key,
+and mouse movement only reveals the cursor. During the pre-game phase, `G` toggles between the QR
+screen and the empty 90-number grid without recording a draw. `P` cycles the dark, light, and
+high-contrast projection palettes; `vpd.loto.palette` stores the selection in local storage. The
+projection palette uses white idle numbers on a near-black field and amber cells for drawn numbers.
+The public Website route uses `src/Website/src/app/feature/tableau/` and the
 shared `buildLotoTableauView` projection. At phone widths its live order is the latest number, up to
 five previous numbers, the 90-cell grid, then the current party, prizes, and bingo; desktop keeps
 the summary and party details in the left column beside the grid.
@@ -30,6 +35,15 @@ Website phone-tableau files changed, so its five-previous-number layout remains 
 maintainer because Windows Computer Use could not resolve Chrome's current URL and the BackOffice
 table route uses `MsalGuard`. Graphify re-extracted all 1,861 source files but could not render its
 9,115-node graph within the HTML visualization limit.
+
+The same-day follow-up adds the pre-game `G` toggle between QR and an empty grid, opens the help
+bar only for unrecognized keys, widens it to 1,840 px, and adds a persisted high-contrast palette.
+The BackOffice suite passes 56/56 with all six bootstrap checks, and the production build passes
+with existing Angular warnings. `npm ci` reports 80 dependency vulnerabilities. The current
+production board was viewed read-only; the local modified render could not be opened because
+Computer Use could not verify Chrome's current URL, and the physical projector comparison remains
+pending. Graphify re-extracted 1,862 source files, but its 9,117-node graph exceeds the HTML
+visualization limit.
 
 As of 2026-09-22, the Scan rare-book surfaces follow the supplied Claude mockups: the home
 orders `Trier des livres`, `Livres rares`, `Caisse`, and `Consulter`; the rare-book list has a
