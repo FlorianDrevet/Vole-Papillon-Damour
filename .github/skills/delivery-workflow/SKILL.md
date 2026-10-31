@@ -14,7 +14,15 @@ Before editing files:
    rtk git fetch origin main
    ```
 
-4. Create a sibling worktree and a new branch directly from the fetched base:
+4. If `tools/worktree-dependency-sharing.mjs` is available in the current checkout, install its clone-local hook before creating a worktree:
+
+   ```powershell
+   node tools/worktree-dependency-sharing.mjs --install
+   ```
+
+   This is idempotent and changes only the common Git hooks directory for this local clone.
+
+5. Create a sibling worktree and a new branch directly from the fetched base:
 
    ```powershell
    rtk git worktree add -b <type>/<short-slug> <sibling-worktree-path> origin/main
@@ -22,7 +30,7 @@ Before editing files:
 
 `origin/main` is the authoritative freshly pulled base. Do not start from a stale local `main`. Use a descriptive branch such as `feat/...`, `fix/...`, `refactor/...` or `docs/...`.
 
-If a task is already underway, verify that the active worktree is dedicated to that task and based on `origin/main`; otherwise stop and move the work to a new worktree before continuing. Never reset or discard another worktree's changes to make this possible.
+If a task is already underway, verify that the active worktree is dedicated to that task and based on `origin/main`; otherwise stop and move the work to a new worktree before continuing. Never reset or discard another worktree's changes to make this possible. See [worktree dependency sharing](../../../docs/development/worktree-dependency-sharing.md) for the local hook setup and behavior.
 
 ## 2. Implement and validate
 

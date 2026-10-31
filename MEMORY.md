@@ -35,6 +35,7 @@
 | `.github/memory/14-scan-metadata-latency.md` | Dated provider telemetry, ISBN error triage, and the Google Books key issue |
 | `.github/memory/15-isbndb-migration.md` | ISBNdb-first book notices, quota, catch-up, Catalog/Scan flows, infra and validation |
 | `.github/memory/16-catalog-performance.md` | Deployed Catalog request latency, admin statistics optimization, and remaining SQL investigation |
+| `.github/memory/17-worktree-dependency-sharing.md` | Clone-local Git hook for reusing frontend dependencies across worktrees |
 
 ## Quick Reference
 
