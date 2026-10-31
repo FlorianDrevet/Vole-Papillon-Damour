@@ -6,7 +6,6 @@ using ShopAppVpd.Apis.Enums;
 using ShopAppVpd.Dtos;
 using ShopAppVpd.Interfaces;
 using ShopAppVpd.Models;
-using ShopAppVpd.Views;
 
 namespace ShopAppVpd.ViewModels;
 
@@ -118,6 +117,7 @@ public partial class MainViewModel : ObservableObject
         FilteredProducts.Clear();
 
         var filtered = Products
+            .Where(p => p.Available)
             .Where(p => p.ProductSection == section.ToString())
             .Where(p => foodSection is null || p.ProductCategory == foodSection.ToString());
 

@@ -43,13 +43,6 @@ export class CaisseComponent {
     this.filterBar.set(category);
   }
 
-  protected downloadCaisseApp(): void {
-    const link = document.createElement('a');
-    link.href = 'apks/app-debug.apk';
-    link.download = 'caisse-app.apk';
-    link.click();
-  }
-
   protected openDialogCreation(): void {
     const dialogRef = this.dialog.open(CreateUpdateProductDialogComponent, {
       data: null,

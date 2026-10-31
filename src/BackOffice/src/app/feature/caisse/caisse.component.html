@@ -1,7 +1,14 @@
 <div class="flex w-full flex-col gap-8 px-shell pb-16">
   <app-page-header eyebrow="Vole Papillon d'Amour · Espace bénévoles" title="La Caisse">
     <div class="flex gap-2">
-      <app-icon-button icon="download" ariaLabel="Télécharger l'application caisse" (click)="downloadCaisseApp()"></app-icon-button>
+      <a
+        href="/apks/app-debug.apk"
+        download="caisse-app.apk"
+        aria-label="Télécharger l’application caisse Android"
+        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-line bg-white px-3 text-xs font-semibold text-slate-2 transition hover:border-blue-2 hover:bg-blue/5 hover:text-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 sm:px-4 sm:text-sm">
+        <app-icon name="download" [size]="17"></app-icon>
+        <span>Télécharger l’APK</span>
+      </a>
       <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
         <app-icon name="add" [size]="15"></app-icon>
         Nouveau produit

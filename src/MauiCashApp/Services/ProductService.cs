@@ -2,7 +2,6 @@
 using ShopAppVpd.Databases;
 using ShopAppVpd.Dtos;
 using ShopAppVpd.Interfaces;
-using ErrorOr;
 
 namespace ShopAppVpd.Services;
 
@@ -27,23 +26,29 @@ internal sealed class ProductService: IProductService
 
                 if (productsResponse.IsSuccessful)
                 {
-                    var products = productsResponse.Content.ConvertAll(p => new Product(p));
-                    await _productDatabase.SaveProductsAsync(products);
-                    return products;
+                    var cashierProducts = CashierProductFilter.FromApi(productsResponse.Content);
+                    await _productDatabase.SaveProductsAsync(cashierProducts);
+                    return cashierProducts;
                 }
                 else
                 {
-                    return await _productDatabase.GetProductsAsync();
+                    return await GetAvailableCachedProductsAsync();
                 }
             }
             catch
             {
-                return await _productDatabase.GetProductsAsync();
+                return await GetAvailableCachedProductsAsync();
             }
         }
         else
         {
-            return await _productDatabase.GetProductsAsync();
+            return await GetAvailableCachedProductsAsync();
         }
+    }
+
+    private async Task<IEnumerable<Product>> GetAvailableCachedProductsAsync()
+    {
+        var cachedProducts = await _productDatabase.GetProductsAsync();
+        return CashierProductFilter.FromCache(cachedProducts);
     }
 }

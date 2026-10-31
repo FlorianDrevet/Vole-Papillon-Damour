@@ -192,11 +192,11 @@
   observable so MSAL redirect-start failures are rendered inline instead of being swallowed.
   The production environment uses `https://scan.volepapillondamour.fr` for both redirect and
   post-logout URLs; the deployment workflow and Dockerfile inject the same canonical origin.
-- `MauiCashApp` targets `net10.0-android` and uses MSAL.NET 4.88.0. `MsalAuthService` acquires
-  `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` silently first and falls back to
-  interactive sign-in; `AuthHandler` attaches the resulting bearer token to the Refit client.
-  The Android callback is handled by `MainActivity` and `MsalActivity` for
-  `msal427c90de-bf59-4b01-af63-dc0799248496://auth`.
+- `MauiCashApp` targets `net10.0-android` and does not use tablet authentication. Its public
+  Refit client is registered by `VpdApiServiceCollectionExtensions.AddUnauthenticatedVpdApi`;
+  `appsettings.json` points to the deployed Container App API and `GET /product` is public.
+  The MAUI cache and UI show only available products from `Bar` and `Bingo`; the `Book` section
+  is excluded.
 
 ## Configuration Sources
 
@@ -213,8 +213,14 @@
   registered while existing local/technical URIs remain; the public Scan role gate was verified.
 - Scan uses `@zxing/browser` with `TRY_HARDER` for ISBN/QR camera and photo fallback decoding;
   the HTTPS ACA deployment satisfies the secure-context camera requirement.
-- MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; its MSAL values are constants in
-  `MsalAuthService`. Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
+- MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; it has no MSAL settings. Its Android
+  APK uses `ApplicationDisplayVersion` / `ApplicationVersion` from `ShopAppVpd.csproj`.
+  BackOffice serves `public/apks/app-debug.apk` from `/apks/app-debug.apk` on the login and
+  product-management screens. A Debug APK can be built with
+  `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj -f net10.0-android -c Debug -p:AndroidPackageFormat=apk`.
+  The APK is currently debug-signed; a differing signing certificate requires uninstalling the
+  previous package before installation. Use a shared release keystore for future in-place updates.
+  Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
 - Frontend images patch production environment values at build time through `API_URL` and
   `WEBSITE_URL`; Docker builds use the `src/` context so `src/SharedUi/` resolves.
 - ACA probes check `/health` on port `8080`; the dev SQL parameter is Azure SQL `S0`, 10 DTUs,
