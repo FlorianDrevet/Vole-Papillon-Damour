@@ -12,6 +12,25 @@ namespace Vole_Papillon_Damour.Infrastructure.tests.Persistence;
 public sealed class EventRepositoryLiveTableauTests
 {
     [Fact]
+    public async Task LiveTheme_WhenSavedAndReloaded_PreservesHalloween()
+    {
+        await using var connection = await OpenConnectionAsync();
+        var loto = CreateEvent();
+        loto.SetLiveTheme(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+
+        await using (var writeContext = await CreateContextAsync(connection))
+        {
+            writeContext.AssoEvents.Add(loto);
+            await writeContext.SaveChangesAsync();
+        }
+
+        await using var readContext = await CreateContextAsync(connection);
+        var reloaded = await readContext.AssoEvents.SingleAsync(item => item.Id == loto.Id);
+
+        reloaded.LiveTheme.Should().Be(new LiveTheme(LiveTheme.LiveThemeEnum.Halloween));
+    }
+
+    [Fact]
     public async Task GetLiveRevisions_ReturnsTheRevisionOfEachExistingRequestedEvent()
     {
         await using var connection = await OpenConnectionAsync();

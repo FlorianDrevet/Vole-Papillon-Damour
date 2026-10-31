@@ -40,6 +40,14 @@ public class AssoEventConfiguration : IEntityTypeConfiguration<AssoEvents>
                 value => new EventsType((EventsType.EventsTypeEnum)value)
             );
 
+        builder.Property(x => x.LiveTheme)
+            .IsRequired()
+            .HasConversion(
+                theme => (int)theme.Value,
+                value => new LiveTheme((LiveTheme.LiveThemeEnum)value)
+            )
+            .HasDefaultValueSql("0");
+
         // Every live tableau mutation increments it: concurrent mutations of the same
         // event cannot both succeed, and each revision describes one board state.
         builder.Property(events => events.LiveRevision)
