@@ -58,6 +58,14 @@ interface HalloweenCandy {
   secondary: string;
 }
 
+interface EndCandy {
+  index: number;
+  left: number;
+  delay: number;
+  turn: number;
+  color: string;
+}
+
 function createCandies(): HalloweenCandy[] {
   return Array.from({length: 40}, (_, index) => {
     const kind = index % 3;
@@ -75,6 +83,17 @@ function createCandies(): HalloweenCandy[] {
       secondary: colors[1],
     };
   });
+}
+
+function createEndCandies(): EndCandy[] {
+  const colors = ['#ffb347', '#ff8c2e', '#d2b8f2', '#ffc94d', '#9bd85a'];
+  return colors.map((color, index) => ({
+    index,
+    left: [8, 29, 51, 73, 90][index],
+    delay: [.1, .5, .25, .4, .8][index],
+    turn: [160, -240, 300, -120, 220][index],
+    color,
+  }));
 }
 
 @Component({
@@ -97,6 +116,8 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
   protected readonly tombTilts = [-2, 1.5, -1, 2, -1.5];
   protected readonly batSizes = [78, 54, 112, 40, 60];
   protected readonly candies = createCandies();
+  protected readonly endCandies = createEndCandies();
+  protected finishedCandyPlayed = false;
   private lastBatsKey: 'a' | 'b' | null = null;
 
   constructor() {
@@ -113,6 +134,9 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['view'] && this.view?.phase === 'finished' && this.preferences.calm()) {
+      this.finishedCandyPlayed = true;
+    }
     if (changes['event']) {
       this.fx.accept(this.event as LotoEventSnapshot | null);
     }
@@ -133,7 +157,29 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
     this.preferences.toggleCalm();
     if (this.preferences.calm()) {
       this.fx.cancelCurrent();
+      if (this.view?.phase === 'finished') {
+        this.finishedCandyPlayed = true;
+      }
     }
+  }
+
+  protected markFinishedCandyPlayed(): void {
+    this.finishedCandyPlayed = true;
+  }
+
+  protected shouldShowFx(): boolean {
+    return this.view?.phase === 'playing'
+      && (this.fx.moment() !== null || this.fx.interrupting())
+      && (!this.view.intermission || this.shouldDeferIntermission());
+  }
+
+  protected shouldDeferIntermission(): boolean {
+    if (!this.view?.intermission) {
+      return false;
+    }
+    const moment = this.fx.moment();
+    return this.fx.interrupting() || moment?.kind === 'partie'
+      || (moment?.kind === 'line' && moment.endsPartie);
   }
 
   protected isUndoCell(value: number, key: 'a' | 'b'): boolean {
