@@ -3,6 +3,7 @@ import {EnvironmentInterface} from "../app/shared/interfaces/environment.interfa
 export const environment : EnvironmentInterface =
   {
     production: true,
+    auth_provider: 'entra',
     api_url: "https://vole-papillon-damour-backend.onrender.com",
     url_vpd_web_site: "https://vole-papillon-damour-website.onrender.com/accueil",
     time_numero_modal: 2000,

@@ -76,10 +76,13 @@ persona qui ne porte pas le rôle exigé.
 
 Le client `vpd-local-test` utilise le flux OAuth2 Direct Access Grant pour rendre cette
 récupération non interactive. Ce flux est réservé à cet environnement local; il n'est pas
-configuré dans Bicep. La validation des jetons garde l'audience et les rôles. Le scope
-`vpd-api-access` expose les rôles VPD dans `roles`, le courriel dans `email`, les noms dans
-`given_name` et `family_name`, et l'identifiant externe stable (UUID) dans `oid`, comme
-attendus par l'API.
+configuré dans Bicep. Le BackOffice local utilise un client navigateur séparé,
+`vpd-backoffice-local`, avec Authorization Code et PKCE S256, sans secret client ni accès
+direct par mot de passe. Son URI de redirection est limitée à `http://localhost:4200/*`.
+Le scope `vpd-api-access` est ajouté par défaut; il émet l'audience `vpd-api`, les rôles VPD
+dans `roles`, le courriel dans `email`, les noms dans `given_name` et `family_name`, ainsi
+que l'identifiant externe stable (UUID) dans `oid`. Ces claims sont attendus par l'API et
+permettent au BackOffice d'afficher le compte connecté.
 
 Keycloak précise que Direct Access Grant ne fait pas partie d'OpenID Connect et qu'il est
 retiré d'OAuth 2.1; ce client local ne doit pas devenir un flux de connexion applicatif
@@ -94,5 +97,10 @@ Réinitialise le seul volume Keycloak pour importer le realm modifié. Ne donne 
 persona les rôles d'administration Keycloak : les rôles `Administration`, `Tri`, `Caisse`
 et `LivresRares` sont des rôles métier de l'API.
 
-Les frontends Angular conservent leur configuration MSAL/Entra locale. Les jetons Keycloak
-de ce dispositif servent aux appels de test directs vers l'API.
+En local, le BackOffice utilise Keycloak pour sa connexion navigateur et les API; le Website,
+Catalog et Scan conservent leur connexion Entra. En production, tous les frontends gardent
+Entra. Le realm charge `vpd-backoffice-local` uniquement quand son volume est initialisé.
+Un volume Keycloak déjà persistant ne récupère pas les nouveaux clients automatiquement :
+ajoute le client avec les mêmes paramètres dans la console d'administration, ou réimporte
+le realm après avoir arrêté Aspire et supprimé uniquement le volume Keycloak selon la
+procédure ci-dessus. Le client `vpd-local-test` reste réservé aux appels API automatisés.
