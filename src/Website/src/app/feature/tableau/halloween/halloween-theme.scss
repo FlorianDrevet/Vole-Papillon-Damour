@@ -380,6 +380,37 @@
 .fx .bat:nth-child(3) { opacity: .95; }
 .fx .bat:nth-child(4) { opacity: .7; }
 .hw.paused ~ .fx, .hw.paused ~ .fx * { animation-play-state: paused !important; }
+.fx .candy { position: absolute; top: 0; animation-name: hw-candy-fall; animation-fill-mode: both; }
+.fx .candy-spin { animation-name: hw-candy-spin; animation-timing-function: cubic-bezier(.3,.1,.6,1); animation-fill-mode: forwards; }
+.fx .candy svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+@keyframes hw-candy-fall {
+  0% { transform: translateY(-7.1vh); opacity: 1; animation-timing-function: cubic-bezier(.55,0,.9,.55); }
+  62% { transform: translateY(94.3vh); animation-timing-function: cubic-bezier(.2,.6,.4,1); }
+  70% { transform: translateY(90vh); animation-timing-function: cubic-bezier(.6,0,.9,.5); }
+  77% { transform: translateY(94.3vh); animation-timing-function: ease-out; }
+  81% { transform: translateY(93.1vh); animation-timing-function: ease-in; }
+  85% { transform: translateY(94.3vh); opacity: 1; }
+  100% { transform: translateY(94.3vh); opacity: 0; }
+}
+@keyframes hw-candy-spin { from { transform: rotate(0); } to { transform: rotate(520deg); } }
+.fx .pumpkin-party { position: absolute; inset: 0; }
+.fx .pk-rise { position: absolute; bottom: -12px; animation: hw-pk-rise 4.2s both; }
+@keyframes hw-pk-rise {
+  0% { transform: translateY(120%); animation-timing-function: cubic-bezier(.2,.9,.3,1.25); }
+  22% { transform: translateY(0); }
+  84% { transform: translateY(0); animation-timing-function: cubic-bezier(.6,0,.9,.4); }
+  100% { transform: translateY(130%); }
+}
+.fx .banner { position: absolute; top: 322px; right: 22px; left: 22px; display: flex; flex-direction: column; gap: 4px; padding: 16px 20px 18px; border-radius: 22px; background: var(--cire); box-shadow: 0 22px 48px rgba(0,0,0,.5); color: var(--encre); animation: hw-banner 4.2s both; }
+.fx .banner-title { color: #a83a06; font-family: 'Fraunces', Georgia, serif; font-size: 34px; font-style: italic; font-weight: 900; letter-spacing: -.01em; line-height: 1; }
+.fx .banner-lot { font-size: 17px; font-weight: 700; }
+@keyframes hw-banner {
+  0% { opacity: 0; transform: translateY(18px) scale(.9); }
+  9% { opacity: 1; transform: translateY(-3px) scale(1.03); }
+  15% { transform: translateY(0) scale(1); }
+  86% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
 
 @media (min-width: 540px) {
   .hw {

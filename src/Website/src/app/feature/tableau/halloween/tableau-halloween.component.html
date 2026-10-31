@@ -128,10 +128,42 @@
 
 @if (fx.moment() !== null || fx.interrupting()) {
   <div class="fx" [class.interrupting]="fx.interrupting()" #fxLayer aria-hidden="true">
-    @if (fx.moment()?.kind === 'numero') {
+    @if (fx.moment()?.kind === 'numero' || fx.moment()?.kind === 'bingo') {
       @for (size of batSizes; track $index) {
         <div class="bat"><vpd-chauve-souris [size]="size" mood="vol" /></div>
       }
+    }
+    @if (fx.moment()?.kind === 'line' || fx.moment()?.kind === 'bingo') {
+      <div class="candy-rain">
+        @for (candy of candies.slice(0, fx.moment()?.kind === 'bingo' ? 40 : 26); track candy.index) {
+          <div class="candy" [style.left.vw]="candy.leftVw" [style.width.px]="candy.width"
+               [style.animation-delay.s]="candy.delayRatio * (fx.moment()?.kind === 'bingo' ? 1.8 : 1.2)"
+               [style.animation-duration.s]="candy.duration">
+            <div class="candy-spin" [style.animation-duration.s]="candy.spin">
+              @switch (candy.kind) {
+                @case ('wrapped') {
+                  <svg viewBox="0 0 30 16" aria-hidden="true"><path d="M1 2 9 8 1 14Q3 8 1 2Z" [attr.fill]="candy.secondary"/><path d="M29 2 21 8 29 14Q27 8 29 2Z" [attr.fill]="candy.secondary"/><ellipse cx="15" cy="8" rx="7.5" ry="6.5" [attr.fill]="candy.primary"/><path d="M11.5 3.2Q15.5 8 12.5 12.8" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+                }
+                @case ('corn') {
+                  <svg viewBox="0 0 18 22" aria-hidden="true"><path d="M9 1 12.2 8H5.8Z" fill="#fff5e1"/><path d="M5.8 8h6.4L15 15H3Z" fill="#ff8c2e"/><path d="M3 15h12l2 4.5q-8 3-16 0Z" fill="#ffc94d"/></svg>
+                }
+                @case ('lollipop') {
+                  <svg viewBox="0 0 24 34" aria-hidden="true"><rect x="11" y="18" width="2" height="16" rx="1" fill="#f4e8cf"/><circle cx="12" cy="11" r="10" [attr.fill]="candy.primary"/><path d="M12 11m-1 0a1 1 0 1 1 2 0a3 3 0 1 1-5-1a5.5 5.5 0 1 1 9 4a8 8 0 1 1-14-4" [attr.stroke]="candy.secondary" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="pumpkin-party">
+        <div class="pk-rise" style="left: -16px; animation-delay: 0s"><vpd-citrouille [size]="130" mood="rire" /></div>
+        <div class="pk-rise" style="left: 118px; animation-delay: .12s"><vpd-citrouille [size]="156" mood="rire" /></div>
+        <div class="pk-rise" style="right: -16px; animation-delay: .24s"><vpd-citrouille [size]="130" mood="rire" /></div>
+      </div>
+      <div class="banner">
+        <span class="banner-title">{{ fx.moment()?.kind === 'bingo' ? 'Bingo !' : 'Ligne gagnée !' }}</span>
+        @if (lineLotName() !== null) { <span class="banner-lot">{{ lineLotName() }}</span> }
+      </div>
     }
   </div>
 }

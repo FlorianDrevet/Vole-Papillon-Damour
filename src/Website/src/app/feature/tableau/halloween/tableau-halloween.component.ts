@@ -39,6 +39,44 @@ const BAT_FLIGHTS: {duration: number; delay: number; frames: Keyframe[]}[] = [
   ]},
 ];
 
+const CANDY_COLORS = [
+  ['#ff8c2e', '#ffb347'],
+  ['#9bd85a', '#d7f2b0'],
+  ['#8b5cc7', '#d2b8f2'],
+  ['#f4e8cf', '#ff8c2e'],
+] as const;
+
+interface HalloweenCandy {
+  index: number;
+  kind: 'wrapped' | 'corn' | 'lollipop';
+  leftVw: number;
+  width: number;
+  delayRatio: number;
+  duration: number;
+  spin: number;
+  primary: string;
+  secondary: string;
+}
+
+function createCandies(): HalloweenCandy[] {
+  return Array.from({length: 40}, (_, index) => {
+    const kind = index % 3;
+    const duration = 2.3 + ((index * 13) % 10) / 10;
+    const colors = CANDY_COLORS[index % CANDY_COLORS.length];
+    return {
+      index,
+      kind: kind === 0 ? 'wrapped' : kind === 1 ? 'corn' : 'lollipop',
+      leftVw: ((((index * 73) % 350) + 6) / 390) * 100,
+      width: kind === 0 ? 30 : kind === 1 ? 18 : 22,
+      delayRatio: ((index * 37) % 100) / 100,
+      duration,
+      spin: duration * .62,
+      primary: colors[0],
+      secondary: colors[1],
+    };
+  });
+}
+
 @Component({
   selector: 'app-tableau-halloween',
   standalone: true,
@@ -58,6 +96,7 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
 
   protected readonly tombTilts = [-2, 1.5, -1, 2, -1.5];
   protected readonly batSizes = [78, 54, 112, 40, 60];
+  protected readonly candies = createCandies();
   private lastBatsKey: 'a' | 'b' | null = null;
 
   constructor() {
@@ -82,7 +121,7 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
   ngAfterViewChecked(): void {
     const moment = this.fx.moment();
     const key = this.fx.animationKey();
-    if (!isPlatformBrowser(this.platformId) || moment?.kind !== 'numero' || key === this.lastBatsKey) {
+    if (!isPlatformBrowser(this.platformId) || (moment?.kind !== 'numero' && moment?.kind !== 'bingo') || key === this.lastBatsKey) {
       return;
     }
 
@@ -102,9 +141,15 @@ export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
     return moment?.kind === 'undo' && moment.value === value && this.fx.animationKey() === key;
   }
 
+  protected lineLotName(): string | null {
+    const moment = this.fx.moment();
+    return moment?.kind === 'line' ? moment.lotName : null;
+  }
+
   private playBats(key: 'a' | 'b'): void {
     const moment = this.fx.moment();
-    if (moment?.kind !== 'numero' || this.fx.animationKey() !== key || this.preferences.calm()) {
+    if ((moment?.kind !== 'numero' && moment?.kind !== 'bingo')
+      || this.fx.animationKey() !== key || this.preferences.calm()) {
       return;
     }
 

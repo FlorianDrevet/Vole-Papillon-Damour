@@ -7,7 +7,7 @@ import {VpdEventModel} from '../../../shared/models/vpdEvent.model';
 import {HalloweenPreferences} from './halloween-preferences';
 import {TableauHalloweenComponent} from './tableau-halloween.component';
 
-function loto(partieType = 'Standard'): LotoEventSnapshot {
+function loto(partieType = 'Standard', lotWon = true, bingoWon = false): LotoEventSnapshot {
   const lastNumeros = partieType === 'PlusUnMoinsUn' ? [10, 21] : [5, 11, 18, 27, 39, 90];
   const liveNumeros = partieType === 'PlusUnMoinsUn' ? [10, 9, 11, 21, 20, 22] : lastNumeros;
   const partie: LotoPartieSnapshot = {
@@ -23,7 +23,7 @@ function loto(partieType = 'Standard'): LotoEventSnapshot {
       index: 0,
       numberLine: 'OneLine',
       lots: [
-        {id: 'lot-1', name: 'Bon d’achat', isWon: true},
+        {id: 'lot-1', name: 'Bon d’achat', isWon: lotWon ? true : null},
         {id: 'lot-2', name: 'Panier garni', isWon: null},
       ],
     }],
@@ -35,7 +35,7 @@ function loto(partieType = 'Standard'): LotoEventSnapshot {
     parties: [partie],
     currentPartieIndex: 0,
     bingoNumeros: [7, 19, 33, 58, 81],
-    bingoHasBeenWon: false,
+    bingoHasBeenWon: bingoWon,
   };
 }
 
@@ -44,13 +44,14 @@ describe('TableauHalloweenComponent', () => {
   let preferences: {
     calm: ReturnType<typeof signal<boolean>>;
     visible: ReturnType<typeof signal<boolean>>;
+    visibleSince: ReturnType<typeof signal<number>>;
     toggleCalm: jasmine.Spy;
   };
 
-  async function render(partieType = 'Standard'): Promise<HTMLElement> {
+  async function render(snapshot = loto()): Promise<HTMLElement> {
     fixture = TestBed.createComponent(TableauHalloweenComponent);
-    fixture.componentRef.setInput('view', buildLotoTableauView(loto(partieType)));
-    fixture.componentRef.setInput('event', {id: 'loto-1', name: 'Loto de test'} as unknown as VpdEventModel);
+    fixture.componentRef.setInput('view', buildLotoTableauView(snapshot));
+    fixture.componentRef.setInput('event', snapshot as unknown as VpdEventModel);
     fixture.componentRef.setInput('connection', 'live' as LiveTableauConnection);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
@@ -60,6 +61,7 @@ describe('TableauHalloweenComponent', () => {
     preferences = {
       calm: signal(false),
       visible: signal(true),
+      visibleSince: signal(Date.now() - 5000),
       toggleCalm: jasmine.createSpy('toggleCalm').and.callFake(() => preferences.calm.update(value => !value)),
     };
     await TestBed.configureTestingModule({
@@ -81,7 +83,7 @@ describe('TableauHalloweenComponent', () => {
   });
 
   it('marque les voisins du +1 / −1 avec leur anneau', async () => {
-    const element = await render('PlusUnMoinsUn');
+    const element = await render(loto('PlusUnMoinsUn'));
 
     const neighbourCells = Array.from(element.querySelectorAll('.cell.nb')).map(cell => cell.textContent?.trim());
     expect(neighbourCells).toEqual(['20', '22']);
@@ -127,5 +129,39 @@ describe('TableauHalloweenComponent', () => {
     fixture.detectChanges();
 
     expect(element.querySelector('.hw')?.classList.contains('paused')).toBeTrue();
+  });
+
+  it('joue une ligne gagnée avec trois citrouilles, 26 bonbons et le nom du lot', async () => {
+    const element = await render(loto('Standard', false));
+    const next = loto('Standard', true);
+    fixture.componentRef.setInput('view', buildLotoTableauView(next));
+    fixture.componentRef.setInput('event', next as unknown as VpdEventModel);
+    fixture.detectChanges();
+
+    expect(element.querySelectorAll('.fx .pk-rire').length).toBe(3);
+    expect(element.querySelectorAll('.fx .candy').length).toBe(26);
+    expect(element.querySelector('.fx .banner-title')?.textContent?.trim()).toBe('Ligne gagnée !');
+    expect(element.querySelector('.fx .banner-lot')?.textContent?.trim()).toBe('Bon d’achat');
+  });
+
+  it('joue un bingo avec 40 bonbons puis retire les effets après 5,2 secondes', async () => {
+    jasmine.clock().install();
+    try {
+      const element = await render(loto('Standard', true, false));
+      const next = loto('Standard', true, true);
+      fixture.componentRef.setInput('view', buildLotoTableauView(next));
+      fixture.componentRef.setInput('event', next as unknown as VpdEventModel);
+      fixture.detectChanges();
+
+      expect(element.querySelectorAll('.fx .candy').length).toBe(40);
+      expect(element.querySelectorAll('.fx .bat').length).toBe(5);
+      expect(element.querySelector('.fx .banner-title')?.textContent?.trim()).toBe('Bingo !');
+
+      jasmine.clock().tick(5200);
+      fixture.detectChanges();
+      expect(element.querySelector('.fx')).toBeNull();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 });
