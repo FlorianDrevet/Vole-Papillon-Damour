@@ -6,17 +6,17 @@ The basket calculates a total for manual payment; this app does not persist comp
 
 # ✨ Features
 - 📱 Android only: The supported target is `net10.0-android` for phones and tablets.
-- 📦 Distribution: the application is currently installed from the direct app build; a durable signing keystore and organized redistribution will be defined later.
+- 📦 Distribution: BackOffice serves a standalone Android APK that includes its managed assemblies.
 - 🔄 API Integration with Refit: Strongly-typed REST API clients using Refit
 - 🔓 No tablet sign-in: the deployed `GET /product` endpoint is public.
 - 💾 Offline catalog: available API products are cached locally using SQLite; cached disabled products are filtered out.
 - ⚡ MVVM Architecture: Built with CommunityToolkit.MVVM
 - ⚙️ Configuration management: Uses appsettings.json with Microsoft.Extensions.Configuration for flexible configuration.
 
-This APK is signed with the local Android debug key. The current package has the same app ID as
-the earlier APK but a different signing certificate, so uninstall an older installation before
-installing this build; uninstalling also clears the tablet's local product cache. A shared release
-key is needed for future in-place updates.
+The APK is currently signed with an Android debug key. Keep using the same signing certificate
+when replacing the BackOffice download so installed devices can update in place; uninstalling an
+older package with a different certificate clears its local product cache. A durable release key
+is still needed for a managed signing workflow.
 
 # 🛠️ Tech Stack
 
@@ -30,11 +30,12 @@ key is needed for future in-place updates.
 From the repository root:
 
 ```powershell
-dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android
+dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android --configuration Release -p:AndroidPackageFormat=apk
 ```
 
-The durable signing keystore and the organized APK redistribution channel are intentionally
-deferred. The current workflow uses the direct application build.
+`EmbedAssembliesIntoApk=true` is set in the project because BackOffice serves the APK as a direct download. This disables Fast Deployment and packages the managed assemblies inside the APK. The generated APK is available under `src/MauiCashApp/bin/Release/net10.0-android/`.
+
+The durable signing keystore and the organized APK redistribution channel are intentionally deferred. The current workflow uses the direct application build.
 
 # 📸 Screenshots
 

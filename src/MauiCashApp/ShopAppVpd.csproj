@@ -17,11 +17,13 @@
         <ApplicationId>com.companyname.shopappvpd</ApplicationId>
 
         <!-- Versions -->
-        <ApplicationDisplayVersion>1.1</ApplicationDisplayVersion>
-        <ApplicationVersion>2</ApplicationVersion>
+        <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
+        <ApplicationVersion>3</ApplicationVersion>
 
         <RuntimeIdentifiers>android-arm;android-arm64;android-x86;android-x64</RuntimeIdentifiers>
         <SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+        <!-- BackOffice distributes a standalone APK, outside ADB Fast Deployment. -->
+        <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
     </PropertyGroup>
 
     <ItemGroup>
