@@ -9,11 +9,11 @@
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-seasonal-events-page`
 - Branche : `feat/seasonal-events-page`, partie de `feat/halloween-loto-board` (dont elle
   dépend), à rebaser sur `main` après la fusion de cette dernière.
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/DCADrDqkqKp6tdcPExVMoV
 
 ## Statut
 
-- [ ] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
+- [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
 - [ ] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
 - [ ] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md)
 - [ ] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
