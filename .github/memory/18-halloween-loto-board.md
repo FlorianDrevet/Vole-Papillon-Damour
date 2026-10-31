@@ -17,6 +17,7 @@
 
 ## Verified validation (2026-10-31)
 
+- The implementation is under review in [PR #364](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/364); it is open and has not been merged.
 - Backend solution tests: 1,061 passed. Website ChromeHeadless tests: 148 passed; Website production build passes with existing initial-bundle/style/CommonJS warnings.
 - BackOffice production build passes and direct Angular tests pass 60/60. Its `npm test` wrapper still stops on two existing bootstrap-contract regex assertions before Angular tests run.
 - At CPU throttling ×4, the Bingo animation produced 159 sampled frame gaps; the maximum was 50 ms, with zero gaps over 50 ms and zero Long Tasks. Headless checks also confirmed hidden-page pause, reduced-motion/calm suppression, and no second ghost after same-page route navigation.
