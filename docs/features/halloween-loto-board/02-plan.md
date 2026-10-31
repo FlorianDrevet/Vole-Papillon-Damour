@@ -398,6 +398,69 @@ Dans `tableau-halloween.component.html`, selon `view.phase`, `view.intermission`
 
 ---
 
+## Tâche 12 bis — E6 : bandeau du jour en habit d'Halloween
+
+*Ajoutée le 2026-10-31, après la tâche 12 : à faire avant la validation finale.*
+
+**Maquette :** preview/Bandeau.html — zones E6-bandeau, E6-bandeau-mobile, E6-citrouille, E6-etat, E6-dernier-numero, E6-bouton-suivre, E6-araignee, E6-fantome-course, E6-chauves-souris
+
+**Fichiers**
+- API : `Application/Events/Common/TodayEventResult.cs` gagne `LiveTheme? LiveTheme` (renseigné
+  pour un loto seulement, dans `Queries/GetTodayEvent/GetTodayEventQueryHandler.cs`) ;
+  `Contracts/Events/Responses/TodayEventResponse.cs` gagne `public string? LiveTheme { get; set; }` ;
+  mapping dans `Api/Common/Mapping/EventMappingConfig.cs` (`TodayEventResult → TodayEventResponse`).
+  Mettre à jour la construction de `TodayEventResult` dans
+  `Api.tests/LiveTableau/LiveTableauEndpointTests.cs`.
+- Site : `src/Website/src/app/shared/models/today-event.model.ts` : `liveTheme?: 'Classic' | 'Halloween' | null`.
+- `src/Website/src/app/feature/tableau/halloween/halloween-preferences.ts` : rendre le service
+  utilisable hors du tableau (`providedIn: 'root'`), ou extraire la lecture de
+  `vpd.tableau.calm` et de `prefers-reduced-motion` dans une fonction partagée : le bandeau et
+  le tableau partagent **la même** préférence (RG-40).
+- `src/Website/src/app/core/layouts/today-banner/today-banner.component.{ts,html}` :
+  `halloween = computed(() => today()?.liveTheme === 'Halloween')`. Si vrai, rendre la
+  variante Halloween **sur toutes les largeurs** (RG-39), sinon le template actuel, inchangé.
+  La variante Halloween peut vivre dans un composant à part
+  (`today-banner/today-banner-halloween.component.*`, standalone) qui reçoit `today`,
+  `variant`, `schedule` et l'événement `close`.
+- Contenu et libellés mot pour mot de la maquette :
+  - « En direct » ou « Aujourd'hui », en Fraunces italique, sans pastille lumineuse ;
+  - le nom de l'événement, ou « Le loto est terminé, merci à tous ! » ;
+  - « Dernier numéro » suivi de la pastille citrouille ;
+  - « Suivre le tableau », « Voir l'événement », « Voir le tableau final » ;
+  - le bouton « Masquer le bandeau ».
+  Hauteur 56 px sur ordinateur ; sur téléphone, deux lignes comme aujourd'hui (RG-20 : pas de
+  saut de mise en page).
+- Décor, repris de `maquettes/sources/Bandeau.dc.html` :
+  - petite `vpd-citrouille` `idle` (34 px, 30 px sur téléphone) ;
+  - étoiles, petite lune, brume au bas, toile d'araignée au coin gauche ;
+  - araignée près du bouton de fermeture (cycle 18 s).
+  Tout porte `aria-hidden="true"`.
+- **Fantôme qui court** : `vpd-fantome` avec la nouvelle humeur `course`. Ajouter cette humeur
+  au composant de la tâche 8 depuis `sources/Fantome.dc.html` (`gh-run`, `gh-flutter`, bras qui
+  s'agite vite, regard devant). Il traverse le bandeau en 2,8 s (2,2 s sur téléphone), suivi de
+  trois petits nuages `puff`. Il passe **une fois par chargement de page** : un drapeau en
+  mémoire, dans un service racine, suffit. Pas de `sessionStorage` : RG-40 dit « par
+  chargement ».
+- **Nouveau numéro** : quand `today().lastNumero` change pendant que la page est ouverte (pas au
+  premier affichage), la pastille joue `chip-a` / `chip-b` et deux `vpd-chauve-souris` (30 et
+  22 px) traversent le bandeau (`hbat-1`, `hbat-2`).
+- Mode calme ou `prefers-reduced-motion` : décor figé, ni fantôme ni chauves-souris (RG-40).
+- Le bandeau reste absent de la page du tableau (RG-20) : rien à changer.
+
+**Tests d'abord**
+- `Application.tests` : le loto du jour réglé sur Halloween renvoie `LiveTheme = Halloween` ; un
+  événement d'un autre type renvoie `null`.
+- `today-banner.component.spec.ts` (à créer) :
+  - `liveTheme: 'Halloween'` → variante Halloween, avec « En direct » et le dernier numéro ;
+  - `Classic` ou absent → template actuel ;
+  - le fantôme est rendu au premier affichage, pas au second ;
+  - un changement de `lastNumero` rend deux chauves-souris ;
+  - en mode calme, ni fantôme ni chauves-souris.
+
+**Commit** : `feat(site): bandeau du jour en habit d'Halloween`
+
+---
+
 ## Tâche 13 — Validation complète et PR
 
 1. Tests backend et frontend de la tâche 0 : aucun nouvel échec.
@@ -410,8 +473,11 @@ Dans `tableau-halloween.component.html`, selon `view.phase`, `view.intermission`
    - enregistrement Performance pendant un bingo : pas d'image au-delà de 50 ms ;
    - onglet caché : animations en pause ;
    - mode calme et `prefers-reduced-motion` émulé : rien ne bouge en dehors des fondus ;
-   - en 1024 px : thème classique ; projection du backoffice inchangée.
-4. Captures d'écran 390 px de E2, des cinq moments de E3 et des états de E4 dans la PR.
+   - en 1024 px : thème classique pour le tableau ; projection du backoffice inchangée ;
+   - bandeau du jour (E6) en Halloween en 390 et 1440 px : le fantôme court une fois au
+     chargement, pas en naviguant ; deux chauves-souris à chaque nouveau numéro.
+4. Captures d'écran 390 px de E2, des cinq moments de E3 et des états de E4, et du bandeau E6
+   en 390 et 1440 px, dans la PR.
 5. Ouvrir la PR vers `main` en suivant `delivery-workflow`. La migration `AddEventLiveTheme`
    est à appliquer avant le déploiement du site.
 

@@ -38,8 +38,7 @@ s'en débarrasse.
 
 ## 3. Hors périmètre
 
-- La projection du backoffice (`evenement/:id/loto-tableau`) et le bandeau « Aujourd'hui » : ils
-  restent en thème classique.
+- La projection du backoffice (`evenement/:id/loto-tableau`) : elle reste en thème classique.
 - Le tableau en largeur tablette et ordinateur : il garde le thème classique (voir RG-26).
 - Le son et la vibration : aucun, ni par défaut ni en option (décision du 2026-10-31).
 - D'autres thèmes (Noël…) : le réglage est prévu pour en accueillir, mais seul Halloween est
@@ -87,6 +86,7 @@ s'en débarrasse.
 | **E3** | Animations d'événements (storyboards) : nouveau numéro, annulation, ligne gagnée, bingo, partie suivante | *nouveau* | — |
 | **E4** | États Halloween : avant le début, pause, terminé, chargement, reconnexion / hors ligne, introuvable | *modifié* | États de E4 de *loto-live-board* ; l'état « pause » est *nouveau* côté mobile |
 | **E5** | Bouton « Animations : pleines / calmes » | *nouveau* | Dans l'en-tête de E2 et E4 |
+| **E6** | Bandeau « Aujourd'hui » en habit d'Halloween | *modifié* | Bandeau du jour du site (`today-banner`, E5 de *loto-live-board*), ajouté le 2026-10-31 |
 
 ### E1 — Réglage du thème
 
@@ -150,6 +150,22 @@ Un petit bouton dans l'en-tête, à côté de l'état de connexion. En « calmes
 pose soignée, aucune animation d'événement ; les changements se lisent par un simple fondu des
 chiffres et des cases. Le choix est mémorisé sur le téléphone.
 
+### E6 — Bandeau « Aujourd'hui » en habit d'Halloween
+
+Même contenu, mêmes états (avant, en direct, terminé) et même bouton de fermeture que le bandeau
+actuel. Ce qui change :
+
+- Fond nuit, quelques étoiles, une petite lune, une brume qui glisse au ras du bas, une toile
+  d'araignée dans le coin gauche et une araignée qui descend de temps en temps près du bouton
+  de fermeture.
+- Une petite citrouille vivante (yeux qui clignent, bougie qui vacille) remplace l'étiquette en
+  capitales. « En direct » et « Aujourd'hui » s'écrivent en italique, sans pastille lumineuse.
+- Le dernier numéro est une pastille citrouille ; à chaque nouveau numéro, elle s'embrase et
+  deux petites chauves-souris traversent le bandeau.
+- **À l'arrivée sur le site**, un fantôme traverse le bandeau en courant, penché en avant,
+  bras qui s'agitent, avec une traînée de petits nuages derrière lui.
+- Bouton « Suivre le tableau » couleur cire.
+
 ## 7. Palette proposée
 
 Remplace la palette bleu nuit en mode Halloween uniquement.
@@ -186,6 +202,8 @@ La maquette présente cette palette et une variante plus « sang et os » pour c
 | **RG-36** | Sécurité visuelle : aucun clignotement de plus de trois éclats par seconde, aucun flash plein écran. |
 | **RG-37** | Fluidité et batterie : le décor tient 60 images par seconde sur un téléphone Android d'entrée de gamme de trois ans ; il s'arrête quand la page n'est pas visible ; une pluie de bonbons compte au plus 40 bonbons à la fois. La page n'ajoute pas plus de 150 Ko au premier chargement du tableau. |
 | **RG-38** | Le mode Halloween n'a ni son ni vibration. |
+| **RG-39** | Le bandeau du jour (E6) prend l'habit d'Halloween quand l'événement du jour est un loto réglé sur Halloween, **sur toutes les largeurs** (contrairement au tableau, RG-26). Les règles du bandeau (RG-16 à RG-20 de *loto-live-board*) ne changent pas. |
+| **RG-40** | Le fantôme du bandeau court **une seule fois par chargement de page** du site, pas à chaque changement de page. Les chauves-souris du bandeau ne passent que sur un nouveau numéro reçu pendant que la page est ouverte. Mode calme (RG-34, même préférence que le tableau) ou réduction des animations : décor figé, ni fantôme ni chauves-souris. |
 
 ## 9. Critères d'acceptation
 
@@ -207,7 +225,10 @@ La maquette présente cette palette et une variante plus « sang et os » pour c
    dehors des fondus de données ; le choix survit au rechargement (RG-34).
 9. Contrastes, niveaux de gris et clignotements vérifiés sur les maquettes et la page réelle
    (RG-35, RG-36).
-10. Enregistrement de performance sur un profil « téléphone moyen » (processeur ralenti ×4) :
+10. Le jour d'un loto Halloween, le bandeau s'affiche en habit d'Halloween sur ordinateur et
+    téléphone ; le fantôme le traverse une fois au chargement, pas en naviguant entre les pages ;
+    un nouveau numéro fait passer deux chauves-souris (RG-39, RG-40).
+11. Enregistrement de performance sur un profil « téléphone moyen » (processeur ralenti ×4) :
     pas d'image au-delà de 50 ms pendant une pluie de bonbons ; décor arrêté en onglet caché
     (RG-37).
 

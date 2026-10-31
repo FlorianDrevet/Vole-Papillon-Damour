@@ -1,7 +1,8 @@
 # Maquettes — Tableau du loto, mode Halloween (mobile)
 
 - **Canvas Claude Design** : https://claude.ai/artifact/TPeyvSzwE6VHyT3ARtTUC5 (privé).
-  Exporté le 2026-10-31 depuis la version publiée `1793448898-dec6`.
+  Exporté le 2026-10-31 depuis la version publiée `1793451544-7dfa` (ajout du bandeau E6 et de
+  l'humeur `course` du fantôme).
 - **Aperçus** : ouvrir `preview/index.html` dans un navigateur donne le sommaire des écrans et
   de leurs zones. Chaque `preview/*.html` est autonome. `preview/Main.html` est **jouable** :
   les boutons à droite du téléphone simulent les messages du direct.
@@ -43,5 +44,6 @@
 | `Tableau.html` | E2 · Tableau en jeu + E5 | E2-retour, E2-etat-connexion, E2-dernier-numero, E2-scene-ciel, E2-citrouille, E2-precedents, E2-grille, E2-case-derniere, E2-araignee, E2-partie, E2-lots, E2-bingo, E2-feux-follets, E2-brume, E5-bouton-animations | § 6 E2, E5, RG-34, RG-35 |
 | `Main.html` | E3 · Démo jouable des moments | E2-ecran, E2-brume, E3-chauves-souris, E3-citrouilles-rire, E3-pluie-bonbons, E3-banniere, E3-fantome, E3-annonce-partie, E4-pause, E4-balai, E4-chaudron | § 6 E3, RG-27 à RG-33 |
 | `Etats.html` | E4 · États hors jeu | E4-avant, E4-cimetiere, E4-citrouille-endormie, E4-pause, E4-balai, E4-chaudron, E4-termine, E4-salut, E4-chargement, E4-reconnexion, E4-chauve-souris-endormie, E4-introuvable, E4-fantome-lanterne | § 6 E4, RG-13, RG-15, RG-31 |
+| `Bandeau.html` | E6 · Bandeau du jour (jouable) | E6-bandeau, E6-bandeau-mobile, E6-citrouille, E6-etat, E6-dernier-numero, E6-bouton-suivre, E6-araignee, E6-fantome-course, E6-chauves-souris | § 6 E6, RG-39, RG-40 |
 | `Palette.html` | Palette | P-proposition, P-variante (non retenue) | § 7 |
 | `Citrouille.html`, `ChauveSouris.html`, `Fantome.html`, `Chaudron.html` | Personnages | — | § 6 E2 à E4 |

@@ -15,6 +15,8 @@
   - partie suivante : un fantôme qui souffle la grille ;
   - pause, début et fin : leur scène propre.
 - **Calmer :** un bouton fige les animations.
+- **Bandeau du jour :** le jour du loto, le bandeau en haut du site passe lui aussi en Halloween,
+  sur toutes les largeurs. À l'arrivée, un fantôme le traverse en courant.
 - **Ce qui ne change pas :** la projection du backoffice et le tableau sur tablette ou
   ordinateur.
 
@@ -32,7 +34,8 @@ PR avec ce qui reste à faire.
 
 1. `docs/features/halloween-loto-board/01-fonctionnel.md` : **la spec, elle fait foi**. Elle
    reprend RG-01 à RG-24 de `loto-live-board` et ajoute RG-25 à RG-38.
-2. `docs/features/halloween-loto-board/02-plan.md` : **le plan à exécuter** (tâches 0 à 13).
+2. `docs/features/halloween-loto-board/02-plan.md` : **le plan à exécuter** (tâches 0 à 13, plus
+   la tâche 12 bis, ajoutée le 2026-10-31 : le bandeau du jour).
 3. `docs/features/halloween-loto-board/maquettes/README.md`, puis
    `maquettes/preview/index.html`. Ouvrir `preview/Main.html` et cliquer les boutons : c'est
    la référence de rythme et de mouvement.
@@ -55,9 +58,11 @@ PR avec ce qui reste à faire.
 | 10 | `Main.html` | `E3-citrouilles-rire`, `E3-pluie-bonbons`, `E3-banniere` |
 | 11 | `Main.html` | `E3-fantome`, `E3-annonce-partie` |
 | 12 | `Etats.html`, `Main.html` | `E4-*` |
+| 12 bis | `Bandeau.html` | `E6-*` |
 
 Largeurs de vérification : 390 × 844 pour le mode Halloween, et 1024 px pour vérifier que le
-thème classique est conservé.
+thème classique est conservé. Le bandeau E6 se vérifie en 390 et 1440 px : il est en Halloween
+sur toutes les largeurs.
 
 ## Spécifique à cette feature
 
@@ -74,7 +79,9 @@ thème classique est conservé.
   - 26 bonbons pour une ligne, 40 au plus pour le bingo.
   - Aucune animation pendant 3 s après le retour de la page au premier plan.
   - La grille reste gelée au plus 2 s, ou 6,5 s après une ligne qui termine la partie.
-  - Clé `localStorage` du bouton Calmer : `vpd.tableau.calm`.
+  - Clé `localStorage` du bouton Calmer : `vpd.tableau.calm`. Le tableau et le bandeau
+    partagent cette préférence.
+  - Fantôme du bandeau : une fois par chargement de page, en 2,8 s (2,2 s sur téléphone).
 - **Interdits :**
   - Aucune nouvelle dépendance npm (pas de Motion, Lottie ni canvas).
   - Aucune image matricielle ni vidéo : tout est en SVG et CSS.
