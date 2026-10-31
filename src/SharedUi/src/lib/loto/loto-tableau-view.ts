@@ -28,6 +28,7 @@ export interface LotoPartieSnapshot {
   pauseAfter: boolean;
   lastNumeros: number[];
   liveNumeros: number[];
+  /** Position in lineParties after sorting by each line's index. */
   currentLineIndex: number;
   lineParties: LotoLineSnapshot[];
 }
@@ -109,7 +110,9 @@ export function buildLotoTableauView(event: LotoEventSnapshot | null): LotoTable
   const parties = [...(event?.parties ?? [])].sort((a, b) => a.index - b.index);
   const current = event === null ? undefined : parties.find(partie => partie.index === event.currentPartieIndex);
   const phase = resolvePhase(event, parties, current);
-  const line = current?.lineParties.find(candidate => candidate.index === current.currentLineIndex);
+  const line = current === undefined
+    ? undefined
+    : [...current.lineParties].sort((a, b) => a.index - b.index)[current.currentLineIndex];
   const lastNumero = current?.lastNumeros.at(-1) ?? null;
   const neighbours = current ? neighboursOf(current) : [];
   const previousPartie = current === undefined

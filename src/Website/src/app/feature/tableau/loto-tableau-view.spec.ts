@@ -120,4 +120,18 @@ describe('buildLotoTableauView', () => {
 
     expect(view.showBingo).toBeFalse();
   });
+
+  it('affiche une partie carton plein seule malgré son index de ligne 2', () => {
+    const current = partie(0, {
+      partieType: 'CartonPlein',
+      lineParties: [
+        {index: 2, numberLine: 'CartonPlein', lots: [{id: 'lot-final', name: 'Séjour', isWon: null}]},
+      ],
+    });
+
+    const view = buildLotoTableauView(loto([current]));
+
+    expect(view.lineLabel).toBe('Carton plein');
+    expect(view.lots).toEqual([{id: 'lot-final', name: 'Séjour', won: false}]);
+  });
 });
