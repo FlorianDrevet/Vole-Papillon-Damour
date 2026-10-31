@@ -16,5 +16,12 @@
 .gh .lamp { animation: gh-lamp 2s linear infinite; }
 @keyframes gh-lamp { 0%,100% { opacity: 1; } 23% { opacity: .82; } 41% { opacity: .96; } 64% { opacity: .78; } 82% { opacity: .95; } }
 .gh .wave, .gh .lantern, .gh .lantern-arm { display: none; }
+.gh-course .float { animation: gh-run .3s ease-in-out infinite alternate; }
+@keyframes gh-run { from { transform: translateY(-2px) rotate(8deg); } to { transform: translateY(2px) rotate(12deg); } }
+.gh-course .skirt { animation: gh-flutter .18s linear infinite alternate; }
+@keyframes gh-flutter { from { transform: skewX(-18deg); } to { transform: skewX(-10deg); } }
+.gh-course .pupils { animation: none; transform: translate(3px,0); }
+.gh-course .mouth { animation: gh-oh .3s ease-in-out infinite; }
+.gh-course .wave { display: inline; animation: gh-wave .2s ease-in-out infinite alternate; }
 .gh-coucou .wave { display: inline; }
 .gh-lanterne .lantern, .gh-lanterne .lantern-arm { display: inline; }

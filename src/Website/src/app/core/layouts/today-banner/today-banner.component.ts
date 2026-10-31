@@ -22,6 +22,7 @@ export class TodayBannerComponent implements OnInit {
   private readonly dismissal = signal<TodayBannerDismissal | null>(null);
 
   protected readonly today = this.todayEvent.today;
+  protected readonly halloween = computed(() => this.today()?.liveTheme === 'Halloween');
   protected readonly variant = computed(() => {
     const today = this.today();
     return today === null ? null : todayBannerVariant(today);

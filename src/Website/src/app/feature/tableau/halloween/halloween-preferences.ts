@@ -3,7 +3,7 @@ import {isPlatformBrowser} from '@angular/common';
 
 const CALM_STORAGE_KEY = 'vpd.tableau.calm';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class HalloweenPreferences {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);

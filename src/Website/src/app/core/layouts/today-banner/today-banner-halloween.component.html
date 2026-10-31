@@ -1,0 +1,54 @@
+<div class="hb" [class.calm]="calm()" role="region" aria-label="Événement du jour">
+  <div class="hb-decor deco" aria-hidden="true">
+    <svg class="web" viewBox="0 0 34 34" fill="none" stroke="rgba(232,220,245,.3)" stroke-width=".8"><path d="M0 0 34 0M0 0 28 20M0 0 14 34M0 0 0 34"/><path d="M10 0Q9 6 6 8Q3 10 0 10M20 0Q19 11 13 16Q7 20 0 20M30 0Q28 16 20 24Q11 31 0 30"/></svg>
+    <span class="star star-1"></span><span class="star star-2"></span><span class="star star-3"></span><span class="star star-4"></span>
+    <div class="moon"></div><div class="fog"></div>
+    <div class="spider"><i></i><svg viewBox="0 0 24 22"><g class="legs" stroke="#0c0612" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M9 9C5 6 3 4 1 5M9 11C5 10 2 10 0 12M9 12.5C6 14 4 16 2 19M15 9C19 6 21 4 23 5M15 11C19 10 22 10 24 12M15 12.5C18 14 20 16 22 19"/></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".9"/><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".9"/></svg></div>
+  </div>
+
+  <div class="hb-first">
+    <div class="hb-pumpkin deco" aria-hidden="true"><vpd-citrouille [size]="34" mood="idle" /></div>
+    @if (variant === 'live') {
+      <span class="hb-k hb-k-live">En direct</span>
+    } @else {
+      <span class="hb-k hb-k-day">Aujourd'hui</span>
+    }
+    <span class="hb-name">{{ variant === 'finished' ? 'Le loto est terminé, merci à tous !' : today.name }}</span>
+    <button type="button" class="close" (click)="close.emit()" aria-label="Masquer le bandeau">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+  </div>
+
+  <div class="hb-second">
+    @switch (variant) {
+      @case ('live') {
+        <span class="hb-last">Dernier numéro <span class="last-chip" [class.chip-a]="batsActive() && animationKey() === 'a'" [class.chip-b]="batsActive() && animationKey() === 'b'">{{ today.lastNumero ?? '—' }}</span></span>
+        <a class="follow" [routerLink]="['/evenement', today.id, 'tableau']">Suivre le tableau <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      }
+      @case ('finished') {
+        <a class="link-final" [routerLink]="['/evenement', today.id, 'tableau']">Voir le tableau final</a>
+      }
+      @default {
+        @if (schedule) { <span class="hb-schedule">{{ schedule }}</span> }
+        <a class="link-event" [routerLink]="['/evenement', today.id]">Voir l'événement</a>
+      }
+    }
+  </div>
+
+  @if (runnerActive() && !calm()) {
+    <div class="runner run-desktop" aria-hidden="true">
+      <span class="puff puff-1"></span><span class="puff puff-2"></span><span class="puff puff-3"></span>
+      <vpd-fantome [size]="46" mood="course" />
+    </div>
+    <div class="runner run-mobile" aria-hidden="true">
+      <span class="puff puff-1"></span><span class="puff puff-2"></span><span class="puff puff-3"></span>
+      <vpd-fantome [size]="40" mood="course" />
+    </div>
+  }
+  @if (batsActive() && !calm()) {
+    <div class="bat-flight" aria-hidden="true">
+      <div class="hbat hbat-one" [style.animation-name]="'hbat-one-' + animationKey()"><vpd-chauve-souris [size]="30" mood="vol" /></div>
+      <div class="hbat hbat-two" [style.animation-name]="'hbat-two-' + animationKey()"><vpd-chauve-souris [size]="22" mood="vol" /></div>
+    </div>
+  }
+</div>

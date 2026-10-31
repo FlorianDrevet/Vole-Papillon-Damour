@@ -140,7 +140,8 @@ public sealed class LiveTableauEndpointTests
                 null,
                 "Arras",
                 LiveTableauStatus.Live,
-                42));
+                42,
+                new LiveTheme(LiveTheme.LiveThemeEnum.Halloween)));
         await using var application = CreateApplication(mediator, new LiveTableauHub(), LiveTableauTestEvents.CreateMapper());
 
         var context = await InvokeAsync(application, "/asso-events/today", null, TimeSpan.FromSeconds(5));
@@ -151,6 +152,7 @@ public sealed class LiveTableauEndpointTests
         json["eventType"]!.GetValue<string>().Should().Be("Bingo");
         json["liveStatus"]!.GetValue<string>().Should().Be("Live");
         json["lastNumero"]!.GetValue<int>().Should().Be(42);
+        json["liveTheme"]!.GetValue<string>().Should().Be("Halloween");
         json["city"]!.GetValue<string>().Should().Be("Arras");
     }
 

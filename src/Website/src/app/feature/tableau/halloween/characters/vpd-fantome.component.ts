@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 
-export type FantomeMood = 'flotte' | 'coucou' | 'lanterne';
+export type FantomeMood = 'flotte' | 'coucou' | 'lanterne' | 'course';
 
 @Component({
   selector: 'vpd-fantome',

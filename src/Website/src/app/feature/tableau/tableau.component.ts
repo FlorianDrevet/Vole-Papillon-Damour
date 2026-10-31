@@ -10,7 +10,7 @@ import {HalloweenPreferences} from './halloween/halloween-preferences';
     selector: 'app-tableau',
     templateUrl: './tableau.component.html',
     styleUrl: './tableau.component.scss',
-    providers: [SseClientService, HalloweenPreferences],
+    providers: [SseClientService],
     standalone: false
 })
 export class TableauComponent implements OnInit {

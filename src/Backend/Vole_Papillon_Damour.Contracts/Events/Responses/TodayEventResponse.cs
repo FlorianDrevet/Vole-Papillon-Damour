@@ -16,4 +16,7 @@ public class TodayEventResponse
     public string? LiveStatus { get; set; }
 
     public int? LastNumero { get; set; }
+
+    /// <summary><c>Classic</c> or <c>Halloween</c> for a loto; <c>null</c> otherwise.</summary>
+    public string? LiveTheme { get; set; }
 }

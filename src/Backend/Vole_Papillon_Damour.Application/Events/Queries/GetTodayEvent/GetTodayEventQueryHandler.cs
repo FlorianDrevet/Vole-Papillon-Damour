@@ -40,7 +40,8 @@ public class GetTodayEventQueryHandler(IEventRepository eventRepository, IDateTi
             todayEvent.HourCloseDoors,
             todayEvent.Adresse.City,
             isLoto ? todayEvent.GetLiveStatus() : null,
-            isLoto ? todayEvent.GetLastDrawnNumero() : null);
+            isLoto ? todayEvent.GetLastDrawnNumero() : null,
+            isLoto ? todayEvent.LiveTheme : null);
     }
 
     private static bool IsLoto(EventsType eventsType) =>

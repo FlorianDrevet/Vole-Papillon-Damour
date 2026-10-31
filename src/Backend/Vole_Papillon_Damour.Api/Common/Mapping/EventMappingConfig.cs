@@ -70,7 +70,8 @@ public class EventMappingConfig : IRegister
         config.NewConfig<TodayEventResult, TodayEventResponse>()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.EventType, src => src.EventsType.Value.ToString())
-            .Map(dest => dest.LiveStatus, src => src.LiveStatus == null ? null : src.LiveStatus.Value.ToString());
+            .Map(dest => dest.LiveStatus, src => src.LiveStatus == null ? null : src.LiveStatus.Value.ToString())
+            .Map(dest => dest.LiveTheme, src => src.LiveTheme == null ? null : src.LiveTheme.Value.ToString());
 
         config.NewConfig<AddPartieToEventRequest, AddPartieToEventCommand>()
             .Map(dest => dest.PartiesCommand, src => src.Partie);
