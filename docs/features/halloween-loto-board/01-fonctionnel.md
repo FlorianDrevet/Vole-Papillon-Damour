@@ -1,6 +1,6 @@
 # Tableau du loto : mode Halloween animé — spécification fonctionnelle
 
-> Statut : brouillon du 2026-10-31, à valider. Loto prévu le 2026-11-01.
+> Statut : validée le 2026-10-31. Loto prévu le 2026-11-01.
 > Étend [`loto-live-board/01-fonctionnel.md`](../loto-live-board/01-fonctionnel.md) : les règles
 > RG-01 à RG-24 restent valables, la numérotation continue à RG-25.
 
@@ -176,7 +176,7 @@ La maquette présente cette palette et une variante plus « sang et os » pour c
 | **RG-26** | Le mode Halloween ne s'affiche que sur le tableau public du site, et seulement en largeur téléphone (moins de 768 px). Au-delà, et sur la projection du backoffice, le thème classique s'affiche. |
 | **RG-27** | Les animations d'événement (E3) ne se jouent que sur un **changement reçu pendant que la page est ouverte**. Le premier affichage et le retour d'un téléphone sorti de veille montrent l'état directement, sans rejouer ce qui s'est passé. |
 | **RG-28** | Après une reconnexion qui rattrape plusieurs changements, une seule animation est jouée, la plus importante, dans cet ordre : bingo, ligne gagnée, partie suivante, nouveau numéro, annulation. |
-| **RG-29** | Les données ont toujours la priorité sur le décor : un nouvel état s'affiche **immédiatement**, même si une animation est en cours. Une animation en cours est écourtée en fondu quand une animation plus importante arrive, et laisse la suivante se jouer quand elle est de même rang. Les animations ne s'empilent jamais. |
+| **RG-29** | Les données ont toujours la priorité sur le décor : un nouvel état s'affiche **immédiatement**, même si une animation est en cours. Une animation en cours est écourtée en fondu quand une animation plus importante arrive, et laisse la suivante se jouer quand elle est de même rang. Les animations ne s'empilent jamais. Seule exception : à la partie suivante, les cases sorties s'éteignent derrière le fantôme, en 2 s au plus. |
 | **RG-30** | Aucun élément animé ne masque le dernier numéro plus de 0,3 s d'affilée, ni la case qui vient de s'allumer. Les bannières « Ligne gagnée ! » et « Bingo ! » se placent sous le dernier numéro. |
 | **RG-31** | **Pause** sur mobile : le tableau est en pause quand la partie précédente, marquée « pause après », est terminée et qu'aucun numéro n'est encore sorti dans la partie en cours. Il revient en jeu au premier numéro. *(Remplace, pour le mobile, la décision 3 de* loto-live-board *: la pause se déduit de l'état existant, sans nouvelle information envoyée.)* |
 | **RG-32** | **Partie suivante** : l'animation du fantôme se joue quand la partie en cours change et que le tableau se vide. Si la nouvelle partie commence par une pause (RG-31), le fantôme passe d'abord, puis l'écran Pause s'affiche. |
