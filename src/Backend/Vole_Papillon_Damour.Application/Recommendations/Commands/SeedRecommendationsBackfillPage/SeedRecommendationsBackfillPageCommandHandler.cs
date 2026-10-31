@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 
 namespace Vole_Papillon_Damour.Application.Recommendations.Commands.SeedRecommendationsBackfillPage;
@@ -28,19 +29,25 @@ public sealed class SeedRecommendationsBackfillPageCommandHandler(
             .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
         if (!string.IsNullOrWhiteSpace(request.Cursor))
         {
-            booksQuery = booksQuery.Where(book => book.Id.Value.CompareTo(request.Cursor) > 0);
+            if (!Isbn13.TryCreate(request.Cursor, out var cursor))
+            {
+                throw new ArgumentException("The backfill cursor must be a valid ISBN-13.", nameof(request.Cursor));
+            }
+
+            booksQuery = booksQuery.Where(book => book.Id > cursor);
         }
 
-        var books = await booksQuery
-            .OrderBy(book => book.Id.Value)
+        var bookIds = await booksQuery
+            .OrderBy(book => book.Id)
             .Take(PageSize)
-            .Select(book => book.Id.Value)
+            .Select(book => book.Id)
             .ToArrayAsync(cancellationToken);
-        if (books.Length == 0)
+        if (bookIds.Length == 0)
         {
             return new SeedRecommendationsBackfillPageResult(0, 0, null, true);
         }
 
+        var books = bookIds.Select(bookId => bookId.Value).ToArray();
         var jobs = await dbContext.BookRecommendationJobs
             .Where(job => books.Contains(job.Isbn13))
             .ToDictionaryAsync(job => job.Isbn13, cancellationToken);
@@ -55,7 +62,7 @@ public sealed class SeedRecommendationsBackfillPageCommandHandler(
                 jobs.Add(isbn13, job);
             }
 
-            if (job.Request(now))
+            if (job.Request(now, force: job.Status == BookRecommendationJobStatus.Failed))
             {
                 workItems.Add(new BookRecommendationQueueItem(isbn13, job.RequestVersion));
             }
@@ -68,7 +75,7 @@ public sealed class SeedRecommendationsBackfillPageCommandHandler(
         }
 
         var hasMore = books.Length == PageSize;
-        var nextCursor = hasMore ? books[^1] : null;
+        var nextCursor = hasMore ? bookIds[^1].Value : null;
         if (hasMore)
         {
             await workQueue.EnqueueBackfillPageAsync(request.BackfillId, nextCursor, cancellationToken);

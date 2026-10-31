@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -6,6 +7,8 @@ namespace Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 public static class WorkKey
 {
+    public const int MaximumLength = 200;
+
     private static readonly HashSet<string> GenericTitles = new(StringComparer.Ordinal)
     {
         "OEUVRES",
@@ -92,9 +95,17 @@ public static class WorkKey
             return null;
         }
 
-        return volume is null
+        var workKey = volume is null
             ? $"{normalizedTitle}|{authorSurname}"
             : $"{normalizedTitle}|{authorSurname}#{volume.Value}";
+
+        if (workKey.Length <= MaximumLength)
+        {
+            return workKey;
+        }
+
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(workKey)));
+        return $"~{hash}";
     }
 
     private static string? GetPrimaryAuthorSurname(string? authors)

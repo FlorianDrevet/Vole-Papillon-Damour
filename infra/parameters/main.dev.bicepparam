@@ -19,8 +19,8 @@ param containerRegistryCiPrincipalId = readEnvironmentVariable('ACR_CI_PRINCIPAL
 // -----------------------------------------------------------------------
 // Container Apps
 // -----------------------------------------------------------------------
-// Every image listens on 8080: the API through ASPNETCORE_URLS, the Website
-// through the SSR server's PORT, the BackOffice through nginx.conf.
+// The API, Website and BackOffice listen on 8080 through their app server or
+// nginx configuration. The Functions Worker uses the base image's port 80.
 // All six apps use ACA's minimum Consumption allocation: 0.25 vCPU and 0.5 GiB.
 
 param containerAppApiContainerRuntime = {
@@ -194,15 +194,16 @@ param containerAppWorkerContainerRuntime = {
   cpuCores: '0.25'
   memoryGi: '0.5Gi'
 }
-// P1-1 measures whether a timer-triggered Function wakes correctly with no
-// warm host. Keep one maximum replica while observing the production timer.
+// This Worker is deployed as a Container App without trigger-specific scale
+// rules. Keep one replica available so queue, Durable, and timer triggers keep
+// processing when HTTP ingress is idle.
 param containerAppWorkerScaling = {
-  minReplicas: 0
+  minReplicas: 1
   maxReplicas: 1
 }
 param containerAppWorkerIngress = {
   enabled: true
-  targetPort: 8080
+  targetPort: 80
   external: true
   transportMethod: 'auto'
 }

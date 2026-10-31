@@ -49,7 +49,7 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.Genre).HasMaxLength(100);
         builder.Property(book => book.Pages);
         builder.Property(book => book.Edition).HasMaxLength(100);
-        builder.Property(book => book.WorkKey).HasMaxLength(200);
+        builder.Property(book => book.WorkKey).HasMaxLength(WorkKey.MaximumLength);
         builder.Property(book => book.CoverUrl).HasMaxLength(2048);
         builder.Property(book => book.CoverSource)
             .HasConversion<byte>();

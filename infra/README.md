@@ -325,18 +325,23 @@ technique de secours. La caméra est activée seulement après autorisation du s
 Safari.
 
 Le worker est une Azure Function native sur Container Apps (`kind=functionapp`) avec
-ingress externe HTTPS sur le port `8080`. L'environnement ACA conserve le réseau managé
-externe sans VNet, NSG ni route de sortie personnalisée : ACA
+ingress HTTPS externe (443) routé vers le port `80` du conteneur Functions. L'image
+Functions écoute par défaut sur `80`; le `targetPort` ACA, les sondes par défaut et
+`EXPOSE` dans le Dockerfile doivent rester alignés sur ce port. L'environnement ACA
+conserve le réseau managé externe sans VNet, NSG ni route de sortie personnalisée : ACA
 autorise déjà l'egress Internet nécessaire à ISBNdb, BnF et Azure. Aucun réglage egress
 par application n'est nécessaire dans cette configuration. Il utilise l'outbox SQL,
-le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault et l'identité managée
-dédiée. Pendant `P1-1`, sa cible reste `minReplicas: 0`, `maxReplicas: 1`.
+le stockage Azure pour `AzureWebJobsStorage` et Key Vault comme backend des clés Functions
+(`AzureWebJobsSecretStorageType=keyvault`). L'identité managée du Worker utilise
+`AzureWebJobsSecretStorageKeyVaultClientId` et a `Key Vault Secrets Officer` uniquement sur
+le coffre dédié, afin que le host puisse créer et gérer ses clés. Pendant `P1-1`, sa cible
+reste `minReplicas: 0`, `maxReplicas: 1`.
 
-Le coffre `vpd-worker-fn-kv-dev-fc` est dédié à la clé cliente du rattrapage ISBNdb ; il
-ne contient aucun secret applicatif. L'opérateur de développement reçoit `Key Vault Secrets
-Officer` uniquement sur ce coffre. Après le déploiement de l'infrastructure et du nouvel artefact Worker, créer ou
-synchroniser la clé Functions dédiée et l'écrire localement avec des ACL Windows limitées
-à l'utilisateur et à SYSTEM :
+Le coffre `vpd-worker-fn-kv-dev-fc` contient les clés Functions et la clé cliente du
+rattrapage ISBNdb; il ne contient aucun secret applicatif. L'opérateur de développement
+reçoit aussi `Key Vault Secrets Officer` uniquement sur ce coffre. Après le déploiement de
+l'infrastructure et du nouvel artefact Worker, créer ou synchroniser la clé Functions
+dédiée et l'écrire localement avec des ACL Windows limitées à l'utilisateur et à SYSTEM :
 
 ```powershell
 ./infra/scripts/Sync-WorkerFunctionKey.ps1

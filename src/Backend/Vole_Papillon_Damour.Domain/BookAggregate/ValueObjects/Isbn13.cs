@@ -9,6 +9,12 @@ public readonly record struct Isbn13
 
     public string Value { get; }
 
+    public static bool operator <(Isbn13 left, Isbn13 right) =>
+        string.CompareOrdinal(left.Value, right.Value) < 0;
+
+    public static bool operator >(Isbn13 left, Isbn13 right) =>
+        string.CompareOrdinal(left.Value, right.Value) > 0;
+
     public static bool TryCreate(string? input, out Isbn13 isbn13)
     {
         isbn13 = default;
