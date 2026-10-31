@@ -715,6 +715,24 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
 - Static association, Maxence, and legal pages are prerendered; content-driven pages are
   server-rendered; the live `evenement/:id/tableau` route stays client-rendered for `EventSource`.
 
+## Website SSR memory incident (2026-10-31)
+
+- The public Website Container App reached 99% memory and exited with code 137 while
+  running at 0.25 vCPU / 0.5 GiB. The first observed spike followed an SSR visit to an
+  `/evenement/{id}` page, but that timing does not prove the route caused it. Traffic was
+  low and API calls were fast; no memory leak or expensive request has been confirmed.
+- The Website App Insights setup is browser-side, so its `requests` table does not describe
+  server renders. `src/Website/src/ssr-diagnostics.ts` now writes structured console records
+  for SSR start, every 10 seconds while in progress, and finish/close, with route (query
+  removed), duration, status, active SSR count, and RSS/heap/external/array-buffer snapshots
+  and deltas. Never add request headers, IP addresses, or query strings to these records.
+- `infra/parameters/main.dev.bicepparam` raises only the Website allocation to 0.5 vCPU /
+  1 GiB. Azure Container Apps applies its default HTTP scaling rule at 10 concurrent
+  requests when no custom rule is set; preserve the current scale policy until new logs
+  show whether concurrency contributes. [PR #373](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/373)
+  is open and not merged; no Azure change or deployment has been made. After merge, deploy
+  infrastructure and Website, then use the new console records to confirm the trigger.
+
 ## Data Access And Live Updates
 
 - BackOffice/Website use Axios; Scan uses typed `HttpClient`, derives its LAN API host on port

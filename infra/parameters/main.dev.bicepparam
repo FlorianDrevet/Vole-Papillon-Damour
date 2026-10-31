@@ -21,7 +21,9 @@ param containerRegistryCiPrincipalId = readEnvironmentVariable('ACR_CI_PRINCIPAL
 // -----------------------------------------------------------------------
 // The API, Website and BackOffice listen on 8080 through their app server or
 // nginx configuration. The Functions Worker uses the base image's port 80.
-// All six apps use ACA's minimum Consumption allocation: 0.25 vCPU and 0.5 GiB.
+// The Website renders Angular pages on the server and needs more headroom than
+// the other apps after production memory usage approached its 0.5 GiB limit.
+// The remaining five apps keep ACA's minimum Consumption allocation.
 
 param containerAppApiContainerRuntime = {
   cpuCores: '0.25'
@@ -53,8 +55,8 @@ param containerAppApiHealthProbes = {
 }
 
 param containerAppWebsiteContainerRuntime = {
-  cpuCores: '0.25'
-  memoryGi: '0.5Gi'
+  cpuCores: '0.5'
+  memoryGi: '1Gi'
 }
 param containerAppWebsiteScaling = {
   minReplicas: 1
