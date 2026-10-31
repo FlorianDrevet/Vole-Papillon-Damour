@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendrier des événements, ordinateur</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.ca{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.nav{display:flex;align-items:center;gap:14px}
+.arrow{width:48px;height:48px;border-radius:999px;border:1px solid #d9e9f4;background:#ffffff;color:#072b45;display:grid;place-items:center;cursor:pointer}
+.arrow:disabled{opacity:.35;cursor:default}
+.months{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px}
+.mo{display:flex;flex-direction:column;gap:14px;padding:26px 24px 24px;border-radius:26px;background:#ffffff;box-shadow:0 30px 60px -48px rgba(7,43,69,.55)}
+.mo h3{margin:0;display:flex;align-items:baseline;gap:8px}
+.mo h3 b{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:34px;color:#072b45}
+.mo h3 span{font-size:14px;color:#4d6a80}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-size:12px;font-weight:700;color:#7d97ab;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.c{position:relative;height:52px;border-radius:12px;display:grid;place-items:center;font-size:16px;font-weight:600;color:#33536e;border:0;background:transparent;padding:0;font-family:"Libre Franklin",sans-serif}
+.c-empty{visibility:hidden}
+.c-we{color:#7d97ab}
+button.c{cursor:pointer}
+.lit-a{animation:light-a .7s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d)}
+.lit-b{animation:light-b .7s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d)}
+@keyframes light-a{0%{opacity:0;transform:scale(.6);filter:brightness(2)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1);filter:none}}
+@keyframes light-b{0%{opacity:0;transform:scale(.6);filter:brightness(2)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1);filter:none}}
+.c-hw{background:#120a1c;color:#ff8c2e;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:22px;box-shadow:0 0 18px rgba(255,140,46,.45)}
+.c-hw .mini{position:absolute;right:-6px;bottom:-8px}
+.c-bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 12px,rgba(16,50,77,.09) 12px 13px);color:#10324d;font-family:Newsreader,Georgia,serif;font-size:20px;font-weight:500}
+.band-s{border-radius:12px 0 0 12px;box-shadow:4px 0 0 #f4ecdc}
+.band-m{border-radius:0;box-shadow:4px 0 0 #f4ecdc}
+.band-e{border-radius:0 12px 12px 0}
+.c-bk .pbm{position:absolute;top:-10px;left:-4px;width:18px}
+.pbm .l,.pbm .r{transform-origin:12px 9px;animation:pb-flap .34s ease-in-out infinite alternate}
+@keyframes pb-flap{to{transform:scaleX(.25)}}
+.c-lo{background:#0b2438;color:#ffffff;font-weight:800}
+.c-lo i{position:absolute;top:4px;right:5px;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ffffff 0 2.6px,#1497d6 2.8px)}
+.c-sel{outline:3px solid #f0801c;outline-offset:3px}
+.c:focus-visible{outline:3px solid #0c6ea6;outline-offset:3px}
+.legend{display:flex;gap:26px;font-size:14px;color:#33536e}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:22px;height:22px;border-radius:7px}
+
+.st{position:relative;overflow:hidden;display:grid;grid-template-columns:170px minmax(0,1fr) 280px;align-items:center;min-height:170px;border-radius:28px;text-decoration:none;animation:rise .45s cubic-bezier(.2,.9,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.dt{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tx{position:relative;display:flex;flex-direction:column;gap:6px;padding:24px 0}
+.deco{position:absolute;inset:0;pointer-events:none}
+.mas{position:absolute;right:40px;top:50%;transform:translateY(-50%)}
+.when{display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:999px;font-weight:800;font-size:13px;align-self:flex-start;margin-top:4px}
+.go{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:999px;font-weight:800;font-size:15px;text-decoration:none;align-self:flex-start;margin-top:8px}
+.hw{background:#120a1c;color:#f4e8cf}
+.hw .day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:80px;line-height:.85;color:#ff8c2e;font-variation-settings:"opsz" 144}
+.hw .wd{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:17px;color:#b8a5cf}
+.hw .ti{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:36px;line-height:1}
+.hw .me{font-size:16px;color:#d8cbe6}
+.hw .when{background:#ffb347;color:#1a0b22}
+.hw .go{background:#f4e8cf;color:#1a0b22}
+.bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 25px,rgba(16,50,77,.08) 25px 26px);color:#10324d}
+.bk .day{font-family:Newsreader,Georgia,serif;font-size:66px;line-height:.9}
+.bk .wd{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:17px;color:#5a7286}
+.bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:36px}
+.bk .me{font-size:16px;color:#4d6a80}
+.bk .when{background:#10324d;color:#f4ecdc}
+.bk .go{background:#10324d;color:#f4ecdc}
+.lo{background:#0b2438;color:#ffffff}
+.lo .day{font-size:68px;font-weight:800;line-height:.88;letter-spacing:-.04em}
+.lo .wd{font-size:16px;color:#9dc2da}
+.lo .ti{font-family:Newsreader,Georgia,serif;font-size:36px;line-height:1.05}
+.lo .me{font-size:16px;color:#c3dceb}
+.lo .go{background:#ffffff;color:#041d30}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+</style>
+</head>
+<body>
+<div class="ca" style="width: 1440px; min-height: 1180px; box-sizing: border-box; padding: 70px 64px 80px; display: flex; flex-direction: column; gap: 30px;" data-zone="E1-calendrier">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 30px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 56px; line-height: 1; color: #072b45;">L'agenda</h2>
+      <div role="group" aria-label="Affichage de l'agenda" style="display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: #e9f4fb; align-self: flex-start;" data-zone="E1-bascule-vue"><a href="Calendrier.html" aria-current="true" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #072b45; color: #ffffff; font-weight: 700; font-size: 15px; text-decoration: none;">Calendrier</a><a href="AgendaV2.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; color: #072b45; font-weight: 700; font-size: 15px; text-decoration: none;">Liste</a></div>
+      <div class="legend" data-zone="E1-legende"><span><i style="background: #120a1c; box-shadow: 0 0 10px rgba(255,140,46,.5);"></i>Loto d'Halloween</span><span><i style="background: #0b2438;"></i>Loto</span><span><i style="background: #f4ecdc; box-shadow: inset 0 0 0 1px #d9cbb0;"></i>Bourse aux livres</span></div>
+    </div>
+    <div class="nav" data-zone="E1-navigation-mois">
+      <button class="arrow" type="button" aria-label="Mois précédents" onClick="{{prev}}" disabled="{{atStart}}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 L5 8 L10 13"></path></svg></button>
+      <span style="min-width: 250px; text-align: center; font-size: 16px; font-weight: 600; color: #072b45;">{{range}}</span>
+      <button class="arrow" type="button" aria-label="Mois suivants" onClick="{{next}}" disabled="{{atEnd}}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3 L11 8 L6 13"></path></svg></button>
+    </div>
+  </div>
+
+  <div class="months">
+    <sc-for list="{{shown}}" as="m" hint-placeholder-count="3">
+      <section class="mo" data-zone="E1-mois-calendrier">
+        <h3><b>{{m.name}}</b><span>{{m.year}}</span></h3>
+        <div class="wk" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+        <div class="grid">
+          <sc-for list="{{m.cells}}" as="c" hint-placeholder-count="35">
+            <sc-if value="{{c.lit}}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="{{c.cls}}" style="--d: {{c.delay}}s;" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" data-zone="E1-jour-allume">{{c.day}}<sc-if value="{{c.isHw}}" hint-placeholder-val="{{ false }}"><span class="mini" aria-hidden="true"><dc-import name="Citrouille" size="24" mood="idle" hint-size="24px,22px"></dc-import></span></sc-if><sc-if value="{{c.isLo}}" hint-placeholder-val="{{ false }}"><i aria-hidden="true"></i></sc-if><sc-if value="{{c.butterfly}}" hint-placeholder-val="{{ false }}"><span class="pbm" aria-hidden="true"><dc-import name="Papillon" size="24" variant="a" hint-size="24px,19px"></dc-import></span></sc-if></button>
+            </sc-if>
+            <sc-if value="{{c.plain}}" hint-placeholder-val="{{ true }}"><span class="{{c.cls}}">{{c.day}}</span></sc-if>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{sel.isHw}}" hint-placeholder-val="{{ true }}">
+    <a class="st hw" href="#" data-zone="E1-detail-jour">
+      <span class="deco" aria-hidden="true"><span class="star" style="left: 480px; top: 30px;"></span><span class="star" style="left: 720px; top: 120px; animation-delay: -2s;"></span><span class="star" style="left: 900px; top: 40px; animation-delay: -3s;"></span><span class="mas"><dc-import name="Citrouille" size="140" mood="idle" hint-size="140px,128px"></dc-import></span><span style="position: absolute; right: 300px; top: 26px;"><dc-import name="ChauveSouris" size="52" hint-size="52px,26px"></dc-import></span></span>
+      <span class="dt"><span class="day">{{sel.day}}</span><span class="wd">{{sel.wd}}</span></span>
+      <span class="tx"><span class="ti">{{sel.title}}</span><span class="me">{{sel.meta}}</span><span class="go">Toutes les infos</span></span>
+      <span></span>
+    </a>
+  </sc-if>
+  <sc-if value="{{sel.isBooks}}" hint-placeholder-val="{{ false }}">
+    <a class="st bk" href="#" data-zone="E1-detail-jour">
+      <span class="deco" aria-hidden="true"><span class="mas"><dc-import name="Papillon" size="190" variant="a" hint-size="190px,147px"></dc-import></span></span>
+      <span class="dt"><span class="day">{{sel.day}}</span><span class="wd">{{sel.wd}}</span></span>
+      <span class="tx"><span class="ti">{{sel.title}}</span><span class="me">{{sel.meta}}</span><span class="go">Toutes les infos</span></span>
+      <span></span>
+    </a>
+  </sc-if>
+  <sc-if value="{{sel.isLoto}}" hint-placeholder-val="{{ false }}">
+    <a class="st lo" href="#" data-zone="E1-detail-jour">
+      <span class="deco" aria-hidden="true"><span class="mas"><dc-import name="BouleBingo" size="136" num="{{sel.day}}" color="bleu" hint-size="136px,136px"></dc-import></span></span>
+      <span class="dt"><span class="day">{{sel.day}}</span><span class="wd">{{sel.wd}}</span></span>
+      <span class="tx"><span class="ti">{{sel.title}}</span><span class="me">{{sel.meta}}</span><span class="go">Toutes les infos</span></span>
+      <span></span>
+    </a>
+  </sc-if>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Identités visuelles des événements</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.id{font-family:"Libre Franklin",system-ui,sans-serif}
+.card{display:flex;flex-direction:column;border-radius:28px;overflow:hidden;background:#ffffff;box-shadow:0 30px 60px -44px rgba(7,43,69,.6)}
+.scene{position:relative;height:300px;overflow:hidden}
+.body{display:flex;flex-direction:column;gap:12px;padding:22px 24px 26px}
+.name{margin:0;font-size:30px;line-height:1.05}
+.sub{margin:0;font-size:14px;line-height:1.5;color:#4d6a80}
+.sw{display:flex;gap:6px}
+.sw span{flex:1;height:48px;border-radius:10px;display:flex;align-items:flex-end;padding:6px;font-size:10px;font-weight:700;box-sizing:border-box}
+.where{font-size:13px;color:#33536e;line-height:1.5}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+.moon{position:absolute;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 50px 14px rgba(246,232,190,.14)}
+.ruled{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 27px,rgba(16,50,77,.09) 27px 28px);}
+.margin-line{position:absolute;top:0;bottom:0;left:46px;width:2px;background:rgba(229,112,42,.35)}
+.pb{position:absolute;width:26px;animation:pb-drift 14s ease-in-out infinite}
+.pb .l{transform-origin:12px 9px;animation:pb-flap .32s ease-in-out infinite alternate}
+.pb .r{transform-origin:12px 9px;animation:pb-flap .32s ease-in-out infinite alternate}
+@keyframes pb-flap{to{transform:scaleX(.25)}}
+@keyframes pb-drift{0%,100%{transform:translate(0,0) rotate(-8deg)}25%{transform:translate(40px,-26px) rotate(6deg)}50%{transform:translate(80px,4px) rotate(-4deg)}75%{transform:translate(30px,22px) rotate(8deg)}}
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(127,216,245,.13) 1.2px,transparent 1.6px);background-size:22px 22px}
+.ball{position:absolute;border-radius:50%;background:radial-gradient(circle at 36% 32%,#ffffff,#f3ead8 60%,#cdbf9f);display:grid;place-items:center;font-weight:800;color:#041d30;animation:float 6s ease-in-out infinite}
+.ball i{display:grid;place-items:center;width:52%;height:52%;border-radius:50%;background:#f0801c;font-style:normal}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+</style>
+</helmet>
+<div class="id" style="width: 1440px; height: 760px; box-sizing: border-box; padding: 40px; background: #eef4f8; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px;">
+  <article class="card" data-zone="ID-halloween">
+    <div class="scene" style="background: #120a1c;" aria-hidden="true">
+      <span class="star" style="left: 60px; top: 40px;"></span><span class="star" style="left: 180px; top: 80px; animation-delay: -2s;"></span><span class="star" style="left: 300px; top: 30px; animation-delay: -3s;"></span>
+      <div class="moon" style="top: 34px; right: 40px; width: 90px; height: 90px;"></div>
+      <div style="position: absolute; left: 30px; top: 70px;"><dc-import name="ChauveSouris" size="70" hint-size="70px,35px"></dc-import></div>
+      <div style="position: absolute; left: 40px; bottom: 14px;"><dc-import name="Citrouille" size="150" mood="idle" hint-size="150px,137px"></dc-import></div>
+      <div style="position: absolute; right: 50px; bottom: 30px;"><dc-import name="Fantome" size="110" mood="coucou" hint-size="110px,124px"></dc-import></div>
+    </div>
+    <div class="body">
+      <h3 class="name" style="font-family: Fraunces, Georgia, serif; font-weight: 900; color: #1a0b22;">Nuit de citrouille</h3>
+      <p class="sub">Thème Halloween d'un loto. Joyeux plus qu'effrayant.</p>
+      <div class="sw"><span style="background: #120a1c; color: #f4e8cf;">Nuit</span><span style="background: #ff8c2e;">Citrouille</span><span style="background: #f4e8cf;">Cire</span><span style="background: #9bd85a;">Sorcière</span><span style="background: #5b3482; color: #f4e8cf;">Prune</span></div>
+      <span class="where">Citrouille, chauve-souris, fantôme, araignée, lune, brume.</span>
+    </div>
+  </article>
+
+  <article class="card" data-zone="ID-bourse">
+    <div class="scene ruled" aria-hidden="true">
+      <span class="margin-line"></span>
+      <div class="pb" style="left: 64px; top: 40px; width: 46px;"><dc-import name="Papillon" size="46" variant="a" hint-size="46px,36px"></dc-import></div>
+      <div class="pb" style="left: 300px; top: 206px; width: 34px; animation-delay: -6s;"><dc-import name="Papillon" size="34" variant="a" hint-size="34px,26px"></dc-import></div>
+      <div style="position: absolute; left: 50%; top: 50%; margin: -95px 0 0 -122px;" data-zone="ID-papillon"><dc-import name="Papillon" size="244" variant="a" hint-size="244px,189px"></dc-import></div>
+    </div>
+    <div class="body">
+      <h3 class="name" style="font-family: Newsreader, Georgia, serif; font-weight: 500; font-style: italic; color: #10324d;">Papier et papillons</h3>
+      <p class="sub">Identité de la bourse aux livres, toujours active. Un vrai papillon dont les ailes sont des pages, en écho au nom de l'association (proposition A, quatre au choix à côté).</p>
+      <div class="sw"><span style="background: #f4ecdc;">Papier</span><span style="background: #10324d; color: #f4ecdc;">Encre</span><span style="background: #8cc7e6;">Ciel</span><span style="background: #e5702a;">Signet</span><span style="background: #3d7a5f; color: #f4ecdc;">Reliure</span></div>
+      <span class="where">Papillon aux ailes de pages, petits papillons qui volent, lignes de cahier, marge orange.</span>
+    </div>
+  </article>
+
+  <article class="card" data-zone="ID-loto">
+    <div class="scene" style="background: #0b2438;" aria-hidden="true">
+      <span class="dots"></span>
+      <div style="position: absolute; left: 34px; top: 40px;"><dc-import name="BouleBingo" size="70" num="12" color="orange" hint-size="70px,70px"></dc-import></div>
+      <div style="position: absolute; left: 300px; top: 46px;"><dc-import name="BouleBingo" size="56" num="48" color="cyan" mood="pose" hint-size="56px,56px"></dc-import></div>
+      <div style="position: absolute; left: 318px; top: 180px;"><dc-import name="BouleBingo" size="62" num="90" color="orange" mood="pose" hint-size="62px,62px"></dc-import></div>
+      <div style="position: absolute; left: 50%; bottom: 14px; margin-left: -88px;" data-zone="ID-boule"><dc-import name="BouleBingo" size="176" num="7" color="bleu" hint-size="176px,176px"></dc-import></div>
+    </div>
+    <div class="body">
+      <h3 class="name" style="font-family: Newsreader, Georgia, serif; font-weight: 500; color: #072b45;">Boules et carton</h3>
+      <p class="sub">Identité d'un loto sans thème. Elle cède la place au thème de la fête quand il existe (Halloween aujourd'hui, Noël ou muguet demain).</p>
+      <div class="sw"><span style="background: #0b2438; color: #ffffff;">Nuit</span><span style="background: #1497d6; color: #ffffff;">Bleu asso</span><span style="background: #f0801c;">Orange</span><span style="background: #7fd8f5;">Cyan</span><span style="background: #ffffff;">Numéro</span></div>
+      <span class="where">Vraies boules de bingo aux couleurs de l'association, numéro imprimé dessus ; la bleue saute et cligne de l'œil. Trame de carton.</span>
+    </div>
+  </article>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

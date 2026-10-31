@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil mobile, cartes des prochains rendez-vous</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.am{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.cd{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:8px;min-height:190px;padding:20px 20px 18px;border-radius:14px;text-decoration:none;box-shadow:0 22px 36px -28px rgba(4,29,48,.6)}
+.top{position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:10px}
+.ti{position:relative;font-size:18px;font-weight:700}
+.me{position:relative;font-size:14px}
+.lk{position:relative;font-size:14px;font-weight:700;margin-top:2px}
+.deco{position:absolute;inset:0;pointer-events:none}
+.when{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;font-weight:800;font-size:12px}
+.hw{background:#120a1c;color:#f4e8cf}
+.hw .day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:54px;line-height:.85;color:#ff8c2e;text-shadow:0 0 20px rgba(255,140,46,.35)}
+.hw .mo{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:17px;color:#b8a5cf}
+.hw .top{box-shadow:inset 0 -1px 0 rgba(184,165,207,.3)}
+.hw .ti{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:21px}
+.hw .me{color:#d8cbe6}
+.hw .lk{color:#ffb347}
+.moon{position:absolute;top:16px;right:120px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 22px 6px rgba(246,232,190,.14)}
+.bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 21px,rgba(16,50,77,.09) 21px 22px);color:#10324d}
+.bk .margin{position:absolute;top:0;bottom:0;left:12px;width:2px;background:rgba(229,112,42,.4)}
+.bk .day{font-family:Newsreader,Georgia,serif;font-size:50px;line-height:.85}
+.bk .mo{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:17px;color:#5a7286}
+.bk .top{box-shadow:inset 0 -1.5px 0 rgba(16,50,77,.2)}
+.bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:21px}
+.bk .me{color:#4d6a80}
+.bk .lk{color:#0c6ea6}
+.flit{position:absolute;top:10px;right:12px;animation:flit 12s ease-in-out infinite}
+@keyframes flit{0%,100%{transform:translate(0,0) rotate(-6deg)}30%{transform:translate(-20px,12px) rotate(8deg)}60%{transform:translate(-6px,30px) rotate(-4deg)}}
+</style>
+</helmet>
+<div class="am" style="width: 390px; min-height: 1100px; box-sizing: border-box; padding: 40px 16px; display: flex; flex-direction: column; gap: 16px;" data-zone="E7-section">
+  <div style="display: flex; gap: 12px;"><span style="width: 3px; border-radius: 3px; background: linear-gradient(180deg, #1497d6, #7fd8f5 55%, #f0801c);"></span><div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .16em; color: #0c6ea6;">PROCHAINS RENDEZ-VOUS</span><span style="font-family: Newsreader, Georgia, serif; font-size: 32px; color: #072b45;">Venez nous voir.</span></div></div>
+  <div data-zone="E7-cartes" style="display: flex; flex-direction: column; gap: 14px;">
+    <a class="cd hw" href="#" data-zone="E7-carte-halloween">
+      <span class="deco" aria-hidden="true"><span class="moon"></span><span style="position: absolute; right: 6px; bottom: 4px;"><dc-import name="Citrouille" size="86" mood="idle" hint-size="86px,78px"></dc-import></span></span>
+      <span class="top"><span class="day">01</span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><span class="when" style="background: #ffb347; color: #1a0b22;">Demain</span><span class="mo">novembre</span></span></span>
+      <span class="ti">Loto d'halloween</span>
+      <span class="me">Saint Just Saint Rambert · 14:00</span>
+      <span class="lk">Détails</span>
+    </a>
+    <a class="cd bk" href="#" data-zone="E7-carte-bourse">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit"><dc-import name="Papillon" size="56" variant="a" hint-size="56px,43px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">11</span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-right: 60px;"><span class="when" style="background: #10324d; color: #f4ecdc;">Dans 11 jours</span><span class="mo">novembre</span></span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon · 14:00</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+    <a class="cd bk" href="#">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit" style="animation-delay: -5s;"><dc-import name="Papillon" size="50" variant="a" hint-size="50px,39px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">16</span><span class="mo" style="padding-right: 60px;">décembre</span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon · 14:00</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+  </div>
+  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #0c6ea6; padding: 8px 0;">TOUT L'AGENDA →</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

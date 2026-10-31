@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Page Événements, mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.pg{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.serif{font-family:Newsreader,Georgia,serif}
+.bn{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:8px 6px 8px 12px;background:#120a1c;color:#f4e8cf}
+.bn-k{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:600;font-size:16px;color:#ffb347;white-space:nowrap}
+.bn-n{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.x{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;background:transparent;color:#b8a5cf;margin-left:auto;flex-shrink:0}
+.hdr{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #e2eef7}
+.brand{font-family:Newsreader,Georgia,serif;font-size:20px;color:#072b45}
+.burger{width:44px;height:44px;border:0;background:transparent;display:grid;place-items:center;color:#072b45}
+.feat{position:relative;overflow:hidden;border-radius:26px;background:#120a1c;color:#f4e8cf;padding:24px 22px 26px;display:flex;flex-direction:column;gap:12px}
+.moon{position:absolute;top:22px;right:24px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 44px 12px rgba(246,232,190,.14);animation:moon 7s ease-in-out infinite}
+@keyframes moon{50%{box-shadow:0 0 60px 20px rgba(246,232,190,.2)}}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+.fog{position:absolute;left:0;bottom:-20px;width:200%;height:70px;background:radial-gradient(70px 30px at 10% 60%,rgba(200,180,235,.15),transparent),radial-gradient(100px 40px at 35% 70%,rgba(200,180,235,.12),transparent),radial-gradient(80px 30px at 62% 55%,rgba(200,180,235,.14),transparent),radial-gradient(110px 40px at 86% 70%,rgba(200,180,235,.11),transparent);animation:fog 40s linear infinite;pointer-events:none}
+@keyframes fog{to{transform:translateX(-50%)}}
+.runner{position:absolute;top:150px;left:0;width:54px;animation:run 2.6s cubic-bezier(.4,0,.7,1) both;pointer-events:none;z-index:3}
+@keyframes run{0%{transform:translate(-90px,0)}50%{transform:translate(170px,-12px)}100%{transform:translate(440px,4px)}}
+.puff{position:absolute;top:28px;border-radius:50%;background:rgba(232,222,250,.5);animation:puff .32s ease-out infinite}
+.p1{left:-12px;width:12px;height:12px}.p2{left:-26px;width:9px;height:9px;animation-delay:.1s}.p3{left:-38px;width:6px;height:6px;animation-delay:.2s}
+@keyframes puff{0%{transform:scale(1);opacity:.6}100%{transform:scale(.3) translateX(-8px);opacity:0}}
+.big{display:flex;align-items:baseline;gap:10px;position:relative}
+.big-day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:112px;line-height:.82;letter-spacing:-.05em;color:#ff8c2e;font-variation-settings:"opsz" 144;text-shadow:0 0 30px rgba(255,140,46,.3)}
+.big-m{display:flex;flex-direction:column}
+.big-m b{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:600;font-size:26px}
+.big-m span{font-size:15px;color:#b8a5cf}
+.when{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:999px;background:#ffb347;color:#1a0b22;font-weight:800;font-size:15px;align-self:flex-start;position:relative}
+.ftitle{margin:0;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:38px;line-height:1;letter-spacing:-.02em;position:relative}
+.fmeta{font-size:15px;line-height:1.45;color:#e6dcf0;position:relative}
+.btn-cire{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:999px;background:#f4e8cf;color:#1a0b22;font-weight:800;font-size:15px;text-decoration:none;position:relative}
+.btn-ghost{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:999px;border:0;background:#2a1c3a;color:#f4e8cf;font:700 15px "Libre Franklin",sans-serif;position:relative}
+.next{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:22px;background:#ffffff;box-shadow:0 26px 50px -40px rgba(7,43,69,.55)}
+.pill-ink{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;background:#072b45;color:#ffffff;font-weight:700;font-size:13px;align-self:flex-start}
+.filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.flt{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:999px;border:1px solid #d9e9f4;background:#ffffff;color:#072b45;font:600 15px "Libre Franklin",sans-serif;white-space:nowrap;flex-shrink:0}
+.flt span{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#e9f4fb;font-size:13px;font-weight:700}
+.flt-on{background:#072b45;border-color:#072b45;color:#ffffff}
+.flt-on span{background:#ffffff;color:#072b45}
+.month h3{margin:0;font-family:Newsreader,Georgia,serif;font-weight:500;font-size:24px;color:#072b45;padding:6px 0 10px;border-bottom:1px solid #d9e9f4}
+.row{display:grid;grid-template-columns:62px minmax(0,1fr) 16px;gap:14px;align-items:center;padding:14px 0;text-decoration:none;color:#041d30;box-shadow:inset 0 -1px 0 #e9f2f8}
+.d{display:flex;flex-direction:column;align-items:center;justify-content:center;height:62px;border-radius:14px;background:#f2f8fc}
+.d b{font-size:24px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.d small{font-size:12px;color:#4d6a80;margin-top:3px}
+.d-loto{background:#fdeedd}
+.ti{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ti strong{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
+.ti span{font-size:13px;color:#4d6a80}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+.tag-loto{color:#9a3f07}.tag-books{color:#0b5c8a}
+.cd{font-weight:800}
+</style>
+</helmet>
+<div class="pg" style="width: 390px; min-height: 2760px;">
+  <div class="bn" role="region" aria-label="Événement à venir" data-zone="E4-bandeau-mobile">
+    <div aria-hidden="true"><dc-import name="Citrouille" size="28" mood="idle" hint-size="28px,26px"></dc-import></div>
+    <span class="bn-k">Demain</span><span class="bn-n">Loto d'halloween</span>
+    <button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+  </div>
+  <header class="hdr"><span class="brand">Vole Papillon d'Amour</span><button class="burger" type="button" aria-label="Ouvrir le menu"><svg viewBox="0 0 20 20" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"></path></svg></button></header>
+
+  <section style="padding: 30px 16px 40px; display: flex; flex-direction: column; gap: 18px;" data-zone="E1-a-la-une">
+    <h1 class="serif" style="margin: 0; font-weight: 500; font-size: 38px; line-height: 1.02; letter-spacing: -.02em; color: #072b45;" data-zone="E1-titre">Nos prochains rendez-vous</h1>
+    <article class="feat" data-zone="E2-a-la-une-halloween">
+      <div aria-hidden="true" data-zone="E2-decor">
+        <span class="star" style="left: 150px; top: 30px;"></span><span class="star" style="left: 230px; top: 80px; animation-delay: -2s;"></span><span class="star" style="left: 300px; top: 150px; animation-delay: -3.4s;"></span>
+        <div class="moon"></div>
+        <div class="fog"></div>
+        <div style="position: absolute; right: 12px; top: 138px;" data-zone="E2-citrouille"><dc-import name="Citrouille" size="96" mood="idle" hint-size="96px,88px"></dc-import></div>
+      </div>
+      <sc-if value="{{run}}" hint-placeholder-val="{{ false }}">
+        <div class="runner" aria-hidden="true" data-zone="E2-fantome-course"><span class="puff p1"></span><span class="puff p2"></span><span class="puff p3"></span><dc-import name="Fantome" size="54" mood="course" hint-size="54px,61px"></dc-import></div>
+      </sc-if>
+      <div class="big" data-zone="E1-date-a-la-une"><span class="big-day">01</span><span class="big-m"><b>novembre</b><span>dimanche</span></span></div>
+      <span class="when" data-zone="E1-compte-a-rebours">Demain</span>
+      <span style="font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 17px; color: #b8a5cf; position: relative;">Loto</span>
+      <h2 class="ftitle">Loto d'halloween</h2>
+      <span class="fmeta">Saint Just Saint Rambert · ouverture à 12 h</span>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;" data-zone="E1-actions-a-la-une">
+        <a class="btn-cire" href="#">Toutes les infos</a>
+        <button class="btn-ghost" type="button" data-zone="E1-ajouter-agenda"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2.5"></rect><path d="M3 8h14M7 2.5v3M13 2.5v3M10 10.5v4M8 12.5h4"></path></svg>Ajouter à mon agenda</button>
+      </div>
+    </article>
+    <aside class="next" data-zone="E1-ensuite">
+      <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 18px; color: #33536e;">Ensuite</span>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 40px; font-weight: 800; letter-spacing: -.03em; color: #0c6ea6; line-height: 1;">11 → 16</span>
+        <span style="font-family: Newsreader, Georgia, serif; font-size: 20px; color: #072b45;">novembre</span>
+      </div>
+      <span class="pill-ink">Dans 11 jours</span>
+      <span style="font-size: 18px; font-weight: 700;">Bourse aux livres</span>
+      <span style="font-size: 14px; color: #33536e;">Andrézieux-Bouthéon · ouverture à 14 h</span>
+      <a href="#" style="font-size: 15px; font-weight: 700; color: #0c6ea6; padding: 10px 0;">Toutes les infos</a>
+    </aside>
+  </section>
+
+  <section style="background: #ffffff; padding: 36px 16px 44px; display: flex; flex-direction: column; gap: 18px;" data-zone="E1-agenda">
+    <h2 class="serif" style="margin: 0; font-weight: 500; font-size: 32px; color: #072b45;">L'agenda</h2>
+    <div class="filters" role="group" aria-label="Filtrer l'agenda" data-zone="E1-filtres">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}">{{f.label}} <span>{{f.count}}</span></button></sc-for>
+    </div>
+    <sc-for list="{{months}}" as="m" hint-placeholder-count="4">
+      <div class="month" data-zone="E1-mois">
+        <h3>{{m.label}}</h3>
+        <sc-for list="{{m.items}}" as="e" hint-placeholder-count="2">
+          <a class="row" href="#" data-zone="E1-ligne-agenda">
+            <span class="{{e.dCls}}"><b>{{e.day}}</b><small>{{e.wd}}</small></span>
+            <span class="ti">
+              <span class="{{e.tagCls}}">{{e.typeLabel}}<sc-if value="{{e.cdOn}}" hint-placeholder-val="{{ false }}"> · <span class="cd">{{e.cd}}</span></sc-if></span>
+              <strong>{{e.title}}<sc-if value="{{e.halloween}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex;" aria-label="Loto d'Halloween" data-zone="E1-pictogramme-theme"><dc-import name="Citrouille" size="24" mood="idle" hint-size="24px,22px"></dc-import></span></sc-if></strong>
+              <span>{{e.meta}}</span>
+            </span>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="#4d6a80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+          </a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <a href="#" style="font-size: 15px; font-weight: 700; color: #0c6ea6; padding: 10px 0;" data-zone="E1-editions-passees">Voir les éditions passées</a>
+  </section>
+
+  <section style="padding: 40px 16px; display: flex; flex-direction: column; gap: 18px;" data-zone="E1-nos-rendez-vous">
+    <h2 class="serif" style="margin: 0; font-weight: 500; font-size: 32px; color: #072b45;">Nos rendez-vous</h2>
+    <article style="border-radius: 22px; background: #ffffff; overflow: hidden; box-shadow: 0 26px 50px -42px rgba(7,43,69,.5);"><div style="height: 170px; background: #e9f4fb; display: grid; place-items: center; font-size: 13px; color: #4d6a80;">[Photos du loto]</div><div style="padding: 18px;"><h3 class="serif" style="margin: 0 0 8px; font-weight: 500; font-size: 26px; color: #072b45;">Le grand loto</h3><p style="margin: 0; font-size: 15px; line-height: 1.6; color: #33536e;">Une salle comble de plus de 500 personnes, un tableau lumineux, des cartons de loto alignés sur toutes les tables et cette petite montée d’adrénaline à chaque numéro annoncé…</p></div></article>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2760}}'>
+var EVENTS = [
+  { m: "Novembre 2026", day: "01", wd: "dim.", kind: "loto", title: "Loto d'halloween", meta: "Saint Just Saint Rambert · 12 h", cd: "Demain", halloween: true },
+  { m: "Novembre 2026", day: "11", wd: "→ 16", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon · 14 h", cd: "Dans 11 jours" },
+  { m: "Décembre 2026", day: "16", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Janvier 2027", day: "03", wd: "dim.", kind: "loto", title: "Loto de Maxence", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Janvier 2027", day: "20", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Février 2027", day: "21", wd: "dim.", kind: "loto", title: "Loto du carnaval de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Mars 2027", day: "03", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Avril 2027", day: "07", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Mai 2027", day: "01", wd: "sam.", kind: "loto", title: "Loto du 1er mai de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Mai 2027", day: "12", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: "all", run: false };
+    this.timers = [];
+  }
+  componentDidMount() {
+    this.timers.push(setTimeout(() => this.setState({ run: true }), 400));
+    this.timers.push(setTimeout(() => this.setState({ run: false }), 3200));
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  renderVals() {
+    var f = this.state.filter;
+    var months = [];
+    EVENTS.filter((e) => f === "all" || e.kind === f).forEach((e) => {
+      var last = months[months.length - 1];
+      var item = {
+        day: e.day, wd: e.wd, title: e.title, meta: e.meta, cd: e.cd, cdOn: !!e.cd, halloween: !!e.halloween,
+        typeLabel: e.kind === "loto" ? "Loto" : "Bourse aux livres",
+        tagCls: "tag " + (e.kind === "loto" ? "tag-loto" : "tag-books"),
+        dCls: "d" + (e.kind === "loto" ? " d-loto" : "")
+      };
+      if (last && last.label === e.m) { last.items.push(item); } else { months.push({ label: e.m, items: [item] }); }
+    });
+    var defs = [["all", "Tout"], ["loto", "Lotos"], ["books", "Bourses aux livres"]];
+    var filters = defs.map((d) => ({
+      label: d[1],
+      count: EVENTS.filter((e) => d[0] === "all" || e.kind === d[0]).length,
+      cls: "flt" + (f === d[0] ? " flt-on" : ""),
+      pressed: f === d[0] ? "true" : "false",
+      pick: () => this.setState({ filter: d[0] })
+    }));
+    return { months: months, filters: filters, run: this.state.run };
+  }
+}
+</script>
+</body>
+</html>

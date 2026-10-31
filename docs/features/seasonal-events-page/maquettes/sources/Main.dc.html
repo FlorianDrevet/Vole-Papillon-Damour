@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Page Événements, ordinateur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.pg{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.serif{font-family:Newsreader,Georgia,serif}
+.hdr{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 64px;background:#f7fbfe;border-bottom:1px solid #e2eef7}
+.brand{font-family:Newsreader,Georgia,serif;font-size:24px;color:#072b45}
+.nav{display:flex;gap:30px;font-size:15px;font-weight:600;color:#33536e}
+.nav a{color:#33536e;text-decoration:none}
+.nav .on{color:#072b45;box-shadow:inset 0 -2px 0 #f0801c;padding-bottom:4px}
+.help{height:42px;padding:0 20px;border:0;border-radius:999px;background:#f0801c;color:#041d30;font:700 15px "Libre Franklin",sans-serif}
+.wrap{padding:0 64px}
+
+.feat{position:relative;overflow:hidden;border-radius:30px;background:#120a1c;color:#f4e8cf;min-height:440px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;padding:44px 48px;box-sizing:border-box}
+.feat-sky{position:absolute;inset:0;pointer-events:none}
+.moon{position:absolute;top:34px;right:64px;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 60px 18px rgba(246,232,190,.14);animation:moon 7s ease-in-out infinite}
+@keyframes moon{50%{box-shadow:0 0 80px 26px rgba(246,232,190,.21)}}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+.cloud{position:absolute;left:0;fill:#251733}
+.cloud-1{top:96px;width:150px;animation:cloud 60s linear infinite}
+.cloud-2{top:150px;width:110px;animation:cloud 84s linear -40s infinite;opacity:.8}
+@keyframes cloud{from{transform:translateX(-160px)}to{transform:translateX(980px)}}
+.fog{position:absolute;left:0;bottom:-24px;width:200%;height:90px;background:radial-gradient(90px 40px at 10% 60%,rgba(200,180,235,.15),transparent),radial-gradient(130px 50px at 32% 70%,rgba(200,180,235,.12),transparent),radial-gradient(100px 40px at 58% 55%,rgba(200,180,235,.14),transparent),radial-gradient(140px 55px at 84% 70%,rgba(200,180,235,.11),transparent);animation:fog 44s linear infinite}
+@keyframes fog{to{transform:translateX(-50%)}}
+.spider{position:absolute;top:0;right:250px;width:18px}
+.spider i{position:absolute;left:8.5px;top:0;width:1px;height:110px;background:rgba(232,220,245,.5);transform-origin:50% 0;animation:th 22s ease-in-out infinite}
+.spider svg{position:absolute;left:0;top:0;width:18px;animation:dr 22s ease-in-out infinite}
+@keyframes dr{0%,62%{transform:translateY(-14px)}70%{transform:translateY(96px)}72%{transform:translateY(88px)}74%,86%{transform:translateY(96px)}95%,100%{transform:translateY(-14px)}}
+@keyframes th{0%,62%{transform:scaleY(0)}70%{transform:scaleY(1)}72%{transform:scaleY(.92)}74%,86%{transform:scaleY(1)}95%,100%{transform:scaleY(0)}}
+.runner{position:absolute;top:250px;left:0;width:70px;animation:run 3.2s cubic-bezier(.4,0,.7,1) both;pointer-events:none;z-index:3}
+@keyframes run{0%{transform:translate(-120px,0)}50%{transform:translate(420px,-18px)}100%{transform:translate(1000px,6px)}}
+.puff{position:absolute;top:36px;border-radius:50%;background:rgba(232,222,250,.5);animation:puff .32s ease-out infinite}
+.p1{left:-14px;width:16px;height:16px}.p2{left:-32px;width:12px;height:12px;animation-delay:.1s}.p3{left:-48px;width:8px;height:8px;animation-delay:.2s}
+@keyframes puff{0%{transform:scale(1);opacity:.6}100%{transform:scale(.3) translateX(-10px);opacity:0}}
+.big-day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:200px;line-height:.82;letter-spacing:-.05em;color:#ff8c2e;font-variation-settings:"opsz" 144;text-shadow:0 0 40px rgba(255,140,46,.3)}
+.big-month{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:600;font-size:38px;color:#f4e8cf;margin-top:6px}
+.big-wd{font-size:17px;color:#b8a5cf;margin-top:2px}
+.when{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:#ffb347;color:#1a0b22;font-weight:800;font-size:15px;align-self:flex-start}
+.ftype{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:19px;color:#b8a5cf}
+.ftitle{margin:0;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:58px;line-height:.98;letter-spacing:-.02em;color:#f4e8cf;max-width:13ch}
+.fmeta{font-size:17px;line-height:1.5;color:#e6dcf0}
+.btn-cire{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 22px;border-radius:999px;background:#f4e8cf;color:#1a0b22;font-weight:800;font-size:15px;text-decoration:none}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px;border-radius:999px;border:0;background:#2a1c3a;color:#f4e8cf;font:700 15px "Libre Franklin",sans-serif}
+
+.next{display:flex;flex-direction:column;gap:14px;padding:30px;border-radius:26px;background:#ffffff;box-shadow:0 30px 60px -44px rgba(7,43,69,.55)}
+.next-k{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:20px;color:#33536e}
+.next-date{display:flex;align-items:baseline;gap:12px}
+.next-day{font-size:64px;font-weight:800;line-height:.9;letter-spacing:-.03em;color:#0c6ea6;font-variant-numeric:tabular-nums}
+.next-month{font-family:Newsreader,Georgia,serif;font-size:26px;color:#072b45}
+.pill-ink{display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;background:#072b45;color:#ffffff;font-weight:700;font-size:14px;align-self:flex-start}
+.then{display:flex;flex-direction:column;border-top:1px solid #e2eef7;padding-top:6px}
+.then a{display:grid;grid-template-columns:62px minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;text-decoration:none;color:#072b45}
+.then b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.then small{display:block;font-size:13px;color:#4d6a80}
+
+.agenda{background:#ffffff;padding:80px 64px 90px;display:flex;flex-direction:column;gap:30px}
+.ag-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.flt{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:999px;border:1px solid #d9e9f4;background:#ffffff;color:#072b45;font:600 15px "Libre Franklin",sans-serif;cursor:pointer}
+.flt span{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#e9f4fb;font-size:13px;font-weight:700}
+.flt-on{background:#072b45;border-color:#072b45;color:#ffffff}
+.flt-on span{background:#ffffff;color:#072b45}
+.month{display:flex;flex-direction:column}
+.month h3{margin:0 0 6px;font-family:Newsreader,Georgia,serif;font-weight:500;font-size:28px;color:#072b45;padding-bottom:10px;border-bottom:1px solid #d9e9f4}
+.row{display:grid;grid-template-columns:120px 190px minmax(0,1fr) 150px 24px;gap:20px;align-items:center;padding:18px 16px;margin:0 -16px;border-radius:16px;text-decoration:none;color:#041d30}
+.row:hover{background:#f2f8fc}
+.row+.row{box-shadow:inset 0 1px 0 #e9f2f8}
+.d{display:flex;align-items:baseline;gap:10px}
+.d b{font-size:40px;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.d small{font-size:14px;color:#4d6a80}
+.type{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px;border-radius:999px;font-weight:700;font-size:14px;justify-self:start}
+.type-loto{background:#fdeedd;color:#9a3f07}
+.type-books{background:#e3f1fa;color:#0b5c8a}
+.ti{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ti strong{font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.ti span{font-size:14px;color:#4d6a80}
+.cd{font-size:14px;font-weight:700;color:#9a3f07;justify-self:end}
+.cd-blue{color:#0b5c8a}
+.past{font-size:15px;font-weight:700;color:#0c6ea6}
+
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.pillar{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;padding:24px;border-radius:24px;background:#ffffff;box-shadow:0 30px 60px -48px rgba(7,43,69,.5)}
+.ph{border-radius:16px;background:#e9f4fb;display:grid;place-items:center;font-size:13px;color:#4d6a80;min-height:220px;text-align:center;padding:12px}
+.pillar h3{margin:0 0 10px;font-family:Newsreader,Georgia,serif;font-weight:500;font-size:30px;color:#072b45}
+.pillar p{margin:0;font-size:15px;line-height:1.6;color:#33536e}
+.addr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.addr div{padding:26px;border-radius:22px;background:#ffffff;box-shadow:inset 0 0 0 1px #e2eef7}
+.addr h4{margin:0 0 4px;font-family:Newsreader,Georgia,serif;font-weight:500;font-size:24px;color:#072b45}
+.addr p{margin:0;font-size:15px;line-height:1.55;color:#33536e}
+</style>
+</helmet>
+<div class="pg" style="width: 1440px; min-height: 2560px;">
+  <header class="hdr"><span class="brand">Vole Papillon d'Amour</span><nav class="nav"><a href="#">Maxence</a><a href="#">L'association</a><a class="on" href="#">Événements</a><a href="#">Actualités</a><a href="#">Bourse aux livres</a></nav><button class="help" type="button">Nous aider</button></header>
+
+  <section class="wrap" style="padding-top: 64px; padding-bottom: 80px; display: flex; flex-direction: column; gap: 34px;" data-zone="E1-a-la-une">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+      <h1 class="serif" style="margin: 0; font-weight: 500; font-size: 64px; line-height: 1; letter-spacing: -.02em; color: #072b45;" data-zone="E1-titre">Nos prochains rendez-vous</h1>
+      <p style="margin: 0; max-width: 520px; font-size: 16px; line-height: 1.6; color: #33536e;">Deux grands rendez-vous rythment notre année – le loto et la bourse aux livres – ainsi que quelques autres dates au fil des saisons.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px; align-items: stretch;">
+      <article class="feat" data-zone="E2-a-la-une-halloween">
+        <div class="feat-sky" aria-hidden="true" data-zone="E2-decor">
+          <span class="star" style="left: 340px; top: 40px;"></span><span class="star" style="left: 520px; top: 28px; animation-delay: -2s;"></span><span class="star" style="left: 640px; top: 90px; animation-delay: -3.5s;"></span><span class="star" style="left: 420px; top: 120px; animation-delay: -1s;"></span><span class="star" style="left: 760px; top: 200px; animation-delay: -4s;"></span>
+          <div class="moon"></div>
+          <svg class="cloud cloud-1" viewBox="0 0 128 40"><path d="M10 34 C2 34 2 22 12 22 C12 12 26 8 34 16 C40 4 62 4 66 18 C74 10 92 14 92 24 C104 20 118 26 116 34 Z"></path></svg>
+          <svg class="cloud cloud-2" viewBox="0 0 128 40"><path d="M10 34 C2 34 2 22 12 22 C12 12 26 8 34 16 C40 4 62 4 66 18 C74 10 92 14 92 24 C104 20 118 26 116 34 Z"></path></svg>
+          <div class="spider"><i></i><svg viewBox="0 0 24 22"><g stroke="#0c0612" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M9 9 C5 6 3 4 1 5"></path><path d="M9 11 C5 10 2 10 0 12"></path><path d="M9 12.5 C6 14 4 16 2 19"></path><path d="M15 9 C19 6 21 4 23 5"></path><path d="M15 11 C19 10 22 10 24 12"></path><path d="M15 12.5 C18 14 20 16 22 19"></path></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".9"></ellipse><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".9"></circle></svg></div>
+          <div class="fog"></div>
+          <div style="position: absolute; right: 40px; bottom: 6px;" data-zone="E2-citrouille"><dc-import name="Citrouille" size="170" mood="idle" hint-size="170px,155px"></dc-import></div>
+        </div>
+        <sc-if value="{{run}}" hint-placeholder-val="{{ false }}">
+          <div class="runner" aria-hidden="true" data-zone="E2-fantome-course"><span class="puff p1"></span><span class="puff p2"></span><span class="puff p3"></span><dc-import name="Fantome" size="70" mood="course" hint-size="70px,79px"></dc-import></div>
+        </sc-if>
+        <div style="position: relative; display: flex; flex-direction: column;" data-zone="E1-date-a-la-une">
+          <span class="big-day">01</span>
+          <span class="big-month">novembre</span>
+          <span class="big-wd">dimanche</span>
+        </div>
+        <div style="position: relative; display: flex; flex-direction: column; gap: 14px; padding-top: 6px;">
+          <span class="when" data-zone="E1-compte-a-rebours">Demain</span>
+          <span class="ftype">Loto</span>
+          <h2 class="ftitle">Loto d'halloween</h2>
+          <span class="fmeta">Saint Just Saint Rambert · ouverture à 12 h</span>
+          <div style="display: flex; gap: 12px; margin-top: 10px;" data-zone="E1-actions-a-la-une">
+            <a class="btn-cire" href="#">Toutes les infos <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></a>
+            <button class="btn-ghost" type="button" data-zone="E1-ajouter-agenda"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2.5"></rect><path d="M3 8h14M7 2.5v3M13 2.5v3M10 10.5v4M8 12.5h4"></path></svg>Ajouter à mon agenda</button>
+          </div>
+        </div>
+      </article>
+
+      <aside class="next" data-zone="E1-ensuite">
+        <span class="next-k">Ensuite</span>
+        <div class="next-date"><span class="next-day">11 → 16</span></div>
+        <span class="next-month">novembre · du mercredi au lundi</span>
+        <span class="pill-ink">Dans 11 jours</span>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 20px; font-weight: 700;">Bourse aux livres</span>
+          <span style="font-size: 15px; color: #33536e;">Andrézieux-Bouthéon · ouverture à 14 h</span>
+        </div>
+        <a href="#" style="font-size: 15px; font-weight: 700; color: #0c6ea6;">Toutes les infos</a>
+        <div class="then">
+          <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 17px; color: #33536e; padding: 8px 0 2px;">Puis</span>
+          <a href="#"><b>16</b><span>Bourse aux livres<small>mercredi 16 décembre</small></span></a>
+          <a href="#"><b>03</b><span>Loto de Maxence<small>dimanche 3 janvier</small></span></a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="agenda" data-zone="E1-agenda">
+    <div class="ag-head">
+      <h2 class="serif" style="margin: 0; font-weight: 500; font-size: 44px; color: #072b45;">L'agenda</h2>
+      <div class="filters" role="group" aria-label="Filtrer l'agenda" data-zone="E1-filtres">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}">{{f.label}} <span>{{f.count}}</span></button></sc-for>
+      </div>
+    </div>
+    <sc-for list="{{months}}" as="m" hint-placeholder-count="4">
+      <div class="month" data-zone="E1-mois">
+        <h3>{{m.label}}</h3>
+        <sc-for list="{{m.items}}" as="e" hint-placeholder-count="2">
+          <a class="row" href="#" data-zone="E1-ligne-agenda">
+            <span class="d"><b>{{e.day}}</b><small>{{e.wd}}</small></span>
+            <span class="{{e.typeCls}}">
+              <sc-if value="{{e.isLoto}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="3.5" r="1.6"></circle><circle cx="8" cy="3.5" r="1.6"></circle><circle cx="12.5" cy="3.5" r="1.6"></circle><circle cx="3.5" cy="8" r="1.6"></circle><circle cx="8" cy="8" r="1.6"></circle><circle cx="12.5" cy="8" r="1.6"></circle><circle cx="3.5" cy="12.5" r="1.6"></circle><circle cx="8" cy="12.5" r="1.6"></circle><circle cx="12.5" cy="12.5" r="1.6"></circle></svg></sc-if>
+              <sc-if value="{{e.isBooks}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M8 4 C6 2.6 3.6 2.4 1.5 2.8 V13 C3.6 12.6 6 12.8 8 14.2 C10 12.8 12.4 12.6 14.5 13 V2.8 C12.4 2.4 10 2.6 8 4 Z M8 4 V14"></path></svg></sc-if>
+              {{e.typeLabel}}
+            </span>
+            <span class="ti"><strong>{{e.title}}<sc-if value="{{e.halloween}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex;" aria-label="Loto d'Halloween" data-zone="E1-pictogramme-theme"><dc-import name="Citrouille" size="28" mood="idle" hint-size="28px,26px"></dc-import></span></sc-if></strong><span>{{e.meta}}</span></span>
+            <span class="{{e.cdCls}}">{{e.cd}}</span>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="#4d6a80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+          </a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <a class="past" href="#" data-zone="E1-editions-passees">Voir les éditions passées</a>
+  </section>
+
+  <section class="wrap" style="padding-top: 80px; padding-bottom: 40px; display: flex; flex-direction: column; gap: 28px;" data-zone="E1-nos-rendez-vous">
+    <h2 class="serif" style="margin: 0; font-weight: 500; font-size: 44px; color: #072b45;">Nos rendez-vous</h2>
+    <div class="duo">
+      <article class="pillar"><div class="ph">[Photos du loto, celles d'aujourd'hui]</div><div><h3>Le grand loto</h3><p>Une salle comble de plus de 500 personnes, un tableau lumineux, des cartons de loto alignés sur toutes les tables et cette petite montée d’adrénaline à chaque numéro annoncé : notre loto est devenu le plus grand rendez-vous de l’année pour l’association.</p><a href="#" style="display: inline-block; margin-top: 14px; font-weight: 700; color: #0c6ea6;">Lire la suite</a></div></article>
+      <article class="pillar"><div class="ph">[Photos de la bourse aux livres]</div><div><h3>La bourse aux livres</h3><p>Toute l'année, vous nous déposez vos livres ; nos bénévoles les trient, les rangent par catégories et les remettent en vente le temps de quelques jours. Des milliers d'ouvrages à petits prix, et de quoi financer ce que personne d'autre ne prend en charge.</p></div></article>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top: 50px; padding-bottom: 90px; display: flex; flex-direction: column; gap: 28px;" data-zone="E1-nous-trouver">
+    <h2 class="serif" style="margin: 0; font-weight: 500; font-size: 44px; color: #072b45;">Nous trouver</h2>
+    <div class="addr">
+      <div><h4>Dépôt de livres · 24 h/24</h4><p>46 route de Saint-Marcellin, 42170 Saint-Just-Saint-Rambert. Vos livres y sont acceptés toute l'année, à toute heure.</p></div>
+      <div><h4>Foire aux livres</h4><p>Parc des Essarts, Andrézieux-Bouthéon. Le lieu de nos éditions : des milliers d'ouvrages à petits prix, le temps de quelques jours.</p></div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2560}}'>
+var EVENTS = [
+  { m: "Novembre 2026", day: "01", wd: "dim.", kind: "loto", title: "Loto d'halloween", meta: "Saint Just Saint Rambert · ouverture à 12 h", cd: "Demain", halloween: true },
+  { m: "Novembre 2026", day: "11 → 16", wd: "mer. → lun.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon · ouverture à 14 h", cd: "Dans 11 jours" },
+  { m: "Décembre 2026", day: "16", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Janvier 2027", day: "03", wd: "dim.", kind: "loto", title: "Loto de Maxence", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Janvier 2027", day: "20", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Février 2027", day: "21", wd: "dim.", kind: "loto", title: "Loto du carnaval de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Mars 2027", day: "03", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Avril 2027", day: "07", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Mai 2027", day: "01", wd: "sam.", kind: "loto", title: "Loto du 1er mai de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "" },
+  { m: "Mai 2027", day: "12", wd: "mer.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: "all", run: false };
+    this.timers = [];
+  }
+  componentDidMount() {
+    this.timers.push(setTimeout(() => this.setState({ run: true }), 400));
+    this.timers.push(setTimeout(() => this.setState({ run: false }), 3800));
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  renderVals() {
+    var f = this.state.filter;
+    var shown = EVENTS.filter((e) => f === "all" || e.kind === f);
+    var months = [];
+    shown.forEach((e) => {
+      var last = months[months.length - 1];
+      var item = {
+        day: e.day, wd: e.wd, title: e.title, meta: e.meta, cd: e.cd,
+        isLoto: e.kind === "loto", isBooks: e.kind === "books", halloween: !!e.halloween,
+        typeLabel: e.kind === "loto" ? "Loto" : "Bourse aux livres",
+        typeCls: "type " + (e.kind === "loto" ? "type-loto" : "type-books"),
+        cdCls: "cd" + (e.kind === "books" ? " cd-blue" : "")
+      };
+      if (last && last.label === e.m) { last.items.push(item); } else { months.push({ label: e.m, items: [item] }); }
+    });
+    var defs = [["all", "Tout"], ["loto", "Lotos"], ["books", "Bourses aux livres"]];
+    var filters = defs.map((d) => ({
+      label: d[1],
+      count: EVENTS.filter((e) => d[0] === "all" || e.kind === d[0]).length,
+      cls: "flt" + (f === d[0] ? " flt-on" : ""),
+      pressed: f === d[0] ? "true" : "false",
+      pick: () => this.setState({ filter: d[0] })
+    }));
+    return { months: months, filters: filters, run: this.state.run };
+  }
+}
+</script>
+</body>
+</html>

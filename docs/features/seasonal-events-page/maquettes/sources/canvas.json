@@ -1,0 +1,297 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-31T14:00:00Z"
+  },
+  "title": "Événements · agenda et thèmes",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 2560,
+      "title": "E1 + E2 · Page Événements — ordinateur (en-tête et À la une ; l'agenda est remplacé par Calendrier / Liste)",
+      "is_interactive": true
+    },
+    "Mobile.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 390,
+      "h": 2760,
+      "title": "E1 + E2 · Page Événements — mobile (en-tête et À la une ; agenda remplacé)",
+      "is_interactive": true
+    },
+    "AlaUneClassique.dc.html": {
+      "x": 0,
+      "y": 3160,
+      "w": 1440,
+      "h": 640,
+      "title": "E1 · À la une, rendez-vous classique — ordinateur"
+    },
+    "Etats.dc.html": {
+      "x": 1520,
+      "y": 3160,
+      "w": 860,
+      "h": 844,
+      "title": "E6 · États — mobile"
+    },
+    "FicheLoto.dc.html": {
+      "x": 0,
+      "y": 4410,
+      "w": 1440,
+      "h": 1460,
+      "title": "E3 · Fiche d'un loto Halloween — ordinateur et mobile"
+    },
+    "Bandeau.dc.html": {
+      "x": 0,
+      "y": 6290,
+      "w": 1440,
+      "h": 980,
+      "title": "E4 · Bandeau de J-14 au jour J — classique et Halloween"
+    },
+    "Backoffice.dc.html": {
+      "x": 1520,
+      "y": 6290,
+      "w": 760,
+      "h": 560,
+      "title": "E5 · Réglage « Thème du loto » — backoffice"
+    },
+    "Citrouille.dc.html": {
+      "x": 0,
+      "y": 7690,
+      "w": 220,
+      "h": 200,
+      "title": "Personnage · citrouille"
+    },
+    "Fantome.dc.html": {
+      "x": 300,
+      "y": 7690,
+      "w": 180,
+      "h": 220,
+      "title": "Personnage · fantôme"
+    },
+    "ChauveSouris.dc.html": {
+      "x": 560,
+      "y": 7690,
+      "w": 200,
+      "h": 110,
+      "title": "Personnage · chauve-souris"
+    },
+    "Identites.dc.html": {
+      "x": 0,
+      "y": 8300,
+      "w": 1440,
+      "h": 760,
+      "title": "Identités · Halloween, bourse aux livres, loto"
+    },
+    "AgendaV2.dc.html": {
+      "x": 0,
+      "y": 9400,
+      "w": 1440,
+      "h": 2240,
+      "title": "E1 v2 · Agenda en bandeaux thématiques — ordinateur",
+      "is_interactive": true
+    },
+    "AgendaV2Mobile.dc.html": {
+      "x": 1520,
+      "y": 9400,
+      "w": 390,
+      "h": 2300,
+      "title": "E1 v2 · Agenda en bandeaux — mobile",
+      "is_interactive": true
+    },
+    "Calendrier.dc.html": {
+      "x": 0,
+      "y": 12100,
+      "w": 1440,
+      "h": 1180,
+      "title": "E1 variante · Vrai calendrier — ordinateur",
+      "is_interactive": true
+    },
+    "CalendrierMobile.dc.html": {
+      "x": 1520,
+      "y": 12100,
+      "w": 390,
+      "h": 1500,
+      "title": "E1 variante · Vrai calendrier — mobile",
+      "is_interactive": true
+    },
+    "BouleBingo.dc.html": {
+      "x": 1360,
+      "y": 7690,
+      "w": 160,
+      "h": 160,
+      "title": "Personnage · boule de bingo v2"
+    },
+    "Papillon.dc.html": {
+      "x": 1600,
+      "y": 7690,
+      "w": 220,
+      "h": 170,
+      "title": "Personnage · papillon v2 (variantes a à d)"
+    },
+    "Papillons.dc.html": {
+      "x": 1520,
+      "y": 8300,
+      "w": 1440,
+      "h": 640,
+      "title": "Bourse aux livres · papillons proposés (retenu : A, Marque-page)"
+    },
+    "Accueil.dc.html": {
+      "x": 0,
+      "y": 13700,
+      "w": 1440,
+      "h": 980,
+      "title": "E7 · Accueil, cartes « Venez nous voir » — ordinateur"
+    },
+    "AccueilMobile.dc.html": {
+      "x": 1520,
+      "y": 13700,
+      "w": 390,
+      "h": 1100,
+      "title": "E7 · Accueil, cartes « Venez nous voir » — mobile"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Mobile.dc.html",
+    "AlaUneClassique.dc.html",
+    "Etats.dc.html",
+    "FicheLoto.dc.html",
+    "Bandeau.dc.html",
+    "Backoffice.dc.html",
+    "Citrouille.dc.html",
+    "Fantome.dc.html",
+    "ChauveSouris.dc.html",
+    "Identites.dc.html",
+    "AgendaV2.dc.html",
+    "AgendaV2Mobile.dc.html",
+    "Calendrier.dc.html",
+    "CalendrierMobile.dc.html",
+    "BouleBingo.dc.html",
+    "Papillon.dc.html",
+    "Papillons.dc.html",
+    "Accueil.dc.html",
+    "AccueilMobile.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "x": 0,
+      "y": -300,
+      "text": "Page Événements en agenda",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "t2": {
+      "x": 0,
+      "y": 2860,
+      "text": "Variante classique et états",
+      "kind": "title1",
+      "maxW": 2380
+    },
+    "t3": {
+      "x": 0,
+      "y": 4110,
+      "text": "Fiche d'un loto à thème",
+      "kind": "title1",
+      "maxW": 1440
+    },
+    "t4": {
+      "x": 0,
+      "y": 5990,
+      "text": "Bandeau et réglage",
+      "kind": "title1",
+      "maxW": 2280
+    },
+    "t5": {
+      "x": 0,
+      "y": 7390,
+      "text": "Personnages (repris du tableau Halloween)",
+      "kind": "title1",
+      "maxW": 1440
+    },
+    "n1": {
+      "x": 1990,
+      "y": 0,
+      "w": 380,
+      "fill": "orange",
+      "text": "RG-41 / RG-42 · À la une = le rendez-vous à venir le plus proche, Ensuite = le suivant. Compte à rebours en jours calendaires à Paris : Aujourd'hui, Demain, Dans n jours, En ce moment. Dans l'agenda, seulement sous 30 jours. Maquettes datées au samedi 31 octobre 2026."
+    },
+    "n2": {
+      "x": 1990,
+      "y": 400,
+      "w": 380,
+      "fill": "purple",
+      "text": "RG-44 / RG-49 · Le thème habille sans rien changer au contenu. Un loto Halloween : bloc À la une, petite citrouille dans l'agenda, en-tête de fiche, bandeau. Le reste de la page garde la charte du site."
+    },
+    "n3": {
+      "x": 1990,
+      "y": 800,
+      "w": 380,
+      "fill": "green",
+      "text": "RG-43 · Un événement sur plusieurs jours apparaît une fois, au mois de son début, avec sa plage « 11 → 16 ». Filtres avec leur nombre, filtre vide masqué (« Autres » n'apparaît pas ici)."
+    },
+    "n4": {
+      "x": 1990,
+      "y": 1200,
+      "w": 380,
+      "fill": "gray",
+      "text": "Textes de présentation du loto et de la bourse conservés mot pour mot (seul le premier paragraphe est montré ici). Photos : celles d'aujourd'hui, en vignettes."
+    },
+    "t6": {
+      "x": 0,
+      "y": 8040,
+      "text": "Identités visuelles",
+      "kind": "title1",
+      "maxW": 1440
+    },
+    "t7": {
+      "x": 0,
+      "y": 9140,
+      "text": "Agenda v2 · chaque date porte son identité",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "t8": {
+      "x": 0,
+      "y": 11840,
+      "text": "Variante · un vrai calendrier",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "n6": {
+      "x": 1990,
+      "y": 9400,
+      "w": 380,
+      "fill": "orange",
+      "text": "v2 (retour du 2026-10-31) : plus de pastilles à icône, de compteurs ni de chevrons. Chaque date est un bandeau dans l'identité de son événement : loto à thème (Halloween, puis Noël…), loto sans thème (boules), bourse aux livres (papier et papillons-livres)."
+    },
+    "n7": {
+      "x": 1990,
+      "y": 12100,
+      "w": 380,
+      "fill": "purple",
+      "text": "Variante calendrier : trois mois côte à côte, les jours d'événement s'allument un à un à l'arrivée, chacun dans son identité. Une bourse sur plusieurs jours forme une bande continue. Cliquer un jour ouvre son bandeau dessous."
+    },
+    "t9": {
+      "x": 0,
+      "y": 13440,
+      "text": "Accueil · les cartes des prochains rendez-vous",
+      "kind": "title1",
+      "maxW": 1910
+    },
+    "n8": {
+      "x": 3040,
+      "y": 8300,
+      "w": 380,
+      "fill": "orange",
+      "text": "Retenu le 2026-10-31 : papillon A « Marque-page » et boule de bingo pleine avec pastille numérotée. Appliqués à l'agenda (liste et calendrier), aux identités et à l'accueil."
+    }
+  },
+  "designSystems": []
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendrier des événements, mobile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.ca{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.arrow{width:44px;height:44px;border-radius:999px;border:1px solid #d9e9f4;background:#ffffff;color:#072b45;display:grid;place-items:center}
+.arrow:disabled{opacity:.35}
+.mo{display:flex;flex-direction:column;gap:10px;padding:18px 14px;border-radius:24px;background:#ffffff;box-shadow:0 26px 50px -42px rgba(7,43,69,.55)}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;font-size:11px;font-weight:700;color:#7d97ab;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.c{position:relative;height:44px;border-radius:10px;display:grid;place-items:center;font-size:15px;font-weight:600;color:#33536e;border:0;background:transparent;padding:0;font-family:"Libre Franklin",sans-serif}
+.c-empty{visibility:hidden}
+.c-we{color:#7d97ab}
+.lit-a{animation:light-a .7s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d)}
+.lit-b{animation:light-b .7s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d)}
+@keyframes light-a{0%{opacity:0;transform:scale(.6);filter:brightness(2)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1);filter:none}}
+@keyframes light-b{0%{opacity:0;transform:scale(.6);filter:brightness(2)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1);filter:none}}
+.c-hw{background:#120a1c;color:#ff8c2e;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:19px;box-shadow:0 0 14px rgba(255,140,46,.45)}
+.c-bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 10px,rgba(16,50,77,.09) 10px 11px);color:#10324d;font-family:Newsreader,Georgia,serif;font-size:18px}
+.band-s{border-radius:10px 0 0 10px;box-shadow:3px 0 0 #f4ecdc}
+.band-m{border-radius:0;box-shadow:3px 0 0 #f4ecdc}
+.band-e{border-radius:0 10px 10px 0}
+.c-lo{background:#0b2438;color:#ffffff;font-weight:800}
+.c-lo i{position:absolute;top:3px;right:4px;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ffffff 0 2px,#1497d6 2.2px)}
+.c-sel{outline:3px solid #f0801c;outline-offset:2px}
+.st{position:relative;overflow:hidden;display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;min-height:128px;border-radius:22px;text-decoration:none;padding-right:96px}
+.dt{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tx{position:relative;display:flex;flex-direction:column;gap:4px;padding:18px 0}
+.deco{position:absolute;inset:0;pointer-events:none}
+.mas{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+.hw{background:#120a1c;color:#f4e8cf}
+.hw .day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:46px;line-height:.85;color:#ff8c2e}
+.hw .wd{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:13px;color:#b8a5cf}
+.hw .ti{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:21px}
+.hw .me{font-size:13px;color:#d8cbe6}
+.bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 21px,rgba(16,50,77,.08) 21px 22px);color:#10324d}
+.bk .day{font-family:Newsreader,Georgia,serif;font-size:36px;line-height:.9}
+.bk .wd{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:13px;color:#5a7286}
+.bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:22px}
+.bk .me{font-size:13px;color:#4d6a80}
+.lo{background:#0b2438;color:#ffffff}
+.lo .day{font-size:40px;font-weight:800;line-height:.9}
+.lo .wd{font-size:12px;color:#9dc2da}
+.lo .ti{font-family:Newsreader,Georgia,serif;font-size:21px}
+.lo .me{font-size:13px;color:#c3dceb}
+</style>
+</head>
+<body>
+<div class="ca" style="width: 390px; min-height: 1500px; box-sizing: border-box; padding: 36px 16px 44px; display: flex; flex-direction: column; gap: 18px;" data-zone="E1-calendrier">
+  <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 38px; color: #072b45;">L'agenda</h2>
+  <div role="group" aria-label="Affichage de l'agenda" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 999px; background: #e9f4fb;" data-zone="E1-bascule-vue"><a href="CalendrierMobile.html" aria-current="true" style="display: flex; align-items: center; justify-content: center; height: 40px; border-radius: 999px; background: #072b45; color: #ffffff; font-weight: 700; font-size: 15px; text-decoration: none;">Calendrier</a><a href="AgendaV2Mobile.html" style="display: flex; align-items: center; justify-content: center; height: 40px; border-radius: 999px; color: #072b45; font-weight: 700; font-size: 15px; text-decoration: none;">Liste</a></div>
+  <div class="mo" data-zone="E1-mois-calendrier">
+    <div style="display: flex; align-items: center; justify-content: space-between;" data-zone="E1-navigation-mois">
+      <button class="arrow" type="button" aria-label="Mois précédent" onClick="{{prev}}" disabled="{{atStart}}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 L5 8 L10 13"></path></svg></button>
+      <span style="display: flex; align-items: baseline; gap: 6px;"><b style="font-family: Newsreader, Georgia, serif; font-style: italic; font-weight: 500; font-size: 28px; color: #072b45;">{{month.name}}</b><span style="font-size: 13px; color: #4d6a80;">{{month.year}}</span></span>
+      <button class="arrow" type="button" aria-label="Mois suivant" onClick="{{next}}" disabled="{{atEnd}}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3 L11 8 L6 13"></path></svg></button>
+    </div>
+    <div class="wk" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+    <div class="grid">
+      <sc-for list="{{month.cells}}" as="c" hint-placeholder-count="35">
+        <sc-if value="{{c.lit}}" hint-placeholder-val="{{ false }}"><button type="button" class="{{c.cls}}" style="--d: {{c.delay}}s;" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" data-zone="E1-jour-allume">{{c.day}}<sc-if value="{{c.isLo}}" hint-placeholder-val="{{ false }}"><i aria-hidden="true"></i></sc-if></button></sc-if>
+        <sc-if value="{{c.plain}}" hint-placeholder-val="{{ true }}"><span class="{{c.cls}}">{{c.day}}</span></sc-if>
+      </sc-for>
+    </div>
+  </div>
+  <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 20px; color: #33536e;">Ce mois-ci</span>
+  <sc-for list="{{list}}" as="e" hint-placeholder-count="2">
+    <sc-if value="{{e.isHw}}" hint-placeholder-val="{{ false }}"><a class="st hw" href="#" style="{{e.ring}}" data-zone="E1-detail-jour"><span class="deco" aria-hidden="true"><span class="mas"><dc-import name="Citrouille" size="82" mood="idle" hint-size="82px,75px"></dc-import></span></span><span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span><span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span></span></a></sc-if>
+    <sc-if value="{{e.isBooks}}" hint-placeholder-val="{{ true }}"><a class="st bk" href="#" style="{{e.ring}}" data-zone="E1-detail-jour"><span class="deco" aria-hidden="true"><span class="mas"><dc-import name="Papillon" size="104" variant="a" hint-size="104px,81px"></dc-import></span></span><span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span><span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span></span></a></sc-if>
+    <sc-if value="{{e.isLoto}}" hint-placeholder-val="{{ false }}"><a class="st lo" href="#" style="{{e.ring}}" data-zone="E1-detail-jour"><span class="deco" aria-hidden="true"><span class="mas"><dc-import name="BouleBingo" size="84" num="{{e.day}}" color="bleu" hint-size="84px,84px"></dc-import></span></span><span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span><span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span></span></a></sc-if>
+  </sc-for>
+</div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boule de bingo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@800;900&amp;display=swap">
+<style>
+body{margin:0}
+.bb{position:relative}
+.bb svg{display:block;width:100%;height:100%;overflow:visible}
+.bb-shadow{position:absolute;left:24%;right:24%;bottom:1%;height:7%;border-radius:50%;background:#000000;opacity:.26;animation:bb-shadow 2.8s cubic-bezier(.3,0,.5,1) infinite}
+@keyframes bb-shadow{0%,58%,100%{transform:scaleX(1);opacity:.26}76%{transform:scaleX(.7);opacity:.13}}
+.bb-body{position:absolute;inset:0;transform-origin:50% 92%;animation:bb-hop 2.8s cubic-bezier(.3,0,.5,1) infinite}
+@keyframes bb-hop{0%,58%,100%{transform:translateY(0) scale(1)}66%{transform:translateY(0) scale(1.06,.92)}76%{transform:translateY(-14%) scale(.97,1.04)}86%{transform:translateY(0) scale(1.05,.94)}92%{transform:translateY(0) scale(1)}}
+.bb-num{position:absolute;left:0;right:0;top:56%;transform:translateY(-50%);text-align:center;font-family:"Libre Franklin",Arial,sans-serif;font-weight:900;line-height:1;letter-spacing:-.04em;color:#041d30;font-variant-numeric:tabular-nums}
+.bb .eye{transform-box:fill-box;transform-origin:center;animation:bb-blink 4.6s infinite}
+.bb .eye-r{animation:bb-wink 9s infinite}
+@keyframes bb-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+@keyframes bb-wink{0%,40%,52%,90%,100%{transform:scaleY(1)}44%,48%{transform:scaleY(.1)}94%{transform:scaleY(.1)}}
+.bb-pose .bb-body,.bb-pose .bb-shadow{animation:none}
+</style>
+</head>
+<body>
+<div class="{{cls}}" style="width: {{w}}px; height: {{w}}px;">
+  <span class="bb-shadow" aria-hidden="true"></span>
+  <div class="bb-body">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <radialGradient id="{{gid}}" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="{{c1}}"></stop><stop offset=".55" stop-color="{{c2}}"></stop><stop offset="1" stop-color="{{c3}}"></stop></radialGradient>
+      </defs>
+      <circle cx="50" cy="52" r="40" fill="url(#{{gid}})"></circle>
+      <circle cx="50" cy="56" r="23" fill="#ffffff"></circle>
+      <circle cx="50" cy="56" r="19.5" fill="none" stroke="{{c2}}" stroke-width="1.6"></circle>
+      <g class="eye"><ellipse cx="41" cy="23" rx="3" ry="3.8" fill="#ffffff"></ellipse><circle cx="41.5" cy="23.8" r="1.7" fill="#041d30"></circle></g>
+      <g class="eye eye-r"><ellipse cx="59" cy="23" rx="3" ry="3.8" fill="#ffffff"></ellipse><circle cx="59.5" cy="23.8" r="1.7" fill="#041d30"></circle></g>
+      <path d="M44 84 Q50 88 56 84" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"></path>
+      <circle cx="31" cy="30" r="3" fill="#ffffff" opacity=".25"></circle>
+      <circle cx="69" cy="30" r="3" fill="#ffffff" opacity=".25"></circle>
+      <path d="M24 34 C28 22 38 15 48 14" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"></path>
+      <circle cx="27" cy="44" r="2" fill="#ffffff" opacity=".6"></circle>
+    </svg>
+    <span class="bb-num" style="font-size: {{nfs}}px;">{{num}}</span>
+  </div>
+</div>
+</body>
+</html>
