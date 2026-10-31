@@ -113,8 +113,10 @@
 @keyframes hw-breathe { 50% { opacity: .55; transform: scale(.94); } }
 .hw .hero-pk { position: absolute !important; z-index: 2 !important; right: -8px; bottom: -16px; width: 104px; height: 95px; }
 .hw .hero-pk vpd-citrouille { display: block; }
-.hw .web { position: absolute; z-index: 3; top: -30px; right: -16px; width: 88px; height: 88px; pointer-events: none; }
-.hw .spider { position: absolute; z-index: 4; top: 10px; right: 34px; width: 22px; transform-origin: 50% 0; animation: hw-spider-sway 26s ease-in-out infinite; pointer-events: none; }
+/* La toile et l'araignée restent sous le titre et les cases : aucun numéro n'est masqué. */
+.hw .board-h, .hw .grid { position: relative; z-index: 1; }
+.hw .web { position: absolute; z-index: 0; top: -30px; right: -16px; width: 88px; height: 88px; pointer-events: none; }
+.hw .spider { position: absolute; z-index: 0; top: 10px; right: 34px; width: 22px; transform-origin: 50% 0; animation: hw-spider-sway 26s ease-in-out infinite; pointer-events: none; }
 .hw .thread { position: absolute; top: 0; left: 10.5px; width: 1px; height: 84px; transform-origin: 50% 0; background: rgba(232,220,245,.55); animation: hw-thread 26s ease-in-out infinite; }
 .hw .spider-b { position: absolute; top: 4px; left: 0; width: 22px; animation: hw-spider-drop 26s ease-in-out infinite; }
 .hw .spider-b .legs { transform-origin: 12px 10px; animation: hw-spider-legs .5s ease-in-out infinite alternate; }

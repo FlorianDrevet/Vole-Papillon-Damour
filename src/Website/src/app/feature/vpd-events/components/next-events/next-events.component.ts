@@ -37,7 +37,7 @@ export class NextEventsComponent {
         timeZone: 'Europe/Paris',
         hour: '2-digit',
         minute: '2-digit',
-      }).format(event.hourOpenDoors).replace(':', ' h ');
+      }).format(new Date(event.hourOpenDoors)).replace(':', ' h ');
       parts.push(`ouverture à ${time}`);
     }
     return parts.filter(Boolean).join(' · ');

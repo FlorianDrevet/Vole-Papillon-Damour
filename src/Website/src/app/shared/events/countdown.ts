@@ -1,13 +1,14 @@
 import {VpdEventModel} from '../models/vpdEvent.model';
 
 /** Jour calendaire à Paris, au format `AAAA-MM-JJ`. */
-export function parisDay(now: Date): string {
+/** L'API renvoie les dates en chaîne ISO : elles sont converties avant d'être formatées. */
+export function parisDay(now: Date | string): string {
   return new Intl.DateTimeFormat('fr-CA', {
     timeZone: 'Europe/Paris',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(now);
+  }).format(new Date(now));
 }
 
 /** Jour calendaire parisien sous forme d'ordinal indépendant du fuseau de la machine. */

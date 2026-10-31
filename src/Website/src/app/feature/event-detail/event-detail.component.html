@@ -39,7 +39,8 @@
 
       @if (liveLoto(); as loto) {
         <!-- E6 : maquettes preview/E6-Desktop.html, preview/E6-Mobile.html -->
-        <div class="flex max-w-[650px] flex-col gap-3 rounded-xl border border-orange-2/45 bg-[#0b2438] p-4 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-[18px]">
+        <div class="flex max-w-[650px] flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-[18px]"
+             [ngClass]="identity(event) === 'halloween' ? 'border-orange/55 bg-[#1d1229]' : 'border-orange-2/45 bg-[#0b2438]'">
           <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <span class="inline-flex items-center gap-2 font-serif text-[16px] font-semibold italic text-orange-2 sm:text-[17px]">
               <span aria-hidden="true" class="h-2 w-2 rounded-full bg-orange shadow-[0_0_0_4px_rgba(240,128,28,.25)]"></span>Tableau en direct
@@ -72,7 +73,7 @@
         </span>
         <span
           class="rounded-full border px-3 py-1 text-[12px] font-semibold"
-          [class]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
+          [ngClass]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
           @if (countdown(event); as label) { {{ label }} } @else { Édition passée }
         </span>
       </div>
