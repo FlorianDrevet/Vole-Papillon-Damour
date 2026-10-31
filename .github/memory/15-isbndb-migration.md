@@ -11,6 +11,14 @@
 - The Worker runs catch-up on `Isbndb__CatchUpSchedule`; the infrastructure default is `0 30 2 * * *` UTC with `Isbndb__RequestsPerSecond=1`.
 - API routes expose quota/status, absent books, completion and recheck operations. Catalog uses a cached, rate-limited public edition search beneath the last external-results page.
 
+## Production catch-up follow-up — 2026-10-25
+
+- The Worker restart produced healthy revision `vpd-worker-ca-dev-fc--0000033`. The temporary timer `0 40 10 * * *` was loaded, but no `IsbndbCatchUp` invocation was recorded at its 10:40 UTC occurrence. The timer is restored to `0 30 2 * * *` UTC.
+- The Function-key-protected manual POST route was invoked at 10:50 UTC and returned HTTP 500 after about two minutes. App Insights records `DbUpdateConcurrencyException` during `FinishRunAsync` after the handler expected one updated row and SQL reported zero. Do not infer the exact books written from this exception; candidate metadata may have partially persisted. The dashboard continued to show the 03:30 Paris run as in progress.
+- The quota panel still showed 3,400/5,000 from a response read at 03:59 Paris; it is not a current balance. Verify quota and run state from a fresh provider/header/status read before another attempt.
+- The manual endpoint awaits the full catch-up command and only returns after completion; it does not return a background job identifier. It requires a Function key. Never record that key in repository memory or logs.
+- Current network state is external HTTPS ingress on target port 8080 (`allowInsecure=false`) and unrestricted outbound access (ACA environment `publicNetworkAccess=Enabled`, no VNet configuration). The public root returned 200. The ingress/port settings are live Azure state and have not been reconciled with Bicep.
+- Follow-up before another production run: identify the original concurrency failure and make finalization resilient; verify the current candidate count/quota; then start one run and confirm its final status and counters.
 ## Scan matching
 
 - The offline Scan catalog stores `workKey`, publisher, publication year and other ISBNs. IndexedDB schema version 7 clears the cached catalog and its sync marker once so the new fields can be resynced.
