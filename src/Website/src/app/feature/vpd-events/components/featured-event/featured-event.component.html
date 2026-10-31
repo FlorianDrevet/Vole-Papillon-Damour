@@ -1,0 +1,56 @@
+<article class="featured-event" [class.featured-event--halloween]="identity === 'halloween'" [class.featured-event--books]="identity === 'books'" [class.calm]="calm()" [class.paused]="!visible()" [attr.data-zone]="identity === 'halloween' ? 'E2-a-la-une-halloween' : 'E1-a-la-une-classique'">
+  <div class="feature-art" aria-hidden="true">
+    @if (identity === 'halloween') {
+      <div class="feature-sky halloween-scene" data-zone="E2-decor">
+        <span class="feature-star star-one"></span><span class="feature-star star-two"></span><span class="feature-star star-three"></span><span class="feature-star star-four"></span>
+        <span class="feature-moon"></span><span class="feature-cloud cloud-one"></span><span class="feature-cloud cloud-two"></span>
+        <vpd-citrouille class="feature-pumpkin" [size]="170" mood="idle" data-zone="E2-citrouille" />
+        @if (runnerActive() && !calm()) {
+          <div class="feature-runner" data-zone="E2-fantome-course"><vpd-fantome [size]="64" mood="course" /></div>
+        }
+      </div>
+    } @else if (identity === 'books') {
+      <div class="feature-paper">
+        <span class="paper-margin"></span>
+        <vpd-papillon class="feature-butterfly" [size]="190" mood="vol" />
+      </div>
+    } @else if (identity === 'loto') {
+      <div class="feature-classic-art">
+        <vpd-boule-bingo [size]="150" [num]="event.dateStart | date:'dd':'UTC'" color="bleu" mood="saute" />
+      </div>
+    } @else {
+      <div class="feature-other-art"><span></span><span></span><span></span></div>
+    }
+  </div>
+
+  <div class="feature-date" data-zone="E1-date-a-la-une">
+    @if (event.dateEnd) {
+      <span class="feature-day">{{ event.dateStart | date:'dd':'UTC' }}<span aria-hidden="true">–</span>{{ event.dateEnd | date:'dd':'UTC' }}</span>
+      <span class="feature-month">{{ event.dateStart | date:'MMMM':'UTC' }}</span>
+      <span class="feature-weekday">Du {{ event.dateStart | date:'EEEE d':'UTC' }} au {{ event.dateEnd | date:'EEEE d':'UTC' }}</span>
+    } @else {
+      <span class="feature-day">{{ event.dateStart | date:'dd':'UTC' }}</span>
+      <span class="feature-month">{{ event.dateStart | date:'MMMM':'UTC' }}</span>
+      <span class="feature-weekday">{{ event.dateStart | date:'EEEE':'UTC' }}</span>
+    }
+  </div>
+
+  <div class="feature-copy">
+    @if (countdown) {
+      <span class="feature-countdown" data-zone="E1-compte-a-rebours">{{ countdown }}</span>
+    }
+    <span class="feature-type">{{ typeLabel }}</span>
+    <h2 class="feature-title">{{ event.name }}</h2>
+    <p class="feature-meta">{{ schedule }}</p>
+    <div class="feature-actions" data-zone="E1-actions-a-la-une">
+      <a class="feature-details" [routerLink]="['/evenement', event.id]">
+        Toutes les infos
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+      </a>
+      <button class="feature-calendar" type="button" (click)="addToCalendar()" data-zone="E1-ajouter-agenda">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2.5"></rect><path d="M3 8h14M7 2.5v3M13 2.5v3M10 10.5v4M8 12.5h4"></path></svg>
+        Ajouter à mon agenda
+      </button>
+    </div>
+  </div>
+</article>
