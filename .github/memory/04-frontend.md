@@ -886,8 +886,10 @@ starts at J-7. `HalloweenPreferences` shares the existing `vpd.tableau.calm` set
 guards browser-only APIs for SSR. BackOffice labels the existing theme field « Thème du
 loto » without changing its projection contract.
 
-Final validation for the seasonal events handoff: Website tests 186/186 and SSR build pass;
-BackOffice build and the feature dialog spec (3/3) pass. `npm test` in BackOffice still
-fails its existing bootstrap contract checks (4/6). Chrome screenshots at 390/1440 could
-not be captured because the CUA browser host was unavailable; the public Render API also
-returned `Service Suspended` during the local visual check.
+Final validation for the seasonal events handoff: Website tests 186/186, SEO tests 14/14,
+and SSR build pass; Backend solution build passes with 74 existing warnings, Application
+tests pass 708/708, and API tests pass 92/92. BackOffice build and the feature dialog spec
+(3/3) pass. `npm test` in BackOffice still fails its existing bootstrap contract checks
+(4/6). Chrome screenshots at 390/1440 could not be captured because the CUA browser host
+was unavailable; the public Render API also returned `Service Suspended` during the local
+visual check.
