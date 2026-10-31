@@ -1,16 +1,16 @@
 import {isPlatformBrowser} from '@angular/common';
 import {Component, computed, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
-import {parisDay} from '../../../shared/events/countdown';
 import {TodayEventService} from '../../../shared/services/today-event.service';
 import {
   isTodayBannerDismissed,
   TODAY_BANNER_STORAGE_KEY,
   TodayBannerDismissal,
+  todayBannerLabel,
   todayBannerSchedule,
-  todayBannerVariant,
+  todayBannerStage,
 } from './today-banner-state';
 
-/** E5 · Bandeau « Aujourd'hui », au-dessus de l'en-tête, sur toutes les pages sauf le tableau. */
+/** E4 · Bandeau du prochain rendez-vous, au-dessus de l'en-tête, sur toutes les pages sauf le tableau. */
 @Component({
   selector: 'app-today-banner',
   templateUrl: './today-banner.component.html',
@@ -23,17 +23,23 @@ export class TodayBannerComponent implements OnInit {
 
   protected readonly today = this.todayEvent.today;
   protected readonly halloween = computed(() => this.today()?.liveTheme === 'Halloween');
-  protected readonly variant = computed(() => {
+  protected readonly stage = computed(() => {
     const today = this.today();
-    return today === null ? null : todayBannerVariant(today);
+    return today === null ? null : todayBannerStage(today, new Date());
+  });
+  protected readonly label = computed(() => {
+    const today = this.today();
+    const stage = this.stage();
+    return today === null || stage === null ? '' : todayBannerLabel(today, stage, new Date());
   });
   protected readonly schedule = computed(() => {
     const today = this.today();
-    return today === null ? '' : todayBannerSchedule(today);
+    const stage = this.stage();
+    return today === null || stage === null ? '' : todayBannerSchedule(today, stage, new Date());
   });
   protected readonly visible = computed(() => {
     const today = this.today();
-    return today !== null && !isTodayBannerDismissed(today, this.dismissal(), parisDay(new Date()));
+    return today !== null && !isTodayBannerDismissed(today, this.dismissal(), new Date());
   });
 
   ngOnInit(): void {
@@ -43,11 +49,11 @@ export class TodayBannerComponent implements OnInit {
 
   protected close(): void {
     const today = this.today();
-    const variant = this.variant();
-    if (today === null || variant === null) {
+    const stage = this.stage();
+    if (today === null || stage === null) {
       return;
     }
-    const dismissal: TodayBannerDismissal = {eventId: today.id, day: parisDay(new Date()), variant};
+    const dismissal: TodayBannerDismissal = {eventId: today.id, stage};
     this.dismissal.set(dismissal);
     try {
       localStorage.setItem(TODAY_BANNER_STORAGE_KEY, JSON.stringify(dismissal));

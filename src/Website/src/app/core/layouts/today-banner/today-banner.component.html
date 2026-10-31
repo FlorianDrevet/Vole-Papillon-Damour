@@ -1,22 +1,15 @@
 @if (visible() && today(); as today) {
   @if (halloween()) {
-    <app-today-banner-halloween [today]="today" [variant]="variant() ?? 'other'" [schedule]="schedule()" (close)="close()" />
+    <app-today-banner-halloween [today]="today" [stage]="stage() ?? 'today'" [label]="label()" [schedule]="schedule()" (close)="close()" />
   } @else {
   <!-- E5 : maquettes preview/E5-Desktop.html, preview/E5-Mobile.html, preview/E5-Etats.html -->
-  <div role="region" aria-label="Événement du jour"
+  <div role="region" [attr.aria-label]="stage() === 'upcoming' ? 'Prochain rendez-vous' : stage() === 'ongoing' ? 'Événement en cours' : 'Événement du jour'"
        class="flex flex-col gap-2 bg-ink py-2.5 pl-4 pr-2 text-white lg:h-[52px] lg:flex-row lg:items-center lg:gap-5 lg:py-0 lg:pl-shell lg:pr-3">
     <div class="flex min-w-0 items-center gap-2.5 lg:gap-5">
-      @if (variant() === 'live') {
-        <span class="inline-flex shrink-0 items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-orange-2 lg:text-[11px] lg:tracking-[.18em]">
-          <span aria-hidden="true" class="h-2 w-2 rounded-full bg-orange shadow-[0_0_0_4px_rgba(240,128,28,.25)] motion-safe:animate-pulse"></span>
-          En direct
-        </span>
-      } @else {
-        <span class="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-cyan lg:text-[11px] lg:tracking-[.18em]">Aujourd'hui</span>
-      }
+      <span class="stage-label shrink-0 font-serif text-sm italic text-cyan lg:text-base">{{ label() }}</span>
 
       <span class="min-w-0 truncate text-sm font-semibold lg:text-[15px]">
-        {{ variant() === 'finished' ? 'Le loto est terminé, merci à tous !' : today.name }}
+        {{ stage() === 'finished' ? 'Le loto est terminé, merci à tous !' : today.name }}
       </span>
 
       <button type="button" (click)="close()" aria-label="Masquer le bandeau"
@@ -26,7 +19,7 @@
     </div>
 
     <div class="flex items-center gap-2.5 pr-2 lg:flex-1 lg:gap-5 lg:pr-0">
-      @switch (variant()) {
+      @switch (stage()) {
         @case ('live') {
           @if (today.lastNumero !== null) {
             <span class="inline-flex items-center gap-2 text-[13px] text-mist-2 lg:text-sm">
