@@ -355,6 +355,32 @@
   letter-spacing: -.01em;
 }
 
+.hw .num-old { grid-area: 1 / 1; pointer-events: none; }
+.hw .num-ign-a, .hw .num-ign-b { animation: hw-num-ign .75s .16s cubic-bezier(.2,.9,.3,1.1) both; }
+@keyframes hw-num-ign { 0% { opacity: 0; transform: scale(.8); filter: blur(8px) brightness(1.7); } 45% { opacity: 1; transform: scale(1.04); filter: blur(0) brightness(1.35); } 100% { transform: scale(1); filter: none; } }
+.hw .num-smoke-a, .hw .num-smoke-b { animation: hw-num-smoke .55s ease-out both; }
+@keyframes hw-num-smoke { 0% { opacity: 1; } 100% { opacity: 0; filter: blur(14px); transform: translateY(-28px) scale(1.08); } }
+.hw .num-back-a, .hw .num-back-b { animation: hw-num-back .45s .2s ease-out both; }
+@keyframes hw-num-back { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: none; } }
+.hw .tomb-in-a, .hw .tomb-in-b { animation: hw-tomb-in .6s .15s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes hw-tomb-in { 0% { opacity: 0; transform: translateY(-34px) rotate(var(--t)) scale(.8); } 100% { opacity: 1; transform: rotate(var(--t)); } }
+.hw .cell.last { animation: hw-last-glow 2.6s ease-in-out infinite; }
+@keyframes hw-last-glow { 50% { box-shadow: inset 0 0 0 2px #ffd08a, 0 0 26px rgba(var(--citrouille-rgb),.75); } }
+.hw .cell.last.ign-a, .hw .cell.last.ign-b { animation: hw-cell-ign .75s .2s cubic-bezier(.3,1.5,.5,1) both, hw-last-glow 2.6s 1s ease-in-out infinite; }
+@keyframes hw-cell-ign { 0% { transform: scale(.7); background: var(--ardoise); } 40% { transform: scale(1.25); background: #ffd08a; box-shadow: 0 0 26px 8px rgba(255,170,80,.7); } 100% { transform: scale(1); } }
+.hw .cell.unlit-a, .hw .cell.unlit-b { animation: hw-cell-unlit .6s both; }
+@keyframes hw-cell-unlit { 0% { background: var(--cire); color: var(--encre); } 100% { background: var(--ardoise); color: var(--lilas); } }
+.hw.calm .num { animation: hw-calm-in .3s both !important; }
+.hw.calm .num-old { animation: hw-calm-out .3s both !important; }
+@keyframes hw-calm-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hw-calm-out { from { opacity: 1; } to { opacity: 0; } }
+.fx { position: fixed; z-index: 1000; inset: 0; overflow: hidden; pointer-events: none; opacity: 1; transition: opacity 150ms linear; }
+.fx.interrupting { opacity: 0; }
+.fx .bat { position: absolute; top: 0; left: 0; will-change: transform; }
+.fx .bat:nth-child(3) { opacity: .95; }
+.fx .bat:nth-child(4) { opacity: .7; }
+.hw.paused ~ .fx, .hw.paused ~ .fx * { animation-play-state: paused !important; }
+
 @media (min-width: 540px) {
   .hw {
     max-width: 520px;

@@ -23,7 +23,7 @@
           @default { Connexion… }
         }
       </span>
-      <button class="calm-btn" type="button" [attr.aria-pressed]="preferences.calm()" [attr.aria-label]="preferences.calm() ? 'Remettre les animations' : 'Calmer les animations'" (click)="preferences.toggleCalm()">
+      <button class="calm-btn" type="button" [attr.aria-pressed]="preferences.calm()" [attr.aria-label]="preferences.calm() ? 'Remettre les animations' : 'Calmer les animations'" (click)="toggleCalm()">
         <svg viewBox="0 0 18 18" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M11.5 2.2A7 7 0 1 0 15.8 12.4a5.6 5.6 0 0 1-4.3-10.2Z"/></svg>
         <span>{{ preferences.calm() ? 'Animer' : 'Calmer' }}</span>
       </button>
@@ -42,16 +42,27 @@
     </div>
     <span class="hw-k">Dernier numéro</span>
     <div class="num-wrap">
-      <span class="num">{{ view.lastNumero ?? '—' }}</span>
+      @if ((fx.moment()?.kind === 'numero' || fx.moment()?.kind === 'undo') && fx.previousLastNumero() !== null) {
+        <span class="num-old" aria-hidden="true"
+              [class.num-smoke-a]="fx.animationKey() === 'a'"
+              [class.num-smoke-b]="fx.animationKey() === 'b'">{{ fx.previousLastNumero() }}</span>
+      }
+      <span class="num"
+            [class.num-ign-a]="fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+            [class.num-ign-b]="fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'"
+            [class.num-back-a]="fx.moment()?.kind === 'undo' && fx.animationKey() === 'a'"
+            [class.num-back-b]="fx.moment()?.kind === 'undo' && fx.animationKey() === 'b'">{{ view.lastNumero ?? '—' }}</span>
     </div>
-    <div class="hero-pk deco" aria-hidden="true"><vpd-citrouille [size]="104" mood="idle" /></div>
+    <div class="hero-pk deco" aria-hidden="true"><vpd-citrouille [size]="104" [mood]="fx.moment()?.kind === 'numero' ? 'sourire' : 'idle'" /></div>
   </section>
 
   <section class="previous" aria-label="Les cinq derniers numéros précédents">
     <span class="hw-k">Les cinq d'avant</span>
     <div class="tombs">
       @for (numero of view.previousNumeros; track $index) {
-        <span class="tomb" [style.--t]="tombTilts[$index] + 'deg'">{{ numero }}</span>
+        <span class="tomb" [style.--t]="tombTilts[$index] + 'deg'"
+              [class.tomb-in-a]="$index === 0 && fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+              [class.tomb-in-b]="$index === 0 && fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'">{{ numero }}</span>
       }
     </div>
     <div class="ground" aria-hidden="true"></div>
@@ -69,7 +80,11 @@
         <span class="cell"
               [class.on]="cell.state === 'drawn'"
               [class.last]="cell.state === 'last'"
-              [class.nb]="cell.state === 'neighbour'">
+              [class.nb]="cell.state === 'neighbour'"
+              [class.ign-a]="cell.state === 'last' && fx.moment()?.kind === 'numero' && fx.animationKey() === 'a'"
+              [class.ign-b]="cell.state === 'last' && fx.moment()?.kind === 'numero' && fx.animationKey() === 'b'"
+              [class.unlit-a]="isUndoCell(cell.value, 'a')"
+              [class.unlit-b]="isUndoCell(cell.value, 'b')">
           {{ cell.value }}
           @if (cell.state === 'last') {
             <svg class="cell-flame" viewBox="0 0 12 18" aria-hidden="true">
@@ -110,3 +125,13 @@
   }
   <div class="fog deco" aria-hidden="true"><div class="fog-a"></div><div class="fog-b"></div></div>
 </main>
+
+@if (fx.moment() !== null || fx.interrupting()) {
+  <div class="fx" [class.interrupting]="fx.interrupting()" #fxLayer aria-hidden="true">
+    @if (fx.moment()?.kind === 'numero') {
+      @for (size of batSizes; track $index) {
+        <div class="bat"><vpd-chauve-souris [size]="size" mood="vol" /></div>
+      }
+    }
+  </div>
+}
