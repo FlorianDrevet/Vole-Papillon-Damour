@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Agenda en bandeaux thématiques, ordinateur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.ag{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.tabs{display:flex;gap:30px}
+.tab{height:44px;padding:0;border:0;background:transparent;font:600 17px "Libre Franklin",sans-serif;color:#4d6a80;cursor:pointer;box-shadow:inset 0 -2px 0 transparent}
+.tab-on{color:#072b45;box-shadow:inset 0 -3px 0 #f0801c}
+.mo{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;padding:34px 0;border-top:1px solid #dbe8f1}
+.mo-name{display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
+.mo-name b{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:46px;line-height:1;color:#072b45}
+.mo-name span{font-size:15px;color:#4d6a80}
+.list{display:flex;flex-direction:column;gap:16px}
+.st{position:relative;overflow:hidden;display:grid;grid-template-columns:170px minmax(0,1fr) 250px;align-items:center;min-height:150px;border-radius:26px;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s}
+.st:hover{transform:translateY(-3px);box-shadow:0 26px 44px -30px rgba(4,29,48,.6)}
+.dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 10px}
+.tx{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 0}
+.deco{position:absolute;inset:0;pointer-events:none}
+.mas{position:absolute;right:34px;bottom:50%;transform:translateY(50%)}
+.when{display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:999px;font-weight:800;font-size:13px;align-self:flex-start;margin-top:4px}
+
+.hw{background:#120a1c;color:#f4e8cf}
+.hw .day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:72px;line-height:.85;letter-spacing:-.04em;color:#ff8c2e;font-variation-settings:"opsz" 144}
+.hw .wd{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:16px;color:#b8a5cf}
+.hw .ti{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:32px;line-height:1.02}
+.hw .me{font-size:15px;color:#d8cbe6}
+.hw .when{background:#ffb347;color:#1a0b22}
+.moon{position:absolute;top:18px;right:200px;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 34px 10px rgba(246,232,190,.13)}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+.fog{position:absolute;left:0;bottom:-16px;width:200%;height:50px;background:radial-gradient(80px 22px at 10% 60%,rgba(200,180,235,.15),transparent),radial-gradient(120px 28px at 40% 60%,rgba(200,180,235,.11),transparent),radial-gradient(90px 22px at 70% 60%,rgba(200,180,235,.14),transparent);animation:fog 36s linear infinite}
+@keyframes fog{to{transform:translateX(-50%)}}
+
+.bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 25px,rgba(16,50,77,.08) 25px 26px);color:#10324d}
+.bk .margin{position:absolute;top:0;bottom:0;left:170px;width:2px;background:rgba(229,112,42,.35)}
+.bk .to{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:26px;line-height:1;margin-top:2px}
+.bk .day{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:62px;line-height:.9;letter-spacing:-.02em}
+.bk .wd{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:16px;color:#5a7286}
+.bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:32px;line-height:1.02;padding-left:26px}
+.bk .me{font-size:15px;color:#4d6a80;padding-left:26px}
+.bk .when{background:#10324d;color:#f4ecdc;margin-left:26px}
+.pb{position:absolute;width:20px;animation:pb-drift 14s ease-in-out infinite}
+.pb .l,.pb .r{transform-origin:12px 9px;animation:pb-flap .32s ease-in-out infinite alternate}
+@keyframes pb-flap{to{transform:scaleX(.25)}}
+@keyframes pb-drift{0%,100%{transform:translate(0,0) rotate(-8deg)}25%{transform:translate(30px,-16px) rotate(6deg)}50%{transform:translate(60px,4px) rotate(-4deg)}75%{transform:translate(24px,16px) rotate(8deg)}}
+
+.lo{background:#0b2438;color:#ffffff}
+.lo .dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(127,216,245,.12) 1.2px,transparent 1.6px);background-size:20px 20px}
+.lo .day{font-size:64px;font-weight:800;line-height:.88;letter-spacing:-.04em;color:#ffffff}
+.lo .wd{font-size:15px;color:#9dc2da}
+.lo .ti{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:32px;line-height:1.05}
+.lo .me{font-size:15px;color:#c3dceb}
+.ball{position:absolute;border-radius:50%;background:radial-gradient(circle at 36% 32%,#ffffff,#f3ead8 60%,#cdbf9f);display:grid;place-items:center;font-weight:800;color:#041d30;animation:float 6s ease-in-out infinite}
+.ball i{display:grid;place-items:center;width:54%;height:54%;border-radius:50%;background:#f0801c;font-style:normal}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+</style>
+</helmet>
+<div class="ag" style="width: 1440px; min-height: 2240px; box-sizing: border-box; padding: 80px 64px 90px;" data-zone="E1-agenda">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 26px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 56px; line-height: 1; color: #072b45;">L'agenda</h2>
+      <div role="group" aria-label="Affichage de l'agenda" style="display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: #e9f4fb; align-self: flex-start;" data-zone="E1-bascule-vue"><a href="Calendrier.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; color: #072b45; font-weight: 700; font-size: 15px; text-decoration: none;">Calendrier</a><a href="AgendaV2.dc.html" aria-current="true" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #072b45; color: #ffffff; font-weight: 700; font-size: 15px; text-decoration: none;">Liste</a></div>
+    </div>
+    <div class="tabs" role="group" aria-label="Filtrer l'agenda" data-zone="E1-filtres">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}">{{t.label}}</button></sc-for>
+    </div>
+  </div>
+
+  <sc-for list="{{months}}" as="m" hint-placeholder-count="4">
+    <section class="mo" data-zone="E1-mois">
+      <div class="mo-name"><b>{{m.name}}</b><span>{{m.year}}</span></div>
+      <div class="list">
+        <sc-for list="{{m.items}}" as="e" hint-placeholder-count="2">
+          <sc-if value="{{e.isHw}}" hint-placeholder-val="{{ false }}">
+            <a class="st hw" href="#" data-zone="E1-bandeau-loto-theme">
+              <span class="deco" aria-hidden="true"><span class="star" style="left: 420px; top: 26px;"></span><span class="star" style="left: 640px; top: 100px; animation-delay: -2s;"></span><span class="star" style="left: 820px; top: 34px; animation-delay: -3s;"></span><span class="moon"></span><span class="fog"></span><span class="mas" style="right: 40px;"><dc-import name="Citrouille" size="118" mood="idle" hint-size="118px,108px"></dc-import></span><span style="position: absolute; right: 280px; top: 22px;"><dc-import name="ChauveSouris" size="46" hint-size="46px,23px"></dc-import></span></span>
+              <span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span>
+              <span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span><sc-if value="{{e.cdOn}}" hint-placeholder-val="{{ true }}"><span class="when">{{e.cd}}</span></sc-if></span>
+              <span></span>
+            </a>
+          </sc-if>
+          <sc-if value="{{e.isBooks}}" hint-placeholder-val="{{ true }}">
+            <a class="st bk" href="#" data-zone="E1-bandeau-bourse">
+              <span class="deco" aria-hidden="true"><span class="margin"></span><span class="pb" style="right: 270px; top: 16px; width: 40px;"><dc-import name="Papillon" size="40" variant="a" hint-size="40px,31px"></dc-import></span><span class="mas"><dc-import name="Papillon" size="170" variant="a" hint-size="170px,132px"></dc-import></span></span>
+              <span class="dt"><span class="day">{{e.day}}</span><sc-if value="{{e.range}}" hint-placeholder-val="{{ false }}"><span class="to">→ {{e.to}}</span></sc-if><span class="wd">{{e.wd}}</span></span>
+              <span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span><sc-if value="{{e.cdOn}}" hint-placeholder-val="{{ false }}"><span class="when">{{e.cd}}</span></sc-if></span>
+              <span></span>
+            </a>
+          </sc-if>
+          <sc-if value="{{e.isLoto}}" hint-placeholder-val="{{ false }}">
+            <a class="st lo" href="#" data-zone="E1-bandeau-loto">
+              <span class="deco" aria-hidden="true"><span class="dots"></span><span style="position: absolute; right: 250px; top: 18px;"><dc-import name="BouleBingo" size="44" num="{{e.b1}}" color="orange" mood="pose" hint-size="44px,44px"></dc-import></span><span style="position: absolute; right: 200px; bottom: 14px;"><dc-import name="BouleBingo" size="36" num="{{e.b2}}" color="cyan" mood="pose" hint-size="36px,36px"></dc-import></span><span class="mas" style="right: 50px;"><dc-import name="BouleBingo" size="120" num="{{e.day}}" color="bleu" hint-size="120px,120px"></dc-import></span></span>
+              <span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span>
+              <span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span></span>
+              <span></span>
+            </a>
+          </sc-if>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+  <div style="border-top: 1px solid #dbe8f1; padding-top: 30px;"><a href="#" style="font-size: 16px; font-weight: 700; color: #0c6ea6;" data-zone="E1-editions-passees">Voir les éditions passées</a></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2240}}'>
+var EVENTS = [
+  { m: "Novembre", y: "2026", day: "01", wd: "dimanche", kind: "hw", title: "Loto d'halloween", meta: "Saint Just Saint Rambert · ouverture à 12 h", cd: "Demain" },
+  { m: "Novembre", y: "2026", day: "11", to: "16", wd: "mer. → lun.", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon · ouverture à 14 h", cd: "Dans 11 jours" },
+  { m: "Décembre", y: "2026", day: "16", wd: "mercredi", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Janvier", y: "2027", day: "03", wd: "dimanche", kind: "loto", title: "Loto de Maxence", meta: "Saint Just Saint Rambert", cd: "", b1: "3", b2: "27" },
+  { m: "Janvier", y: "2027", day: "20", wd: "mercredi", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Février", y: "2027", day: "21", wd: "dimanche", kind: "loto", title: "Loto du carnaval de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "", b1: "21", b2: "64" },
+  { m: "Mars", y: "2027", day: "03", wd: "mercredi", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Avril", y: "2027", day: "07", wd: "mercredi", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" },
+  { m: "Mai", y: "2027", day: "01", wd: "samedi", kind: "loto", title: "Loto du 1er mai de Bulle de poils", meta: "Saint Just Saint Rambert", cd: "", b1: "1", b2: "55" },
+  { m: "Mai", y: "2027", day: "12", wd: "mercredi", kind: "books", title: "Bourse aux livres", meta: "Andrézieux-Bouthéon", cd: "" }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: "all" };
+  }
+  renderVals() {
+    var f = this.state.filter;
+    var months = [];
+    EVENTS.filter((e) => f === "all" || (f === "loto" ? e.kind !== "books" : e.kind === "books")).forEach((e) => {
+      var last = months[months.length - 1];
+      var item = Object.assign({}, e, { isHw: e.kind === "hw", isBooks: e.kind === "books", isLoto: e.kind === "loto", cdOn: !!e.cd, range: !!e.to });
+      if (last && last.name === e.m && last.year === e.y) { last.items.push(item); } else { months.push({ name: e.m, year: e.y, items: [item] }); }
+    });
+    var tabs = [["all", "Tout"], ["loto", "Lotos"], ["books", "Bourses aux livres"]].map((d) => ({
+      label: d[1], cls: "tab" + (f === d[0] ? " tab-on" : ""), pressed: f === d[0] ? "true" : "false",
+      pick: () => this.setState({ filter: d[0] })
+    }));
+    return { months: months, tabs: tabs };
+  }
+}
+</script>
+</body>
+</html>

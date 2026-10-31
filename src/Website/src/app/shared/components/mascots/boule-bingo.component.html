@@ -1,0 +1,25 @@
+<div class="bb" [class.bb-pose]="mood === 'pose'" [style.width.px]="size" [style.height.px]="size" aria-hidden="true">
+  <span class="bb-shadow" aria-hidden="true"></span>
+  <div class="bb-body">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <radialGradient [attr.id]="'bbG-' + instanceId" cx="36%" cy="30%" r="75%">
+          <stop offset="0" [attr.stop-color]="palettes[color][0]"></stop>
+          <stop offset=".55" [attr.stop-color]="palettes[color][1]"></stop>
+          <stop offset="1" [attr.stop-color]="palettes[color][2]"></stop>
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="52" r="40" [attr.fill]="'url(#bbG-' + instanceId + ')'"></circle>
+      <circle cx="50" cy="56" r="23" fill="#ffffff"></circle>
+      <circle cx="50" cy="56" r="19.5" fill="none" [attr.stroke]="palettes[color][1]" stroke-width="1.6"></circle>
+      <g class="eye"><ellipse cx="41" cy="23" rx="3" ry="3.8" fill="#ffffff"></ellipse><circle cx="41.5" cy="23.8" r="1.7" fill="#041d30"></circle></g>
+      <g class="eye eye-r"><ellipse cx="59" cy="23" rx="3" ry="3.8" fill="#ffffff"></ellipse><circle cx="59.5" cy="23.8" r="1.7" fill="#041d30"></circle></g>
+      <path d="M44 84 Q50 88 56 84" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round"></path>
+      <circle cx="31" cy="30" r="3" fill="#ffffff" opacity=".25"></circle>
+      <circle cx="69" cy="30" r="3" fill="#ffffff" opacity=".25"></circle>
+      <path d="M24 34 C28 22 38 15 48 14" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"></path>
+      <circle cx="27" cy="44" r="2" fill="#ffffff" opacity=".6"></circle>
+    </svg>
+    <span class="bb-num" [style.font-size.px]="size * (num.length > 1 ? .22 : .27)">{{ num }}</span>
+  </div>
+</div>

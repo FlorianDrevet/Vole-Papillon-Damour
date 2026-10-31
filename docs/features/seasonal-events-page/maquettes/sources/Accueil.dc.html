@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil, cartes des prochains rendez-vous</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.ac{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start}
+.cd{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;min-height:210px;padding:24px 26px 22px;border-radius:14px;text-decoration:none;box-shadow:0 26px 40px -30px rgba(4,29,48,.6);transition:transform .25s cubic-bezier(.2,.8,.3,1)}
+.cd:hover{transform:translateY(-4px)}
+.cd.tilt{transform:rotate(-1.6deg)}
+.top{position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:12px}
+.ti{position:relative;font-size:19px;font-weight:700}
+.me{position:relative;font-size:15px}
+.lk{position:relative;font-size:14px;font-weight:700;margin-top:4px}
+.deco{position:absolute;inset:0;pointer-events:none}
+.hw{background:#120a1c;color:#f4e8cf}
+.hw .day{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:62px;line-height:.85;color:#ff8c2e;font-variation-settings:"opsz" 144;text-shadow:0 0 22px rgba(255,140,46,.35)}
+.hw .mo{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:18px;color:#b8a5cf}
+.hw .top{box-shadow:inset 0 -1px 0 rgba(184,165,207,.3)}
+.hw .ti{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:22px}
+.hw .me{color:#d8cbe6}
+.hw .lk{color:#ffb347}
+.moon{position:absolute;top:18px;right:110px;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 26px 8px rgba(246,232,190,.14)}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.85}50%{opacity:.2}}
+.when{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-weight:800;font-size:12px}
+.bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 23px,rgba(16,50,77,.09) 23px 24px);color:#10324d}
+.bk .margin{position:absolute;top:0;bottom:0;left:16px;width:2px;background:rgba(229,112,42,.4)}
+.bk .day{font-family:Newsreader,Georgia,serif;font-size:58px;line-height:.85}
+.bk .mo{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:19px;color:#5a7286}
+.bk .top{box-shadow:inset 0 -1.5px 0 rgba(16,50,77,.2)}
+.bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:23px}
+.bk .me{color:#4d6a80}
+.bk .lk{color:#0c6ea6}
+.flit{position:absolute;top:10px;right:14px;animation:flit 12s ease-in-out infinite}
+@keyframes flit{0%,100%{transform:translate(0,0) rotate(-6deg)}30%{transform:translate(-26px,14px) rotate(8deg)}60%{transform:translate(-8px,40px) rotate(-4deg)}}
+.lo{background:#0b2438;color:#ffffff}
+.lo .dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(127,216,245,.13) 1.2px,transparent 1.6px);background-size:18px 18px}
+.lo .day{font-size:58px;font-weight:300;line-height:.85;font-family:Newsreader,Georgia,serif}
+.lo .mo{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:19px;color:#9dc2da}
+.lo .top{box-shadow:inset 0 -1px 0 rgba(157,194,218,.3)}
+.lo .me{color:#c3dceb}
+.lo .lk{color:#f9a93c}
+.cap{margin:0;font-size:14px;font-weight:600;color:#4d6a80}
+</style>
+</helmet>
+<div class="ac" style="width: 1440px; height: 980px; box-sizing: border-box; padding: 50px 64px; display: flex; flex-direction: column; gap: 26px;" data-zone="E7-section">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+    <div style="display: flex; gap: 14px;"><span style="width: 3px; border-radius: 3px; background: linear-gradient(180deg, #1497d6, #7fd8f5 55%, #f0801c);"></span><div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .16em; color: #0c6ea6;">PROCHAINS RENDEZ-VOUS</span><span style="font-family: Newsreader, Georgia, serif; font-size: 38px; color: #072b45;">Venez nous voir.</span></div></div>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #0c6ea6;">TOUT L'AGENDA →</span>
+  </div>
+  <p class="cap">L'en-tête de section reste celui d'aujourd'hui ; seules les cartes changent. Ici, le 31 octobre :</p>
+
+  <div class="cards" data-zone="E7-cartes">
+    <a class="cd hw tilt" href="#" data-zone="E7-carte-halloween">
+      <span class="deco" aria-hidden="true"><span class="star" style="left: 170px; top: 30px;"></span><span class="star" style="left: 300px; top: 90px; animation-delay: -2s;"></span><span class="moon"></span><span style="position: absolute; right: 8px; bottom: 6px;"><dc-import name="Citrouille" size="92" mood="idle" hint-size="92px,84px"></dc-import></span><span style="position: absolute; right: 150px; top: 60px;"><dc-import name="ChauveSouris" size="34" hint-size="34px,17px"></dc-import></span></span>
+      <span class="top"><span class="day">01</span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><span class="when" style="background: #ffb347; color: #1a0b22;">Demain</span><span class="mo">novembre</span></span></span>
+      <span class="ti">Loto d'halloween</span>
+      <span class="me">Saint Just Saint Rambert · 14:00</span>
+      <span class="lk">Détails</span>
+    </a>
+    <a class="cd bk" href="#" data-zone="E7-carte-bourse">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit"><dc-import name="Papillon" size="62" variant="a" hint-size="62px,48px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">11</span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-right: 64px;"><span class="when" style="background: #10324d; color: #f4ecdc;">Dans 11 jours</span><span class="mo">novembre</span></span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon · 14:00</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+    <a class="cd bk" href="#">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit" style="animation-delay: -5s;"><dc-import name="Papillon" size="54" variant="a" hint-size="54px,42px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">16</span><span class="mo" style="padding-right: 64px;">décembre</span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon · 14:00</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+  </div>
+
+  <p class="cap" style="margin-top: 30px;">Plus tard dans la saison, avec un loto sans thème (boule de bingo) :</p>
+  <div class="cards">
+    <a class="cd bk" href="#">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit"><dc-import name="Papillon" size="56" variant="a" hint-size="56px,43px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">16</span><span class="mo" style="padding-right: 64px;">décembre</span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon · 14:00</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+    <a class="cd lo" href="#" data-zone="E7-carte-loto">
+      <span class="deco" aria-hidden="true"><span class="dots"></span><span style="position: absolute; right: 14px; bottom: 10px;"><dc-import name="BouleBingo" size="96" num="3" color="bleu" hint-size="96px,96px"></dc-import></span><span style="position: absolute; right: 96px; top: 18px;"><dc-import name="BouleBingo" size="40" num="21" color="orange" mood="pose" hint-size="40px,40px"></dc-import></span></span>
+      <span class="top"><span class="day">03</span><span class="mo" style="padding-right: 140px;">janvier</span></span>
+      <span class="ti">Loto de Maxence</span>
+      <span class="me">Saint Just Saint Rambert</span>
+      <span class="lk">Détails</span>
+    </a>
+    <a class="cd bk" href="#">
+      <span class="deco" aria-hidden="true"><span class="margin"></span><span class="flit" style="animation-delay: -7s;"><dc-import name="Papillon" size="54" variant="a" hint-size="54px,42px"></dc-import></span></span>
+      <span class="top" style="padding-left: 6px;"><span class="day">20</span><span class="mo" style="padding-right: 64px;">janvier</span></span>
+      <span class="ti" style="padding-left: 6px;">Bourse aux livres</span>
+      <span class="me" style="padding-left: 6px;">Andrézieux-Bouthéon</span>
+      <span class="lk" style="padding-left: 6px;">Détails</span>
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

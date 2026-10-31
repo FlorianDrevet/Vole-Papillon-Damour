@@ -33,21 +33,46 @@
         @for (event of upcomingEvents(); track event.id; let i = $index; let first = $first) {
           <a
             [routerLink]="['/evenement', event.id]"
-            class="flex animate-vpd-float flex-col gap-2.5 rounded px-6 py-6 hover:[animation-play-state:paused]"
-            [ngClass]="first
-              ? 'bg-ink-2 text-paper shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)] hover:shadow-[0_34px_54px_-28px_rgba(7,43,69,0.9)]'
-              : 'mt-4 border border-line bg-white shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)]'"
+            class="home-event-card flex animate-vpd-float flex-col gap-2.5 rounded px-6 py-6 hover:[animation-play-state:paused]"
+            [class.home-event-card--first]="first"
+            [class.home-event-card--halloween]="identity(event) === 'halloween'"
+            [class.home-event-card--books]="identity(event) === 'books'"
+            [class.home-event-card--loto]="identity(event) === 'loto'"
+            [class.home-event-card--other]="identity(event) === 'other'"
+            [class.calm]="calm()"
+            [class.paused]="!visible()"
+            [attr.data-zone]="identity(event) === 'halloween' ? 'E7-carte-halloween' : identity(event) === 'books' ? 'E7-carte-bourse' : identity(event) === 'loto' ? 'E7-carte-loto' : 'E7-carte-autre'"
             [style.--r]="cardRotationDeg(i) + 'deg'"
             [style.animation-duration.s]="cardDurationS(i)"
             [style.animation-delay.s]="cardDelayS(i)">
-            <span class="flex items-baseline justify-between">
-              <span class="font-serif text-[40px] leading-[.9]" [ngClass]="first ? '' : 'text-ink-2'">{{ event.dateStart | date:'dd':'UTC' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">{{ event.dateStart | date:'MMM':'UTC' }}</span>
+            <span class="home-event-card__art" aria-hidden="true">
+              @if (identity(event) === 'halloween') {
+                <span class="home-event-card__moon"></span>
+                <vpd-citrouille class="home-event-card__pumpkin" [size]="92" mood="idle" />
+              } @else if (identity(event) === 'books') {
+                <span class="home-event-card__paper-margin"></span>
+                <vpd-papillon class="home-event-card__butterfly" [size]="144" mood="vol" />
+              } @else if (identity(event) === 'loto') {
+                <span class="home-event-card__bingo-pattern"></span>
+                <vpd-boule-bingo class="home-event-card__ball" [size]="126" [num]="eventDayNumber(event)" color="bleu" mood="saute" />
+              } @else {
+                <span class="home-event-card__orbit"></span>
+              }
             </span>
-            <span class="h-px" [ngClass]="first ? 'bg-cyan/[.28]' : 'bg-line-2'"></span>
-            <strong class="text-base font-semibold" [ngClass]="first ? '' : 'text-ink-2'">{{ event.name }}</strong>
-            <span class="text-[13px] leading-snug" [ngClass]="first ? 'text-mist' : 'text-slate-2'">{{ event.city }} · {{ eventTime(event) | date:'HH:mm':'UTC' }}</span>
-            <span class="mt-1 font-mono text-[11px] tracking-[.12em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">DÉTAILS →</span>
+            <span class="home-event-card__date flex items-baseline justify-between">
+              <span class="home-event-card__day font-serif text-[40px] leading-[.9]">{{ event.dateStart | date:'dd':'UTC' }}</span>
+              <span class="home-event-card__month font-serif text-[15px] italic">{{ event.dateStart | date:'MMMM':'UTC' }}</span>
+            </span>
+            <span class="home-event-card__rule h-px"></span>
+            <strong class="home-event-card__title text-base font-semibold">{{ event.name }}</strong>
+            <span class="home-event-card__meta text-[13px] leading-snug">{{ event.city }} · {{ eventTime(event) | date:'HH:mm':'UTC' }}</span>
+            @if (countdown(event); as label) {
+              <span class="home-event-card__countdown">{{ label }}</span>
+            }
+            <span class="home-event-card__details mt-1 inline-flex min-h-11 items-center gap-2 text-sm font-semibold">
+              Détails
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+            </span>
           </a>
         }
       </div>

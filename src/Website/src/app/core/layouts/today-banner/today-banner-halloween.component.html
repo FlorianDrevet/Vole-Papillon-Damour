@@ -1,4 +1,4 @@
-<div class="hb" [class.calm]="calm()" role="region" aria-label="Événement du jour">
+<div class="hb" [class.calm]="calm()" role="region" [attr.aria-label]="stage === 'upcoming' ? 'Prochain rendez-vous' : stage === 'ongoing' ? 'Événement en cours' : 'Événement du jour'">
   <div class="hb-decor deco" aria-hidden="true">
     <svg class="web" viewBox="0 0 34 34" fill="none" stroke="rgba(232,220,245,.3)" stroke-width=".8"><path d="M0 0 34 0M0 0 28 20M0 0 14 34M0 0 0 34"/><path d="M10 0Q9 6 6 8Q3 10 0 10M20 0Q19 11 13 16Q7 20 0 20M30 0Q28 16 20 24Q11 31 0 30"/></svg>
     <span class="star star-1"></span><span class="star star-2"></span><span class="star star-3"></span><span class="star star-4"></span>
@@ -8,19 +8,19 @@
 
   <div class="hb-first">
     <div class="hb-pumpkin deco" aria-hidden="true"><vpd-citrouille [size]="34" mood="idle" /></div>
-    @if (variant === 'live') {
+    @if (stage === 'live') {
       <span class="hb-k hb-k-live">En direct</span>
     } @else {
-      <span class="hb-k hb-k-day">Aujourd'hui</span>
+      <span class="hb-k hb-k-day">{{ label }}</span>
     }
-    <span class="hb-name">{{ variant === 'finished' ? 'Le loto est terminé, merci à tous !' : today.name }}</span>
+    <span class="hb-name">{{ stage === 'finished' ? 'Le loto est terminé, merci à tous !' : today.name }}</span>
     <button type="button" class="close" (click)="close.emit()" aria-label="Masquer le bandeau">
       <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
     </button>
   </div>
 
   <div class="hb-second">
-    @switch (variant) {
+    @switch (stage) {
       @case ('live') {
         <span class="hb-last">Dernier numéro <span class="last-chip" [class.chip-a]="batsActive() && animationKey() === 'a'" [class.chip-b]="batsActive() && animationKey() === 'b'">{{ today.lastNumero ?? '—' }}</span></span>
         <a class="follow" [routerLink]="['/evenement', today.id, 'tableau']">Suivre le tableau <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>

@@ -1,6 +1,6 @@
 import {DestroyRef, inject, Injectable, signal} from '@angular/core';
 import {buildLotoTableauView, LotoCell, LotoEventSnapshot} from '@vpd/ui';
-import {HalloweenPreferences} from './halloween-preferences';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {detectLotoMoment, LotoMoment} from './loto-moment';
 
 const INTERRUPT_FADE_MS = 150;

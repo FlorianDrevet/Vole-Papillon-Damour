@@ -1,9 +1,9 @@
 import {
   isTodayBannerDismissed,
-  parisDay,
   parisTime,
+  todayBannerLabel,
   todayBannerSchedule,
-  todayBannerVariant,
+  todayBannerStage,
 } from './today-banner-state';
 import {TodayEventModel} from '../../../shared/models/today-event.model';
 
@@ -11,44 +11,85 @@ const loto: TodayEventModel = {
   id: 'loto-1',
   name: 'Grand loto de Vole Papillon d’Amour',
   eventType: 'Bingo',
-  dateStart: '2026-11-15T13:00:00Z',
+  dateStart: '2026-11-01T12:00:00Z',
   dateEnd: null,
-  hourOpenDoors: '2026-11-15T12:30:00Z',
-  hourCloseDoors: '2026-11-15T17:30:00Z',
+  hourOpenDoors: '2026-11-01T12:30:00Z',
+  hourCloseDoors: '2026-11-01T17:30:00Z',
   city: 'Arras',
   liveStatus: 'NotStarted',
   lastNumero: null,
 };
 
 describe('today banner state', () => {
-  it('choisit la variante selon le type et l’avancement (RG-18)', () => {
-    expect(todayBannerVariant(loto)).toBe('before');
-    expect(todayBannerVariant({...loto, liveStatus: 'Live', lastNumero: 42})).toBe('live');
-    expect(todayBannerVariant({...loto, liveStatus: 'Finished'})).toBe('finished');
-    expect(todayBannerVariant({...loto, eventType: 'Books', liveStatus: null})).toBe('other');
+  it('announces a rendezvous at J-7 as upcoming', () => {
+    expect(todayBannerStage(
+      {...loto, dateStart: '2026-11-07T12:00:00Z'},
+      new Date('2026-10-31T12:00:00Z'),
+    )).toBe('upcoming');
   });
 
-  it('reste fermé pour la journée, sauf au passage en direct (RG-19)', () => {
-    const closedBefore = {eventId: 'loto-1', day: '2026-11-15', variant: 'before' as const};
+  it('uses a stage label for every banner step', () => {
+    const now = new Date('2026-10-31T12:00:00Z');
+    expect(todayBannerLabel({...loto, dateStart: '2026-11-05T12:00:00Z'}, 'upcoming', now))
+      .toBe('Dans 5 jours');
+    expect(todayBannerLabel(loto, 'upcoming', now)).toBe('Demain');
+    expect(todayBannerLabel(loto, 'today', new Date('2026-11-01T12:00:00Z'))).toBe("Aujourd'hui");
+    expect(todayBannerLabel(loto, 'live', now)).toBe('En direct');
+    expect(todayBannerLabel(loto, 'finished', now)).toBe('Terminé');
+    expect(todayBannerLabel(loto, 'ongoing', now)).toBe('En ce moment');
+  });
 
-    expect(isTodayBannerDismissed(loto, closedBefore, '2026-11-15')).toBeTrue();
-    expect(isTodayBannerDismissed(loto, closedBefore, '2026-11-16')).toBeFalse();
-    expect(isTodayBannerDismissed({...loto, liveStatus: 'Live'}, closedBefore, '2026-11-15')).toBeFalse();
+  it('keeps an upcoming dismissal from J-5 through J-1, then shows the day-J step', () => {
+    const event = {...loto, dateStart: '2026-11-05T12:00:00Z'};
+    const dismissal = {eventId: 'loto-1', stage: 'upcoming' as const};
+
+    expect(isTodayBannerDismissed(event, dismissal, new Date('2026-10-31T12:00:00Z'))).toBeTrue();
+    expect(isTodayBannerDismissed(event, dismissal, new Date('2026-11-04T12:00:00Z'))).toBeTrue();
+    expect(isTodayBannerDismissed(event, dismissal, new Date('2026-11-05T12:00:00Z'))).toBeFalse();
+  });
+
+  it('keeps a multi-day book event in the ongoing stage', () => {
+    const books: TodayEventModel = {
+      ...loto,
+      id: 'books-1',
+      eventType: 'Books',
+      dateStart: '2026-11-11T00:00:00Z',
+      dateEnd: '2026-11-16T00:00:00Z',
+      liveStatus: null,
+    };
+    expect(todayBannerStage(books, new Date('2026-11-13T12:00:00Z'))).toBe('ongoing');
+    expect(todayBannerLabel(books, 'ongoing', new Date('2026-11-13T12:00:00Z')))
+      .toBe('En ce moment');
+    expect(todayBannerSchedule(books, 'ongoing', new Date('2026-11-13T12:00:00Z')))
+      .toBe('jusqu’au lundi 16 novembre · Arras');
+  });
+
+  it('shows the date before the event and opening hours tomorrow or today', () => {
+    const now = new Date('2026-10-31T12:00:00Z');
+    expect(todayBannerSchedule(loto, 'upcoming', now)).toBe('Ouverture des portes 13 h 30 · Arras');
+    expect(todayBannerSchedule({...loto, dateStart: '2026-11-07T12:00:00Z'}, 'upcoming', now))
+      .toBe('samedi 7 novembre · Arras');
+    expect(todayBannerSchedule(
+      {...loto, dateStart: '2026-10-31T12:00:00Z'},
+      'today',
+      now,
+    )).toBe('Ouverture des portes 13 h 30 · Arras');
+    expect(parisTime('2026-11-01T12:30:00Z')).toBe('13 h 30');
+  });
+
+  it('uses live and finished as distinct dismissal steps', () => {
+    const event = {...loto, dateStart: '2026-11-01T12:00:00Z'};
+    const closedToday = {eventId: 'loto-1', stage: 'today' as const};
+    expect(isTodayBannerDismissed(event, closedToday, new Date('2026-11-01T12:00:00Z'))).toBeTrue();
     expect(isTodayBannerDismissed(
-      {...loto, liveStatus: 'Live'},
-      {...closedBefore, variant: 'live'},
-      '2026-11-15')).toBeTrue();
-    expect(isTodayBannerDismissed(loto, null, '2026-11-15')).toBeFalse();
-  });
-
-  it('compte les jours et les heures à Paris (RG-16)', () => {
-    expect(parisDay(new Date('2026-11-14T23:30:00Z'))).toBe('2026-11-15');
-    expect(parisTime('2026-11-15T12:30:00Z')).toBe('13 h 30');
-  });
-
-  it('annonce l’ouverture des portes avant le loto, les horaires sinon', () => {
-    expect(todayBannerSchedule(loto)).toBe('Ouverture des portes 13 h 30 · Arras');
-    expect(todayBannerSchedule({...loto, eventType: 'Books', liveStatus: null}))
-      .toBe('13 h 30 – 18 h 30 · Arras');
+      {...event, liveStatus: 'Live'},
+      closedToday,
+      new Date('2026-11-01T12:00:00Z'),
+    )).toBeFalse();
+    expect(isTodayBannerDismissed(
+      {...event, liveStatus: 'Finished'},
+      {eventId: 'loto-1', stage: 'live'},
+      new Date('2026-11-01T12:00:00Z'),
+    )).toBeFalse();
   });
 });

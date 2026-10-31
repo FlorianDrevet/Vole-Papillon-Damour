@@ -1,0 +1,92 @@
+<section class="agenda-calendar" data-zone="E1-calendrier" aria-label="Calendrier des prochains rendez-vous">
+  <div class="calendar-toolbar" data-zone="E1-navigation-mois">
+    <button type="button" class="calendar-nav" aria-label="Mois précédents" [disabled]="!canGoPrevious" (click)="previousMonths()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5" /></svg>
+    </button>
+    <p class="calendar-range-label" aria-live="polite">
+      @if (months.length) {
+        <span class="calendar-range-label--desktop">{{ months[0].label }} @if (months.length > 1) { – {{ months[months.length - 1].label }} }</span>
+        <span class="calendar-range-label--mobile">{{ months[0].label }}</span>
+      }
+    </p>
+    <button type="button" class="calendar-nav" aria-label="Mois suivants" [disabled]="!canGoNext" (click)="nextMonths()">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
+    </button>
+  </div>
+
+  <div class="calendar-months">
+    @for (month of months; track month.key) {
+      <section class="calendar-month" data-zone="E1-mois-calendrier" [attr.aria-label]="month.label">
+        <h3>{{ month.label }}</h3>
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+        </div>
+        <div class="calendar-days">
+          @for (cell of month.cells; track $index) {
+            @if (cell.day === null || cell.date === null) {
+              <span class="calendar-day calendar-day--empty" aria-hidden="true"></span>
+            } @else if (cell.events.length) {
+              <div class="calendar-day calendar-day--event">
+                @for (occurrence of cell.events; track occurrence.event.id) {
+                  <button
+                    type="button"
+                    class="calendar-event-day light"
+                    [class.calendar-event-day--halloween]="identity(occurrence.event) === 'halloween'"
+                    [class.calendar-event-day--loto]="identity(occurrence.event) === 'loto'"
+                    [class.calendar-event-day--books]="identity(occurrence.event) === 'books'"
+                    [class.calendar-event-day--other]="identity(occurrence.event) === 'other'"
+                    [class.calendar-event-day--start]="occurrence.position === 'start'"
+                    [class.calendar-event-day--middle]="occurrence.position === 'middle'"
+                    [class.calendar-event-day--end]="occurrence.position === 'end'"
+                    [class.calendar-event-day--one]="occurrence.position === 'one'"
+                    [class.calendar-event-day--selected]="selectedEventId === occurrence.event.id && selectedDate === cell.date"
+                    [class.calm]="calm()"
+                    [class.paused]="!visible()"
+                    [style.animation-delay]="lightDelay(cell.date)"
+                    [attr.data-date]="cell.date"
+                    [attr.data-event-id]="occurrence.event.id"
+                    [attr.data-zone]="identity(occurrence.event) === 'halloween' ? 'E1-jour-allume' : null"
+                    [attr.aria-label]="dayAriaLabel(cell.date, occurrence.event)"
+                    [attr.aria-pressed]="selectedEventId === occurrence.event.id && selectedDate === cell.date"
+                    (click)="selectEvent(occurrence, cell.date)">
+                    <span class="calendar-day-number">{{ cell.day }}</span>
+                    @if (identity(occurrence.event) === 'halloween') {
+                      <vpd-citrouille class="calendar-pumpkin" [size]="34" mood="sourire" aria-hidden="true" />
+                    } @else if (identity(occurrence.event) === 'loto') {
+                      <vpd-boule-bingo class="calendar-bingo-ball" [size]="36" [num]="eventDayNumber(cell.day)" color="bleu" mood="pose" aria-hidden="true" />
+                    } @else if (identity(occurrence.event) === 'books' && occurrence.position === 'start') {
+                      <vpd-papillon class="calendar-butterfly" [size]="28" mood="pose" aria-hidden="true" />
+                    }
+                  </button>
+                }
+              </div>
+            } @else {
+              <span class="calendar-day"><span class="calendar-day-number">{{ cell.day }}</span></span>
+            }
+          }
+        </div>
+      </section>
+    } @empty {
+      <p class="calendar-empty">Aucun prochain rendez-vous n'est programmé.</p>
+    }
+  </div>
+
+  <div class="calendar-legend" data-zone="E1-legende" aria-label="Légende du calendrier">
+    <span><i class="legend-mark legend-mark--halloween" aria-hidden="true"></i>Loto d'Halloween</span>
+    <span><i class="legend-mark legend-mark--loto" aria-hidden="true"></i>Loto</span>
+    <span><i class="legend-mark legend-mark--books" aria-hidden="true"></i>Bourse aux livres</span>
+  </div>
+
+  <section class="calendar-selection" data-zone="E1-detail-jour" aria-label="Détail du rendez-vous sélectionné">
+    <div class="calendar-selection--desktop">
+      <h3 class="calendar-selection-heading">Le rendez-vous sélectionné</h3>
+      <div class="calendar-selected">
+        <app-agenda-liste [events]="selectedEvents" [showMonthHeader]="false"></app-agenda-liste>
+      </div>
+    </div>
+    <div class="calendar-selection--mobile">
+      <h3 class="calendar-selection-heading">Ce mois-ci</h3>
+      <app-agenda-liste [events]="currentMonthEvents" [showMonthHeader]="false" [selectedEventId]="selectedEventId"></app-agenda-liste>
+    </div>
+  </section>
+</section>

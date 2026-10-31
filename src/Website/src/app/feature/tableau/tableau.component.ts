@@ -3,7 +3,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from "@angular/router";
 import {buildLotoTableauView} from '@vpd/ui';
 import {SseClientService} from "../../shared/clients/sse-client.service";
-import {HalloweenPreferences} from './halloween/halloween-preferences';
+import {HalloweenPreferences} from '../../shared/components/mascots/halloween-preferences';
 
 /** E4 · Tableau du loto en direct, pensé pour le téléphone des joueurs. */
 @Component({

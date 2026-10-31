@@ -12,9 +12,16 @@ describe('VpdEventSections', () => {
   let fixture: ComponentFixture<VpdEventSections>;
   let axiosServiceSpy: jasmine.SpyObj<AxiosService>;
 
-  const createEventResponse = (id: string, eventType: string, dateStart: string, hourOpenDoors: string | null = null) => ({
+  const createEventResponse = (
+    id: string,
+    eventType: string,
+    dateStart: string,
+    hourOpenDoors: string | null = null,
+    liveTheme: 'Classic' | 'Halloween' = 'Classic',
+  ) => ({
     id,
     eventType,
+    liveTheme,
     dateStart,
     dateEnd: null,
     hourOpenDoors,
@@ -106,6 +113,32 @@ describe('VpdEventSections', () => {
     expect(eventCards[0].textContent).not.toContain('17:30');
     expect(eventCards[1].textContent).toContain('14:00');
     expect(eventCards[2].textContent).toContain('19:00');
+  });
+
+  it('adds the countdown and visual identity to the next three event cards', async () => {
+    const todayParts = new Intl.DateTimeFormat('fr-CA', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date()).split('-').map(Number);
+    const tomorrow = new Date(Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2] + 1, 12));
+    const dayAfter = new Date(Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2] + 2, 12));
+    const thirdDay = new Date(Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2] + 3, 12));
+    configureRequests([
+      createEventResponse('halloween', 'Bingo', tomorrow.toISOString(), null, 'Halloween'),
+      createEventResponse('books', 'Books', dayAfter.toISOString()),
+      createEventResponse('classic', 'Bingo', thirdDay.toISOString()),
+    ]);
+
+    await createComponent();
+
+    const cards = [...fixture.nativeElement.querySelectorAll('.home-event-card')] as HTMLElement[];
+    expect(cards.length).toBe(3);
+    expect(cards[0].textContent).toContain('Demain');
+    expect(cards[0].querySelector('vpd-citrouille')).not.toBeNull();
+    expect(cards[1].querySelector('vpd-papillon')).not.toBeNull();
+    expect(cards[2].querySelector('vpd-boule-bingo')).not.toBeNull();
   });
 
   it('should keep upcomingEvents empty when the request fails', async () => {

@@ -1,0 +1,422 @@
+:host {
+  display: block;
+}
+
+.featured-event {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-height: 490px;
+  padding: 26px 22px 28px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 24px;
+  background: linear-gradient(125deg, #072b45 5%, #0b3f63 58%, #0c6ea6 130%);
+  color: #fff;
+  box-shadow: 0 28px 48px -40px rgba(7, 43, 69, .75);
+}
+
+.feature-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.feature-date,
+.feature-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.feature-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  min-height: 105px;
+  text-shadow: 0 2px 18px rgba(7, 43, 69, .25);
+}
+
+.feature-day {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: clamp(50px, 16vw, 72px);
+  font-weight: 850;
+  line-height: .86;
+  letter-spacing: -.055em;
+  font-variant-numeric: tabular-nums;
+}
+
+.feature-month {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+.feature-weekday {
+  margin-top: 3px;
+  color: rgba(229, 242, 250, .78);
+  font-size: 13px;
+}
+
+.feature-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 710px;
+  padding-top: 4px;
+}
+
+.feature-countdown {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: #e9f4fb;
+  color: #072b45;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.feature-type {
+  color: #b8d5e7;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 18px;
+  font-style: italic;
+}
+
+.feature-title {
+  max-width: 18ch;
+  margin: 0;
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(35px, 10vw, 50px);
+  font-weight: 500;
+  line-height: .99;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+.feature-meta {
+  margin: 0;
+  color: #d9e9f4;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.feature-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 6px;
+}
+
+.feature-details,
+.feature-calendar {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 999px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.feature-details {
+  border-color: #fff;
+  background: #fff;
+  color: #072b45;
+}
+
+.feature-calendar {
+  background: rgba(7, 43, 69, .28);
+  cursor: pointer;
+}
+
+.feature-details:hover,
+.feature-calendar:hover {
+  transform: translateY(-1px);
+}
+
+.feature-calendar:hover {
+  background: rgba(255, 255, 255, .14);
+}
+
+.featured-event--halloween {
+  background: linear-gradient(125deg, #100b1a 5%, #20152e 58%, #392348 130%);
+}
+
+.featured-event--books {
+  border-color: #e8dcc3;
+  background: #fffaf0;
+  color: #072b45;
+}
+
+.featured-event--books .feature-art {
+  inset: 0 0 0 auto;
+  width: 54%;
+  background: repeating-linear-gradient(to bottom, transparent 0 31px, rgba(102, 156, 191, .18) 32px 33px);
+  opacity: .82;
+}
+
+.featured-event--books .feature-date,
+.featured-event--books .feature-copy {
+  text-shadow: none;
+}
+
+.featured-event--books .feature-day {
+  color: #0c6ea6;
+}
+
+.featured-event--books .feature-month,
+.featured-event--books .feature-title {
+  color: #072b45;
+}
+
+.featured-event--books .feature-weekday,
+.featured-event--books .feature-meta {
+  color: #33536e;
+}
+
+.featured-event--books .feature-type {
+  color: #0c6ea6;
+}
+
+.featured-event--books .feature-details {
+  border-color: #0c6ea6;
+  background: #0c6ea6;
+  color: #fff;
+}
+
+.featured-event--books .feature-calendar {
+  border-color: #9dc2da;
+  background: transparent;
+  color: #0c6ea6;
+}
+
+.feature-sky,
+.feature-classic-art,
+.feature-other-art,
+.feature-paper {
+  position: absolute;
+  inset: 0;
+}
+
+.feature-sky {
+  overflow: hidden;
+  background: radial-gradient(ellipse at 76% 80%, rgba(101, 52, 93, .58), transparent 42%);
+}
+
+.feature-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #f6e8b6;
+  box-shadow: 0 0 9px rgba(246, 232, 182, .82);
+  animation: feature-twinkle 2.8s ease-in-out infinite alternate;
+}
+
+.star-one { top: 14%; right: 45%; }
+.star-two { top: 22%; right: 25%; animation-delay: -1.4s; }
+.star-three { top: 39%; right: 38%; animation-delay: -.7s; }
+.star-four { top: 10%; right: 13%; animation-delay: -2.1s; }
+
+.feature-moon {
+  position: absolute;
+  top: 10%;
+  right: 19%;
+  width: 64px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #f7df9a;
+  box-shadow: 0 0 35px rgba(247, 223, 154, .3);
+}
+
+.feature-moon::after {
+  position: absolute;
+  top: -5px;
+  left: 17px;
+  width: 64px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #20152e;
+  content: '';
+}
+
+.feature-cloud {
+  position: absolute;
+  right: 0;
+  bottom: -11%;
+  left: 0;
+  height: 34%;
+  border-radius: 50% 50% 0 0;
+  background: linear-gradient(180deg, #38213e, #170f24);
+}
+
+.cloud-two {
+  right: auto;
+  bottom: -18%;
+  left: 38%;
+  width: 76%;
+  height: 35%;
+  background: linear-gradient(180deg, #49304a, #21152e);
+}
+
+.feature-pumpkin {
+  position: absolute;
+  right: 4%;
+  bottom: -7%;
+  width: 38%;
+  max-width: 225px;
+}
+
+.feature-runner {
+  position: absolute;
+  top: 42%;
+  left: -74px;
+  animation: feature-ghost-run 2.8s ease-in-out both;
+}
+
+.feature-paper {
+  background: linear-gradient(90deg, transparent 0 24%, rgba(229, 112, 42, .22) 24% 25%, transparent 25% 100%);
+}
+
+.feature-butterfly {
+  position: absolute;
+  right: -3%;
+  bottom: 4%;
+  width: min(72%, 260px);
+  opacity: .96;
+}
+
+.feature-classic-art {
+  display: grid;
+  place-items: center;
+  padding: 40px 6% 0 40%;
+  background: radial-gradient(circle at 76% 58%, rgba(20, 151, 214, .38), transparent 37%);
+}
+
+.feature-other-art span {
+  position: absolute;
+  top: -22%;
+  right: -4%;
+  width: 52%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(217, 233, 244, .17);
+  border-radius: 50%;
+}
+
+.feature-other-art span:nth-child(2) {
+  top: 16%;
+  right: 8%;
+  width: 36%;
+}
+
+.feature-other-art span:nth-child(3) {
+  top: 42%;
+  right: 23%;
+  width: 18%;
+}
+
+.featured-event.calm .feature-art *,
+.featured-event.calm .feature-runner {
+  animation: none !important;
+  transition: none !important;
+}
+
+.featured-event.paused .feature-art * {
+  animation-play-state: paused !important;
+}
+
+@keyframes feature-twinkle {
+  from { opacity: .4; transform: scale(.78); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes feature-ghost-run {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100vw + 800px)); }
+}
+
+@media (min-width: 720px) {
+  .featured-event {
+    grid-template-columns: minmax(145px, 205px) minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+    min-height: 385px;
+    padding: 40px 38px;
+  }
+
+  .feature-date {
+    justify-content: center;
+    min-height: 210px;
+  }
+
+  .feature-day {
+    font-size: clamp(66px, 7vw, 96px);
+  }
+
+  .feature-month {
+    font-size: 28px;
+  }
+
+  .feature-weekday {
+    font-size: 15px;
+  }
+
+  .feature-copy {
+    gap: 13px;
+  }
+
+  .feature-title {
+    font-size: clamp(48px, 5vw, 66px);
+  }
+
+  .feature-meta {
+    font-size: 16px;
+  }
+
+  .feature-actions {
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .feature-details,
+  .feature-calendar {
+    min-height: 48px;
+    padding: 0 19px;
+    font-size: 15px;
+  }
+
+  .feature-pumpkin {
+    right: 4%;
+    width: 31%;
+  }
+
+  .feature-butterfly {
+    right: 2%;
+    bottom: 0;
+    width: min(42%, 300px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-art * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

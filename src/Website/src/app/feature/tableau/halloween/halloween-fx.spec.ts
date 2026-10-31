@@ -1,7 +1,7 @@
 import {signal} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
 import {LotoEventSnapshot, LotoPartieSnapshot} from '@vpd/ui';
-import {HalloweenPreferences} from './halloween-preferences';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {HalloweenFx} from './halloween-fx';
 
 function partie(lastNumeros: number[] = [], isWon: boolean | null = null, index = 0): LotoPartieSnapshot {

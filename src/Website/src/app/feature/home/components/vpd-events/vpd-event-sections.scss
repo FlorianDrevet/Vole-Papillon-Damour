@@ -1,0 +1,245 @@
+:host {
+  display: block;
+}
+
+.home-event-card {
+  position: relative;
+  isolation: isolate;
+  min-height: 240px;
+  overflow: hidden;
+  border: 1px solid #dbe8f1;
+  background: #fff;
+  color: #072b45;
+  box-shadow: 0 22px 40px -32px rgba(7, 43, 69, .6);
+  text-decoration: none;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.home-event-card--first {
+  border-color: rgba(255, 255, 255, .14);
+  background: #072b45;
+  color: #fff;
+  box-shadow: 0 26px 44px -30px rgba(7, 43, 69, .85);
+}
+
+.home-event-card--first:hover {
+  box-shadow: 0 34px 54px -28px rgba(7, 43, 69, .9);
+}
+
+.home-event-card:not(.home-event-card--first) {
+  margin-top: 16px;
+}
+
+.home-event-card:hover {
+  z-index: 2;
+  transform: translateY(-2px) rotate(calc(var(--r, 0deg) * .35));
+}
+
+.home-event-card__art {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-event-card__date,
+.home-event-card__rule,
+.home-event-card__title,
+.home-event-card__meta,
+.home-event-card__countdown,
+.home-event-card__details {
+  position: relative;
+  z-index: 1;
+}
+
+.home-event-card__date { min-height: 42px; }
+.home-event-card__day { color: #072b45; font-variant-numeric: tabular-nums; }
+.home-event-card__month { color: #0c6ea6; text-transform: capitalize; }
+.home-event-card__rule { display: block; background: #dbe8f1; }
+.home-event-card__title { color: #072b45; }
+.home-event-card__meta { color: #55738a; }
+.home-event-card__details { color: #0c6ea6; }
+
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__day,
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__title {
+  color: #fff;
+}
+
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__month,
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__details {
+  color: #f0801c;
+}
+
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__rule {
+  background: rgba(127, 216, 245, .28);
+}
+
+.home-event-card--first:not(.home-event-card--halloween):not(.home-event-card--books):not(.home-event-card--loto) .home-event-card__meta {
+  color: #d9e9f4;
+}
+
+.home-event-card--halloween {
+  border-color: #493254;
+  background: linear-gradient(125deg, #120a1c, #251630 70%, #392348);
+  color: #f4e8cf;
+}
+
+.home-event-card--halloween .home-event-card__day,
+.home-event-card--halloween .home-event-card__title { color: #fff6e6; }
+.home-event-card--halloween .home-event-card__month,
+.home-event-card--halloween .home-event-card__details { color: #ffb347; }
+.home-event-card--halloween .home-event-card__rule { background: rgba(244, 232, 207, .22); }
+.home-event-card--halloween .home-event-card__meta { color: #d7c8e5; }
+
+.home-event-card--books {
+  border-color: #e8dcc3;
+  background: #fffaf0;
+}
+
+.home-event-card--books .home-event-card__art {
+  background: repeating-linear-gradient(to bottom, transparent 0 25px, rgba(102, 156, 191, .2) 26px 27px);
+}
+
+.home-event-card--books .home-event-card__paper-margin {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 24%;
+  width: 1px;
+  background: rgba(229, 112, 42, .48);
+}
+
+.home-event-card--books .home-event-card__day,
+.home-event-card--books .home-event-card__title { color: #072b45; }
+.home-event-card--books .home-event-card__month,
+.home-event-card--books .home-event-card__details { color: #0c6ea6; }
+
+.home-event-card--loto {
+  border-color: #153e5a;
+  background: linear-gradient(125deg, #082b45, #104a70);
+  color: #fff;
+}
+
+.home-event-card--loto .home-event-card__day,
+.home-event-card--loto .home-event-card__title { color: #fff; }
+.home-event-card--loto .home-event-card__month,
+.home-event-card--loto .home-event-card__details { color: #7fd8f5; }
+.home-event-card--loto .home-event-card__rule { background: rgba(217, 233, 244, .22); }
+.home-event-card--loto .home-event-card__meta { color: #c6dce9; }
+
+.home-event-card__moon {
+  position: absolute;
+  top: 19px;
+  right: 33%;
+  width: 35px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #f7df9a;
+  box-shadow: 0 0 24px rgba(247, 223, 154, .25);
+}
+
+.home-event-card__moon::after {
+  position: absolute;
+  top: -3px;
+  left: 10px;
+  width: 35px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #20152e;
+  content: '';
+}
+
+.home-event-card__pumpkin {
+  position: absolute;
+  right: 4%;
+  bottom: -10px;
+  width: 84px;
+}
+
+.home-event-card__butterfly {
+  position: absolute;
+  right: 2%;
+  bottom: -11px;
+  width: 128px;
+}
+
+.home-event-card__bingo-pattern {
+  position: absolute;
+  inset: 0 0 0 45%;
+  background-image: radial-gradient(circle, rgba(217, 233, 244, .45) 1.5px, transparent 1.8px);
+  background-size: 18px 18px;
+  opacity: .25;
+}
+
+.home-event-card__ball {
+  position: absolute;
+  right: 2%;
+  bottom: -13px;
+  width: 122px;
+}
+
+.home-event-card__orbit {
+  position: absolute;
+  top: -50px;
+  right: -24px;
+  width: 180px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(12, 110, 166, .2);
+  border-radius: 50%;
+}
+
+.home-event-card__orbit::after {
+  position: absolute;
+  inset: 25px;
+  border: 1px solid rgba(12, 110, 166, .16);
+  border-radius: 50%;
+  content: '';
+}
+
+.home-event-card__countdown {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #e9f4fb;
+  color: #072b45;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-event-card--halloween .home-event-card__countdown,
+.home-event-card--loto .home-event-card__countdown {
+  background: rgba(255, 255, 255, .13);
+  color: #fff;
+}
+
+.home-event-card.calm,
+.home-event-card.calm .home-event-card__art *,
+.home-event-card.paused .home-event-card__art * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.home-event-card.paused,
+.home-event-card.paused .home-event-card__art * {
+  animation-play-state: paused !important;
+}
+
+@media (min-width: 640px) {
+  .home-event-card { min-height: 270px; }
+  .home-event-card__pumpkin { width: 96px; }
+  .home-event-card__butterfly { width: 140px; }
+  .home-event-card__ball { width: 132px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-event-card,
+  .home-event-card__art * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bandeau de J-14 au jour J</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.bd{font-family:"Libre Franklin",system-ui,sans-serif}
+.cap{margin:0 0 8px;font-size:14px;font-weight:600;color:#b8a5cf}
+.b{position:relative;overflow:hidden;height:56px;display:flex;align-items:center;gap:18px;padding:0 10px 0 28px;border-radius:12px}
+.b-cl{background:#041d30;color:#ffffff}
+.b-hw{background:#120a1c;color:#f4e8cf}
+.k{font-style:italic;font-weight:600;font-size:17px;white-space:nowrap}
+.b-cl .k{font-family:Newsreader,Georgia,serif;color:#7fd8f5;font-size:19px}
+.b-hw .k{font-family:Fraunces,Georgia,serif;color:#ffb347}
+.n{font-size:15px;font-weight:600;white-space:nowrap}
+.s{font-size:14px;white-space:nowrap}
+.b-cl .s{color:#9dc2da}
+.b-hw .s{color:#b8a5cf}
+.lnk{margin-left:auto;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.b-cl .lnk{color:#ffffff}
+.b-hw .lnk{color:#f4e8cf}
+.cta{margin-left:auto;display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:#f4e8cf;color:#1a0b22;font-weight:800;font-size:14px;text-decoration:none}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:32px;border-radius:9px;background:#ff8c2e;color:#1a0b22;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:21px;box-shadow:0 0 14px rgba(255,140,46,.45)}
+.x{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;background:transparent;flex-shrink:0}
+.b-cl .x{color:#9dc2da}
+.b-hw .x{color:#b8a5cf}
+.fog{position:absolute;left:0;bottom:-8px;width:200%;height:22px;background:radial-gradient(60px 12px at 10% 60%,rgba(200,180,235,.16),transparent),radial-gradient(90px 14px at 35% 60%,rgba(200,180,235,.12),transparent),radial-gradient(70px 12px at 62% 60%,rgba(200,180,235,.15),transparent),radial-gradient(100px 14px at 85% 60%,rgba(200,180,235,.12),transparent);animation:fog 30s linear infinite;pointer-events:none}
+@keyframes fog{to{transform:translateX(-50%)}}
+.m{display:flex;flex-direction:column;gap:4px;padding:8px 6px 10px 12px;border-radius:12px;width:390px;box-sizing:border-box}
+.m .r{display:flex;align-items:center;gap:8px;min-width:0}
+.m .n{overflow:hidden;text-overflow:ellipsis;min-width:0}
+</style>
+</helmet>
+<div class="bd" style="width: 1440px; height: 980px; box-sizing: border-box; padding: 40px; background: #0d0812; display: flex; flex-direction: column; gap: 22px;">
+  <div data-zone="E4-bandeau-classique">
+    <p class="cap">Classique · de J-7 à J-2 (ici une bourse aux livres)</p>
+    <div class="b b-cl" role="region" aria-label="Événement à venir"><span class="k" data-zone="E4-etape">Dans 5 jours</span><span class="n">Bourse aux livres</span><span class="s">du mercredi 11 au lundi 16 novembre · Andrézieux-Bouthéon</span><a class="lnk" href="#">Voir l'événement</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div>
+    <p class="cap">Classique · bourse en cours</p>
+    <div class="b b-cl"><span class="k">En ce moment</span><span class="n">Bourse aux livres</span><span class="s">jusqu'au lundi 16 novembre · Andrézieux-Bouthéon · 14 h</span><a class="lnk" href="#">Voir l'événement</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div data-zone="E4-bandeau-halloween">
+    <p class="cap">Halloween · J-6 (le fantôme traverse une fois par chargement, à toutes les étapes)</p>
+    <div class="b b-hw"><div class="fog" aria-hidden="true"></div><div aria-hidden="true" style="margin-top: 4px;"><dc-import name="Citrouille" size="34" mood="idle" hint-size="34px,31px"></dc-import></div><span class="k">Dans 6 jours</span><span class="n">Loto d'halloween</span><span class="s">dimanche 1er novembre · Saint Just Saint Rambert</span><a class="lnk" href="#">Voir l'événement</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div>
+    <p class="cap">Halloween · J-1</p>
+    <div class="b b-hw"><div class="fog" aria-hidden="true"></div><div aria-hidden="true" style="margin-top: 4px;"><dc-import name="Citrouille" size="34" mood="idle" hint-size="34px,31px"></dc-import></div><span class="k">Demain</span><span class="n">Loto d'halloween</span><span class="s">ouverture à 12 h · Saint Just Saint Rambert</span><a class="lnk" href="#">Voir l'événement</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div>
+    <p class="cap">Halloween · jour J, avant le premier numéro</p>
+    <div class="b b-hw"><div class="fog" aria-hidden="true"></div><div aria-hidden="true" style="margin-top: 4px;"><dc-import name="Citrouille" size="34" mood="idle" hint-size="34px,31px"></dc-import></div><span class="k">Aujourd'hui</span><span class="n">Loto d'halloween</span><span class="s">portes 12 h · Saint Just Saint Rambert</span><a class="lnk" href="#">Voir l'événement</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div>
+    <p class="cap">Halloween · en direct</p>
+    <div class="b b-hw"><div class="fog" aria-hidden="true"></div><div aria-hidden="true" style="margin-top: 4px;"><dc-import name="Citrouille" size="34" mood="idle" hint-size="34px,31px"></dc-import></div><span class="k">En direct</span><span class="n">Loto d'halloween</span><span class="s" style="display: inline-flex; align-items: center; gap: 8px;">Dernier numéro <span class="chip">42</span></span><a class="cta" href="#">Suivre le tableau</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div>
+    <p class="cap">Halloween · terminé</p>
+    <div class="b b-hw"><div class="fog" aria-hidden="true"></div><div aria-hidden="true" style="margin-top: 4px;"><dc-import name="Citrouille" size="34" mood="salut" hint-size="34px,31px"></dc-import></div><span class="n">Le loto est terminé, merci à tous !</span><a class="lnk" href="#">Voir le tableau final</a><button class="x" type="button" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+  </div>
+  <div style="display: flex; gap: 40px; margin-top: 10px;" data-zone="E4-bandeau-mobile">
+    <div><p class="cap">Téléphone · classique</p><div class="m b-cl"><div class="r"><span class="k">Dans 5 jours</span><span class="n">Bourse aux livres</span><button class="x" type="button" aria-label="Masquer le bandeau" style="margin-left: auto;"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div><div class="r" style="padding-right: 8px;"><span class="s">mer. 11 → lun. 16 nov.</span><a class="lnk" href="#">Voir l'événement</a></div></div></div>
+    <div><p class="cap">Téléphone · Halloween</p><div class="m b-hw" style="position: relative; overflow: hidden;"><div class="fog" aria-hidden="true"></div><div class="r"><div aria-hidden="true"><dc-import name="Citrouille" size="30" mood="idle" hint-size="30px,27px"></dc-import></div><span class="k">Dans 6 jours</span><span class="n">Loto d'halloween</span><button class="x" type="button" aria-label="Masquer le bandeau" style="margin-left: auto;"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div><div class="r" style="padding-right: 8px;"><span class="s">dimanche 1er novembre</span><a class="lnk" href="#">Voir l'événement</a></div></div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

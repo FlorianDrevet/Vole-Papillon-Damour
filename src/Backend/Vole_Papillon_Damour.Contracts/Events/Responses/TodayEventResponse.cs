@@ -1,6 +1,6 @@
 namespace Vole_Papillon_Damour.Contracts.Events.Responses;
 
-/// <summary>The event shown in the site's "today" banner.</summary>
+/// <summary>The event announced in the site's banner, up to seven days ahead.</summary>
 public class TodayEventResponse
 {
     public Guid Id { get; set; }

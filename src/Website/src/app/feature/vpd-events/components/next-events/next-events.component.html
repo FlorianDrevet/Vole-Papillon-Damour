@@ -1,0 +1,44 @@
+@if (events.length) {
+  <aside class="next-events" data-zone="E1-ensuite" aria-label="Rendez-vous suivants">
+    <span class="next-kicker">Ensuite</span>
+    @if (events[0]; as event) {
+      <a class="next-feature" [routerLink]="['/evenement', event.id]">
+        <span class="next-date">
+          <span class="next-day">
+            {{ event.dateStart | date:'dd':'UTC' }}@if (event.dateEnd) {<span aria-hidden="true">–</span>{{ event.dateEnd | date:'dd':'UTC' }} }
+          </span>
+          <span class="next-month">{{ event.dateStart | date:'MMMM':'UTC' }}</span>
+          <span class="next-weekday">
+            @if (event.dateEnd) {
+              Du {{ event.dateStart | date:'EEEE d':'UTC' }} au {{ event.dateEnd | date:'EEEE d':'UTC' }}
+            } @else {
+              {{ event.dateStart | date:'EEEE d':'UTC' }}
+            }
+          </span>
+        </span>
+        @if (countdown(event); as label) {
+          <span class="next-countdown">{{ label }}</span>
+        }
+        <span class="next-type">{{ typeLabel(event) }}</span>
+        <strong class="next-title">{{ event.name }}</strong>
+        <span class="next-meta">{{ meta(event) }}</span>
+        <span class="next-link">Toutes les infos</span>
+      </a>
+    }
+
+    @if (events.length > 1) {
+      <div class="next-then">
+        <span class="then-label">Puis</span>
+        @for (later of events.slice(1, 3); track later.id) {
+          <a class="then-event" [routerLink]="['/evenement', later.id]">
+            <b>{{ later.dateStart | date:'dd':'UTC' }}</b>
+            <span>
+              <strong>{{ later.name }}</strong>
+              <small>{{ later.dateStart | date:'EEEE d MMMM':'UTC' }}</small>
+            </span>
+          </a>
+        }
+      </div>
+    }
+  </aside>
+}

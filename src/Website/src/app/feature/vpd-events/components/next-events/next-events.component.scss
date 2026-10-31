@@ -1,0 +1,174 @@
+:host {
+  display: block;
+}
+
+.next-events {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 23px 21px 18px;
+  border: 1px solid #d7e3eb;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 46px -38px rgba(7, 43, 69, .44);
+}
+
+.next-kicker,
+.then-label {
+  color: #33536e;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 19px;
+  font-style: italic;
+}
+
+.next-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: #072b45;
+  text-decoration: none;
+}
+
+.next-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 9px;
+  row-gap: 2px;
+}
+
+.next-day {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: #0c6ea6;
+  font-size: 43px;
+  font-weight: 850;
+  line-height: .95;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.next-month {
+  color: #072b45;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 23px;
+}
+
+.next-weekday {
+  flex-basis: 100%;
+  color: #55738a;
+  font-size: 13px;
+}
+
+.next-countdown {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #e9f4fb;
+  color: #072b45;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.next-type {
+  color: #55738a;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 17px;
+  font-style: italic;
+}
+
+.next-title {
+  color: #072b45;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.next-meta {
+  color: #55738a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.next-link {
+  margin-top: 2px;
+  color: #0c6ea6;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.next-feature:hover .next-link,
+.then-event:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.next-then {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e3ebf0;
+}
+
+.then-label {
+  font-size: 17px;
+}
+
+.then-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  color: #072b45;
+  text-decoration: none;
+}
+
+.then-event > b {
+  width: 36px;
+  color: #0c6ea6;
+  font-size: 27px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.then-event > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.then-event strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.then-event small {
+  color: #69849a;
+  font-size: 12px;
+}
+
+@media (min-width: 1024px) {
+  .next-events {
+    gap: 16px;
+    padding: 28px 26px 21px;
+  }
+
+  .next-day {
+    font-size: 51px;
+  }
+
+  .next-month {
+    font-size: 26px;
+  }
+
+  .next-then {
+    display: flex;
+  }
+}

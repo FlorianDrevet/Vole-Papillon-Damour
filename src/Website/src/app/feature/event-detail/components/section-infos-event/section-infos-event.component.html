@@ -6,7 +6,7 @@
     <img [src]="UrlIcon()" alt="" class="h-4 w-4 opacity-80">
   </span>
   <div class="flex min-w-0 flex-1 flex-col gap-1">
-    <span class="font-mono text-[10px] uppercase tracking-[.16em] text-slate-3">{{ Title() }}</span>
+    <span class="font-serif text-[15px] italic text-slate-3">{{ Title() }}</span>
     @if (Value()) {
       <p class="text-[15px] font-medium leading-snug text-ink-2" [innerHTML]="Value()"></p>
     }

@@ -68,12 +68,13 @@ describe('CreateUpdateEventDialogComponent', () => {
   });
 
   it('shows the live theme selector only for a loto', () => {
-    const label = 'Thème du tableau en direct';
+    const label = 'Thème du loto';
     expect(fixture.nativeElement.textContent).not.toContain(label);
 
     component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Bingo);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(label);
+    expect(fixture.nativeElement.textContent).toContain('Habille la page Événements, la fiche, le bandeau du site et le tableau sur téléphone. La projection ne change pas.');
 
     component.newEventForm.get('eventType')?.setValue(VpdEventEnum.Books);
     fixture.detectChanges();

@@ -1,0 +1,62 @@
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+.agenda-filters {
+  display: flex;
+  gap: 19px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.agenda-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.agenda-filter {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 1px;
+  border: 0;
+  background: transparent;
+  color: #55738a;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.agenda-filter::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: #0c6ea6;
+  content: '';
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 160ms ease;
+}
+
+.agenda-filter--active {
+  color: #072b45;
+}
+
+.agenda-filter--active::after {
+  transform: scaleX(1);
+}
+
+.agenda-filter:focus-visible {
+  outline: 2px solid #0c6ea6;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agenda-filter::after {
+    transition: none;
+  }
+}

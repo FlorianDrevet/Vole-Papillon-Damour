@@ -4,11 +4,11 @@ import {RouterLink} from '@angular/router';
 import {LotoCell, LotoEventSnapshot, LotoTableauView} from '@vpd/ui';
 import {LiveTableauConnection} from '../../../shared/clients/sse-client.service';
 import {VpdEventModel} from '../../../shared/models/vpdEvent.model';
-import {HalloweenPreferences} from './halloween-preferences';
+import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {VpdChaudronComponent} from './characters/vpd-chaudron.component';
-import {VpdCitrouilleComponent} from './characters/vpd-citrouille.component';
-import {VpdFantomeComponent} from './characters/vpd-fantome.component';
-import {VpdChauveSourisComponent} from './characters/vpd-chauve-souris.component';
+import {VpdCitrouilleComponent} from '../../../shared/components/mascots/vpd-citrouille.component';
+import {VpdFantomeComponent} from '../../../shared/components/mascots/vpd-fantome.component';
+import {VpdChauveSourisComponent} from '../../../shared/components/mascots/vpd-chauve-souris.component';
 import {HalloweenFx} from './halloween-fx';
 
 const BAT_FLIGHTS: {duration: number; delay: number; frames: Keyframe[]}[] = [

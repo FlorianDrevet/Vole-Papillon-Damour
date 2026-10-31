@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.agenda-view-toggle {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #e9f4fb;
+}
+
+button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #072b45;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.active {
+  background: #072b45;
+  color: #fff;
+}
+
+button:focus-visible {
+  outline: 2px solid #0c6ea6;
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  button {
+    padding: 0 18px;
+    font-size: 15px;
+  }
+}

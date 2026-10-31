@@ -1,8 +1,11 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../../../shared/enums/vpdEvent.enum";
 import {AxiosService} from "../../../../shared/services/axios.service";
 import {MethodEnum} from "../../../../shared/enums/method.enum";
+import {countdownLabel} from '../../../../shared/events/countdown';
+import {eventIdentity, EventIdentity} from '../../../../shared/events/event-identity';
+import {HalloweenPreferences} from '../../../../shared/components/mascots/halloween-preferences';
 
 /** Nombre de cartes de la bande « Prochains rendez-vous » sur l'accueil. */
 const UPCOMING_EVENTS_COUNT = 3;
@@ -14,6 +17,7 @@ const UPCOMING_EVENTS_COUNT = 3;
     standalone: false
 })
 export class VpdEventSections implements OnInit {
+  private readonly preferences = inject(HalloweenPreferences);
   /**
    * Les trois prochains rendez-vous, tous types confondus et dans l'ordre chronologique :
    * la bande peut donc afficher trois lotos d'affilée. Auparavant elle figeait « le prochain
@@ -23,6 +27,8 @@ export class VpdEventSections implements OnInit {
   upcomingEvents = signal<VpdEventModel[]>([])
   readonly isLoading = signal(true);
   readonly loadingCards = [0, 1, 2];
+  protected readonly calm = this.preferences.calm;
+  protected readonly visible = this.preferences.visible;
 
   constructor(private axiosService: AxiosService) {
   }
@@ -63,6 +69,18 @@ export class VpdEventSections implements OnInit {
     }
 
     return new Date(event.dateStart);
+  }
+
+  protected identity(event: VpdEventModel): EventIdentity {
+    return eventIdentity(event);
+  }
+
+  protected countdown(event: VpdEventModel): string | null {
+    return countdownLabel(event, new Date());
+  }
+
+  protected eventDayNumber(event: VpdEventModel): string {
+    return String(event.dateStart.getUTCDate()).padStart(2, '0');
   }
 
   ngOnInit(): void {

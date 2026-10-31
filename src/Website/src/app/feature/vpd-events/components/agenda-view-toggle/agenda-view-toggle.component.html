@@ -1,0 +1,4 @@
+<div class="agenda-view-toggle" role="group" aria-label="Affichage de l'agenda" data-zone="E1-bascule-vue">
+  <button type="button" [attr.aria-pressed]="active === 'calendar'" [class.active]="active === 'calendar'" (click)="activeChange.emit('calendar')">Calendrier</button>
+  <button type="button" [attr.aria-pressed]="active === 'list'" [class.active]="active === 'list'" (click)="activeChange.emit('list')">Liste</button>
+</div>
