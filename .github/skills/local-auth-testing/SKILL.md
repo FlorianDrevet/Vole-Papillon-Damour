@@ -16,20 +16,24 @@ and current personas.
 
 1. Verify the configured container runtime with `rtk docker ps`. If its daemon is
    unavailable, report runtime validation as pending and continue with static checks.
-2. Start Aspire from the repository root with `rtk aspire start --isolated --non-interactive`.
-3. Wait for `keycloak` and `api` with
+2. If the AppHost has no `Parameters:keycloak-admin-password` user secret yet, set one with
+   `rtk dotnet user-secrets set "Parameters:keycloak-admin-password" "<local strong password>" --project src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj`.
+   This password is only for the local Keycloak console; persona token retrieval does not use it.
+3. Start Aspire from the repository root with `rtk aspire start --isolated --non-interactive`.
+4. Wait for `keycloak` and `api` with
    `rtk aspire wait <resource> --timeout 300 --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj --non-interactive`.
-4. Read the API URL from
+5. Read the API URL from
    `rtk aspire describe --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj --non-interactive`.
-5. Get a local access token with
+6. Get a local access token with
    `rtk powershell -NoProfile -File tools/Get-LocalApiToken.ps1 -Persona <admin|tri-volunteer|cashier|member>`.
-6. Send it as `Authorization: Bearer <token>` to the endpoint under test. Check one
+7. Send it as `Authorization: Bearer <token>` to the endpoint under test. Check one
    authorized persona and one persona that should receive 403 where that distinction
    applies.
 
-The helper reads the seeded username and password from the realm file; do not copy a token
-into source control, logs, documentation, or another environment. The local Keycloak authority
-uses HTTP only on loopback; remote Keycloak authorities must use HTTPS.
+The helper reads the seeded username and password from the realm file and discovers the
+current Keycloak endpoint from Aspire; do not copy a token into source control, logs,
+documentation, or another environment. The AppHost uses HTTPS, while the API also permits
+HTTP only for a loopback Keycloak authority; remote authorities must use HTTPS.
 
 ## Persona changes
 
@@ -44,10 +48,12 @@ there with:
 - a fixture-only password credential.
 
 Add the persona name to `tools/Get-LocalApiToken.ps1` when agents should be able to request
-it by name, then restart Aspire so Keycloak imports the updated realm. The audience mapper
-must continue to issue `vpd-api`; the role mapper must continue to issue a top-level `roles`
-claim. API policies use the same role names as Entra: `Administration`, `LivresRares`,
-`Tri`, and `Caisse`.
+it by name. Keycloak imports the realm only into an empty persistent data volume; after
+changing the fixture, reset only the Keycloak volume as described in `docs/local-authentication.md`.
+The audience mapper must continue to issue `vpd-api`; the role mapper must continue to issue
+a top-level `roles` claim. The `vpd-api-access` scope must also map `email`, `given_name`,
+`family_name`, and `oid` into access tokens for member identity. API policies use the same
+role names as Entra: `Administration`, `LivresRares`, `Tri`, and `Caisse`.
 
 ## Boundaries
 
