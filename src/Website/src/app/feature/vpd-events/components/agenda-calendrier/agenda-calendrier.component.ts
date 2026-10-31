@@ -38,36 +38,30 @@ export class AgendaCalendarComponent implements OnChanges {
   protected readonly phone = this.preferences.phone;
 
   private anchorMonth: {year: number; month: number} | null = null;
+  private availableMonths: AgendaMonth[] = [];
+  private visibleMonths: AgendaMonthView[] = [];
+  private eventDayDelays = new Map<string, string>();
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['events']) {
-      const firstMonth = agendaMonths(this.events)[0];
+      this.availableMonths = agendaMonths(this.events);
+      const firstMonth = this.availableMonths[0];
       this.anchorMonth = firstMonth ? {year: firstMonth.year, month: firstMonth.month} : null;
+      this.updateVisibleMonths();
     }
   }
 
   protected get months(): AgendaMonthView[] {
-    const available = agendaMonths(this.events);
-    if (available.length === 0) {
-      return [];
-    }
-
-    const anchor = this.anchorMonth ?? {year: available[0].year, month: available[0].month};
-    const anchorKey = this.key(anchor.year, anchor.month);
-    const start = Math.max(0, available.findIndex(month => month.key === anchorKey));
-    return available.slice(start, start + 3).map(month => ({
-      ...month,
-      cells: calendarMonth(month.year, month.month, this.events),
-    }));
+    return this.visibleMonths;
   }
 
   protected get canGoPrevious(): boolean {
-    const available = agendaMonths(this.events);
+    const available = this.availableMonths;
     return available.length > 0 && this.anchorIndex(available) > 0;
   }
 
   protected get canGoNext(): boolean {
-    const available = agendaMonths(this.events);
+    const available = this.availableMonths;
     if (available.length === 0) {
       return false;
     }
@@ -113,12 +107,7 @@ export class AgendaCalendarComponent implements OnChanges {
   }
 
   protected lightDelay(date: string): string {
-    const eventDays = [...new Set(this.months
-      .flatMap(month => month.cells)
-      .filter(cell => cell.date !== null && cell.events.length > 0)
-      .map(cell => cell.date!))];
-    const index = eventDays.indexOf(date);
-    return `${Math.max(0, index) * 0.12}s`;
+    return this.eventDayDelays.get(date) ?? '0s';
   }
 
   protected eventTypeLabel(event: VpdEventModel): string {
@@ -159,7 +148,7 @@ export class AgendaCalendarComponent implements OnChanges {
   }
 
   private moveMonths(direction: -1 | 1): void {
-    const available = agendaMonths(this.events);
+    const available = this.availableMonths;
     if (available.length === 0) {
       return;
     }
@@ -168,6 +157,32 @@ export class AgendaCalendarComponent implements OnChanges {
     const nextIndex = Math.min(maxStart, Math.max(0, current + direction * this.monthStep()));
     const target = available[nextIndex];
     this.anchorMonth = {year: target.year, month: target.month};
+    this.updateVisibleMonths();
+  }
+
+  private updateVisibleMonths(): void {
+    if (this.availableMonths.length === 0) {
+      this.visibleMonths = [];
+      this.eventDayDelays = new Map();
+      return;
+    }
+
+    const anchor = this.anchorMonth ?? {
+      year: this.availableMonths[0].year,
+      month: this.availableMonths[0].month,
+    };
+    const anchorKey = this.key(anchor.year, anchor.month);
+    const start = Math.max(0, this.availableMonths.findIndex(month => month.key === anchorKey));
+    this.visibleMonths = this.availableMonths.slice(start, start + 3).map(month => ({
+      ...month,
+      cells: calendarMonth(month.year, month.month, this.events),
+    }));
+
+    const eventDays = [...new Set(this.visibleMonths
+      .flatMap(month => month.cells)
+      .filter(cell => cell.date !== null && cell.events.length > 0)
+      .map(cell => cell.date!))];
+    this.eventDayDelays = new Map(eventDays.map((date, index) => [date, `${index * 0.12}s`]));
   }
 
   private anchorIndex(available: AgendaMonth[]): number {

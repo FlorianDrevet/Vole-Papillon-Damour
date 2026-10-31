@@ -1,4 +1,5 @@
-import {Component, computed, effect, inject, OnDestroy, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
+import {Component, computed, effect, inject, OnDestroy, OnInit, PendingTasks, PLATFORM_ID, signal} from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute} from "@angular/router";
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
@@ -8,9 +9,9 @@ import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../shared/utils/event-address.util";
 import {eventIdentity, EventIdentity} from '../../shared/events/event-identity';
 import {countdownLabel, parisDay} from '../../shared/events/countdown';
+import {trackSsrDataRequest} from '../../shared/events/ssr-pending-task';
 import {HalloweenPreferences} from '../../shared/components/mascots/halloween-preferences';
 import {TodayBannerHalloweenMotionService} from '../../core/layouts/today-banner/today-banner-halloween-motion.service';
-import {isPlatformBrowser} from '@angular/common';
 
 @Component({
     selector: 'app-event-detail',
@@ -22,6 +23,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly todayEvent = inject(TodayEventService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly pendingTasks = inject(PendingTasks);
   private readonly preferences = inject(HalloweenPreferences);
   private readonly motion = inject(TodayBannerHalloweenMotionService);
   private runnerTimer: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +133,7 @@ export class EventDetailComponent implements OnInit, OnDestroy {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id !== null) {
+        const finishSsrTask = trackSsrDataRequest(this.pendingTasks, this.platformId);
         this.eventsFacadeService.getEventById(id)
           .then(response => {
             const data: any = response;
@@ -138,7 +141,10 @@ export class EventDetailComponent implements OnInit, OnDestroy {
             this.vpdEvent.set(response);
           })
           .catch(() => this.vpdEvent.set(null))
-          .finally(() => this.isLoading.set(false));
+          .finally(() => {
+            this.isLoading.set(false);
+            finishSsrTask();
+          });
       } else {
         this.isLoading.set(false);
       }

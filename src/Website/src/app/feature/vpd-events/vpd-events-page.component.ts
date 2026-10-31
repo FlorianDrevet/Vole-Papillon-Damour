@@ -1,10 +1,11 @@
-import {Component, computed, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, PendingTasks, PLATFORM_ID, signal} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
 import {VpdEventModel} from '../../shared/models/vpdEvent.model';
 import {VpdEventEnum} from '../../shared/enums/vpdEvent.enum';
 import {parisDay} from '../../shared/events/countdown';
 import {EVENT_EDITORIAL_PHOTOS} from '../../shared/data/event-editorial-content';
+import {trackSsrDataRequest} from '../../shared/events/ssr-pending-task';
 import {AgendaFilter} from './components/agenda-filters/agenda-filters.component';
 import {AgendaView} from './components/agenda-view-toggle/agenda-view-toggle.component';
 
@@ -18,6 +19,7 @@ const AGENDA_VIEW_STORAGE_KEY = 'vpd.agenda.vue';
 export class VpdEventsPageComponent implements OnInit {
   private readonly eventFacade = inject(VpdEventsFacadeService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly pendingTasks = inject(PendingTasks);
 
   /** Photos et points clés des deux rendez-vous permanents, indépendants des dates de l'API. */
   protected readonly lotoPhotos = EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Bingo];
@@ -83,12 +85,16 @@ export class VpdEventsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.restoreAgendaView();
+    const finishSsrTask = trackSsrDataRequest(this.pendingTasks, this.platformId);
     this.eventFacade.getAllEvents$()
       .then(events => {
         this.events.set((events ?? []).map(event => this.toVpdEvent(event)));
       })
       .catch(() => undefined)
-      .finally(() => this.isLoading.set(false));
+      .finally(() => {
+        this.isLoading.set(false);
+        finishSsrTask();
+      });
   }
 
   protected setAgendaView(view: AgendaView): void {
