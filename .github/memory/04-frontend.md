@@ -734,7 +734,7 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
   book section is not part of this app. Website visibility remains an independent filter.
 - BackOffice distributes `src/BackOffice/public/apks/app-debug.apk` at `/apks/app-debug.apk`.
   Both the public login page and the authenticated `/caisse` page link to this static asset;
-  replace it with the freshly built APK when updating the app.
+  replace it with a freshly built standalone APK when updating the app. The MAUI project sets `EmbedAssembliesIntoApk=true` so direct installation does not depend on ADB Fast Deployment. Its display version is 1.2 / Android version code 3.
 
 
 ## Website canonical URLs (2026-10-04)

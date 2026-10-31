@@ -226,8 +226,12 @@
 - MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; it has no MSAL settings. Its Android
   APK uses `ApplicationDisplayVersion` / `ApplicationVersion` from `ShopAppVpd.csproj`.
   BackOffice serves `public/apks/app-debug.apk` from `/apks/app-debug.apk` on the login and
-  product-management screens. A Debug APK can be built with
-  `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj -f net10.0-android -c Debug -p:AndroidPackageFormat=apk`.
+  product-management screens. Build a standalone Release APK with
+  `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk`.
+  Standalone BackOffice APKs must embed assemblies; Fast Deployment artifacts abort at launch
+  when installed outside ADB deployment. This was reproduced from the distributed APK with
+  Android logcat: Mono exited because `files/.__override__/x86_64` contained no assemblies.
+  Enabling `EmbedAssembliesIntoApk` fixed startup on the API 36 emulator.
   The APK is currently debug-signed; a differing signing certificate requires uninstalling the
   previous package before installation. Use a shared release keystore for future in-place updates.
   Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
