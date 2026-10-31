@@ -1,0 +1,29 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-31T10:00:00Z"},
+  "title": "Loto · mode Halloween",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1100, "h": 980, "title": "E3 · Démo du direct (cliquer Play) — mobile", "is_interactive": true},
+    "Tableau.dc.html": {"x": 1180, "y": 0, "w": 390, "h": 1400, "title": "E2 · Tableau Halloween en jeu — mobile"},
+    "Palette.dc.html": {"x": 1650, "y": 0, "w": 960, "h": 980, "title": "Palette · proposition et variante"},
+    "Etats.dc.html": {"x": 0, "y": 1820, "w": 2540, "h": 844, "title": "E4 · États Halloween — mobile"},
+    "Backoffice.dc.html": {"x": 0, "y": 3010, "w": 760, "h": 560, "title": "E1 · Réglage du thème — backoffice"},
+    "Citrouille.dc.html": {"x": 840, "y": 3010, "w": 220, "h": 200, "title": "Personnage · citrouille"},
+    "ChauveSouris.dc.html": {"x": 1140, "y": 3010, "w": 200, "h": 110, "title": "Personnage · chauve-souris"},
+    "Fantome.dc.html": {"x": 1420, "y": 3010, "w": 180, "h": 220, "title": "Personnage · fantôme"},
+    "Chaudron.dc.html": {"x": 1680, "y": 3010, "w": 200, "h": 190, "title": "Personnage · chaudron"}
+  },
+  "order": ["Main.dc.html", "Tableau.dc.html", "Palette.dc.html", "Etats.dc.html", "Backoffice.dc.html", "Citrouille.dc.html", "ChauveSouris.dc.html", "Fantome.dc.html", "Chaudron.dc.html"],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "Tableau du loto · mode Halloween (mobile)", "kind": "title1", "maxW": 2610},
+    "t2": {"x": 0, "y": 1520, "text": "États hors jeu", "kind": "title1", "maxW": 2540},
+    "t3": {"x": 0, "y": 2710, "text": "Réglage et personnages", "kind": "title1", "maxW": 1880},
+    "n1": {"x": 2700, "y": 0, "w": 360, "fill": "orange", "text": "RG-26 · Halloween uniquement sous 768 px, sur le site. Tablette, ordinateur et projection du backoffice restent en thème classique : pas d'artboard desktop, l'existant ne change pas."},
+    "n2": {"x": 2700, "y": 360, "w": 360, "fill": "purple", "text": "RG-27 / RG-28 · Aucune animation au chargement ni au retour de veille. Après une reconnexion, une seule animation : bingo > ligne > partie suivante > numéro > annulation."},
+    "n3": {"x": 2700, "y": 700, "w": 360, "fill": "purple", "text": "RG-29 / RG-30 · Le numéro s'affiche tout de suite, même pendant une animation. Rien ne cache le dernier numéro plus de 0,3 s. Seule exception : à la partie suivante, les cases s'éteignent derrière le fantôme (2 s au plus)."},
+    "n4": {"x": 2700, "y": 1040, "w": 360, "fill": "green", "text": "RG-34 / RG-37 · Bouton Calmer dans l'en-tête (mémorisé). prefers-reduced-motion = calme d'office. Décor arrêté onglet caché. 40 bonbons max. Tout est en SVG + CSS, aucune image."}
+  },
+  "designSystems": []
+}

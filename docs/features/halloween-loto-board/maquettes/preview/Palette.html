@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palette Halloween</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800;900&amp;display=swap">
+<style>
+body{margin:0}
+.pal{font-family:"Libre Franklin",system-ui,sans-serif}
+.col{flex:1;display:flex;flex-direction:column;gap:18px;padding:30px;border-radius:28px}
+.ttl{margin:0;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:34px;line-height:1}
+.sub{margin:0;font-size:15px;line-height:1.5}
+.sw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.chip{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;min-height:66px;justify-content:flex-end;font-size:13px}
+.chip b{font-size:14px}
+.prev{display:flex;gap:14px;align-items:center;padding:18px;border-radius:22px}
+.big{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:110px;line-height:.9;letter-spacing:-.045em;font-variation-settings:"opsz" 144}
+.cells{display:grid;grid-template-columns:repeat(4,38px);gap:4px}
+.cells span{height:34px;border-radius:7px;display:grid;place-items:center;font-weight:800;font-size:15px}
+.verdict{font-size:14px;line-height:1.5;padding:12px 14px;border-radius:14px}
+</style>
+</head>
+<body>
+<div class="pal" style="width: 960px; height: 980px; box-sizing: border-box; padding: 40px; background: #0d0812; display: flex; gap: 24px;">
+  <section class="col" style="background: #120a1c; color: #f4e8cf;" data-zone="P-proposition">
+    <h2 class="ttl">Nuit de citrouille</h2>
+    <p class="sub" style="color: #b8a5cf;">Proposition retenue dans la spec. Chaude, lisible, joyeuse plus qu'effrayante : un loto en famille.</p>
+    <div class="sw">
+      <div class="chip" style="background: #120a1c; box-shadow: inset 0 0 0 1px #3a2950;"><b>Nuit d'aubergine</b>#120a1c</div>
+      <div class="chip" style="background: #1d1229;"><b>Velours</b>#1d1229</div>
+      <div class="chip" style="background: #2a1c3a;"><b>Ardoise violette</b>#2a1c3a</div>
+      <div class="chip" style="background: #ff8c2e; color: #1a0b22;"><b>Citrouille</b>#ff8c2e</div>
+      <div class="chip" style="background: #ffb347; color: #1a0b22;"><b>Braise</b>#ffb347</div>
+      <div class="chip" style="background: #f4e8cf; color: #1a0b22;"><b>Cire de bougie</b>#f4e8cf</div>
+      <div class="chip" style="background: #9bd85a; color: #1a0b22;"><b>Vert sorcière</b>#9bd85a</div>
+      <div class="chip" style="background: #b8a5cf; color: #1a0b22;"><b>Lilas fané</b>#b8a5cf</div>
+      <div class="chip" style="background: #5b3482;"><b>Prune</b>#5b3482</div>
+    </div>
+    <div class="prev" style="background: #170e23;">
+      <span class="big" style="color: #ff8c2e;">84</span>
+      <div class="cells">
+        <span style="background: #2a1c3a; color: #b8a5cf;">81</span><span style="background: #f4e8cf; color: #1a0b22;">82</span><span style="background: #2a1c3a; color: #ffffff; box-shadow: inset 0 0 0 2px #9bd85a;">83</span><span style="background: #ff8c2e; color: #1a0b22;">84</span>
+      </div>
+    </div>
+    <div class="verdict" style="background: #1d1229; color: #f4e8cf;">Citrouille sur fond du dernier numéro : 7,6:1. Cire / encre : 15:1. Case non sortie (lilas sur ardoise) : 7:1. En niveaux de gris, sorti, non sorti et dernier restent trois clartés distinctes.</div>
+  </section>
+
+  <section class="col" style="background: #0f0b0b; color: #efe6d8;" data-zone="P-variante">
+    <h2 class="ttl">Sang et os</h2>
+    <p class="sub" style="color: #b9aca0;">Variante plus effrayante : noir, os, rouge sang, mousse. Plus « film d'horreur », moins familiale.</p>
+    <div class="sw">
+      <div class="chip" style="background: #0f0b0b; box-shadow: inset 0 0 0 1px #3a2c2c;"><b>Charbon</b>#0f0b0b</div>
+      <div class="chip" style="background: #1c1616;"><b>Suie</b>#1c1616</div>
+      <div class="chip" style="background: #2b2323;"><b>Pierre</b>#2b2323</div>
+      <div class="chip" style="background: #e0343f;"><b>Sang</b>#e0343f</div>
+      <div class="chip" style="background: #efe6d8; color: #0f0b0b;"><b>Os</b>#efe6d8</div>
+      <div class="chip" style="background: #7a8b3a; color: #0f0b0b;"><b>Mousse</b>#7a8b3a</div>
+    </div>
+    <div class="prev" style="background: #1c1616;">
+      <span class="big" style="color: #efe6d8; text-shadow: 0 0 24px rgba(224,52,63,.55);">84</span>
+      <div class="cells">
+        <span style="background: #2b2323; color: #b9aca0;">81</span><span style="background: #efe6d8; color: #0f0b0b;">82</span><span style="background: #2b2323; color: #ffffff; box-shadow: inset 0 0 0 2px #7a8b3a;">83</span><span style="background: #e0343f; color: #0f0b0b;">84</span>
+      </div>
+    </div>
+    <div class="verdict" style="background: #1c1616; color: #efe6d8;">Le rouge ne tient pas 7:1 : sang sur charbon 4,5:1, texte sombre sur sang 4,6:1. Le dernier numéro doit donc rester couleur os, et la case rouge se distingue mal des cases os en niveaux de gris. Je la déconseille pour un écran lu de loin.</div>
+  </section>
+</div>
+</body>
+</html>
