@@ -51,7 +51,7 @@
     @if (agendaView() === 'calendar') {
       <app-agenda-calendrier
         [events]="filteredEvents()"
-        [selectedEventId]="selectedEvent()?.id ?? null"
+        [selectedEventId]="selectedEvent().id"
         [selectedDate]="selectedCalendarDate()"
         (eventSelected)="selectCalendarEvent($event)"></app-agenda-calendrier>
     } @else {

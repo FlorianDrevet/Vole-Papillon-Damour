@@ -1,6 +1,5 @@
 import {CommonModule} from '@angular/common';
 import {Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
-import {RouterLink} from '@angular/router';
 import {AgendaMonth, CalendarDayCell, CalendarEventOccurrence, agendaMonths, calendarMonth} from '../../../../shared/events/agenda';
 import {eventIdentity, EventIdentity} from '../../../../shared/events/event-identity';
 import {VpdEventEnum} from '../../../../shared/enums/vpdEvent.enum';
@@ -18,7 +17,6 @@ type AgendaMonthView = AgendaMonth & {cells: CalendarDayCell[]};
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     VpdBouleBingoComponent,
     VpdCitrouilleComponent,
     VpdPapillonComponent,

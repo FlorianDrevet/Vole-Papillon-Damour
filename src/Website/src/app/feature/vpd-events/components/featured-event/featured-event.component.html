@@ -16,7 +16,7 @@
       </div>
     } @else if (identity === 'loto') {
       <div class="feature-classic-art">
-        <vpd-boule-bingo [size]="150" [num]="event.dateStart | date:'dd':'UTC'" color="bleu" mood="saute" />
+        <vpd-boule-bingo [size]="150" [num]="(event.dateStart | date:'dd':'UTC') ?? ''" color="bleu" mood="saute" />
       </div>
     } @else {
       <div class="feature-other-art"><span></span><span></span><span></span></div>
