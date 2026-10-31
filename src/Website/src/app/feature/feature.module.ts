@@ -41,6 +41,8 @@ import {AgendaCalendarComponent} from './vpd-events/components/agenda-calendrier
 import {AgendaViewToggleComponent} from './vpd-events/components/agenda-view-toggle/agenda-view-toggle.component';
 import {VpdCitrouilleComponent} from '../shared/components/mascots/vpd-citrouille.component';
 import {VpdFantomeComponent} from '../shared/components/mascots/vpd-fantome.component';
+import {VpdBouleBingoComponent} from '../shared/components/mascots/boule-bingo.component';
+import {VpdPapillonComponent} from '../shared/components/mascots/papillon.component';
 import {EventDetailComponent} from './event-detail/event-detail.component';
 import {BingoEventComponent} from './event-detail/components/bingo-event/bingo-event.component';
 import {BooksEventComponent} from './event-detail/components/books-event/books-event.component';
@@ -151,6 +153,8 @@ import {TableauHalloweenComponent} from './tableau/halloween/tableau-halloween.c
     AgendaViewToggleComponent,
     VpdCitrouilleComponent,
     VpdFantomeComponent,
+    VpdBouleBingoComponent,
+    VpdPapillonComponent,
     TableauHalloweenComponent
   ]
 })
