@@ -32,13 +32,15 @@ describe('HalloweenPreferences', () => {
 
   it('tracks phone width, reduced motion, visibility, and the return time', () => {
     mockMatchMedia(true);
+    spyOn(Date, 'now').and.returnValue(12345);
     const preferences = configureBrowserPreferences();
 
     expect(preferences.phone()).toBeTrue();
     expect(preferences.reducedMotion()).toBeTrue();
     expect(preferences.calm()).toBeTrue();
-    expect(preferences.visible()).toBe(document.visibilityState !== 'hidden');
-    expect(preferences.visibleSince()).toBeGreaterThan(0);
+    const isVisible = document.visibilityState !== 'hidden';
+    expect(preferences.visible()).toBe(isVisible);
+    expect(preferences.visibleSince()).toBe(isVisible ? 12345 : 0);
   });
 
   it('persists the calm choice on the device', () => {

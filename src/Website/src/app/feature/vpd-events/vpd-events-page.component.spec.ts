@@ -82,7 +82,6 @@ describe('VpdEventsPageComponent', () => {
     fixture = TestBed.createComponent(VpdEventsPageComponent);
     fixture.detectChanges();
     await response;
-    await fixture.whenStable();
     await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
