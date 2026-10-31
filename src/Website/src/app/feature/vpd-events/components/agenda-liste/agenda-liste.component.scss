@@ -27,6 +27,12 @@
   min-width: 0;
 }
 
+.agenda-month--without-title {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
 .agenda-event {
   position: relative;
   isolation: isolate;
@@ -49,6 +55,11 @@
 .agenda-event:hover {
   transform: translateY(-2px);
   box-shadow: 0 21px 32px -28px rgba(7, 43, 69, .6);
+}
+
+.agenda-event--selected {
+  border-color: #e5702a;
+  box-shadow: 0 0 0 2px rgba(229, 112, 42, .24), 0 18px 32px -28px rgba(7, 43, 69, .7);
 }
 
 .event-date,

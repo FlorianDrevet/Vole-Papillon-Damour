@@ -1,6 +1,8 @@
 @for (month of months; track month.key) {
-  <section class="agenda-month" data-zone="E1-mois">
-    <h3 class="month-name">{{ month.label }}</h3>
+  <section class="agenda-month" [class.agenda-month--without-title]="!showMonthHeader" data-zone="E1-mois">
+    @if (showMonthHeader) {
+      <h3 class="month-name">{{ month.label }}</h3>
+    }
     <div class="month-events">
       @for (event of month.events; track event.id) {
         <a
@@ -9,6 +11,7 @@
           [class.agenda-event--books]="identity(event) === 'books'"
           [class.agenda-event--loto]="identity(event) === 'loto'"
           [class.agenda-event--other]="identity(event) === 'other'"
+          [class.agenda-event--selected]="selectedEventId === event.id"
           [class.calm]="calm()"
           [class.paused]="!visible()"
           [attr.data-zone]="identity(event) === 'halloween' ? 'E1-bandeau-loto-theme' : identity(event) === 'books' ? 'E1-bandeau-bourse' : identity(event) === 'loto' ? 'E1-bandeau-loto' : 'E1-bandeau-autre'"

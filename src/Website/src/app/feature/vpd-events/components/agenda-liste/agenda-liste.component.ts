@@ -30,6 +30,8 @@ export class AgendaListComponent {
   private readonly preferences = inject(HalloweenPreferences);
 
   @Input() events: VpdEventModel[] = [];
+  @Input() showMonthHeader = true;
+  @Input() selectedEventId: string | null = null;
 
   protected readonly calm = this.preferences.calm;
   protected readonly visible = this.preferences.visible;

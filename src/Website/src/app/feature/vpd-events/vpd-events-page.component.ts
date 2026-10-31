@@ -1,10 +1,14 @@
-import {Component, computed, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
 import {VpdEventModel} from '../../shared/models/vpdEvent.model';
 import {VpdEventEnum} from '../../shared/enums/vpdEvent.enum';
 import {parisDay} from '../../shared/events/countdown';
 import {EVENT_EDITORIAL_PHOTOS} from '../../shared/data/event-editorial-content';
 import {AgendaFilter} from './components/agenda-filters/agenda-filters.component';
+import {AgendaView} from './components/agenda-view-toggle/agenda-view-toggle.component';
+
+const AGENDA_VIEW_STORAGE_KEY = 'vpd.agenda.vue';
 
 @Component({
   selector: 'app-vpd-events',
@@ -13,6 +17,7 @@ import {AgendaFilter} from './components/agenda-filters/agenda-filters.component
 })
 export class VpdEventsPageComponent implements OnInit {
   private readonly eventFacade = inject(VpdEventsFacadeService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   /** Photos et points clés des deux rendez-vous permanents, indépendants des dates de l'API. */
   protected readonly lotoPhotos = EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Bingo];
@@ -47,6 +52,9 @@ export class VpdEventsPageComponent implements OnInit {
   protected readonly featuredEvent = computed<VpdEventModel | null>(() => this.upcomingEvents()[0] ?? null);
   protected readonly nextEvents = computed(() => this.upcomingEvents().slice(1, 4));
   protected readonly agendaFilter = signal<AgendaFilter>('all');
+  protected readonly agendaView = signal<AgendaView>('calendar');
+  protected readonly selectedEventId = signal<string | null>(null);
+  protected readonly selectedDate = signal<string | null>(null);
   protected readonly filteredEvents = computed(() => this.upcomingEvents().filter(event => {
     switch (this.agendaFilter()) {
       case 'bingo':
@@ -59,14 +67,56 @@ export class VpdEventsPageComponent implements OnInit {
         return true;
     }
   }));
+  protected readonly selectedEvent = computed(() => this.filteredEvents().find(event => event.id === this.selectedEventId())
+    ?? this.filteredEvents()[0]
+    ?? null);
+  protected readonly selectedCalendarDate = computed(() => {
+    const event = this.selectedEvent();
+    if (!event) {
+      return null;
+    }
+    const date = this.selectedDate();
+    const start = parisDay(event.dateStart);
+    const end = parisDay(event.dateEnd ?? event.dateStart);
+    return date && date >= start && date <= end ? date : start;
+  });
 
   ngOnInit(): void {
+    this.restoreAgendaView();
     this.eventFacade.getAllEvents$()
       .then(events => {
         this.events.set((events ?? []).map(event => this.toVpdEvent(event)));
       })
       .catch(() => undefined)
       .finally(() => this.isLoading.set(false));
+  }
+
+  protected setAgendaView(view: AgendaView): void {
+    this.agendaView.set(view);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    try {
+      localStorage.setItem(AGENDA_VIEW_STORAGE_KEY, view === 'list' ? 'liste' : 'calendrier');
+    } catch {
+      // The current view remains usable if browser storage is unavailable.
+    }
+  }
+
+  protected selectCalendarEvent(selection: {eventId: string; date: string}): void {
+    this.selectedEventId.set(selection.eventId);
+    this.selectedDate.set(selection.date);
+  }
+
+  private restoreAgendaView(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    try {
+      this.agendaView.set(localStorage.getItem(AGENDA_VIEW_STORAGE_KEY) === 'liste' ? 'list' : 'calendar');
+    } catch {
+      // Calendar is the default when browser storage is unavailable.
+    }
   }
 
   /** L'API renvoie des dates et un type d'évènement sérialisés en chaînes. */

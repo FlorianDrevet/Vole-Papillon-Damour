@@ -6,6 +6,8 @@ import {DesignSystemModule} from '@vpd/ui';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
 import {AgendaFiltersComponent} from './components/agenda-filters/agenda-filters.component';
 import {AgendaListComponent} from './components/agenda-liste/agenda-liste.component';
+import {AgendaCalendarComponent} from './components/agenda-calendrier/agenda-calendrier.component';
+import {AgendaViewToggleComponent} from './components/agenda-view-toggle/agenda-view-toggle.component';
 import {FeaturedEventComponent} from './components/featured-event/featured-event.component';
 import {NextEventsComponent} from './components/next-events/next-events.component';
 import {SpecialEventComponent} from './components/special-event/special-event.component';
@@ -49,6 +51,7 @@ describe('VpdEventsPageComponent', () => {
   beforeEach(async () => {
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2026-10-31T12:00:00Z'));
+    localStorage.removeItem('vpd.agenda.vue');
     eventsFacadeSpy = jasmine.createSpyObj<VpdEventsFacadeService>('VpdEventsFacadeService', ['getAllEvents$']);
 
     await TestBed.configureTestingModule({
@@ -60,13 +63,18 @@ describe('VpdEventsPageComponent', () => {
         NextEventsComponent,
         AgendaFiltersComponent,
         AgendaListComponent,
+        AgendaCalendarComponent,
+        AgendaViewToggleComponent,
       ],
       providers: [provideRouter([]), {provide: VpdEventsFacadeService, useValue: eventsFacadeSpy}],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
   });
 
-  afterEach(() => jasmine.clock().uninstall());
+  afterEach(() => {
+    localStorage.removeItem('vpd.agenda.vue');
+    jasmine.clock().uninstall();
+  });
 
   async function render(events: object[]): Promise<void> {
     eventsFacadeSpy.getAllEvents$.and.resolveTo(events as never);
@@ -113,6 +121,11 @@ describe('VpdEventsPageComponent', () => {
       }),
     ]);
 
+    const listButton = [...fixture.nativeElement.querySelectorAll('button')]
+      .find(button => button.textContent?.trim() === 'Liste') as HTMLButtonElement;
+    listButton.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelectorAll('.agenda-event').length).toBe(2);
     const lotoFilter = [...fixture.nativeElement.querySelectorAll('button')]
       .find(button => button.textContent?.trim() === 'Lotos') as HTMLButtonElement;
@@ -122,6 +135,63 @@ describe('VpdEventsPageComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.agenda-event').length).toBe(1);
     expect(fixture.nativeElement.querySelector('.agenda-event--books')).toBeNull();
     expect(fixture.nativeElement.querySelector('.agenda-event--loto')).not.toBeNull();
+  });
+
+  it('opens in Calendar and remembers a choice of List', async () => {
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
+      apiEvent('books-1', 'Bourse aux livres', 'Books', '2026-11-11T00:00:00Z', {
+        dateEnd: '2026-11-16T00:00:00Z',
+      }),
+    ]);
+
+    expect(fixture.nativeElement.querySelector('.agenda-calendar')).not.toBeNull();
+    const listButton = [...fixture.nativeElement.querySelectorAll('button')]
+      .find(button => button.textContent?.trim() === 'Liste') as HTMLButtonElement;
+    listButton.click();
+    fixture.detectChanges();
+
+    expect(localStorage.getItem('vpd.agenda.vue')).toBe('liste');
+    expect(fixture.nativeElement.querySelector('.agenda-calendar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-agenda-liste')).not.toBeNull();
+
+    fixture.destroy();
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
+      apiEvent('books-1', 'Bourse aux livres', 'Books', '2026-11-11T00:00:00Z', {
+        dateEnd: '2026-11-16T00:00:00Z',
+      }),
+    ]);
+
+    expect(fixture.nativeElement.querySelector('.agenda-calendar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-agenda-liste')).not.toBeNull();
+  });
+
+  it('lights November 1 and November 11 through 16 in the calendar', async () => {
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
+      apiEvent('books-1', 'Bourse aux livres', 'Books', '2026-11-11T00:00:00Z', {
+        dateEnd: '2026-11-16T00:00:00Z',
+      }),
+      apiEvent('jan-loto', 'Loto de janvier', 'Bingo', '2027-01-03T12:00:00Z'),
+    ]);
+
+    expect(fixture.nativeElement.querySelector('[data-date="2026-11-01"].calendar-event-day.light')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[data-event-id="books-1"].calendar-event-day').length).toBe(6);
+    expect(fixture.nativeElement.querySelector('[data-date="2026-11-16"][data-event-id="books-1"]')).not.toBeNull();
+  });
+
+  it('shows the clicked January 3 loto beneath the calendar', async () => {
+    await render([
+      apiEvent('loto-1', 'Loto de Maxence', 'Bingo', '2026-11-01T12:00:00Z'),
+      apiEvent('jan-loto', 'Loto de Maxence', 'Bingo', '2027-01-03T12:00:00Z'),
+    ]);
+
+    const januaryLoto = fixture.nativeElement.querySelector('[data-date="2027-01-03"][data-event-id="jan-loto"]') as HTMLButtonElement;
+    januaryLoto.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.calendar-selected')?.textContent).toContain('Loto de Maxence');
   });
 
   it('keeps the original presentation and expands the rest of the loto text', async () => {

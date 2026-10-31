@@ -25,8 +25,11 @@
   }
 </section>
 <section class="flex flex-col gap-6 bg-white px-shell py-10 lg:gap-8 lg:py-14" data-zone="E1-agenda">
-  <div class="flex flex-col gap-5 border-b border-line pb-4 lg:flex-row lg:items-end lg:justify-between">
-    <h2 class="font-serif text-[32px] font-medium leading-none text-ink-2 lg:text-[44px]">L'agenda</h2>
+  <div class="flex flex-col gap-4 border-b border-line pb-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <h2 class="font-serif text-[32px] font-medium leading-none text-ink-2 lg:text-[44px]">L'agenda</h2>
+      <app-agenda-view-toggle [active]="agendaView()" (activeChange)="setAgendaView($event)"></app-agenda-view-toggle>
+    </div>
     <app-agenda-filters
       [events]="upcomingEvents()"
       [active]="agendaFilter()"
@@ -34,7 +37,15 @@
   </div>
 
   @if (filteredEvents().length) {
-    <app-agenda-liste [events]="filteredEvents()"></app-agenda-liste>
+    @if (agendaView() === 'calendar') {
+      <app-agenda-calendrier
+        [events]="filteredEvents()"
+        [selectedEventId]="selectedEvent()?.id ?? null"
+        [selectedDate]="selectedCalendarDate()"
+        (eventSelected)="selectCalendarEvent($event)"></app-agenda-calendrier>
+    } @else {
+      <app-agenda-liste [events]="filteredEvents()"></app-agenda-liste>
+    }
   } @else if (isLoading()) {
     <div class="grid grid-cols-1 gap-3" aria-hidden="true">
       <span class="skeleton h-28 rounded-2xl"></span>

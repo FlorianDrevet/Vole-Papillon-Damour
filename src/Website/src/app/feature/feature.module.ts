@@ -37,6 +37,8 @@ import {FeaturedEventComponent} from './vpd-events/components/featured-event/fea
 import {NextEventsComponent} from './vpd-events/components/next-events/next-events.component';
 import {AgendaListComponent} from './vpd-events/components/agenda-liste/agenda-liste.component';
 import {AgendaFiltersComponent} from './vpd-events/components/agenda-filters/agenda-filters.component';
+import {AgendaCalendarComponent} from './vpd-events/components/agenda-calendrier/agenda-calendrier.component';
+import {AgendaViewToggleComponent} from './vpd-events/components/agenda-view-toggle/agenda-view-toggle.component';
 import {EventDetailComponent} from './event-detail/event-detail.component';
 import {BingoEventComponent} from './event-detail/components/bingo-event/bingo-event.component';
 import {BooksEventComponent} from './event-detail/components/books-event/books-event.component';
@@ -143,6 +145,8 @@ import {TableauHalloweenComponent} from './tableau/halloween/tableau-halloween.c
     NextEventsComponent,
     AgendaListComponent,
     AgendaFiltersComponent,
+    AgendaCalendarComponent,
+    AgendaViewToggleComponent,
     TableauHalloweenComponent
   ]
 })
