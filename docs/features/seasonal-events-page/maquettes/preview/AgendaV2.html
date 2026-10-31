@@ -16,7 +16,7 @@ body{margin:0}
 .mo-name b{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:46px;line-height:1;color:#072b45}
 .mo-name span{font-size:15px;color:#4d6a80}
 .list{display:flex;flex-direction:column;gap:16px}
-.st{position:relative;overflow:hidden;display:grid;grid-template-columns:150px minmax(0,1fr) 250px;align-items:center;min-height:150px;border-radius:26px;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s}
+.st{position:relative;overflow:hidden;display:grid;grid-template-columns:170px minmax(0,1fr) 250px;align-items:center;min-height:150px;border-radius:26px;text-decoration:none;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s}
 .st:hover{transform:translateY(-3px);box-shadow:0 26px 44px -30px rgba(4,29,48,.6)}
 .dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 10px}
 .tx{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 0}
@@ -37,7 +37,8 @@ body{margin:0}
 @keyframes fog{to{transform:translateX(-50%)}}
 
 .bk{background-color:#f4ecdc;background-image:repeating-linear-gradient(180deg,transparent 0 25px,rgba(16,50,77,.08) 25px 26px);color:#10324d}
-.bk .margin{position:absolute;top:0;bottom:0;left:150px;width:2px;background:rgba(229,112,42,.35)}
+.bk .margin{position:absolute;top:0;bottom:0;left:170px;width:2px;background:rgba(229,112,42,.35)}
+.bk .to{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:26px;line-height:1;margin-top:2px}
 .bk .day{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:62px;line-height:.9;letter-spacing:-.02em}
 .bk .wd{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:16px;color:#5a7286}
 .bk .ti{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:500;font-size:32px;line-height:1.02;padding-left:26px}
@@ -87,7 +88,7 @@ body{margin:0}
           <sc-if value="{{e.isBooks}}" hint-placeholder-val="{{ true }}">
             <a class="st bk" href="#" data-zone="E1-bandeau-bourse">
               <span class="deco" aria-hidden="true"><span class="margin"></span><span class="pb" style="right: 270px; top: 16px; width: 40px;"><dc-import name="Papillon" size="40" variant="a" hint-size="40px,31px"></dc-import></span><span class="mas"><dc-import name="Papillon" size="170" variant="a" hint-size="170px,132px"></dc-import></span></span>
-              <span class="dt"><span class="day">{{e.day}}</span><span class="wd">{{e.wd}}</span></span>
+              <span class="dt"><span class="day">{{e.day}}</span><sc-if value="{{e.range}}" hint-placeholder-val="{{ false }}"><span class="to">→ {{e.to}}</span></sc-if><span class="wd">{{e.wd}}</span></span>
               <span class="tx"><span class="ti">{{e.title}}</span><span class="me">{{e.meta}}</span><sc-if value="{{e.cdOn}}" hint-placeholder-val="{{ false }}"><span class="when">{{e.cd}}</span></sc-if></span>
               <span></span>
             </a>
