@@ -6,7 +6,6 @@ export type FantomeMood = 'flotte' | 'coucou' | 'lanterne' | 'course';
   selector: 'vpd-fantome',
   standalone: true,
   templateUrl: './vpd-fantome.component.html',
-  styleUrl: './vpd-fantome.component.scss',
 })
 export class VpdFantomeComponent {
   private static nextInstance = 0;

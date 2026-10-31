@@ -6,7 +6,6 @@ export type CitrouilleMood = 'idle' | 'sourire' | 'rire' | 'dort' | 'salut';
   selector: 'vpd-citrouille',
   standalone: true,
   templateUrl: './vpd-citrouille.component.html',
-  styleUrl: './vpd-citrouille.component.scss',
 })
 export class VpdCitrouilleComponent {
   private static nextInstance = 0;
