@@ -36,6 +36,7 @@
 | `.github/memory/15-isbndb-migration.md` | ISBNdb-first book notices, quota, catch-up, Catalog/Scan flows, infra and validation |
 | `.github/memory/16-catalog-performance.md` | Deployed Catalog request latency, admin statistics optimization, and remaining SQL investigation |
 | `.github/memory/17-worktree-dependency-sharing.md` | Clone-local Git hook for reusing frontend dependencies across worktrees |
+| `.github/memory/18-halloween-loto-board.md` | Halloween live-board API contract, Website theme wiring, motion behavior, validation, and rollout |
 
 ## Quick Reference
 
@@ -58,6 +59,7 @@
 15. Seven-day App Insights data showed metadata API p95 10.9 s; the Open Library latency fix is in [PR #345](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/345) (merged 2026-10-26). Google Books returned `API_KEY_INVALID` on 2026-10-23 and still needs key validation. PR #338 (merged 2026-10-23) raised the Worker BnF timeout default to 2 s, but the 2026-10-26 catch-up still recorded BnF timeouts. See `.github/memory/14-scan-metadata-latency.md` for dated evidence and follow-up.
 16. ISBNdb is the primary notice source with BnF/Open Library/Google Books fallback. Manual catch-up is a Durable `202 Accepted` flow; after deploying the infrastructure and Worker, run `infra/scripts/Sync-WorkerFunctionKey.ps1`, then `infra/scripts/Invoke-WorkerIsbndbCatchUp.ps1`. Recommendation SQL persistence must not use the reserved T-SQL alias `current`. See `.github/memory/15-isbndb-migration.md`.
 17. The 2026-10-25 Catalog latency investigation and fixes are recorded in `.github/memory/16-catalog-performance.md`; the deployed search endpoint still has an unattributed SQL long tail because Application Insights omits command text.
+19. The Website Halloween live board and E6 banner are wired through `liveTheme` and share `vpd.tableau.calm`; apply `AddEventLiveTheme` before deploying the API. See `.github/memory/18-halloween-loto-board.md`.
 
 ## Commands To Remember
 

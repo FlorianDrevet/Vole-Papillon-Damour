@@ -70,16 +70,16 @@ app-today-banner-halloween { display: block; }
 .bat-flight { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .hbat { position: absolute; top: 0; left: 0; will-change: transform; }
 .hbat vpd-chauve-souris { display: block; }
-.hbat-one { width: 30px; }
-.hbat-two { width: 22px; }
-.hbat-one[style*="hbat-one-a"] { animation: hbat-one-a 1.3s ease-in-out both; }
-.hbat-one[style*="hbat-one-b"] { animation: hbat-one-b 1.3s ease-in-out both; }
-.hbat-two[style*="hbat-two-a"] { animation: hbat-two-a 1.5s .15s ease-in-out both; }
-.hbat-two[style*="hbat-two-b"] { animation: hbat-two-b 1.5s .15s ease-in-out both; }
+.hbat-one { width: 30px; animation-duration: 1.3s; animation-timing-function: ease-in-out; animation-fill-mode: both; }
+.hbat-two { width: 22px; animation-duration: 1.5s; animation-delay: .15s; animation-timing-function: ease-in-out; animation-fill-mode: both; }
 @keyframes hbat-one-a { 0% { transform: translate(1480px,30px) scaleX(-1); } 50% { transform: translate(800px,4px) scaleX(-1); } 100% { transform: translate(-60px,22px) scaleX(-1); } }
 @keyframes hbat-one-b { 0% { transform: translate(1480px,30px) scaleX(-1); } 50% { transform: translate(800px,4px) scaleX(-1); } 100% { transform: translate(-60px,22px) scaleX(-1); } }
 @keyframes hbat-two-a { 0% { transform: translate(-40px,26px); } 50% { transform: translate(600px,2px); } 100% { transform: translate(1480px,20px); } }
 @keyframes hbat-two-b { 0% { transform: translate(-40px,26px); } 50% { transform: translate(600px,2px); } 100% { transform: translate(1480px,20px); } }
+@keyframes hbat-one-mobile-a { 0% { transform: translate(calc(100vw + 30px),30px) scaleX(-1); } 50% { transform: translate(55vw,4px) scaleX(-1); } 100% { transform: translate(-60px,22px) scaleX(-1); } }
+@keyframes hbat-one-mobile-b { 0% { transform: translate(calc(100vw + 30px),30px) scaleX(-1); } 50% { transform: translate(55vw,4px) scaleX(-1); } 100% { transform: translate(-60px,22px) scaleX(-1); } }
+@keyframes hbat-two-mobile-a { 0% { transform: translate(-40px,26px); } 50% { transform: translate(55vw,2px); } 100% { transform: translate(calc(100vw + 30px),20px); } }
+@keyframes hbat-two-mobile-b { 0% { transform: translate(-40px,26px); } 50% { transform: translate(55vw,2px); } 100% { transform: translate(calc(100vw + 30px),20px); } }
 
 @media (max-width: 767.98px) {
   .hb { height: auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 8px 12px 14px; }

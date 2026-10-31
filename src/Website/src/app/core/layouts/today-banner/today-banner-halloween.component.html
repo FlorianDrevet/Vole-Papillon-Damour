@@ -47,8 +47,8 @@
   }
   @if (batsActive() && !calm()) {
     <div class="bat-flight" aria-hidden="true">
-      <div class="hbat hbat-one" [style.animation-name]="'hbat-one-' + animationKey()"><vpd-chauve-souris [size]="30" mood="vol" /></div>
-      <div class="hbat hbat-two" [style.animation-name]="'hbat-two-' + animationKey()"><vpd-chauve-souris [size]="22" mood="vol" /></div>
+      <div class="hbat hbat-one" [style.animation-name]="'hbat-one-' + (phone() ? 'mobile-' : '') + animationKey()"><vpd-chauve-souris [size]="30" mood="vol" /></div>
+      <div class="hbat hbat-two" [style.animation-name]="'hbat-two-' + (phone() ? 'mobile-' : '') + animationKey()"><vpd-chauve-souris [size]="22" mood="vol" /></div>
     </div>
   }
 </div>

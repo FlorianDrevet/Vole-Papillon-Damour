@@ -32,6 +32,7 @@ export class TodayBannerHalloweenComponent implements OnChanges {
   @Output() close = new EventEmitter<void>();
 
   protected readonly calm = this.preferences.calm;
+  protected readonly phone = this.preferences.phone;
   protected readonly runnerActive = signal(false);
   protected readonly batsActive = signal(false);
   protected readonly animationKey = signal<'a' | 'b'>('a');

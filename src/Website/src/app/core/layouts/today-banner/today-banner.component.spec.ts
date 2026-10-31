@@ -26,6 +26,7 @@ function event(liveTheme?: 'Classic' | 'Halloween' | null): TodayEventModel {
 describe('TodayBannerComponent', () => {
   let today: ReturnType<typeof signal<TodayEventModel | null>>;
   let calm: ReturnType<typeof signal<boolean>>;
+  let phone: ReturnType<typeof signal<boolean>>;
   let eventService: jasmine.SpyObj<TodayEventService>;
   let fixture: ComponentFixture<TodayBannerComponent>;
 
@@ -38,6 +39,7 @@ describe('TodayBannerComponent', () => {
   beforeEach(async () => {
     today = signal<TodayEventModel | null>(event('Halloween'));
     calm = signal(false);
+    phone = signal(false);
     eventService = jasmine.createSpyObj<TodayEventService>('TodayEventService', ['start'], {today});
     eventService.start.and.resolveTo();
     await TestBed.configureTestingModule({
@@ -46,7 +48,7 @@ describe('TodayBannerComponent', () => {
       providers: [
         provideRouter([]),
         {provide: TodayEventService, useValue: eventService},
-        {provide: HalloweenPreferences, useValue: {calm, phone: signal(false)}},
+        {provide: HalloweenPreferences, useValue: {calm, phone}},
       ],
     }).compileComponents();
   });
@@ -89,6 +91,19 @@ describe('TodayBannerComponent', () => {
 
     expect(banner.nativeElement.querySelectorAll('.hbat').length).toBe(2);
     expect(banner.nativeElement.querySelector('.last-chip.chip-a, .last-chip.chip-b')).not.toBeNull();
+  });
+
+  it('fait traverser les chauves-souris sur toute la largeur du bandeau mobile', async () => {
+    phone.set(true);
+    const banner = await createBanner();
+
+    today.set({...event('Halloween'), lastNumero: 43});
+    banner.detectChanges();
+
+    const bats = banner.nativeElement.querySelectorAll('.hbat');
+    expect(bats.length).toBe(2);
+    expect(bats[0].style.animationName).toBe('hbat-one-mobile-b');
+    expect(bats[1].style.animationName).toBe('hbat-two-mobile-b');
   });
 
   it('ne joue ni le fantôme ni les chauves-souris en mode calme', async () => {
