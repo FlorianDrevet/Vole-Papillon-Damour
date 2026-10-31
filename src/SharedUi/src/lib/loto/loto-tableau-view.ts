@@ -63,6 +63,7 @@ export interface LotoPartieSummary {
 
 export interface LotoTableauView {
   phase: LotoPhase;
+  intermission: boolean;
   eventName: string;
   partieNumber: number;
   partieCount: number;
@@ -111,12 +112,19 @@ export function buildLotoTableauView(event: LotoEventSnapshot | null): LotoTable
   const line = current?.lineParties.find(candidate => candidate.index === current.currentLineIndex);
   const lastNumero = current?.lastNumeros.at(-1) ?? null;
   const neighbours = current ? neighboursOf(current) : [];
+  const previousPartie = current === undefined
+    ? undefined
+    : parties.find(partie => partie.index === current.index - 1);
   const live = new Set(current?.liveNumeros ?? []);
   const neighbourSet = new Set(neighbours);
   const next = current === undefined ? undefined : parties.find(partie => partie.index === current.index + 1);
 
   return {
     phase,
+    intermission: current !== undefined
+      && current.index > 0
+      && current.lastNumeros.length === 0
+      && previousPartie?.pauseAfter === true,
     eventName: event?.name ?? '',
     partieNumber: (current?.index ?? 0) + 1,
     partieCount: parties.length,

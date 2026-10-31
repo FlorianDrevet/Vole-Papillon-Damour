@@ -103,6 +103,18 @@ describe('buildLotoTableauView', () => {
     expect(buildLotoTableauView(loto([first], 1)).phase).toBe('finished');
   });
 
+  it('déduit la pause après une partie terminée et la quitte au premier numéro', () => {
+    const previous = partie(0, {pauseAfter: true, lastNumeros: [12], liveNumeros: [12]});
+    const next = partie(1);
+
+    expect(buildLotoTableauView(loto([previous, next], 1)).intermission).toBeTrue();
+    expect(buildLotoTableauView(loto([
+      previous,
+      partie(1, {lastNumeros: [27], liveNumeros: [27]}),
+    ], 1)).intermission).toBeFalse();
+    expect(buildLotoTableauView(loto([partie(0, {pauseAfter: true})])).intermission).toBeFalse();
+  });
+
   it('masque le rappel du bingo pendant la partie Bingo', () => {
     const view = buildLotoTableauView(loto([partie(0, {partieType: 'Bingo', lastNumeros: [4], liveNumeros: [4]})]));
 
