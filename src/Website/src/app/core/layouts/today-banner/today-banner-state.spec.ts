@@ -1,11 +1,11 @@
 import {
   isTodayBannerDismissed,
-  parisDay,
   parisTime,
   todayBannerSchedule,
   todayBannerVariant,
 } from './today-banner-state';
 import {TodayEventModel} from '../../../shared/models/today-event.model';
+import {parisDay} from '../../../shared/events/countdown';
 
 const loto: TodayEventModel = {
   id: 'loto-1',

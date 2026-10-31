@@ -1,4 +1,5 @@
 import {TodayEventModel} from '../../../shared/models/today-event.model';
+import {parisDay} from '../../../shared/events/countdown';
 
 export type TodayBannerVariant = 'before' | 'live' | 'finished' | 'other';
 
@@ -38,16 +39,6 @@ export function isTodayBannerDismissed(
     return false;
   }
   return !(todayBannerVariant(today) === 'live' && dismissal.variant !== 'live');
-}
-
-/** Jour calendaire à Paris, au format `AAAA-MM-JJ`. */
-export function parisDay(now: Date): string {
-  return new Intl.DateTimeFormat('fr-CA', {
-    timeZone: 'Europe/Paris',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
 }
 
 /** « 13 h 30 » à l'heure de Paris. */

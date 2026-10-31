@@ -1,9 +1,9 @@
 import {isPlatformBrowser} from '@angular/common';
 import {Component, computed, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {parisDay} from '../../../shared/events/countdown';
 import {TodayEventService} from '../../../shared/services/today-event.service';
 import {
   isTodayBannerDismissed,
-  parisDay,
   TODAY_BANNER_STORAGE_KEY,
   TodayBannerDismissal,
   todayBannerSchedule,
