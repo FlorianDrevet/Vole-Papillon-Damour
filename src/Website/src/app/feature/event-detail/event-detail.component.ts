@@ -15,6 +15,7 @@ import {isPlatformBrowser} from '@angular/common';
 @Component({
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
+    styleUrl: './event-detail.component.scss',
     standalone: false
 })
 export class EventDetailComponent implements OnInit, OnDestroy {

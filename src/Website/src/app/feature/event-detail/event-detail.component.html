@@ -72,7 +72,7 @@
         </span>
         <span
           class="rounded-full border px-3 py-1 text-[12px] font-semibold"
-          [class]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
+          [ngClass]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
           @if (countdown(event); as label) { {{ label }} } @else { Édition passée }
         </span>
       </div>

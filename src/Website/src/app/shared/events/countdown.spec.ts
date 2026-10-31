@@ -24,6 +24,15 @@ describe('countdownLabel', () => {
     expect(parisDay(new Date('2026-10-31T23:45:00Z'))).toBe('2026-11-01');
   });
 
+  it('accepts the ISO strings returned by the API', () => {
+    const event = {
+      dateStart: '2026-11-01T14:00:00+00:00',
+      dateEnd: null,
+    } as unknown as VpdEventModel;
+
+    expect(countdownLabel(event, new Date('2026-10-31T12:00:00Z'))).toBe('Demain');
+  });
+
   it('returns null when the event is beyond the countdown window', () => {
     const event = {dateStart: new Date('2026-12-01T12:00:00Z'), dateEnd: null} as VpdEventModel;
 
