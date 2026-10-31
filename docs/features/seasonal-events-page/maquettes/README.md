@@ -1,7 +1,7 @@
 # Maquettes — Page Événements en agenda et thèmes des lotos
 
 - **Canvas Claude Design** : https://claude.ai/artifact/DCADrDqkqKp6tdcPExVMoV (privé).
-  Exporté le 2026-10-31 depuis la version publiée `1793454758-9403`.
+  Exporté le 2026-10-31 depuis la version publiée `1793455092-900c`.
 - **Aperçus** : `preview/index.html` donne le sommaire des écrans et de leurs zones. Sont
   jouables : `Main.html`, `Mobile.html`, `AgendaV2*.html`, `Calendrier*.html` (bascule
   Calendrier / Liste, filtres, clic sur un jour) et `FicheLoto.html`.
