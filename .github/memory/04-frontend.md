@@ -729,8 +729,9 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
 - `infra/parameters/main.dev.bicepparam` raises only the Website allocation to 0.5 vCPU /
   1 GiB. Azure Container Apps applies its default HTTP scaling rule at 10 concurrent
   requests when no custom rule is set; preserve the current scale policy until new logs
-  show whether concurrency contributes. This branch has not been deployed; after merge,
-  deploy Website and use the new console records to confirm the trigger.
+  show whether concurrency contributes. [PR #373](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/373)
+  is open and not merged; no Azure change or deployment has been made. After merge, deploy
+  infrastructure and Website, then use the new console records to confirm the trigger.
 
 ## Data Access And Live Updates
 
