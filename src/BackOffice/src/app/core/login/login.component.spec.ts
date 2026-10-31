@@ -60,4 +60,14 @@ describe('LoginComponent', () => {
     expect(host.textContent).not.toContain('Microsoft');
     expect(panels.every(panel => !panel.classList.contains('px-shell'))).toBeTrue();
   });
+
+  it('offers the caisse APK download before signing in', () => {
+    fixture.detectChanges();
+
+    const downloadLink = fixture.nativeElement.querySelector('a[download]') as HTMLAnchorElement | null;
+
+    expect(downloadLink?.getAttribute('href')).toBe('/apks/app-debug.apk');
+    expect(downloadLink?.getAttribute('download')).toBe('caisse-app.apk');
+    expect(downloadLink?.textContent).toContain('Télécharger la caisse Android');
+  });
 });

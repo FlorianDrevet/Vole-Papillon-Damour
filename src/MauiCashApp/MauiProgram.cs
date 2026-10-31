@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Refit;
 using ShopAppVpd.Apis;
 using ShopAppVpd.Databases;
 using ShopAppVpd.Interfaces;
@@ -35,16 +34,13 @@ public static class MauiProgram
         
         builder.Services.AddSingleton<ProductDatabase>();
         builder.Services.AddTransient<IProductService, ProductService>();
-        builder.Services.AddSingleton<IAuthService, MsalAuthService>();
-        builder.Services.AddTransient<AuthHandler>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainPage>();
         
         var vpdSettings = config.GetSection("VpdSettings");
-        builder.Services
-            .AddRefitClient<IVpdApi>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(vpdSettings.GetValue<string>(nameof(VpdSettings.BaseUrl)) ?? throw new InvalidOperationException()))
-            .AddHttpMessageHandler<AuthHandler>();
+        var apiBaseUrl = vpdSettings.GetValue<string>(nameof(VpdSettings.BaseUrl))
+            ?? throw new InvalidOperationException("The VPD API base URL is not configured.");
+        builder.Services.AddUnauthenticatedVpdApi(new Uri(apiBaseUrl));
 
 #if DEBUG
         builder.Logging.AddDebug();

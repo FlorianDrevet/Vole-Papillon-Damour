@@ -713,10 +713,14 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
 ## MAUI Client
 
 - `src/MauiCashApp/` is Android-only .NET MAUI 10 (`net10.0-android`) with MVVM Toolkit,
-  Refit, SQLite, embedded config, and MSAL.NET 4.88.0 silent-first auth using the Android
-  redirect `msal427c90de-bf59-4b01-af63-dc0799248496://auth` and an `AuthHandler`.
-- `IVpdApi.GetProductsAsync()` calls `GET /product`; the cash surface intentionally keeps the
-  full projection, including products hidden from Website.
+  Refit, SQLite, and embedded config. It has no tablet sign-in or bearer-token handler;
+  `VpdApiServiceCollectionExtensions` registers the public `GET /product` client.
+- The cashier shows only available `Bar` and `Bingo` products. `CashierProductFilter` applies
+  that rule to API and SQLite data, and `Categories.All` exposes only Buvette and Loto; the
+  book section is not part of this app. Website visibility remains an independent filter.
+- BackOffice distributes `src/BackOffice/public/apks/app-debug.apk` at `/apks/app-debug.apk`.
+  Both the public login page and the authenticated `/caisse` page link to this static asset;
+  replace it with the freshly built APK when updating the app.
 
 
 ## Website canonical URLs (2026-10-04)

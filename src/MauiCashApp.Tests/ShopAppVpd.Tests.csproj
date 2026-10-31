@@ -10,6 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="sqlite-net-pcl" />
+    <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -19,8 +23,22 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Compile Include="..\MauiCashApp\Interfaces\IAuthService.cs" Link="Production\IAuthService.cs" />
-    <Compile Include="..\MauiCashApp\Services\AuthHandler.cs" Link="Production\AuthHandler.cs" />
+    <Compile Include="..\MauiCashApp\Apis\IVpdApi.cs" Link="Production\IVpdApi.cs" />
+    <Compile Include="..\MauiCashApp\Apis\VpdApiServiceCollectionExtensions.cs" Link="Production\VpdApiServiceCollectionExtensions.cs" />
+    <Compile Include="..\MauiCashApp\Apis\Responses\ProductResponse.cs" Link="Production\ProductResponse.cs" />
+    <Compile Include="..\MauiCashApp\Apis\Responses\PromotionResponse.cs" Link="Production\PromotionResponse.cs" />
+    <Compile Include="..\MauiCashApp\Services\CashierProductFilter.cs" Link="Production\CashierProductFilter.cs" />
+    <Compile Include="..\MauiCashApp\Interfaces\IProductService.cs" Link="Production\IProductService.cs" />
+    <Compile Include="..\MauiCashApp\Models\Product.cs" Link="Production\Product.cs" />
+    <Compile Include="..\MauiCashApp\Models\Category.cs" Link="Production\Category.cs" />
+    <Compile Include="..\MauiCashApp\Models\Promotion.cs" Link="Production\Promotion.cs" />
+    <Compile Include="..\MauiCashApp\Models\FoodSection.cs" Link="Production\FoodSection.cs" />
+    <Compile Include="..\MauiCashApp\ViewModels\MainViewModel.cs" Link="Production\MainViewModel.cs" />
+    <Compile Include="..\MauiCashApp\ViewModels\ShoppedProductViewModel.cs" Link="Production\ShoppedProductViewModel.cs" />
+    <Compile Include="..\MauiCashApp\Constants\Categories.cs" Link="Production\Categories.cs" />
+    <Compile Include="..\MauiCashApp\Constants\FoodSections.cs" Link="Production\FoodSections.cs" />
+    <Compile Include="..\MauiCashApp\Apis\Enums\ProductSection.cs" Link="Production\ProductSection.cs" />
+    <Compile Include="..\MauiCashApp\Apis\Enums\ProductCategory.cs" Link="Production\ProductCategory.cs" />
   </ItemGroup>
 
 </Project>

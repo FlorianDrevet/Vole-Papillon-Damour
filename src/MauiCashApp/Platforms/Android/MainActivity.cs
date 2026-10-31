@@ -1,8 +1,5 @@
 using Android.App;
-using Android.Content;
 using Android.Content.PM;
-using Android.OS;
-using Microsoft.Identity.Client;
 
 namespace ShopAppVpd;
 
@@ -13,18 +10,4 @@ namespace ShopAppVpd;
     ScreenOrientation = ScreenOrientation.Landscape)]
 public class MainActivity : MauiAppCompatActivity
 {
-    protected override void OnCreate(Bundle? savedInstanceState)
-    {
-        base.OnCreate(savedInstanceState);
-        Microsoft.Maui.ApplicationModel.Platform.Init(this, savedInstanceState);
-    }
-
-    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
-    {
-        base.OnActivityResult(requestCode, resultCode, data);
-        AuthenticationContinuationHelper.SetAuthenticationContinuationEventArgs(
-            requestCode,
-            resultCode,
-            data);
-    }
 }
