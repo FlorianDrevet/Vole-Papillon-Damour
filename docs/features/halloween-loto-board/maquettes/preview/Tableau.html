@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau Halloween en jeu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800;900&amp;display=swap">
+<style>
+body{margin:0}
+.hw{--nuit:#120a1c;--velours:#1d1229;--ardoise:#2a1c3a;--citrouille:#ff8c2e;--braise:#ffb347;--cire:#f4e8cf;--sorciere:#9bd85a;--lilas:#b8a5cf;--prune:#5b3482;--encre:#1a0b22;position:relative;box-sizing:border-box;padding:8px 16px 140px;background:var(--nuit);color:var(--cire);font-family:"Libre Franklin",system-ui,sans-serif;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.hw-k{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:500;font-size:17px;color:var(--lilas)}
+.calm .deco,.calm .deco *{animation:none !important;transition:none !important}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;height:52px}
+.back{display:flex;align-items:center;gap:4px;min-width:0;height:44px;color:var(--cire);text-decoration:none;font-weight:700;font-size:15px}
+.back span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--braise)}
+.live svg{width:10px;height:15px;transform-origin:50% 100%;animation:flame 1.3s ease-in-out infinite}
+.calm-btn{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 14px;border:0;border-radius:999px;background:var(--velours);color:var(--cire);font:700 14px "Libre Franklin",system-ui,sans-serif;cursor:pointer}
+.calm-btn[aria-pressed="true"]{background:var(--prune)}
+.calm-btn:focus-visible{outline:3px solid var(--braise);outline-offset:2px}
+
+.hero{position:relative;min-height:252px;box-sizing:border-box;padding:16px 58px 22px 18px;border-radius:26px;background:#170e23;display:flex;flex-direction:column}
+.hero-sky{position:absolute;inset:0;border-radius:26px;overflow:hidden}
+.moon{position:absolute;top:18px;right:22px;width:66px;height:66px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fffaea,#f3e4bd 58%,#dcc792);box-shadow:0 0 44px 12px rgba(246,232,190,.13);animation:moon 7s ease-in-out infinite}
+.moon i{position:absolute;border-radius:50%;background:rgba(170,145,95,.22)}
+@keyframes moon{50%{box-shadow:0 0 60px 20px rgba(246,232,190,.2)}}
+.cloud{position:absolute;left:0;fill:#251733}
+.cloud-1{top:52px;width:128px;animation:cloud 48s linear infinite}
+.cloud-2{top:104px;width:92px;animation:cloud 70s linear -34s infinite;opacity:.8}
+@keyframes cloud{from{transform:translateX(-150px)}to{transform:translateX(420px)}}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#f4e8cf;animation:twinkle 5s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.85}50%{opacity:.2}}
+.num-glow{position:absolute;left:30px;right:70px;top:60px;height:170px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,140,46,.2),transparent);animation:breathe 4.5s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.55;transform:scale(.94)}}
+.num-wrap{position:relative;display:grid;place-items:center;margin-top:6px}
+.num,.num-old{grid-area:1/1;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:184px;line-height:.9;letter-spacing:-.045em;color:var(--citrouille);font-variant-numeric:lining-nums tabular-nums;font-variation-settings:"opsz" 144;text-shadow:0 0 30px rgba(255,140,46,.32)}
+.num-old{pointer-events:none}
+.num-hide{display:none}
+.num-ign-a{animation:num-ign-a .75s .16s cubic-bezier(.2,.9,.3,1.1) both}
+.num-ign-b{animation:num-ign-b .75s .16s cubic-bezier(.2,.9,.3,1.1) both}
+@keyframes num-ign-a{0%{opacity:0;transform:scale(.8);filter:blur(8px) brightness(1.7)}45%{opacity:1;transform:scale(1.04);filter:blur(0) brightness(1.35)}100%{transform:scale(1);filter:none}}
+@keyframes num-ign-b{0%{opacity:0;transform:scale(.8);filter:blur(8px) brightness(1.7)}45%{opacity:1;transform:scale(1.04);filter:blur(0) brightness(1.35)}100%{transform:scale(1);filter:none}}
+.num-smoke-a{animation:num-smoke-a .55s ease-out both}
+.num-smoke-b{animation:num-smoke-b .55s ease-out both}
+@keyframes num-smoke-a{0%{opacity:1}100%{opacity:0;filter:blur(14px);transform:translateY(-28px) scale(1.08)}}
+@keyframes num-smoke-b{0%{opacity:1}100%{opacity:0;filter:blur(14px);transform:translateY(-28px) scale(1.08)}}
+.num-back-a{animation:num-back-a .45s .2s ease-out both}
+.num-back-b{animation:num-back-b .45s .2s ease-out both}
+@keyframes num-back-a{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
+@keyframes num-back-b{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
+.calm .num{animation:num-fade .3s both !important}
+.calm .num-old{animation:num-fadeout .3s both !important}
+@keyframes num-fade{from{opacity:0}to{opacity:1}}
+@keyframes num-fadeout{from{opacity:1}to{opacity:0}}
+.hero-pk{position:absolute;right:-8px;bottom:-16px;z-index:2}
+
+.tombs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
+.tomb{height:54px;border-radius:24px 24px 6px 6px;background:var(--cire);color:var(--encre);display:grid;place-items:center;font-weight:800;font-size:24px;font-variant-numeric:tabular-nums;transform:rotate(var(--t));box-shadow:inset 0 -7px 0 rgba(26,11,34,.12)}
+.tomb-in-a{animation:tomb-in-a .6s .15s cubic-bezier(.3,1.4,.5,1) both}
+.tomb-in-b{animation:tomb-in-b .6s .15s cubic-bezier(.3,1.4,.5,1) both}
+@keyframes tomb-in-a{0%{opacity:0;transform:translateY(-34px) rotate(var(--t)) scale(.8)}100%{opacity:1;transform:rotate(var(--t))}}
+@keyframes tomb-in-b{0%{opacity:0;transform:translateY(-34px) rotate(var(--t)) scale(.8)}100%{opacity:1;transform:rotate(var(--t))}}
+.ground{height:6px;margin:0 -4px;border-radius:999px;background:#1d1229}
+
+.board{position:relative;display:flex;flex-direction:column;gap:10px}
+.board-h{display:flex;justify-content:space-between;align-items:baseline;padding-right:58px}
+.board-h b{font-size:14px;font-weight:600;color:var(--lilas)}
+.grid{position:relative;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}
+.cell{position:relative;height:32px;border-radius:7px;background:var(--ardoise);color:var(--lilas);display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.cell.on{background:var(--cire);color:var(--encre);font-weight:800}
+.cell.nb{color:#ffffff;box-shadow:inset 0 0 0 2px var(--sorciere)}
+.cell.last{background:var(--citrouille);color:var(--encre);font-weight:900;box-shadow:inset 0 0 0 2px #ffd08a,0 0 16px rgba(255,140,46,.5);animation:last-glow 2.6s ease-in-out infinite}
+@keyframes last-glow{50%{box-shadow:inset 0 0 0 2px #ffd08a,0 0 26px rgba(255,140,46,.75)}}
+.calm .cell.last{animation:none}
+.cell.last.ign-a{animation:ign-a .75s .2s cubic-bezier(.3,1.5,.5,1) both,last-glow 2.6s 1s ease-in-out infinite}
+.cell.last.ign-b{animation:ign-b .75s .2s cubic-bezier(.3,1.5,.5,1) both,last-glow 2.6s 1s ease-in-out infinite}
+@keyframes ign-a{0%{transform:scale(.7);background:var(--ardoise)}40%{transform:scale(1.25);background:#ffd08a;box-shadow:0 0 26px 8px rgba(255,170,80,.7)}100%{transform:scale(1)}}
+@keyframes ign-b{0%{transform:scale(.7);background:var(--ardoise)}40%{transform:scale(1.25);background:#ffd08a;box-shadow:0 0 26px 8px rgba(255,170,80,.7)}100%{transform:scale(1)}}
+.cell.unlit-a{animation:unlit-a .6s both}
+.cell.unlit-b{animation:unlit-b .6s both}
+@keyframes unlit-a{0%{background:var(--cire);color:var(--encre)}100%{background:var(--ardoise);color:var(--lilas)}}
+@keyframes unlit-b{0%{background:var(--cire);color:var(--encre)}100%{background:var(--ardoise);color:var(--lilas)}}
+.cell.out{animation:cell-out .55s var(--d) both}
+@keyframes cell-out{0%{background:var(--cire);color:var(--encre)}35%{background:#fff6dd;color:var(--encre);transform:translateY(-2px);box-shadow:0 -8px 16px rgba(255,236,190,.6)}100%{background:var(--ardoise);color:var(--lilas);box-shadow:none;transform:none}}
+.flame{position:absolute;left:50%;top:-16px;width:11px;height:16px;margin-left:-5.5px;transform-origin:50% 100%;animation:flame 1.1s ease-in-out infinite;z-index:2}
+@keyframes flame{0%,100%{transform:scale(1,1) skewX(0)}25%{transform:scale(.9,1.1) skewX(-5deg)}50%{transform:scale(1.06,.93) skewX(3deg)}75%{transform:scale(.95,1.06) skewX(-2deg)}}
+
+.web{position:absolute;top:-30px;right:-16px;width:88px;height:88px;pointer-events:none;z-index:3}
+.spider{position:absolute;top:10px;right:34px;width:22px;z-index:4;transform-origin:50% 0;animation:sway 26s ease-in-out infinite;pointer-events:none}
+.thread{position:absolute;left:10.5px;top:0;width:1px;height:84px;background:rgba(232,220,245,.55);transform-origin:50% 0;animation:thread 26s ease-in-out infinite}
+.spider-b{position:absolute;left:0;top:4px;width:22px;animation:drop 26s ease-in-out infinite}
+.spider-b .legs{transform-origin:12px 10px;animation:legs .5s ease-in-out infinite alternate}
+@keyframes drop{0%,62%{transform:translateY(0)}70%{transform:translateY(80px)}72%{transform:translateY(73px)}74%,86%{transform:translateY(80px)}95%,100%{transform:translateY(0)}}
+@keyframes thread{0%,62%{transform:scaleY(.08)}70%{transform:scaleY(1)}72%{transform:scaleY(.92)}74%,86%{transform:scaleY(1)}95%,100%{transform:scaleY(.08)}}
+@keyframes sway{0%,74%{transform:rotate(0)}78%{transform:rotate(7deg)}82%{transform:rotate(-5deg)}85%,100%{transform:rotate(0)}}
+@keyframes legs{to{transform:scaleY(.86)}}
+
+.card{border-radius:22px;background:var(--velours);padding:18px;display:flex;flex-direction:column;gap:10px}
+.card-t{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:27px;line-height:1.08;letter-spacing:-.01em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;background:var(--prune);color:var(--cire);font-weight:700;font-size:14px}
+.chip-a{background:var(--citrouille);color:var(--encre)}
+.chip-b{background:var(--cire);color:var(--encre)}
+.lots{display:flex;flex-direction:column;gap:7px;padding-top:12px;border-top:1px dashed #3a2950}
+.lot{font-size:17px;font-weight:700}
+.lot-won{display:flex;gap:8px;align-items:baseline;font-size:15px;color:var(--lilas)}
+.lot-won s{text-decoration-thickness:2px}
+.lot-won em{font-style:normal;font-size:13px;font-weight:700;color:var(--sorciere)}
+.bingo{background:#21102b;box-shadow:inset 0 0 0 2px var(--citrouille)}
+.bingo .hw-k{color:var(--braise)}
+.bingo-n{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.ff{position:absolute;width:5px;height:5px;border-radius:50%;background:#e9ffa8;box-shadow:0 0 10px 3px rgba(205,255,120,.45);pointer-events:none}
+.ff-1{left:40px;top:430px;animation:ff-1 17s ease-in-out infinite}
+.ff-2{left:310px;top:760px;animation:ff-2 21s ease-in-out -6s infinite}
+.ff-3{left:120px;top:1120px;animation:ff-1 19s ease-in-out -11s infinite}
+@keyframes ff-1{0%,100%{transform:translate(0,0);opacity:0}15%{opacity:.9}35%{transform:translate(60px,-40px)}55%{transform:translate(20px,-90px);opacity:.3}75%{transform:translate(90px,-60px);opacity:.9}90%{opacity:0}}
+@keyframes ff-2{0%,100%{transform:translate(0,0);opacity:0}20%{opacity:.8}45%{transform:translate(-70px,-30px)}70%{transform:translate(-30px,-80px);opacity:.4}85%{opacity:.8}}
+.fog{position:absolute;left:0;right:0;bottom:0;height:150px;pointer-events:none;overflow:hidden}
+.fog-a,.fog-b{position:absolute;bottom:-30px;left:0;width:200%;height:130px;background:radial-gradient(60px 40px at 10% 60%,rgba(200,180,235,.16),transparent),radial-gradient(90px 50px at 30% 70%,rgba(200,180,235,.13),transparent),radial-gradient(70px 40px at 55% 55%,rgba(200,180,235,.15),transparent),radial-gradient(100px 55px at 80% 70%,rgba(200,180,235,.12),transparent);animation:fog 40s linear infinite}
+.fog-b{bottom:-46px;opacity:.8;animation-duration:62s;animation-direction:reverse}
+@keyframes fog{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+<div class="{{rootCls}}" style="width: 390px; min-height: 1400px;">
+  <svg width="0" height="0" style="position: absolute;" aria-hidden="true"><defs><linearGradient id="hwFlame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff8c2e"></stop><stop offset=".6" stop-color="#ffc35c"></stop><stop offset="1" stop-color="#fff1b8"></stop></linearGradient></defs></svg>
+  <div class="deco" aria-hidden="true" data-zone="E2-feux-follets"><span class="ff ff-1"></span><span class="ff ff-2"></span><span class="ff ff-3"></span></div>
+
+  <header class="top">
+    <a class="back" href="#" data-zone="E2-retour"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 L5 8 L10 13"></path></svg><span>Loto de test</span></a>
+    <div class="top-r">
+      <span class="live" role="status" data-zone="E2-etat-connexion"><svg class="deco" viewBox="0 0 12 18" aria-hidden="true"><path d="M6 .5 C7.4 4 11.5 7.2 11.5 11.6 C11.5 15 9 17.5 6 17.5 C3 17.5 .5 15 .5 11.6 C.5 9 2 7.6 3 6.2 C3.4 8 4.2 9 5.2 9.4 C4.6 6.6 5 3.4 6 .5 Z" fill="#ffb347"></path></svg>En direct</span>
+      <button class="calm-btn" type="button" aria-pressed="{{calmPressed}}" aria-label="{{calmAria}}" onClick="{{toggleCalm}}" data-zone="E5-bouton-animations"><svg viewBox="0 0 18 18" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M11.5 2.2 A7 7 0 1 0 15.8 12.4 A5.6 5.6 0 0 1 11.5 2.2 Z"></path></svg><span>{{calmLabel}}</span></button>
+    </div>
+  </header>
+
+  <section class="hero" aria-live="polite" data-zone="E2-dernier-numero">
+    <div class="hero-sky deco" aria-hidden="true" data-zone="E2-scene-ciel">
+      <span class="star" style="left: 30px; top: 30px;"></span>
+      <span class="star" style="left: 140px; top: 18px; animation-delay: -2s;"></span>
+      <span class="star" style="left: 212px; top: 54px; animation-delay: -3.4s;"></span>
+      <span class="star" style="left: 96px; top: 74px; animation-delay: -1.2s;"></span>
+      <span class="star" style="left: 262px; top: 22px; animation-delay: -4.1s;"></span>
+      <span class="star" style="left: 330px; top: 120px; animation-delay: -2.6s;"></span>
+      <div class="moon"><i style="left: 16px; top: 20px; width: 10px; height: 10px;"></i><i style="left: 36px; top: 38px; width: 7px; height: 7px;"></i><i style="left: 40px; top: 14px; width: 5px; height: 5px;"></i></div>
+      <svg class="cloud cloud-1" viewBox="0 0 128 40"><path d="M10 34 C2 34 2 22 12 22 C12 12 26 8 34 16 C40 4 62 4 66 18 C74 10 92 14 92 24 C104 20 118 26 116 34 Z"></path></svg>
+      <svg class="cloud cloud-2" viewBox="0 0 128 40"><path d="M10 34 C2 34 2 22 12 22 C12 12 26 8 34 16 C40 4 62 4 66 18 C74 10 92 14 92 24 C104 20 118 26 116 34 Z"></path></svg>
+      <div class="num-glow"></div>
+    </div>
+    <span class="hw-k" style="position: relative;">Dernier numéro</span>
+    <div class="num-wrap">
+      <span class="{{oldCls}}" aria-hidden="true">{{oldText}}</span>
+      <span class="{{numCls}}">{{lastText}}</span>
+    </div>
+    <div class="hero-pk deco" aria-hidden="true" data-zone="E2-citrouille"><dc-import name="Citrouille" size="104" mood="{{mood}}" hint-size="104px,95px"></dc-import></div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 4px;" data-zone="E2-precedents">
+    <span class="hw-k">Les cinq d'avant</span>
+    <div class="tombs">
+      <sc-for list="{{prev}}" as="t" hint-placeholder-count="5">
+        <span class="{{t.cls}}" style="--t: {{t.tilt}}deg;">{{t.n}}</span>
+      </sc-for>
+    </div>
+    <div class="ground"></div>
+  </section>
+
+  <section class="board" data-zone="E2-grille">
+    <div class="board-h"><span class="hw-k">Tous les numéros</span><b>{{drawnCount}} sortis</b></div>
+    <svg class="web deco" viewBox="0 0 88 88" fill="none" stroke="rgba(232,220,245,.3)" stroke-width="1" aria-hidden="true"><path d="M88 0 L20 0 M88 0 L34 34 M88 0 L60 62 M88 0 L88 74"></path><path d="M70 0 Q72 10 76 12 Q80 14 88 16"></path><path d="M52 0 Q56 18 64 24 Q74 30 88 32"></path><path d="M36 0 Q40 24 52 38 Q66 50 88 50"></path><path d="M22 0 Q26 30 42 46 Q60 62 88 66"></path></svg>
+    <div class="spider deco" aria-hidden="true" data-zone="E2-araignee">
+      <span class="thread"></span>
+      <svg class="spider-b" viewBox="0 0 24 22"><g class="legs" stroke="#0c0612" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M9 9 C5 6 3 4 1 5"></path><path d="M9 11 C5 10 2 10 0 12"></path><path d="M9 12.5 C6 14 4 16 2 19"></path><path d="M10 14 C8 17 7 19 6 21"></path><path d="M15 9 C19 6 21 4 23 5"></path><path d="M15 11 C19 10 22 10 24 12"></path><path d="M15 12.5 C18 14 20 16 22 19"></path><path d="M14 14 C16 17 17 19 18 21"></path></g><ellipse cx="12" cy="12.5" rx="4.6" ry="5.2" fill="#0c0612" stroke="#6a5385" stroke-width=".8"></ellipse><circle cx="12" cy="6.6" r="3" fill="#0c0612" stroke="#6a5385" stroke-width=".8"></circle><circle cx="11" cy="6.2" r=".7" fill="#ff8c2e"></circle><circle cx="13" cy="6.2" r=".7" fill="#ff8c2e"></circle></svg>
+    </div>
+    <div class="grid" role="img" aria-label="Grille des numéros 1 à 90">
+      <sc-for list="{{cells}}" as="cell" hint-placeholder-count="90">
+        <span class="{{cell.cls}}" style="--d: {{cell.outDelay}}s;">{{cell.value}}<sc-if value="{{cell.isLast}}" hint-placeholder-val="{{ false }}"><svg class="flame deco" viewBox="0 0 12 18" aria-hidden="true" data-zone="E2-case-derniere"><path d="M6 .5 C7.4 4 11.5 7.2 11.5 11.6 C11.5 15 9 17.5 6 17.5 C3 17.5 .5 15 .5 11.6 C.5 9 2 7.6 3 6.2 C3.4 8 4.2 9 5.2 9.4 C4.6 6.6 5 3.4 6 .5 Z" fill="url(#hwFlame)"></path><path d="M6 9.4 C7.2 11 8.4 12.4 8.4 14.2 C8.4 15.7 7.3 16.7 6 16.7 C4.7 16.7 3.6 15.7 3.6 14.2 C3.6 12.6 4.8 11.4 6 9.4 Z" fill="#fff6d0"></path></svg></sc-if></span>
+      </sc-for>
+    </div>
+  </section>
+
+  <section class="card" data-zone="E2-partie">
+    <span class="hw-k">{{partieLabel}}</span>
+    <span class="card-t">{{partieName}}</span>
+    <div class="chips">
+      <sc-for list="{{chips}}" as="chip" hint-placeholder-count="2"><span class="{{chip.cls}}">{{chip.label}}</span></sc-for>
+    </div>
+    <div class="lots" data-zone="E2-lots">
+      <span class="hw-k" style="font-size: 16px;">À gagner sur cette ligne</span>
+      <sc-for list="{{lots}}" as="lot" hint-placeholder-count="3">
+        <sc-if value="{{lot.won}}" hint-placeholder-val="{{ false }}"><span class="lot-won"><s>{{lot.name}}</s><em>gagné</em></span></sc-if>
+        <sc-if value="{{lot.open}}" hint-placeholder-val="{{ true }}"><span class="lot">{{lot.name}}</span></sc-if>
+      </sc-for>
+    </div>
+  </section>
+
+  <section class="card bingo" data-zone="E2-bingo">
+    <span class="hw-k">Bingo</span>
+    <span class="bingo-n">7 · 19 · 33 · 58 · 81</span>
+  </section>
+
+  <div class="fog deco" aria-hidden="true" data-zone="E2-brume"><div class="fog-a"></div><div class="fog-b"></div></div>
+</div>
+</body>
+</html>

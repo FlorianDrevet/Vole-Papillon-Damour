@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Démo du direct Halloween</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Libre+Franklin:wght@400;600;700;800;900&amp;display=swap">
+<style>
+body{margin:0}
+.demo{font-family:"Libre Franklin",system-ui,sans-serif;color:#f4e8cf}
+.phone{position:relative;width:390px;height:844px;padding:10px;border-radius:52px;background:#231a2b;box-shadow:0 0 0 1px #3a2c45,0 40px 80px rgba(0,0,0,.55)}
+.screen{position:relative;width:390px;height:844px;overflow:hidden;border-radius:42px;background:#120a1c}
+.scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.calm .deco,.calm .deco *{animation:none !important;transition:none !important}
+
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6}
+.bat{position:absolute;left:0;top:0;will-change:transform;animation-fill-mode:both;animation-timing-function:cubic-bezier(.42,0,.58,1)}
+.bat-1{animation-name:fly-1;animation-duration:1.5s}
+.bat-2{animation-name:fly-2;animation-duration:1.7s;animation-delay:.1s}
+.bat-3{animation-name:fly-3;animation-duration:1.15s;animation-delay:.22s;opacity:.95}
+.bat-4{animation-name:fly-4;animation-duration:1.8s;animation-delay:.32s;opacity:.7}
+.bat-5{animation-name:fly-5;animation-duration:1.5s;animation-delay:.42s}
+@keyframes fly-1{0%{transform:translate(-90px,250px) rotate(10deg)}35%{transform:translate(90px,175px) rotate(-6deg)}70%{transform:translate(260px,118px) rotate(5deg)}100%{transform:translate(470px,58px) rotate(-12deg)}}
+@keyframes fly-2{0%{transform:translate(470px,330px) scaleX(-1)}45%{transform:translate(230px,250px) scaleX(-1) rotate(-6deg)}100%{transform:translate(-100px,196px) scaleX(-1) rotate(8deg)}}
+@keyframes fly-3{0%{transform:translate(-150px,600px) scale(1.15) rotate(6deg)}100%{transform:translate(480px,410px) scale(1.15) rotate(-14deg)}}
+@keyframes fly-4{0%{transform:translate(-50px,118px)}50%{transform:translate(190px,40px) rotate(-8deg)}100%{transform:translate(440px,96px)}}
+@keyframes fly-5{0%{transform:translate(470px,150px) scaleX(-1)}55%{transform:translate(160px,70px) scaleX(-1) rotate(10deg)}100%{transform:translate(-90px,24px) scaleX(-1)}}
+
+.candy{position:absolute;top:0;animation-name:candy-fall;animation-fill-mode:both}
+.candy-spin{animation-name:candy-spin;animation-timing-function:cubic-bezier(.3,.1,.6,1);animation-fill-mode:forwards}
+.candy svg{display:block;width:100%;height:auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))}
+@keyframes candy-fall{
+0%{transform:translateY(-60px);opacity:1;animation-timing-function:cubic-bezier(.55,0,.9,.55)}
+62%{transform:translateY(796px);animation-timing-function:cubic-bezier(.2,.6,.4,1)}
+70%{transform:translateY(760px);animation-timing-function:cubic-bezier(.6,0,.9,.5)}
+77%{transform:translateY(796px);animation-timing-function:ease-out}
+81%{transform:translateY(786px);animation-timing-function:ease-in}
+85%{transform:translateY(796px);opacity:1}
+100%{transform:translateY(796px);opacity:0}}
+@keyframes candy-spin{from{transform:rotate(0)}to{transform:rotate(520deg)}}
+
+.pk-rise{position:absolute;bottom:-12px;animation:pk-rise 4.2s both}
+@keyframes pk-rise{
+0%{transform:translateY(120%);animation-timing-function:cubic-bezier(.2,.9,.3,1.25)}
+22%{transform:translateY(0)}
+84%{transform:translateY(0);animation-timing-function:cubic-bezier(.6,0,.9,.4)}
+100%{transform:translateY(130%)}}
+
+.banner{position:absolute;left:22px;right:22px;top:322px;padding:16px 20px 18px;border-radius:22px;background:#f4e8cf;color:#1a0b22;box-shadow:0 22px 48px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:4px;animation:banner 4.2s both}
+.banner-title{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:900;font-size:34px;line-height:1;color:#a83a06;letter-spacing:-.01em}
+.banner-lot{font-size:17px;font-weight:700}
+@keyframes banner{
+0%{opacity:0;transform:translateY(18px) scale(.9)}
+9%{opacity:1;transform:translateY(-3px) scale(1.03)}
+15%{transform:translateY(0) scale(1)}
+86%{opacity:1;transform:translateY(0)}
+100%{opacity:0;transform:translateY(-10px)}}
+
+.ghost-fly{position:absolute;top:430px;left:0;animation:gh-cross 2.6s cubic-bezier(.45,.05,.55,.95) both}
+@keyframes gh-cross{0%{transform:translate(-150px,0)}50%{transform:translate(140px,-26px)}100%{transform:translate(440px,8px)}}
+.announce{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(18,10,28,.78);animation:ann 1.8s 2.2s both}
+.announce-card{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:0 32px}
+@keyframes ann{0%{opacity:0}14%{opacity:1}82%{opacity:1}100%{opacity:0}}
+.ann-k{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:18px;color:#b8a5cf}
+.ann-t{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:40px;line-height:1.02;color:#f4e8cf}
+
+.fog{position:absolute;left:0;right:0;bottom:0;height:130px;pointer-events:none;z-index:4;overflow:hidden}
+.fog-a,.fog-b{position:absolute;bottom:-30px;left:0;width:200%;height:120px;background:radial-gradient(60px 40px at 10% 60%,rgba(200,180,235,.16),transparent),radial-gradient(90px 50px at 30% 70%,rgba(200,180,235,.13),transparent),radial-gradient(70px 40px at 55% 55%,rgba(200,180,235,.15),transparent),radial-gradient(100px 55px at 80% 70%,rgba(200,180,235,.12),transparent);animation:fog 40s linear infinite}
+.fog-b{bottom:-46px;opacity:.8;animation-duration:62s;animation-direction:reverse}
+@keyframes fog{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+.pause{position:relative;min-height:844px;padding:12px 16px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px}
+.sky{position:relative;height:250px;margin:0 -16px;overflow:hidden}
+.moon{position:absolute;top:34px;right:46px;width:120px;height:120px;border-radius:50%;background:#f6ecd2;box-shadow:0 0 60px 18px rgba(246,236,210,.16);animation:moon 7s ease-in-out infinite}
+@keyframes moon{50%{box-shadow:0 0 80px 26px rgba(246,236,210,.22)}}
+.witch{position:absolute;top:66px;left:0;width:96px;animation:witch 11s linear infinite}
+@keyframes witch{0%,52%{transform:translate(-120px,30px) rotate(-6deg)}86%{transform:translate(440px,-34px) rotate(-10deg)}100%{transform:translate(440px,-34px)}}
+.cauldron-wrap{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%)}
+.pause h1{margin:0;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:64px;line-height:.95;letter-spacing:-.02em;color:#f4e8cf}
+.lede{margin:0;font-size:16px;line-height:1.45;color:#b8a5cf}
+.card{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:18px;background:#1d1229}
+.card-k{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:16px;color:#b8a5cf}
+.card-t{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:24px;line-height:1.1}
+.bingo-n{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:#f4e8cf}
+
+.panel{display:flex;flex-direction:column;gap:22px;width:560px}
+.panel h1{margin:0;font-family:Fraunces,Georgia,serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.02em;color:#f4e8cf}
+.panel p{margin:0;font-size:16px;line-height:1.5;color:#c9b9dc}
+.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.btn{height:54px;border:0;border-radius:14px;background:#26173a;color:#f4e8cf;font:700 15px "Libre Franklin",system-ui,sans-serif;cursor:pointer;text-align:left;padding:0 18px;display:flex;align-items:center;justify-content:space-between}
+.btn:hover{background:#321f4b}
+.btn:focus-visible{outline:3px solid #ffb347;outline-offset:2px}
+.btn-main{background:#ff8c2e;color:#1a0b22}
+.btn-main:hover{background:#ffa04f}
+.btn small{font-weight:600;font-size:13px;opacity:.7}
+.log{padding:16px 18px;border-radius:14px;background:#1d1229;font-size:15px;line-height:1.5;color:#f4e8cf;min-height:72px}
+.log b{display:block;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:600;font-size:15px;color:#b8a5cf;margin-bottom:4px}
+.times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 24px;font-size:14px;color:#c9b9dc}
+.times span:nth-child(odd){color:#f4e8cf;font-weight:700}
+</style>
+</helmet>
+<div class="demo" style="width: 1100px; height: 980px; box-sizing: border-box; padding: 58px 60px; background: #0d0812; display: flex; gap: 70px; align-items: flex-start;">
+  <div class="phone">
+    <div class="{{screenCls}}" data-zone="E2-ecran">
+      <div class="scroller">
+        <sc-if value="{{inGame}}" hint-placeholder-val="{{ true }}">
+          <dc-import name="Tableau" last-text="{{lastText}}" num-cls="{{numCls}}" old-text="{{oldText}}" old-cls="{{oldCls}}" prev="{{prev}}" cells="{{cells}}" drawn-count="{{drawnCount}}" partie-label="{{partieLabel}}" partie-name="{{partieName}}" lots="{{lots}}" mood="{{mood}}" calm="{{calm}}" on-toggle-calm="{{toggleCalm}}" hint-size="390px,1400px"></dc-import>
+        </sc-if>
+        <sc-if value="{{inPause}}" hint-placeholder-val="{{ false }}">
+          <section class="pause" data-zone="E4-pause">
+            <div class="sky deco" aria-hidden="true">
+              <div class="moon"></div>
+              <svg class="witch" data-zone="E4-balai" viewBox="0 0 100 46" fill="#0a0510"><path d="M2 34 L74 24 L75 27 L3 37 Z"></path><path d="M70 21 L96 14 L98 22 L99 34 L72 30 Z"></path><path d="M38 4 L28 22 L46 22 Z"></path><path d="M24 22 L50 22 L48 25 L26 25 Z"></path><path d="M30 25 C26 30 28 36 36 33 L50 28 C48 25 42 24 30 25 Z"></path><path d="M31 27 C20 28 12 32 8 38 C18 34 24 33 32 33 Z"></path></svg>
+              <div class="cauldron-wrap" data-zone="E4-chaudron"><dc-import name="Chaudron" size="200" hint-size="200px,190px"></dc-import></div>
+            </div>
+            <h1>Pause</h1>
+            <p class="lede">On reprend dans quelques minutes. Gardez la page ouverte, le tableau repartira tout seul.</p>
+            <div class="card">
+              <span class="card-k">Bingo</span>
+              <span class="bingo-n">7 · 19 · 33 · 58 · 81</span>
+            </div>
+            <div class="card">
+              <span class="card-k">Ensuite, {{partieLabel}}</span>
+              <span class="card-t">{{partieName}}</span>
+              <span style="font-size: 16px; color: #f4e8cf;">1 ligne · Panier garni, Bon d'achat 30 €</span>
+            </div>
+          </section>
+        </sc-if>
+      </div>
+
+      <div class="fog deco" aria-hidden="true" data-zone="E2-brume"><div class="fog-a"></div><div class="fog-b"></div></div>
+
+      <div class="fx" aria-hidden="true">
+        <sc-if value="{{showBats}}" hint-placeholder-val="{{ false }}">
+          <div data-zone="E3-chauves-souris">
+            <div class="bat bat-1"><dc-import name="ChauveSouris" size="78" hint-size="78px,39px"></dc-import></div>
+            <div class="bat bat-2"><dc-import name="ChauveSouris" size="54" hint-size="54px,27px"></dc-import></div>
+            <div class="bat bat-3"><dc-import name="ChauveSouris" size="112" hint-size="112px,56px"></dc-import></div>
+            <div class="bat bat-4"><dc-import name="ChauveSouris" size="40" hint-size="40px,20px"></dc-import></div>
+            <div class="bat bat-5"><dc-import name="ChauveSouris" size="60" hint-size="60px,30px"></dc-import></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{showParty}}" hint-placeholder-val="{{ false }}">
+          <div data-zone="E3-pluie-bonbons">
+            <sc-for list="{{candies}}" as="c" hint-placeholder-count="20">
+              <div class="candy" style="left: {{c.left}}px; width: {{c.w}}px; animation-delay: {{c.delay}}s; animation-duration: {{c.dur}}s;">
+                <div class="candy-spin" style="animation-duration: {{c.spin}}s;">
+                  <sc-if value="{{c.wrap}}" hint-placeholder-val="{{ true }}">
+                    <svg viewBox="0 0 30 16"><path d="M1 2 L9 8 L1 14 Q3 8 1 2 Z" fill="{{c.c2}}"></path><path d="M29 2 L21 8 L29 14 Q27 8 29 2 Z" fill="{{c.c2}}"></path><ellipse cx="15" cy="8" rx="7.5" ry="6.5" fill="{{c.c1}}"></ellipse><path d="M11.5 3.2 Q15.5 8 12.5 12.8" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>
+                  </sc-if>
+                  <sc-if value="{{c.corn}}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 18 22"><path d="M9 1 L12.2 8 L5.8 8 Z" fill="#fff5e1"></path><path d="M5.8 8 L12.2 8 L15 15 L3 15 Z" fill="#ff8c2e"></path><path d="M3 15 L15 15 L17 19.5 Q9 22.5 1 19.5 Z" fill="#ffc94d"></path></svg>
+                  </sc-if>
+                  <sc-if value="{{c.lolly}}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 24 34"><rect x="11" y="18" width="2" height="16" rx="1" fill="#f4e8cf"></rect><circle cx="12" cy="11" r="10" fill="{{c.c1}}"></circle><path d="M12 11 m-1 0 a1 1 0 1 1 2 0 a3 3 0 1 1 -5 -1 a5.5 5.5 0 1 1 9 4 a8 8 0 1 1 -14 -4" stroke="{{c.c2}}" stroke-width="2.4" fill="none" stroke-linecap="round"></path></svg>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div data-zone="E3-citrouilles-rire">
+            <div class="pk-rise" style="left: -16px; animation-delay: 0s;"><dc-import name="Citrouille" size="130" mood="rire" hint-size="130px,118px"></dc-import></div>
+            <div class="pk-rise" style="left: 118px; animation-delay: .12s;"><dc-import name="Citrouille" size="156" mood="rire" hint-size="156px,142px"></dc-import></div>
+            <div class="pk-rise" style="right: -16px; animation-delay: .24s;"><dc-import name="Citrouille" size="130" mood="rire" hint-size="130px,118px"></dc-import></div>
+          </div>
+          <div class="banner" data-zone="E3-banniere">
+            <span class="banner-title">{{bannerTitle}}</span>
+            <span class="banner-lot">{{bannerLot}}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{showGhost}}" hint-placeholder-val="{{ false }}">
+          <div class="ghost-fly" data-zone="E3-fantome"><dc-import name="Fantome" size="120" mood="coucou" hint-size="120px,146px"></dc-import></div>
+          <div class="announce" data-zone="E3-annonce-partie">
+            <div class="announce-card">
+              <span class="ann-k">{{partieLabel}}</span>
+              <span class="ann-t">{{partieName}}</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h1>Le direct, comme le jour du loto</h1>
+    <p>Chaque bouton simule un message reçu par le téléphone. À l'ouverture de la page, rien ne se joue : le tableau s'affiche tel quel, et seul le décor bouge.</p>
+    <div class="btns">
+      <button class="btn btn-main" type="button" onClick="{{draw}}">Nouveau numéro <small>1,6 s</small></button>
+      <button class="btn" type="button" onClick="{{undo}}">Annuler le dernier <small>0,8 s</small></button>
+      <button class="btn" type="button" onClick="{{line}}">Ligne gagnée <small>4 s</small></button>
+      <button class="btn" type="button" onClick="{{bingo}}">Bingo <small>5 s</small></button>
+      <button class="btn" type="button" onClick="{{next}}">Partie suivante <small>3 s</small></button>
+      <button class="btn" type="button" onClick="{{nextPause}}">Partie suivante, puis pause <small>3 s</small></button>
+    </div>
+    <div class="log" aria-live="polite"><b>Ce que voit le joueur</b>{{log}}</div>
+    <div class="times">
+      <span>Chauves-souris</span><span>5 tailles, vol battu à 4,5 battements/s</span>
+      <span>Bonbons</span><span>26 par ligne, 40 au bingo, rebond puis fondu</span>
+      <span>Citrouilles</span><span>sortie en ressort, mâchoire qui rit</span>
+      <span>Fantôme</span><span>souffle les cases colonne par colonne</span>
+      <span>Calmer</span><span>bouton de l'en-tête du téléphone</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":980}}'>
+var PARTIES = ["Le carton d'ouverture", "La toile d'araignée", "Le carton des sorcières", "Le chaudron", "Les feux follets", "La nuit des citrouilles", "Le bal des fantômes", "La grande ronde"];
+var LOTS = ["Panier garni des sorcières", "Bon d'achat 50 €", "Coffret de chocolats"];
+var CANDY_COLORS = [["#ff8c2e", "#ffb347"], ["#9bd85a", "#d7f2b0"], ["#8b5cc7", "#d2b8f2"], ["#f4e8cf", "#ff8c2e"]];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      drawn: [12, 25, 37, 48, 61, 72, 84], partie: 2, won: 0,
+      fx: null, k: "a", old: null, oldMode: "draw", fresh: false,
+      mood: "idle", calm: false, pause: false, wave: false,
+      bannerTitle: "", bannerLot: "",
+      log: "Page ouverte : le tableau s'affiche tel quel, sans animation d'événement (RG-27)."
+    };
+    this.timers = [];
+    this.pendingClear = false;
+    this.pendingPause = false;
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  later(ms, fn) { this.timers.push(setTimeout(fn, ms)); }
+  flush() {
+    this.timers.forEach(clearTimeout);
+    this.timers = [];
+    if (this.pendingClear) {
+      this.pendingClear = false;
+      var pause = this.pendingPause;
+      this.pendingPause = false;
+      this.setState({ drawn: [], wave: false, fresh: false, old: null, pause: pause });
+    }
+  }
+  play(fx, ms) {
+    var calm = this.state.calm;
+    this.setState({ fx: null });
+    if (calm) { return; }
+    this.later(30, () => this.setState({ fx: fx }));
+    this.later(ms, () => this.setState({ fx: null, mood: "idle" }));
+  }
+  toggle(k) { return k === "a" ? "b" : "a"; }
+
+  renderVals() {
+    var s = this.state;
+    var drawn = s.drawn;
+    var last = drawn.length ? drawn[drawn.length - 1] : null;
+    var cells = [];
+    for (var v = 1; v <= 90; v++) {
+      var on = drawn.indexOf(v) >= 0;
+      var isLast = v === last;
+      var cls = "cell" + (on ? " on" : "") + (isLast ? " last" : "");
+      if (isLast && s.fresh && s.oldMode === "draw") { cls += " ign-" + s.k; }
+      if (s.fresh && s.oldMode === "undo" && v === s.old) { cls += " unlit-" + s.k; }
+      if (s.wave && on) { cls += " out"; }
+      cells.push({ value: v, cls: cls, isLast: isLast, outDelay: (0.45 + 0.164 * ((v - 1) % 10)).toFixed(2) });
+    }
+    var tilts = [-2, 1.5, -1, 2, -1.5];
+    var prev = drawn.slice(0, -1).reverse().slice(0, 5).map((n, i) => ({
+      n: n,
+      cls: "tomb" + (i === 0 && s.fresh && s.oldMode === "draw" ? " tomb-in-" + s.k : ""),
+      tilt: tilts[i]
+    }));
+    var count = s.fx === "bingo" ? 40 : 26;
+    var candies = [];
+    for (var i = 0; i < count; i++) {
+      var kind = i % 3;
+      var col = CANDY_COLORS[i % 4];
+      var dur = 2.3 + ((i * 13) % 10) / 10;
+      candies.push({
+        left: ((i * 73) % 350) + 6,
+        w: kind === 0 ? 30 : kind === 1 ? 18 : 22,
+        delay: (((i * 37) % 100) / 100 * (s.fx === "bingo" ? 1.8 : 1.2)).toFixed(2),
+        dur: dur.toFixed(2),
+        spin: (dur * 0.62).toFixed(2),
+        wrap: kind === 0, corn: kind === 1, lolly: kind === 2,
+        c1: col[0], c2: col[1]
+      });
+    }
+    var lots = LOTS.map((name, idx) => ({ name: name, won: idx < s.won }));
+    return {
+      screenCls: "screen" + (s.calm ? " calm" : ""),
+      inGame: !s.pause, inPause: s.pause,
+      lastText: last === null ? "—" : String(last),
+      numCls: s.fresh ? (s.oldMode === "undo" ? "num num-back-" : "num num-ign-") + s.k : "num",
+      oldText: s.fresh && s.old !== null ? String(s.old) : "",
+      oldCls: s.fresh && s.old !== null ? "num-old num-smoke-" + s.k : "num-old num-hide",
+      prev: prev, cells: cells, drawnCount: drawn.length,
+      partieLabel: "Partie " + s.partie + " sur 8",
+      partieName: PARTIES[(s.partie - 1) % 8],
+      lots: lots, mood: s.mood, calm: s.calm,
+      showBats: s.fx === "bats" || s.fx === "bingo",
+      showParty: s.fx === "ligne" || s.fx === "bingo",
+      showGhost: s.fx === "ghost",
+      bannerTitle: s.bannerTitle, bannerLot: s.bannerLot,
+      bannerZone: s.fx === "bingo" ? "E3-banniere-bingo" : "E3-banniere-ligne",
+      candies: candies, log: s.log,
+      draw: () => this.draw(), undo: () => this.undo(), line: () => this.line(), bingo: () => this.bingo(),
+      next: () => this.next(false), nextPause: () => this.next(true),
+      toggleCalm: () => { this.flush(); this.setState((st) => ({ calm: !st.calm, fx: null, mood: "idle", log: st.calm ? "Animations pleines : le décor bouge de nouveau." : "Animations calmes : décor figé, les changements se lisent par un simple fondu (RG-34)." })); }
+    };
+  }
+
+  draw() {
+    this.flush();
+    this.setState((st) => {
+      var pool = [];
+      for (var n = 1; n <= 90; n++) { if (st.drawn.indexOf(n) < 0) { pool.push(n); } }
+      if (!pool.length) { return null; }
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      var last = st.drawn.length ? st.drawn[st.drawn.length - 1] : null;
+      return {
+        drawn: st.drawn.concat([pick]), old: last, oldMode: "draw", fresh: true, k: this.toggle(st.k),
+        pause: false, mood: st.calm ? "idle" : "sourire",
+        log: "Le " + pick + " sort. Des chauves-souris traversent l'écran, le numéro s'embrase, sa case s'allume et la citrouille sourit."
+      };
+    });
+    this.play("bats", 1700);
+  }
+  undo() {
+    this.flush();
+    this.setState((st) => {
+      if (!st.drawn.length) { return null; }
+      var removed = st.drawn[st.drawn.length - 1];
+      return {
+        drawn: st.drawn.slice(0, -1), old: removed, oldMode: "undo", fresh: true, k: this.toggle(st.k),
+        log: "Le " + removed + " est annulé : il part en fumée et sa case s'éteint. Pas de chauves-souris."
+      };
+    });
+    this.setState({ fx: null });
+  }
+  line() {
+    this.flush();
+    this.setState((st) => {
+      var lot = LOTS[Math.min(st.won, LOTS.length - 1)];
+      return { won: Math.min(st.won + 1, LOTS.length), bannerTitle: "Ligne gagnée !", bannerLot: lot, mood: "idle",
+        log: "Ligne gagnée : trois citrouilles surgissent en riant, les bonbons tombent, le lot « " + lot + " » s'affiche puis se barre dans la liste." };
+    });
+    this.play("ligne", 4300);
+  }
+  bingo() {
+    this.flush();
+    this.setState({ bannerTitle: "Bingo !", bannerLot: "Le gros lot du bingo",
+      log: "Bingo : comme la ligne, en plus fort, avec la nuée de chauves-souris." });
+    this.play("bingo", 5300);
+  }
+  next(withPause) {
+    this.flush();
+    var calm = this.state.calm;
+    this.setState((st) => ({ partie: st.partie + 1, won: 0, wave: !calm, fresh: false,
+      log: withPause
+        ? "Partie suivante avec pause : le fantôme passe d'abord, puis l'écran Pause s'affiche (RG-32)."
+        : "Partie suivante : un fantôme traverse la grille et souffle les cases une à une, puis la nouvelle partie s'annonce." }));
+    this.pendingClear = true;
+    this.pendingPause = withPause;
+    if (calm) { this.flush(); return; }
+    this.play("ghost", withPause ? 2600 : 4000);
+    this.later(2300, () => {
+      if (this.pendingClear) {
+        this.pendingClear = false;
+        var pause = this.pendingPause;
+        this.pendingPause = false;
+        this.setState({ drawn: [], wave: false, old: null, pause: pause });
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
