@@ -215,7 +215,7 @@ bleue et boule de bingo pour un loto sans thème. Le compte à rebours s'ajoute 
 | **RG-46** | La fermeture du bandeau est mémorisée sur l'appareil pour l'événement **et l'étape** : « avant » (J-7 à J-1), « jour J », « en direct ». Le bandeau réapparaît au changement d'étape. |
 | **RG-47** | « Ajouter à mon agenda » télécharge un fichier `.ics` de l'événement (titre, début, fin, lieu, lien vers la fiche), sans compte ni service tiers. |
 | **RG-48** | Les animations d'un thème suivent RG-34, RG-36 et RG-37 : elles respectent le réglage « réduire les animations » et le bouton Calmer, ne clignotent jamais plus de trois fois par seconde et s'arrêtent quand la page est cachée. Le fantôme court une fois par chargement de page, quel que soit l'endroit (bandeau ou à la une). |
-| **RG-50** | Chaque type d'événement a une **identité visuelle** utilisée dans l'agenda (liste et calendrier) et les cartes de l'accueil : la bourse aux livres a toujours « Papier et papillons » (papier ligné aux lignes droites et complètes, papillon aux ailes de pages — dessin à choisir parmi quatre propositions) ; un loto sans thème a « Boules et carton » (nuit bleue, vraies boules de bingo aux couleurs de l'association, pastille blanche et gros numéro, la bleue saute et cligne de l'œil) ; un loto à thème prend l'identité de son thème (Halloween : « Nuit de citrouille »). Un événement « Autre » garde la charte du site. |
+| **RG-50** | Chaque type d'événement a une **identité visuelle** utilisée dans l'agenda (liste et calendrier) et les cartes de l'accueil : la bourse aux livres a toujours « Papier et papillons » (papier ligné aux lignes droites et complètes, papillon aux ailes de pages — dessin A « Marque-page ») ; un loto sans thème a « Boules et carton » (nuit bleue, vraies boules de bingo aux couleurs de l'association, pastille blanche et gros numéro, la bleue saute et cligne de l'œil) ; un loto à thème prend l'identité de son thème (Halloween : « Nuit de citrouille »). Un événement « Autre » garde la charte du site. |
 | **RG-51** | L'agenda s'ouvre en **Calendrier**. La bascule « Calendrier / Liste » est mémorisée sur l'appareil ; les filtres s'appliquent aux deux affichages. Le calendrier commence au mois du prochain rendez-vous et va jusqu'au mois du dernier rendez-vous connu. |
 | **RG-49** | Un thème est un **habillage** : palette, personnages, décor, animations. Il ne change jamais le contenu, l'ordre des informations ni les libellés. Ajouter un thème ne modifie ni la page ni ses règles. |
 
@@ -254,8 +254,7 @@ bleue et boule de bingo pour un loto sans thème. Le compte à rebours s'ajoute 
 
 ## 10. Questions ouvertes
 
-- **Q4** — Quel papillon pour la bourse aux livres : A « Marque-page », B « Origami »,
-  C « Livre qui s'envole » ou D « Monarque relié » ?
+- ~~Q4~~ — Papillon retenu le 2026-10-31 : **A « Marque-page »**.
 
 - **Q1** — Le bandeau à J-7 pour **tous** les types : faut-il aussi l'afficher pour un
   événement « Autre » (par exemple une marche), ou seulement pour les lotos et les bourses ?

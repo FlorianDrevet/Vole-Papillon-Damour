@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>À la une, rendez-vous classique</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800;900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;display=swap">
+<style>
+body{margin:0}
+.pg{font-family:"Libre Franklin",system-ui,sans-serif;color:#041d30;background:#f7fbfe}
+.feat{position:relative;overflow:hidden;border-radius:30px;background:#041d30;color:#ffffff;min-height:420px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;padding:44px 48px;box-sizing:border-box}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(127,216,245,.14)}
+.big-day{font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.05em;color:#7fd8f5;font-variant-numeric:tabular-nums}
+.big-month{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:36px;margin-top:8px}
+.when{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:#f9a93c;color:#041d30;font-weight:800;font-size:15px;align-self:flex-start}
+.btn-w{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 22px;border-radius:999px;background:#ffffff;color:#041d30;font-weight:800;font-size:15px;text-decoration:none}
+.btn-d{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px;border-radius:999px;border:0;background:#0b2438;color:#ffffff;font:700 15px "Libre Franklin",sans-serif}
+.next{display:flex;flex-direction:column;gap:14px;padding:30px;border-radius:26px;background:#ffffff;box-shadow:0 30px 60px -44px rgba(7,43,69,.55)}
+</style>
+</helmet>
+<div class="pg" style="width: 1440px; height: 640px; box-sizing: border-box; padding: 60px 64px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px; align-items: stretch;">
+  <article class="feat" data-zone="E1-a-la-une-classique">
+    <span class="ring" aria-hidden="true" style="width: 420px; height: 420px; right: -120px; top: -160px;"></span>
+    <span class="ring" aria-hidden="true" style="width: 260px; height: 260px; right: 60px; bottom: -150px; border-color: rgba(249,169,60,.18);"></span>
+    <div style="display: flex; flex-direction: column;">
+      <span class="big-day">11</span>
+      <span class="big-month">novembre</span>
+      <span style="font-size: 17px; color: #9dc2da; margin-top: 4px;">du mercredi 11 au lundi 16</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px; padding-top: 6px; position: relative;">
+      <span class="when">Dans 9 jours</span>
+      <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 20px; color: #9dc2da;">Bourse aux livres</span>
+      <h2 style="margin: 0; font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 60px; line-height: 1; letter-spacing: -.02em;">Bourse aux livres</h2>
+      <span style="font-size: 17px; color: #d9e9f4;">Andrézieux-Bouthéon · ouverture à 14 h</span>
+      <div style="display: flex; gap: 12px; margin-top: 10px;">
+        <a class="btn-w" href="#">Toutes les infos</a>
+        <button class="btn-d" type="button"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2.5"></rect><path d="M3 8h14M7 2.5v3M13 2.5v3M10 10.5v4M8 12.5h4"></path></svg>Ajouter à mon agenda</button>
+      </div>
+    </div>
+  </article>
+  <aside class="next">
+    <span style="font-family: Newsreader, Georgia, serif; font-style: italic; font-size: 20px; color: #33536e;">Ensuite</span>
+    <span style="font-size: 64px; font-weight: 800; line-height: .9; letter-spacing: -.03em; color: #0c6ea6;">16</span>
+    <span style="font-family: Newsreader, Georgia, serif; font-size: 26px; color: #072b45;">décembre · mercredi</span>
+    <span style="display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 999px; background: #e9f4fb; color: #072b45; font-weight: 700; font-size: 14px; align-self: flex-start;">Dans 44 jours</span>
+    <span style="font-size: 20px; font-weight: 700;">Bourse aux livres</span>
+    <span style="font-size: 15px; color: #33536e;">Andrézieux-Bouthéon</span>
+    <a href="#" style="font-size: 15px; font-weight: 700; color: #0c6ea6;">Toutes les infos</a>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
