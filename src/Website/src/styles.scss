@@ -100,6 +100,13 @@ $custom-theme: mat.define-theme((
 @tailwind components;
 @tailwind utilities;
 
+// Le tableau Live Loto est conçu pour tenir sur l'écran des joueurs sans bouton flottant.
+@media (max-width: 767px) {
+  body:has(app-tableau) app-go-up {
+    display: none;
+  }
+}
+
 // Chargement progressif : les blocs reprennent les dimensions du contenu réel,
 // avec un reflet discret plutôt qu'un écran gris ou un spinner isolé.
 .skeleton {
