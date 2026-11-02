@@ -10,6 +10,20 @@ export interface TodayBannerDismissal {
 }
 
 export const TODAY_BANNER_STORAGE_KEY = 'vpd.today-banner.dismissed';
+export const HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY = 'vpd.today-banner.halloween-photos-dismissed';
+
+const HALLOWEEN_PHOTOS_ANNOUNCEMENT_START = Date.parse('2026-11-02T00:00:00+01:00');
+const HALLOWEEN_PHOTOS_ANNOUNCEMENT_END = Date.parse('2026-11-09T00:00:00+01:00');
+
+/** The Halloween album announcement runs for one Paris calendar week after the loto. */
+export function isHalloweenPhotosAnnouncementActive(now: Date): boolean {
+  return now.getTime() >= HALLOWEEN_PHOTOS_ANNOUNCEMENT_START
+    && now.getTime() < HALLOWEEN_PHOTOS_ANNOUNCEMENT_END;
+}
+
+export function halloweenPhotosAnnouncementRemaining(now: Date): number {
+  return Math.max(0, HALLOWEEN_PHOTOS_ANNOUNCEMENT_END - now.getTime());
+}
 
 function dayOrdinal(day: string): number {
   const [year, month, date] = day.split('-').map(Number);

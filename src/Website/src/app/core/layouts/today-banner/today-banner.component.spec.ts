@@ -5,7 +5,7 @@ import {TodayEventModel} from '../../../shared/models/today-event.model';
 import {TodayEventService} from '../../../shared/services/today-event.service';
 import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {TodayBannerHalloweenComponent} from './today-banner-halloween.component';
-import {TODAY_BANNER_STORAGE_KEY} from './today-banner-state';
+import {HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY, TODAY_BANNER_STORAGE_KEY} from './today-banner-state';
 import {TodayBannerComponent} from './today-banner.component';
 
 function event(
@@ -45,6 +45,7 @@ describe('TodayBannerComponent', () => {
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2026-10-31T12:00:00Z'));
     localStorage.removeItem(TODAY_BANNER_STORAGE_KEY);
+    localStorage.removeItem(HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY);
     today = signal<TodayEventModel | null>(event('Halloween'));
     calm = signal(false);
     phone = signal(false);
@@ -63,6 +64,7 @@ describe('TodayBannerComponent', () => {
 
   afterEach(() => {
     localStorage.removeItem(TODAY_BANNER_STORAGE_KEY);
+    localStorage.removeItem(HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY);
     jasmine.clock().uninstall();
   });
 
@@ -73,6 +75,58 @@ describe('TodayBannerComponent', () => {
     expect(banner.nativeElement.textContent).toContain('En direct');
     expect(banner.nativeElement.textContent).toContain('Dernier numéro');
     expect(banner.nativeElement.querySelector('.last-chip')?.textContent?.trim()).toBe('42');
+  });
+
+  it('annonce les photos du loto Halloween et ouvre uniquement son album', async () => {
+    jasmine.clock().mockDate(new Date('2026-11-02T12:00:00Z'));
+    today.set(null);
+    const banner = await createBanner();
+
+    expect(banner.nativeElement.textContent).toContain('Loto Halloween 2026');
+    expect(banner.nativeElement.textContent).toContain('Les photos sont disponibles');
+    expect((banner.nativeElement.querySelector('[data-halloween-photo-album]') as HTMLAnchorElement).getAttribute('href'))
+      .toBe('/association/photos/loto-halloween-2026');
+  });
+
+  it('garde l’annonce photos au premier plan d’un prochain événement', async () => {
+    jasmine.clock().mockDate(new Date('2026-11-02T12:00:00Z'));
+    today.set(event('Classic', '2026-11-05T12:00:00Z', 'NotStarted'));
+    const banner = await createBanner();
+
+    expect(banner.nativeElement.querySelector('[data-halloween-photo-album]')).not.toBeNull();
+    expect(banner.nativeElement.querySelector('[href="/evenement/loto-1"]')).toBeNull();
+  });
+
+  it('mémorise la fermeture de l’annonce photos', async () => {
+    jasmine.clock().mockDate(new Date('2026-11-02T12:00:00Z'));
+    today.set(null);
+    const banner = await createBanner();
+
+    (banner.nativeElement.querySelector('[aria-label="Masquer le bandeau"]') as HTMLButtonElement).click();
+    banner.detectChanges();
+
+    expect(banner.nativeElement.querySelector('app-today-banner-halloween')).toBeNull();
+    expect(localStorage.getItem(HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY)).toBe('true');
+  });
+
+  it('n’affiche plus l’annonce photos après la semaine de publication', async () => {
+    jasmine.clock().mockDate(new Date('2026-11-09T12:00:00Z'));
+    today.set(null);
+    const banner = await createBanner();
+
+    expect(banner.nativeElement.querySelector('app-today-banner-halloween')).toBeNull();
+  });
+
+  it('retire l’annonce à son expiration sans recharger la page', async () => {
+    jasmine.clock().mockDate(new Date('2026-11-08T22:59:30Z'));
+    today.set(null);
+    const banner = await createBanner();
+    expect(banner.nativeElement.querySelector('app-today-banner-halloween')).not.toBeNull();
+
+    jasmine.clock().tick(31_000);
+    banner.detectChanges();
+
+    expect(banner.nativeElement.querySelector('app-today-banner-halloween')).toBeNull();
   });
 
   it('garde le template actuel pour un thème Classic ou absent', async () => {
@@ -120,19 +174,19 @@ describe('TodayBannerComponent', () => {
   });
 
   it('keeps an upcoming dismissal until the event reaches day J', async () => {
-    today.set(event('Classic', '2026-11-05T12:00:00Z', 'NotStarted'));
+    today.set(event('Classic', '2026-11-12T12:00:00Z', 'NotStarted'));
     const banner = await createBanner();
     (banner.nativeElement.querySelector('[aria-label="Masquer le bandeau"]') as HTMLButtonElement).click();
     banner.detectChanges();
 
     expect(JSON.parse(localStorage.getItem(TODAY_BANNER_STORAGE_KEY) ?? '{}').stage).toBe('upcoming');
-    jasmine.clock().mockDate(new Date('2026-11-04T12:00:00Z'));
-    today.set(event('Classic', '2026-11-05T12:00:00Z', 'NotStarted'));
+    jasmine.clock().mockDate(new Date('2026-11-11T12:00:00Z'));
+    today.set(event('Classic', '2026-11-12T12:00:00Z', 'NotStarted'));
     banner.detectChanges();
     expect(banner.nativeElement.querySelector('.bg-ink')).toBeNull();
 
-    jasmine.clock().mockDate(new Date('2026-11-05T12:00:00Z'));
-    today.set(event('Classic', '2026-11-05T12:00:00Z', 'NotStarted'));
+    jasmine.clock().mockDate(new Date('2026-11-12T12:00:00Z'));
+    today.set(event('Classic', '2026-11-12T12:00:00Z', 'NotStarted'));
     banner.detectChanges();
     expect(banner.nativeElement.querySelector('.bg-ink')).not.toBeNull();
     expect(banner.nativeElement.querySelector('.stage-label')?.textContent?.trim()).toBe("Aujourd'hui");
