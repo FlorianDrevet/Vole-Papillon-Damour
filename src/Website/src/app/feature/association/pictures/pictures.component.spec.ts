@@ -54,11 +54,11 @@ describe('PicturesComponent', () => {
     expect(pageText).not.toContain('Albums à venir');
   });
 
-  it('should include the 2026 Halloween loto album with all 98 photos', () => {
+  it('should include the 2026 Halloween loto album with the 95 remaining photos', () => {
     const album = component.photoAlbums.find(item => item.slug === 'loto-halloween-2026');
 
     expect(album?.title).toBe('Loto Halloween 2026');
-    expect(album?.photos.length).toBe(98);
+    expect(album?.photos.length).toBe(95);
   });
 
   it('should navigate to an album page instead of opening a dialog', () => {
