@@ -28,6 +28,7 @@ app-today-banner-halloween { display: block; }
 .hb-k { z-index: 1; flex: 0 0 auto; color: var(--lilac); font-family: Fraunces, Georgia, serif; font-size: 17px; font-style: italic; font-weight: 600; white-space: nowrap; }
 .hb-k-live { color: var(--ember); }
 .hb-name { z-index: 1; min-width: 0; overflow: hidden; flex: 1 1 auto; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.hb-photo-name { flex: 0 1 auto; }
 .hb-last { z-index: 1; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; color: var(--lilac); font-size: 14px; white-space: nowrap; }
 .last-chip { display: inline-flex; min-width: 36px; height: 32px; align-items: center; justify-content: center; padding: 0 6px; border-radius: 9px; background: var(--pumpkin); box-shadow: 0 0 14px rgba(255,140,46,.45); color: #1a0b22; font-family: Fraunces, Georgia, serif; font-size: 21px; font-variant-numeric: lining-nums tabular-nums; font-weight: 900; }
 .last-chip.chip-a, .last-chip.chip-b { animation: hb-chip .7s .15s cubic-bezier(.3,1.5,.5,1) both; }
@@ -87,6 +88,14 @@ app-today-banner-halloween { display: block; }
   .hb-schedule { display: none; }
   .hb-first, .hb-second { display: flex; min-width: 0; align-items: center; gap: 10px; }
   .hb-second { min-height: 44px; padding-right: 6px; }
+  .hb.photo-announcement { flex-wrap: wrap; row-gap: 0; }
+  .hb.photo-announcement { width: 100%; max-width: 100vw; min-width: 0; }
+  .hb.photo-announcement .hb-first { flex: 1 1 100%; padding-right: 0; }
+  .hb.photo-announcement .hb-second { width: 100%; flex: 1 1 100%; justify-content: flex-start; gap: 6px; padding: 0 6px 0 30px; }
+  .hb.photo-announcement .hb-photo-name { max-width: 32vw; flex: 0 1 32vw; white-space: normal; line-height: 1.25; }
+  .hb.photo-announcement .follow { flex-shrink: 0; gap: 4px; margin-left: 0; padding-right: 8px; padding-left: 8px; font-size: 13px; }
+  .hb.photo-announcement .hb-second .close { position: static; order: 0; margin: 0; border: 1px solid rgba(244,232,207,.28); background: rgba(244,232,207,.08); color: var(--wax); }
+  .hb.photo-announcement .moon { display: none; }
   .hb-pumpkin { flex-basis: 30px; width: 30px; height: 28px; margin: 0; overflow: hidden; }
   .hb-pumpkin vpd-citrouille { transform: scale(.882); transform-origin: left center; }
   .hb-k { font-size: 16px; }

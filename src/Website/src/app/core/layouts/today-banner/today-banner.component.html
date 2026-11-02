@@ -1,4 +1,6 @@
-@if (visible() && today(); as today) {
+@if (photoAnnouncement()) {
+  <app-today-banner-halloween [photoAnnouncement]="true" (close)="closePhotoAnnouncement()" />
+} @else if (visible() && today(); as today) {
   @if (halloween()) {
     <app-today-banner-halloween [today]="today" [stage]="stage() ?? 'today'" [label]="label()" [schedule]="schedule()" (close)="close()" />
   } @else {

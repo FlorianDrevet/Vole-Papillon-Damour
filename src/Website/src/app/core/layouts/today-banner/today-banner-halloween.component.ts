@@ -26,10 +26,11 @@ export class TodayBannerHalloweenComponent implements OnChanges {
   private runnerTimer: ReturnType<typeof setTimeout> | undefined;
   private batsTimer: ReturnType<typeof setTimeout> | undefined;
 
-  @Input({required: true}) today!: TodayEventModel;
-  @Input({required: true}) stage!: TodayBannerStage;
-  @Input({required: true}) label!: string;
+  @Input() today: TodayEventModel | null = null;
+  @Input() stage: TodayBannerStage = 'today';
+  @Input() label = '';
   @Input() schedule = '';
+  @Input() photoAnnouncement = false;
   @Output() close = new EventEmitter<void>();
 
   protected readonly calm = this.preferences.calm;
@@ -54,7 +55,7 @@ export class TodayBannerHalloweenComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['today']) {
+    if (!changes['today'] || !this.today) {
       return;
     }
 
@@ -68,11 +69,12 @@ export class TodayBannerHalloweenComponent implements OnChanges {
       return;
     }
 
-    const sameEvent = this.previousEventId === this.today.id;
-    const numberChanged = this.previousLastNumero !== this.today.lastNumero;
-    this.previousEventId = this.today.id;
-    this.previousLastNumero = this.today.lastNumero;
-    if (sameEvent && numberChanged && this.today.lastNumero !== null
+    const today = this.today;
+    const sameEvent = this.previousEventId === today.id;
+    const numberChanged = this.previousLastNumero !== today.lastNumero;
+    this.previousEventId = today.id;
+    this.previousLastNumero = today.lastNumero;
+    if (sameEvent && numberChanged && today.lastNumero !== null
       && this.stage === 'live' && isPlatformBrowser(this.platformId) && !this.preferences.calm()) {
       this.playBats();
     }

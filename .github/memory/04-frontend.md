@@ -21,6 +21,7 @@
 - Website event SSR now registers initial list/detail API promises as bounded Angular server `PendingTasks` and caches calendar/date-animation projections. The local 20-list + 20-detail SSR run is recorded separately from the prior deployed 300-client SSE run in `.github/memory/19-website-event-ssr.md`.
 - Website canonical links use `https://volepapillondamour.fr`, remove query/hash/trailing slash, and map `/` to `/accueil`; public SEO checks cover redirect and sitemap behavior.
 - Website photo albums are catalog-driven by `src/app/feature/association/pictures/photo-album-catalog.ts`; event assets live under `public/images/Evenements/<album-slug>/`. The album list is prerendered and `/association/photos/:albumSlug` is server-rendered. Loto Halloween 2026 is registered as an event album with 98 resized JPEGs (maximum 2,200 px).
+- The top Halloween banner announces the Loto Halloween 2026 photo album from Nov 2 through Nov 8 in Paris time, links directly to `/association/photos/loto-halloween-2026`, and has its own persistent dismissal so it does not overwrite the next-event preference.
 
 ## Catalog
 
@@ -44,5 +45,6 @@
 
 ## Recent validation
 
+- The Loto Halloween photo announcement passes its focused Website tests (20/20) and the SSR production build. The full Website suite is 202/203 because the pre-existing event-detail test still expects “Demain” for a Nov 1 event while the test clock uses Nov 2; no deployment. Desktop and mobile SSR screenshots were reviewed. `graphify update . --no-viz` completed AST extraction but could not rebuild the report because the existing 9,404-node graph exceeded its visualization limit.
 - The 2026-10-31 event SSR correction passes Website 197/197, SEO HTTP checks 14/14, and the SSR production build (existing Angular budget/CommonJS warnings). Its local concurrent request evidence and limits are in `.github/memory/19-website-event-ssr.md`.
 - The Halloween loto board and E6 banner validation is in `.github/memory/18-halloween-loto-board.md`; deployment still requires the `AddEventLiveTheme` migration first.
