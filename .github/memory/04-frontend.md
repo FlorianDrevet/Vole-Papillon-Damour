@@ -20,6 +20,7 @@
 - The live tableau uses the shared `buildLotoTableauView`; SSE reconnects with bounded backoff and ignores malformed events. Keep `EventSource` out of SSR execution.
 - Website event SSR now registers initial list/detail API promises as bounded Angular server `PendingTasks` and caches calendar/date-animation projections. The local 20-list + 20-detail SSR run is recorded separately from the prior deployed 300-client SSE run in `.github/memory/19-website-event-ssr.md`.
 - Website canonical links use `https://volepapillondamour.fr`, remove query/hash/trailing slash, and map `/` to `/accueil`; public SEO checks cover redirect and sitemap behavior.
+- Website photo albums are catalog-driven by `src/app/feature/association/pictures/photo-album-catalog.ts`; event assets live under `public/images/Evenements/<album-slug>/`. The album list is prerendered and `/association/photos/:albumSlug` is server-rendered. Loto Halloween 2026 is registered as an event album with 98 resized JPEGs (maximum 2,200 px).
 
 ## Catalog
 

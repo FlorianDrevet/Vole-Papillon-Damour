@@ -34,12 +34,12 @@ describe('PicturesComponent', () => {
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
     const categories = fixture.nativeElement.querySelectorAll('[data-album-category]');
 
-    expect(component.photoAlbums.length).toBe(26);
+    expect(component.photoAlbums.length).toBe(27);
     expect(categories.length).toBe(2);
     expect(categories[0].querySelector('h2').textContent).toContain('Vie de Maxence');
     expect(categories[0].querySelectorAll('[data-album-card]').length).toBe(23);
     expect(categories[1].querySelector('h2').textContent).toContain('Événements');
-    expect(categories[1].querySelectorAll('[data-album-card]').length).toBe(3);
+    expect(categories[1].querySelectorAll('[data-album-card]').length).toBe(4);
     expect(component.photoAlbums.map(album => album.title)).toContain('2004');
     expect(component.photoAlbums.map(album => album.title)).toContain('2026');
     expect(component.photoAlbums.map(album => album.title)).toContain('Anniversaire 20 ans Maxence');
@@ -52,6 +52,13 @@ describe('PicturesComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-album-card]').length).toBe(component.photoAlbums.length);
     expect(pageText).toContain('La vidéothèque');
     expect(pageText).not.toContain('Albums à venir');
+  });
+
+  it('should include the 2026 Halloween loto album with all 98 photos', () => {
+    const album = component.photoAlbums.find(item => item.slug === 'loto-halloween-2026');
+
+    expect(album?.title).toBe('Loto Halloween 2026');
+    expect(album?.photos.length).toBe(98);
   });
 
   it('should navigate to an album page instead of opening a dialog', () => {
