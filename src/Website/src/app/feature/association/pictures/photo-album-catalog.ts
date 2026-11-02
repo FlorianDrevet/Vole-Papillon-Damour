@@ -710,6 +710,9 @@ const DONATION_PHOTOS: readonly string[] = [
 ];
 
 const EVENT_PHOTOS: Readonly<Record<string, readonly string[]>> = {
+  "loto-halloween-2026": Array.from({length: 98}, (_, index) =>
+    `images/Evenements/loto-halloween-2026/photo-${String(index + 1).padStart(3, '0')}.jpg`,
+  ),
   "celebrites": [
     'images/Evenements/celebrites/photo-001.jpg',
     'images/Evenements/celebrites/photo-002.jpg',
@@ -1008,6 +1011,14 @@ export const MAXENCE_ALBUMS: readonly PhotoAlbum[] = [
 
 export const EVENT_ALBUMS: readonly PhotoAlbum[] = [
   createPhotoAlbum(
+    'loto-halloween-2026',
+    'Loto Halloween 2026',
+    'Événements · Halloween',
+    'Les parties, les bénévoles et les costumes du loto d’Halloween 2026.',
+    'evenements',
+    EVENT_PHOTOS['loto-halloween-2026'],
+  ),
+  createPhotoAlbum(
     'bourse-aux-livres',
     'Bourse aux livres',
     'Événements · association',
@@ -1045,7 +1056,7 @@ export const PHOTO_ALBUM_CATEGORIES: readonly PhotoAlbumCategory[] = [
     id: 'evenements',
     eyebrow: 'Les rendez-vous de l’association',
     title: 'Événements',
-    description: 'Les bourses aux livres, les rencontres et les fêtes qui jalonnent la vie de l’association.',
+    description: 'Les lotos, les bourses aux livres, les rencontres et les fêtes qui jalonnent la vie de l’association.',
     albums: EVENT_ALBUMS,
   },
 ];
