@@ -709,10 +709,14 @@ const DONATION_PHOTOS: readonly string[] = [
   'images/Association/don-dvd.jpg',
 ];
 
+const LOTO_HALLOWEEN_PHOTO_NUMBERS_TO_EXCLUDE: readonly number[] = [18, 26, 81];
+
 const EVENT_PHOTOS: Readonly<Record<string, readonly string[]>> = {
-  "loto-halloween-2026": Array.from({length: 98}, (_, index) =>
-    `images/Evenements/loto-halloween-2026/photo-${String(index + 1).padStart(3, '0')}.jpg`,
-  ),
+  "loto-halloween-2026": Array.from({length: 98}, (_, index) => index + 1)
+    .filter(photoNumber => !LOTO_HALLOWEEN_PHOTO_NUMBERS_TO_EXCLUDE.includes(photoNumber))
+    .map(photoNumber =>
+      `images/Evenements/loto-halloween-2026/photo-${String(photoNumber).padStart(3, '0')}.jpg`,
+    ),
   "celebrites": [
     'images/Evenements/celebrites/photo-001.jpg',
     'images/Evenements/celebrites/photo-002.jpg',
