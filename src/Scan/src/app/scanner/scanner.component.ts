@@ -2004,6 +2004,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       const cameraHandle = await this.cameraScanner.start(
         this.cameraContainer.nativeElement,
         rawValue => this.handleCameraDetection(rawValue),
+        error => this.handleCameraRecoveryError(startToken, error),
       );
       if (startToken !== this.cameraStartToken) {
         await cameraHandle.stop();
@@ -2023,6 +2024,16 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         : 'La caméra ne peut pas être activée.';
       this.refreshView();
     }
+  }
+
+  private handleCameraRecoveryError(startToken: number, error: Error): void {
+    if (startToken !== this.cameraStartToken) {
+      return;
+    }
+
+    this.stopCamera();
+    this.cameraError = error.message || 'La caméra s’est interrompue. Réessayez la caméra.';
+    this.refreshView();
   }
 
   async scanImage(event: Event): Promise<void> {
