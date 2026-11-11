@@ -19,5 +19,5 @@
 - The Scan build reports the initial JS bundle 11.41 kB over its 1.50 MB budget.
 - The component suite's outdated spies were updated to the current workflow contract, and the camera preview assertion now verifies it remains inside the visible reserved slot while allowing the expected clipping. All 105 component specs pass.
 - A real local Scan → Caisse E2E was not possible in this session. Aspire found no running AppHost because Docker Desktop crashed during startup on an inaccessible stale `dockerInference` IPC reparse point; a normal app relaunch left `com.docker.service` stopped. The automatic review blocked deleting that IPC link (`blocked by policy`), so no workaround was attempted. Factory reset was not attempted. No test book was written to Azure or another deployed database.
-- Graphify refreshed this worktree without an LLM: 4,268 scanned files, 19,075 nodes, 56,906 edges, and 633 communities. HTML visualization was skipped.
+- Graphify refreshed this worktree without an LLM: 2,220 code files, 19,074 nodes, 56,906 edges, and 642 communities. Its HTML output uses the aggregated community view.
 - No deployment was made. The local test data for an actual book-in/checkout needs to be run after Docker Desktop is repaired and the isolated Aspire stack can start.
