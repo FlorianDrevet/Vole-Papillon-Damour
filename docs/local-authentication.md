@@ -6,8 +6,33 @@ Le realm fournit des identités et des rôles déterministes pour les tests de l
 
 ## Démarrer les services
 
-Docker Desktop doit exposer son moteur Linux pour que les conteneurs Aspire démarrent.
-Vérifie-le avec `rtk docker ps` avant d'attendre Keycloak.
+L'AppHost utilise Docker par défaut. Vérifie que son moteur Linux répond avant d'attendre
+Keycloak :
+
+```powershell
+rtk docker info
+rtk aspire start --isolated --non-interactive --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj
+```
+
+### Utiliser Podman
+
+Aspire prend aussi en charge Podman. Sous Windows, démarre la machine Podman avant de lancer
+l'AppHost. Si aucune machine n'existe encore, initialise-la une seule fois :
+
+```powershell
+rtk podman machine list
+# N'initialise qu'une fois, seulement si aucune machine n'est listée.
+rtk podman machine init
+rtk podman machine start
+rtk podman info
+rtk aspire start --launch-profile podman --isolated --non-interactive --apphost src/Backend/Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj
+```
+
+N'exécute `podman machine init` que si `podman machine list` ne montre aucune machine. Le
+profil `podman` définit `ASPIRE_CONTAINER_RUNTIME=podman` pour ce lancement seulement ; Docker
+reste le moteur par défaut. Les commandes `aspire wait`, `describe` et `stop` restent les
+mêmes. Pour les opérations de volumes ci-dessous, utilise `rtk podman volume` avec le profil
+Podman, ou `rtk docker volume` avec le profil Docker.
 
 Avant le premier démarrage, définis le mot de passe local de la console Keycloak dans les
 .NET User Secrets de l'AppHost. Il n'est pas nécessaire pour obtenir un jeton persona, mais

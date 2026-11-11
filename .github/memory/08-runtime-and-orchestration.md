@@ -12,6 +12,7 @@
 
 - API: `src/Backend/Vole_Papillon_Damour.Api/`; local orchestration: `Vole_Papillon_Damour.AppHost/`; background jobs: isolated .NET Worker. Angular delivery surfaces are BackOffice, Website, Catalog, and Scan; `MauiCashApp` is Android-only.
 - Aspire AppHost starts API at 5257, BackOffice at 4200, Website at 4201, Scan at 4202, and Catalog at 4203, plus local SQL Server and Azurite. Its persisted SQL data volume requires a stable secret-backed `Parameters:sql-server-password`.
+- Aspire uses Docker by default and supports Podman through `ASPIRE_CONTAINER_RUNTIME`; AppHost launch profile `podman` selects it for `aspire start --launch-profile podman`. On Windows, start an existing Podman machine before Aspire. On 2026-11-11, `aspire doctor` reported Docker installed but stopped, and with the Podman runtime selected reported Podman not found. WinGet's verified Podman 5.8.9 installer started but is waiting for Windows elevation, so no Podman machine or container was started from this session yet.
 - Keep the backend free of `Aspire.*`; orchestration belongs to AppHost. Let Aspire provide dynamic Azurite connection strings; do not force `UseDevelopmentStorage=true` or override the Functions host-storage connection.
 - API `/health` checks database connectivity and ACA probes use port 8080. The Worker is a native Functions-on-Container-Apps resource for account deletion, Books Sweep/Enrich, and alert delivery. Deployment workflows own migrations before API/Worker rollout.
 - Website SSR's current repair branch raises only Website from the earlier `.25 vCPU / .5 GiB` minimum to `.5 vCPU / 1 GiB`; it has not been deployed. ACA's default HTTP scaling rule targets 10 concurrent requests when no custom rule is set. See `.github/memory/19-website-event-ssr.md` for the separate tested SSR HTTP and prior SSE loads.
@@ -34,6 +35,7 @@
 
 - `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`
 - AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
+- Podman AppHost: `podman machine start`, then `aspire start --launch-profile podman --isolated --non-interactive --apphost .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular: `npm install`, `npm run start`, `npm run build`, `npm test`; run from the target app.
 - Bicep: `az bicep build --file .\infra\main.bicep`; `az bicep build-params --file .\infra\parameters\main.dev.bicepparam`
 - MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`.
