@@ -10,6 +10,7 @@ The basket calculates a total for manual payment; this app does not persist comp
 - 🔄 API Integration with Refit: Strongly-typed REST API clients using Refit
 - 🔓 No tablet sign-in: the deployed `GET /product` endpoint is public.
 - 💾 Offline catalog: available API products are cached locally using SQLite; cached disabled products are filtered out.
+- ⬆️ In-app update: the footer button checks BackOffice for a newer version, verifies the APK SHA-256, then opens Android's installer for user confirmation.
 - ⚡ MVVM Architecture: Built with CommunityToolkit.MVVM
 - ⚙️ Configuration management: Uses appsettings.json with Microsoft.Extensions.Configuration for flexible configuration.
 
@@ -35,12 +36,19 @@ dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android --c
 
 `EmbedAssembliesIntoApk=true` is set in the project because BackOffice serves the APK as a direct download. This disables Fast Deployment and packages the managed assemblies inside the APK. The generated APK is available under `src/MauiCashApp/bin/Release/net10.0-android/`.
 
-Copy each release to a versioned BackOffice asset such as
-`src/BackOffice/public/apks/caisse-app-v1.2.apk`, then update the login and `/caisse`
-download links to that same filename. A new path avoids Cloudflare serving the previous APK
-from the stable URL's cache.
+Copy each release to a versioned BackOffice asset matching
+`src/BackOffice/public/apks/caisse-app-v{ApplicationDisplayVersion}.apk`, then update the
+login and `/caisse` download links. Update `src/BackOffice/public/apks/latest.json` with its
+display version, monotonically increasing version code, asset URL, and SHA-256 checksum.
+BackOffice serves that manifest with no-cache headers. A new APK path avoids Cloudflare
+serving the previous APK from the stable URL's cache.
 
-The durable signing keystore and the organized APK redistribution channel are intentionally deferred. The current workflow uses the direct application build.
+The first release that contains the updater must still be downloaded and installed once from
+BackOffice. Later releases can be installed from the button; Android opens its package
+installer and the user confirms the update. Android may ask once for permission to install
+packages from Caisse. Keep using the same signing certificate for every release so installed
+devices can update in place. The durable signing keystore is still needed for a managed
+signing workflow.
 
 # 📸 Screenshots
 

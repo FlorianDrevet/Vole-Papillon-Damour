@@ -33,6 +33,8 @@ public static class MauiProgram
         builder.Configuration.AddConfiguration(config);
         
         builder.Services.AddSingleton<ProductDatabase>();
+        builder.Services.AddSingleton(new HttpClient { Timeout = TimeSpan.FromMinutes(5) });
+        builder.Services.AddSingleton<IAppUpdateService, AppUpdateService>();
         builder.Services.AddTransient<IProductService, ProductService>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainPage>();
