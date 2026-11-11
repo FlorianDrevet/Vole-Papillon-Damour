@@ -34,6 +34,7 @@
 ## Scan PWA
 
 - Scan is an offline-first Angular PWA. Local decisions, catalog projection, session state, and cash sales are persisted in IndexedDB; final scan gestures and sales replay sequentially with client-generated idempotency IDs.
+- The triage session keeps decided scan history (including already-synced gestures) in IndexedDB until session close. The latest-book strip and session list can request an idempotent removal; pending removals stay queued offline, and each list row groups ISBN copies while removing one scan at a time. Cached cover URLs come from bibliographic metadata.
 - A scan result is local-first; metadata resolves independently and must not replace a keep/discard decision already shown. A valid result pauses the camera until a volunteer decides; an invalid/no-local-result decode resumes the existing camera stream.
 - `Tri` can triage, `Caisse` can sell, both can consult. Cached local work remains usable during token/network loss, but synchronization needs a current API token. Do not put requester contact details in the catalog delta, IndexedDB diagnostics, or logs.
 - The PWA retains explicit retry/error/recovery states; browser storage persistence is a best-effort capability, not a server-sync guarantee.

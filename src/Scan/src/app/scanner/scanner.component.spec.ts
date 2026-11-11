@@ -747,20 +747,20 @@ describe('ScannerComponent', () => {
     expect(previewBounds.bottom).toBeLessThanOrEqual(dock.getBoundingClientRect().top + 1);
   });
 
-  it('lines up manual entry, live photo and gallery pick on a single dock row', () => {
+  it('lines up manual entry, live photo and the session book list on a single dock row', () => {
     const actions = Array.from(
       fixture.nativeElement.querySelectorAll('.scan-dock .dock-action'),
     ) as HTMLElement[];
 
     expect(actions.map(action => action.textContent?.trim()))
-      .toEqual(['Saisir un code', 'Photo', 'Galerie']);
+      .toEqual(['Saisir un code', 'Photo', 'Livres (0)']);
     expect(new Set(actions.map(action => Math.round(action.getBoundingClientRect().top))).size).toBe(1);
 
     const cameraInput = fixture.nativeElement.querySelector('#camera-input') as HTMLInputElement;
-    const galleryInput = fixture.nativeElement.querySelector('#gallery-input') as HTMLInputElement;
-
     expect(cameraInput.getAttribute('capture')).toBe('environment');
-    expect(galleryInput.hasAttribute('capture')).toBeFalse();
+
+    (fixture.nativeElement.querySelector('.dock-session-books') as HTMLButtonElement).click();
+    expect(component.screen).toBe('session-books');
   });
 
   it('offers a way back to the menu while the session has nothing sorted yet', () => {

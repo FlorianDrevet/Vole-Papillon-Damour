@@ -654,6 +654,19 @@ public sealed class Book : AggregateRoot<Isbn13>
         UpdatedAt = utcOccurredAt;
     }
 
+    public void ReverseRejection(DateTime occurredAt)
+    {
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+
+        if (RejectionCount <= 0)
+        {
+            throw new InvalidOperationException("A book without a rejection cannot reverse one.");
+        }
+
+        RejectionCount--;
+        UpdatedAt = utcOccurredAt;
+    }
+
     private static void EnsureIsbn(Isbn13 isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))

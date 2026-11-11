@@ -6,6 +6,7 @@
 - EF configuration owns strong-ID/ISBN conversions, UTC `datetime2` conversion, row versions, filtered unique indexes, and database-specific collation behavior. `Book.Id` maps to persisted `Books.Isbn13`; raw SQL must join on `Isbn13`, not `Id`.
 - Deployment workflows apply EF migrations before rolling out API/Worker revisions. API startup migrations run only in Development; do not assume a code change has updated a deployed schema.
 - Books ledger history is append-only. Corrections, reversals, and reassignment use signed linked movements. Hard delete is limited to unused erroneous catalogue records and removes dependent projections transactionally.
+- Scan-session removal also uses a signed linked movement; it corrects the volunteer's session counts and inventory/request state while keeping the book fiche. The local outbox retains synced gestures until the session closes so an in-session correction can be retried offline.
 - Books metadata separates `Pending`, `Failed`, `NotFound`, `Resolved`, `Manual`, and `Discarded`. `MetadataFailureReason` is bounded; discarded rows with movement history remain hidden and get a compensating withdrawal. Manual field locks survive enrichment.
 - SQLite-backed Application tests use a real in-memory EF transaction and are test-only; validate SQL Server-specific scripts/queries with the SQL Server provider before relying on translation or collation.
 

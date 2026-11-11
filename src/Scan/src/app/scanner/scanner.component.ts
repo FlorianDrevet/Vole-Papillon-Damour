@@ -31,6 +31,7 @@ import {
   ScanRareBook,
   ScanSessionClosePendingError,
   ScanSessionCounts,
+  ScanSessionHistoryItem,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
@@ -61,6 +62,7 @@ export type ScanScreen =
   | 'home'
   | 'session-mode'
   | 'tri'
+  | 'session-books'
   | 'manual'
   | 'session-end'
   | 'cash'
@@ -96,6 +98,13 @@ interface CashScanItem {
   isRare: boolean;
   quantityAvailable: number;
   quantityAnnounced: number;
+}
+
+interface ScanSessionBookGroup {
+  isbn13: string;
+  book: ScanSessionHistoryItem['book'];
+  entries: ScanSessionHistoryItem[];
+  latest: ScanSessionHistoryItem;
 }
 
 const ACCOUNT_SWITCH_PROMPT = "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?";
@@ -164,6 +173,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   persistenceStatus: PersistentStorageStatus | null = null;
   session: ScanSessionSnapshot | null = null;
   sessionCounts: ScanSessionCounts = emptySessionCounts();
+  sessionScanHistory: ScanSessionHistoryItem[] = [];
+  sessionBookGroups: ScanSessionBookGroup[] = [];
   completedSession: ScanSessionSnapshot | null = null;
   completedSessionCounts: ScanSessionCounts = emptySessionCounts();
   manualRequestMissedTitles = new Map<string, string>();
@@ -238,6 +249,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     this.routeDriven = true;
     this.currentScreen = value;
+    if (!this.isCameraDestinationActive()) {
+      this.stopCamera();
+    } else if (this.localModeReady) {
+      this.startCameraIfNeeded();
+    }
     if (value === 'session-end') {
       this.restoreCompletedSummary();
     }
@@ -604,6 +620,59 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.localScan?.catalogBook ?? this.consultationResult?.catalogBook ?? null;
   }
 
+  private rebuildSessionBookGroups(): void {
+    const groups = new Map<string, ScanSessionBookGroup>();
+    for (const item of this.sessionScanHistory) {
+      const existing = groups.get(item.entry.isbn13);
+      if (existing) {
+        existing.entries.push(item);
+        existing.latest = item;
+        existing.book = item.book ?? existing.book;
+      } else {
+        groups.set(item.entry.isbn13, {
+          isbn13: item.entry.isbn13,
+          book: item.book,
+          entries: [item],
+          latest: item,
+        });
+      }
+    }
+
+    this.sessionBookGroups = [...groups.values()].sort((left, right) =>
+      right.latest.entry.createdAt.localeCompare(left.latest.entry.createdAt));
+  }
+
+  get latestSessionBookGroup(): ScanSessionBookGroup | null {
+    return this.sessionBookGroups[0] ?? null;
+  }
+
+  isAdditionalSessionCopy(group: ScanSessionBookGroup): boolean {
+    const entry = group.latest.entry;
+    return entry.verdict === 'FirstCopy' &&
+      entry.quantityAvailable + entry.quantityAnnounced > 0;
+  }
+
+  sessionBookTitle(group: ScanSessionBookGroup): string {
+    return group.book?.title?.trim() || 'Titre non renseigné';
+  }
+
+  sessionBookAuthors(group: ScanSessionBookGroup): string {
+    return group.book?.authors?.trim() || 'Auteur non renseigné';
+  }
+
+  sessionBookCover(group: ScanSessionBookGroup): string | null {
+    return group.book?.coverUrl || ScannerComponent.openLibraryCoverUrlTemplate
+      .replace('{isbn13}', encodeURIComponent(group.isbn13))
+      .replace('-L.jpg', '-M.jpg');
+  }
+
+  onSessionBookCoverError(event: Event): void {
+    const image = event.currentTarget as HTMLImageElement | null;
+    if (image) {
+      image.hidden = true;
+    }
+  }
+
   get activeVerdict(): LocalScanResult['verdict'] | LocalCatalogResult['verdict'] | null {
     return this.localScan?.verdict ?? this.consultationResult?.verdict ?? null;
   }
@@ -967,6 +1036,74 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
     this.refreshView();
     this.startCameraIfNeeded();
+  }
+
+  openSessionBooks(): void {
+    this.stopCamera();
+    this.screen = 'session-books';
+    this.refreshView();
+  }
+
+  returnToSessionScan(): void {
+    this.stopCamera();
+    this.screen = 'tri';
+    this.refreshView();
+    this.startCameraIfNeeded(true);
+  }
+
+  async removeSessionBook(group: ScanSessionBookGroup): Promise<void> {
+    if (!this.scanWorkflow || !this.session) {
+      return;
+    }
+
+    const item = group.latest;
+    const entry = item.entry;
+    const resumeCamera = this.screen === 'tri';
+    this.stopCamera();
+    const confirmed = await this.confirmAction({
+      title: 'Retirer ce scan de la session ?',
+      message: 'Le décompte de la session et les effets de ce scan seront corrigés. La fiche bibliographique du livre restera au catalogue. Un seul scan sera retiré.',
+      confirmLabel: 'Retirer ce scan',
+      cancelLabel: 'Conserver',
+      book: {
+        title: this.sessionBookTitle(group),
+        authors: item.book?.authors ?? null,
+        publisher: item.book?.publisher ?? null,
+        publicationYear: item.book?.publicationYear ?? null,
+        isbn13: group.isbn13,
+        imageUrl: this.sessionBookCover(group),
+        scannedCount: group.entries.length,
+        quantityAvailable: item.book?.qtyAvailable ?? entry.quantityAvailable,
+        quantityAnnounced: item.book?.qtyAnnounced ?? entry.quantityAnnounced,
+        salesCount: item.book?.salesCount ?? entry.salesCount,
+        kept: entry.kept === true,
+        scannedAt: new Date(entry.occurredAt).toLocaleString('fr-FR'),
+      },
+    });
+
+    if (!confirmed) {
+      if (resumeCamera) {
+        this.startCameraIfNeeded(true);
+      }
+      return;
+    }
+
+    try {
+      await this.scanWorkflow.requestSessionScanRemoval(entry.clientGestureId);
+      await this.refreshLocalState();
+      this.trySync();
+      this.refreshView();
+    } catch (error: unknown) {
+      this.setStorageError('critical', this.describeStorageError(
+        error,
+        'Le scan n’a pas pu être retiré de la session.',
+      ));
+      this.refreshView();
+    } finally {
+      if (resumeCamera) {
+        this.startCameraIfNeeded(true);
+      }
+    }
   }
 
   async chooseSessionMode(mode: LocalScanMode): Promise<void> {
@@ -1970,7 +2107,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       if (this.localScan || this.sessionCounts.scannedCount > 0) {
         if (this.screen === 'session-end') {
           this.restoreCompletedSummary();
-        } else {
+        } else if (this.screen !== 'session-books') {
           this.screen = 'tri';
         }
       }
@@ -2019,6 +2156,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.sessionCounts = this.session
       ? await this.getSessionCounts(this.session)
       : emptySessionCounts();
+    this.sessionScanHistory = this.session
+      ? await this.scanWorkflow.getSessionScanHistory(this.session.clientSessionId)
+      : [];
+    this.rebuildSessionBookGroups();
     const counts = this.session
       ? await this.scanWorkflow.getOutboxCounts(this.session.clientSessionId)
       : {pendingDecisionCount: 0, pendingTransmissionCount: 0};
@@ -2414,6 +2555,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         return '/tri/mode';
       case 'tri':
         return '/tri';
+      case 'session-books':
+        return '/tri/livres';
       case 'session-end':
         return '/tri/fin';
       case 'cash':

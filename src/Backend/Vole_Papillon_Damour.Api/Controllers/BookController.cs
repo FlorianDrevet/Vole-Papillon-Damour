@@ -535,6 +535,34 @@ public static class BookController
                 .WithName("ScanBook")
                 .RequireAuthorization("Tri");
 
+            endpoints.MapPost(
+                    "/scan/sessions/{scanSessionId:guid}/scans/{clientGestureId:guid}/remove",
+                    async (
+                        Guid scanSessionId,
+                        Guid clientGestureId,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RemoveScanBookCommand(
+                                ScanSessionId.Create(scanSessionId),
+                                clientGestureId,
+                                volunteerId),
+                            cancellationToken);
+
+                        return result.Match(
+                            removal => Results.Ok(ToResponse(removal)),
+                            error => error.Result());
+                    })
+                .WithName("RemoveOwnScanSessionBook")
+                .RequireAuthorization("Tri");
+
             endpoints.MapGet(
                     "/scan/manual-requests/candidate",
                     async (
@@ -804,6 +832,16 @@ public static class BookController
             result.AlreadyProcessed,
             result.ClockSuspect,
             result.HeldForManualRequest);
+    }
+
+    private static ScanBookRemovalResponse ToResponse(ScanBookRemovalResult result)
+    {
+        return new ScanBookRemovalResponse(
+            result.Isbn13,
+            result.QuantityAvailable,
+            result.QuantityAnnounced,
+            result.ScanSessionId.Value,
+            result.AlreadyRemoved);
     }
 
     private static RegisterSaleResponse ToResponse(RegisterSaleResult result)

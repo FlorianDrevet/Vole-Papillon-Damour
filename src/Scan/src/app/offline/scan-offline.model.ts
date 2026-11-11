@@ -49,7 +49,9 @@ export type ScanOutboxStatus =
   | 'CancelledLocal'
   | 'NeedsDecision'
   | 'NeedsReattach'
-  | 'RejectedByServer';
+  | 'RejectedByServer'
+  | 'Synced'
+  | 'Removed';
 
 export type ScanSetAsideReason =
   | 'no-session'
@@ -74,6 +76,7 @@ export interface ScanCatalogBook {
   workKey?: string | null;
   publisher?: string | null;
   publicationYear?: number | null;
+  coverUrl?: string | null;
   otherIsbns?: string[];
   qtyAvailable: number;
   qtyAnnounced: number;
@@ -241,6 +244,22 @@ export interface ScanOutboxEntry {
   lastFailureKind?: ScanFailureKind | null;
   setAsideReason?: ScanSetAsideReason | null;
   manualRequestOutcome?: 'Held' | 'Missed' | null;
+  remoteScanSessionId?: string | null;
+  removalRequested?: boolean;
+  removalError?: string | null;
+}
+
+export interface ScanBookRemovalResponse {
+  isbn13: string;
+  qtyAvailable: number;
+  qtyAnnounced: number;
+  scanSessionId: string;
+  alreadyRemoved: boolean;
+}
+
+export interface ScanSessionHistoryItem {
+  entry: ScanOutboxEntry;
+  book: ScanCatalogBook | null;
 }
 
 export interface ScanSaleOutboxEntry {

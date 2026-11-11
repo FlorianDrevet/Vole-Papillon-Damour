@@ -26,6 +26,7 @@
 ## Books domain invariants
 
 - Ordinary ISBN `Book` and `RareBook` are distinct aggregates. Ordinary books use ISBN-13 as canonical key and an append-only `BookMovement` inventory ledger. Corrections, cancellations, and session reassignment use signed inverse/replay movements; only deletion of a provably unused erroneous fiche is an explicit hard-delete exception.
+- A volunteer may correct a scan from the session list by session ID plus client gesture ID. The API appends an idempotent reversal, adjusts session counts and relevant stock/manual-request state, and retains the bibliographic `Book` row.
 - ISBN merges preserve redirect rows; ledger movements retain their original ISBN. Public/catalogue projections require a completed metadata state and title, and hide books while an `InProgress` scan session owns their movement.
 - Scan decisions and cash sales use client gesture IDs for idempotence. Cash has its own offline outbox and can run without opening a triage session. A scan session is unique per volunteer while open; close is retry-safe.
 - Book metadata patches lock selected fields. Automatic refresh skips locked fields but keeps fetch/attempt state; failed provider requests and “not found” use separate retry accounting.

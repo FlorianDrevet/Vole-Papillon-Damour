@@ -5,6 +5,22 @@ export interface ScanConfirmationRequest {
   message: string;
   confirmLabel: string;
   cancelLabel: string;
+  book?: ScanConfirmationBookDetails;
+}
+
+export interface ScanConfirmationBookDetails {
+  title: string;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  isbn13: string;
+  imageUrl: string | null;
+  scannedCount: number;
+  quantityAvailable: number;
+  quantityAnnounced: number;
+  salesCount: number;
+  kept: boolean;
+  scannedAt: string;
 }
 
 @Injectable({providedIn: 'root'})
