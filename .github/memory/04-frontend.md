@@ -44,6 +44,7 @@
 ## MAUI cashier
 
 - `src/MauiCashApp/` is Android-only .NET MAUI. Its public API/SQLite cache and UI expose only available `Bar`, `Bingo` and `Book` products; the Livres tab is a price calculator and records no sale or book exit (exception to `RG-50` for the tablette only). Website visibility is a separate filter.
+- Book price order is configured in BackOffice with the product-list move buttons, saved through `PUT /product/books/order`, and applied by the MAUI Livres tab using the persisted product `Index`; the same sort applies to online and cached catalogues.
 - BackOffice distributes a versioned APK at `/apks/caisse-app-v{ApplicationDisplayVersion}.apk`; update both links and filename together to avoid a stale CDN asset.
 
 ## Recent validation

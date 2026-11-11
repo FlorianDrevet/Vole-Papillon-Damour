@@ -22,6 +22,10 @@ export class ProductFacadeService {
     return this.axiosService.request$(MethodEnum.PUT, `/product/${productId}`, updateProductForm, {}, true);
   }
 
+  public reorderBookProducts$(productIds: string[]): Promise<void> {
+    return this.axiosService.request$(MethodEnum.PUT, `/product/books/order`, {productIds});
+  }
+
   public deleteProduct$(productId: string): Promise<void> {
     return this.axiosService.request$(MethodEnum.DELETE, `/product/${productId}`, null);
   }

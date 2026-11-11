@@ -13,6 +13,7 @@
 - Admin event writes include `POST/PUT /asso-events`, party/line/lot operations, draw/undo, `win-partie`, and `bingo-win`. Check each registration's policy; `DELETE /asso-events/{id}` is a known authorization asymmetry to recheck.
 - Live board: `GET /asso-events/{id}/tableau/sse` streams full snapshots with `LiveRevision` as SSE ID, 3-second retry hint, and 15-second idle pings. It subscribes before its initial DB read; a missing event is 404. Mutations publish after save; revision conflicts map to 409; `LiveTableauSyncService` propagates changes across API replicas.
 - `GET /product` is the full cashier/admin projection; Website prices use public `GET /product/public`, filtered by availability and `VisibleOnWebsite`. Product writes are admin routes; `DELETE /product/{id}` is another known authorization asymmetry. Orders use `POST/GET /orders` and are admin-protected.
+- `PUT /product/books/order` is admin-protected and saves the full ordered list of book product IDs into the existing `Product.Index` field; the API rejects incomplete or duplicate orderings.
 
 ## Public catalogue and bibliographic reads
 

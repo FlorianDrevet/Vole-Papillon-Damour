@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Application.Products.Commands.AddPromotions;
 using Vole_Papillon_Damour.Application.Products.Commands.CreateProduct;
 using Vole_Papillon_Damour.Application.Products.Commands.DeleteProduct;
 using Vole_Papillon_Damour.Application.Products.Commands.DeletePromotions;
+using Vole_Papillon_Damour.Application.Products.Commands.ReorderBookProducts;
 using Vole_Papillon_Damour.Application.Products.Commands.UpdateProduct;
 using Vole_Papillon_Damour.Application.Products.Queries.GetAllProduct;
 using Vole_Papillon_Damour.Application.Products.Queries.GetPublicProducts;
@@ -107,6 +108,20 @@ public static class ProductController
                             error => error.Result());
                     })
                 .WithName("Get Public Products");
+
+            endpoints.MapPut("/product/books/order",
+                    async ([FromBody] ReorderBookProductsRequest request, IMediator mediator) =>
+                    {
+                        var command = new ReorderBookProductsCommand(
+                            request.ProductIds?.Select(ProductId.Create).ToArray() ?? Array.Empty<ProductId>());
+                        var result = await mediator.Send(command);
+
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("Reorder Book Products")
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapDelete("/product/{productId}",
                     async ([FromRoute] Guid productId, IMediator mediator, IMapper mapper) =>
