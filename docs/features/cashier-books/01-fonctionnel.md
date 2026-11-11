@@ -106,7 +106,7 @@ tablette (voir CL-06).
 - Les produits de la tablette viennent de `GET /product`, endpoint public sans connexion
   (`src/MauiCashApp/README.md`). Aucune connexion n'est ajoutée : la tablette ne fait que
   lire le catalogue.
-- L'icône existe sous `Resources/Images/book.svg`. L'ancienne référence `book.png` n'existe plus.
+- L'icône de la catégorie est `Resources/Images/book.svg`. La référence `book.png` est correcte : le plugin MAUI génère le PNG à la compilation (`MauiImage Include="Resources\Images\*"`), comme `drink.png` et `loto.png` aujourd'hui.
 - Application Android uniquement (`net10.0-android`).
 - Docs à mettre à jour pendant l'implémentation, pour acter la calculette :
   - `docs/bourse-aux-livres/01-vision-et-perimetre.md` §5 : la ligne « Intégration à
