@@ -152,7 +152,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   consultationResult: LocalCatalogResult | null = null;
   manualRequestLookup: ScanManualRequestLookup = {state: 'none'};
   cashItems: CashScanItem[] = [];
-  cashAssociationNoticeDismissed = false;
   availableRareBooks: ScanRareBook[] = [];
   rareCashResults: ScanRareBook[] = [];
   rareCashSearch = '';
@@ -381,9 +380,31 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.scanPassageAssociation?.state() ?? {kind: 'anonymous'};
   }
 
-  get cashAssociatedDisplayLabel(): string | null {
+  get cashClientLabel(): string {
     const state = this.cashAssociationState;
-    return state.kind === 'associated' ? state.displayLabel : null;
+    switch (state.kind) {
+      case 'associated':
+        return state.displayLabel;
+      case 'pending-offline':
+        return 'Compte en attente';
+      case 'resolving':
+        return 'Lecture de la carte…';
+      default:
+        return 'Anonyme';
+    }
+  }
+
+  get cashAssociationFeedback(): string | null {
+    switch (this.cashAssociationState.kind) {
+      case 'resolving':
+        return 'Scannez la carte du client ou saisissez son code.';
+      case 'pending-offline':
+        return 'Carte conservée sur cet appareil, en attente du réseau.';
+      case 'not-recognised':
+        return 'Carte non reconnue. Réessayez ou saisissez un code.';
+      default:
+        return null;
+    }
   }
 
   get isAwaitingCashMemberCredential(): boolean {
@@ -784,7 +805,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.scanPassageAssociation
     ) {
       await this.scanPassageAssociation.submitCredential(rawInput);
-      this.cashAssociationNoticeDismissed = false;
       this.refreshView();
       return;
     }
@@ -987,7 +1007,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.resetLookupState();
     this.cashMessage = null;
     this.scanPassageAssociation?.clear();
-    this.cashAssociationNoticeDismissed = false;
     this.rareCashPickerOpen = false;
     this.selectedRareBook = null;
     void this.refreshRareCashBooks();
@@ -997,25 +1016,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   startCashAssociation(): void {
     this.scanPassageAssociation?.startAssociation();
-    this.cashAssociationNoticeDismissed = false;
     this.manualAssociationCode = false;
-    this.refreshView();
-  }
-
-  continueCashAssociation(): void {
-    this.cashAssociationNoticeDismissed = true;
-    this.refreshView();
-  }
-
-  changeCashAssociation(): void {
-    this.scanPassageAssociation?.startAssociation();
-    this.cashAssociationNoticeDismissed = false;
-    this.refreshView();
-  }
-
-  continueCashAnonymously(): void {
-    this.scanPassageAssociation?.clear();
-    this.cashAssociationNoticeDismissed = false;
     this.refreshView();
   }
 
@@ -1169,7 +1170,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
       this.manualAssociationCode = false;
       this.screen = this.manualReturnScreen;
-      this.cashAssociationNoticeDismissed = false;
       this.refreshView();
       this.restartContinuousCamera(this.manualReturnScreen);
       return;
@@ -1698,7 +1698,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
       }
       this.scanPassageAssociation?.clear();
-      this.cashAssociationNoticeDismissed = false;
       await this.refreshLocalState();
       this.trySync();
     } catch (error: unknown) {

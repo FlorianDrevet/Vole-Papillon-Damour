@@ -583,76 +583,48 @@
       <section *ngSwitchCase="'cash'" class="app-screen cash-screen" aria-labelledby="cash-title">
         <header class="cash-header mode-header">
           <h1 id="cash-title" class="visually-hidden">Caisse</h1>
-          <span class="cash-header-label">CAISSE 2 · {{ displayName }}</span>
-          <span class="cash-header-status" [class.cash-header-status-offline]="!isOnline">
-            <span aria-hidden="true"></span>{{ isOnline ? 'EN LIGNE' : 'HORS RÉSEAU' }}
-          </span>
-        </header>
-        <ng-container *ngTemplateOutlet="statusStrip"></ng-container>
-        <section
-          class="cash-member-banner"
-          [class.cash-member-banner-anonymous]="cashAssociationState.kind === 'anonymous'"
-          role="status"
-          aria-live="polite"
-          aria-label="Association du compte client">
-          <div class="cash-member-copy">
-            <span class="cash-member-label">
-              Client :
-              <ng-container [ngSwitch]="cashAssociationState.kind">
-                <span *ngSwitchCase="'associated'">Compte de {{ cashAssociatedDisplayLabel }}</span>
-                <span *ngSwitchCase="'pending-offline'">Association en attente</span>
-                <span *ngSwitchDefault>Vente anonyme</span>
-              </ng-container>
-            </span>
-            <p *ngIf="cashAssociationState.kind === 'resolving'">Scannez la carte de compte ou saisissez le code de secours.</p>
-            <p *ngIf="cashAssociationState.kind === 'associated' && !cashAssociationNoticeDismissed">
-              Compte reconnu : {{ cashAssociatedDisplayLabel }} — Les livres de ce passage seront visibles dans Mes achats.
-            </p>
-            <p *ngIf="cashAssociationState.kind === 'pending-offline'">
-              Association en attente — elle sera transmise au retour du réseau.
-            </p>
-            <p *ngIf="cashAssociationState.kind === 'not-recognised'">
-              Carte non reconnue. Réessayez, saisissez le code de secours ou continuez en vente anonyme.
-            </p>
-          </div>
-          <div class="cash-member-actions">
-            <ng-container [ngSwitch]="cashAssociationState.kind">
+          <div class="cash-header-top">
+            <span class="cash-header-label">CAISSE 2</span>
+            <div class="cash-header-actions">
               <button
-                *ngSwitchCase="'anonymous'"
                 type="button"
-                class="cash-member-action cash-member-scan-action"
-                aria-label="Scanner la carte de compte"
+                class="cash-header-action cash-header-scan"
+                data-testid="cash-member-scan"
+                aria-label="Scanner la carte d’un compte client"
                 (click)="startCashAssociation()">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect>
                   <circle cx="8.5" cy="10.5" r="1.6"></circle>
                   <path d="M6.5 15c.5-1.2 1.2-1.8 2-1.8s1.5.6 2 1.8m2-4h4m-4 3h4"></path>
                 </svg>
-                <span>Scanner</span>
+                <span>Scanner carte</span>
               </button>
-              <ng-container *ngSwitchCase="'resolving'">
-                <button type="button" class="cash-member-action" (click)="openManualInput()">Saisir un code</button>
-                <button type="button" class="cash-member-secondary" (click)="continueCashAnonymously()">Continuer en vente anonyme</button>
-              </ng-container>
-              <ng-container *ngSwitchCase="'associated'">
-                <ng-container *ngIf="!cashAssociationNoticeDismissed; else associatedActions">
-                  <button type="button" class="cash-member-action" (click)="continueCashAssociation()">Continuer</button>
-                  <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
-                </ng-container>
-                <ng-template #associatedActions>
-                  <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
-                </ng-template>
-              </ng-container>
-              <ng-container *ngSwitchCase="'pending-offline'">
-                <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
-              </ng-container>
-              <ng-container *ngSwitchCase="'not-recognised'">
-                <button type="button" class="cash-member-action" (click)="changeCashAssociation()">Réessayer</button>
-                <button type="button" class="cash-member-secondary" (click)="continueCashAnonymously()">Continuer en vente anonyme</button>
-              </ng-container>
-            </ng-container>
+              <button
+                type="button"
+                class="cash-header-action cash-header-home"
+                aria-label="Revenir à l’accueil"
+                (click)="returnHome()">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3.5 10.5 8.5-7 8.5 7"></path>
+                  <path d="M5.5 9.5v11h13v-11M9.5 20.5v-6h5v6"></path>
+                </svg>
+                <span>Accueil</span>
+              </button>
+            </div>
           </div>
-        </section>
+          <p class="cash-header-client" aria-live="polite">
+            <span>Client :</span>&nbsp;<strong>{{ cashClientLabel }}</strong>
+          </p>
+          <p
+            *ngIf="cashAssociationFeedback"
+            class="cash-header-feedback"
+            [class.cash-header-feedback-error]="cashAssociationState.kind === 'not-recognised'"
+            [attr.role]="cashAssociationState.kind === 'not-recognised' ? 'alert' : 'status'"
+            aria-live="polite">
+            {{ cashAssociationFeedback }}
+          </p>
+        </header>
+        <ng-container *ngTemplateOutlet="statusStrip"></ng-container>
         <div *ngIf="cameraActive" #cameraSlot class="camera-slot camera-slot-band"></div>
 
         <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">
@@ -730,13 +702,9 @@
               </div>
             </article>
           </ng-container>
-          <p *ngIf="cashItems.length === 0 && !isLoading" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
+          <p *ngIf="cashItems.length === 0 && !isLoading" class="cash-empty">Scannez un livre ou saisissez son code.</p>
         </section>
 
-        <div class="cash-session-summary">
-          <span>SESSION EN COURS</span>
-          <strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }} sorti{{ cashItems.length > 1 ? 's' : '' }}</strong>
-        </div>
         <p *ngIf="cashMessage" class="cash-message" role="status">{{ cashMessage }}</p>
         <button *ngIf="canCancelLastSale" type="button" class="cash-cancel-sale" (click)="cancelLastSale()">
           Annuler la dernière vente
@@ -759,20 +727,19 @@
         </div>
 
         <footer class="action-dock cash-dock">
+          <div class="cash-session-summary" aria-live="polite">
+            <strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }} sorti{{ cashItems.length > 1 ? 's' : '' }}</strong>
+          </div>
           <div class="cash-buttons">
-            <button type="button" class="decision-reject" [disabled]="cashItems.length === 0" (click)="undoLastCashItem()">
+            <button type="button" class="decision-reject" aria-label="Annuler le dernier livre scanné" [disabled]="cashItems.length === 0" (click)="undoLastCashItem()">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 9.5h9.5a5.5 5.5 0 1 1 0 11H8"></path>
                 <path d="m8 5-4 4.5 4 4.5"></path>
               </svg>
               Annuler dernier
             </button>
-            <button type="button" class="dock-primary" [disabled]="cashItems.length === 0" (click)="validateCash()">Valider la sortie</button>
-          </div>
-          <div class="cash-secondary-actions">
-            <button type="button" class="dock-link" (click)="openManualInput()">Saisir un code</button>
-            <button type="button" class="dock-link" (click)="toggleCamera()">{{ cameraActive ? 'Arrêter la caméra' : 'Scanner avec le téléphone' }}</button>
-            <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
+            <button type="button" class="cash-manual-button" (click)="openManualInput()">Saisir un code</button>
+            <button type="button" class="dock-primary" [disabled]="cashItems.length === 0" (click)="validateCash()">Valider</button>
           </div>
         </footer>
 

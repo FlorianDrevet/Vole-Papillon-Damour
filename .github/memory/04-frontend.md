@@ -37,6 +37,7 @@
 - A scan result is local-first; metadata resolves independently and must not replace a keep/discard decision already shown. A valid result pauses the camera until a volunteer decides; an invalid/no-local-result decode resumes the existing camera stream.
 - `Tri` can triage, `Caisse` can sell, both can consult. Cached local work remains usable during token/network loss, but synchronization needs a current API token. Do not put requester contact details in the catalog delta, IndexedDB diagnostics, or logs.
 - The PWA retains explicit retry/error/recovery states; browser storage persistence is a best-effort capability, not a server-sync guarantee.
+- The `/caisse` screen keeps the scanned buyer (or “Anonyme”) in its compact header, with buyer-card scanning and Home actions beside the cashier identifier. Keep the camera preview short, the cash list as the main flexible area, and the bottom dock limited to a compact sold count plus Undo, Enter code, and Validate. Buyer association state remains visible in the header, including offline-pending and unrecognized-card feedback.
 
 ## MAUI cashier
 
@@ -46,6 +47,7 @@
 ## Recent validation
 
 - 2026-11-11 — Scan’s shared manual ISBN keypad now places `0` before `Vider`, keeps `Valider` and `Retour` side by side, and hides the unreadable-barcode notice during manual entry. The code-recovery hint remains. The local Scan build passes; the unchanged `scanner.component.scss` exceeds its style budget by 498 bytes. Automated tests were not run, and authenticated mobile visual verification remains pending. Graphify extracted 1,913 files but could not render its 9,404-node report. No deployment.
+- The 2026-11-11 Scan cashier layout change passes the full Scan suite (317/317), production build, and bootstrap contract tests (6/6). An authenticated device/responsive visual check remains pending because the local screen is protected by MSAL.
 - The Loto Halloween photo announcement passes its focused Website tests (20/20) and the SSR production build. The full Website suite is 202/203 because the pre-existing event-detail test still expects “Demain” for a Nov 1 event while the test clock uses Nov 2; no deployment. Desktop and mobile SSR screenshots were reviewed. `graphify update . --no-viz` completed AST extraction but could not rebuild the report because the existing 9,404-node graph exceeded its visualization limit.
 - The 2026-10-31 event SSR correction passes Website 197/197, SEO HTTP checks 14/14, and the SSR production build (existing Angular budget/CommonJS warnings). Its local concurrent request evidence and limits are in `.github/memory/19-website-event-ssr.md`.
 - The Halloween loto board and E6 banner validation is in `.github/memory/18-halloween-loto-board.md`; deployment still requires the `AddEventLiveTheme` migration first.
