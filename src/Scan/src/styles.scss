@@ -1483,15 +1483,29 @@ input:focus-visible {
 }
 
 .manual-dock {
+  flex-direction: row;
+  align-items: stretch;
   margin-top: auto;
-  gap: 10px;
+  gap: 8px;
   padding-top: 10px;
   border-top: 0;
   box-shadow: none;
 }
 
+.manual-dock .dock-primary,
 .manual-dock .dock-link {
-  min-height: 44px;
+  min-width: 0;
+  min-height: 52px;
+  flex: 1 1 0;
+  padding-right: 8px;
+  padding-left: 8px;
+  font-size: 14px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.manual-dock .dock-link {
+  gap: 6px;
 }
 
 .session-end-screen {
