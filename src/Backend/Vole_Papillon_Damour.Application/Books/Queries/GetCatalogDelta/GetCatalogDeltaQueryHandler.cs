@@ -43,16 +43,16 @@ public sealed class GetCatalogDeltaQueryHandler(
             return Errors.Book.InvalidScanTimestamp();
         }
 
-        var upcomingBookFairs = await dbContext.AssoEvents
+        var fairEvaluationInstant = new DateTimeOffset(generatedAt, TimeSpan.Zero);
+        var nextFair = await dbContext.AssoEvents
             .AsNoTracking()
             .WhereActiveBookFair()
-            .ToListAsync(cancellationToken);
-        var nextFair = upcomingBookFairs
             .Where(assoEvent =>
-                (assoEvent.DateEnd ?? assoEvent.DateStart) > new DateTimeOffset(generatedAt, TimeSpan.Zero))
+                (assoEvent.DateEnd.HasValue && assoEvent.DateEnd.Value > fairEvaluationInstant)
+                || (!assoEvent.DateEnd.HasValue && assoEvent.DateStart > fairEvaluationInstant))
             .OrderBy(assoEvent => assoEvent.DateStart)
-            .ThenBy(assoEvent => assoEvent.Id.Value)
-            .FirstOrDefault();
+            .ThenBy(assoEvent => assoEvent.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var selectedBooks = await GetBooksToProjectAsync(
             since,

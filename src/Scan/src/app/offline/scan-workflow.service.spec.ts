@@ -449,6 +449,7 @@ describe('ScanWorkflowService', () => {
   });
 
   it('deletes a pending cash sale when it is explicitly cancelled', async () => {
+    await store.putCatalogBooks([createBook({qtyAvailable: 1, salesCount: 2})]);
     const entries = await service.recordCashSales(
       ['9782070363735'],
       new Date('2026-09-03T08:06:00.000Z'),
@@ -458,6 +459,10 @@ describe('ScanWorkflowService', () => {
 
     expect(deleted).toBeTrue();
     expect(await store.getSaleOutboxEntry(entries[0].clientGestureId)).toBeNull();
+    expect(await store.getCatalogBook('9782070363735')).toEqual(jasmine.objectContaining({
+      qtyAvailable: 1,
+      salesCount: 2,
+    }));
     expect(await service.deleteSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
   });
 
@@ -484,14 +489,20 @@ describe('ScanWorkflowService', () => {
   });
 
   it('reports whether a cash sale is still pending before transmission', async () => {
-    const entries = await service.recordCashSales(
-      ['9782070363735'],
-      new Date('2026-09-03T08:06:00.000Z'),
-    );
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-03T08:06:15.000Z'));
+    try {
+      const entries = await service.recordCashSales(
+        ['9782070363735'],
+        new Date('2026-09-03T08:06:00.000Z'),
+      );
 
-    expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeTrue();
-    await service.deleteSaleOutboxEntry(entries[0].clientGestureId);
-    expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
+      expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeTrue();
+      await service.deleteSaleOutboxEntry(entries[0].clientGestureId);
+      expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   function createBook(overrides: Partial<ScanCatalogBook> = {}): ScanCatalogBook {

@@ -8,6 +8,8 @@ import {
   ScanBookRemovalResponse,
   ScanCatalogDeltaResponse,
   ScanSaleResponse,
+  ScanSaleVoidRequest,
+  ScanSaleVoidResponse,
   ScanSessionResponse,
   ScanManualRequestCandidate,
   ScanVolunteerStatisticsResponse,
@@ -15,6 +17,8 @@ import {
 import {ScanRareBook} from './scan-offline.model';
 
 const RARE_BOOKS_ADMIN_REQUEST_TIMEOUT_MS = 30_000;
+const SCAN_CATALOG_REQUEST_TIMEOUT_MS = 45_000;
+const SCAN_CASH_REQUEST_TIMEOUT_MS = 30_000;
 
 export interface OpenScanSessionRequest {
   mode: 'AvailableNow' | 'NextFair';
@@ -132,7 +136,7 @@ export class ScanApiService {
     return this.http.get<ScanCatalogDeltaResponse>(
       `${this.baseUrl}/scan/catalog/delta`,
       {params},
-    );
+    ).pipe(timeout({first: SCAN_CATALOG_REQUEST_TIMEOUT_MS}));
   }
 
   getManualRequestCandidate(isbn13: string): Observable<ScanManualRequestCandidate | null> {
@@ -177,7 +181,17 @@ export class ScanApiService {
     return this.http.post<ScanSaleResponse>(
       `${this.baseUrl}/scan/sales`,
       request,
-    );
+    ).pipe(timeout({first: SCAN_CASH_REQUEST_TIMEOUT_MS}));
+  }
+
+  voidSale(
+    saleMovementId: string,
+    request: ScanSaleVoidRequest,
+  ): Observable<ScanSaleVoidResponse> {
+    return this.http.post<ScanSaleVoidResponse>(
+      `${this.baseUrl}/scan/sales/${encodeURIComponent(saleMovementId)}/void`,
+      request,
+    ).pipe(timeout({first: SCAN_CASH_REQUEST_TIMEOUT_MS}));
   }
 
   associatePassage(

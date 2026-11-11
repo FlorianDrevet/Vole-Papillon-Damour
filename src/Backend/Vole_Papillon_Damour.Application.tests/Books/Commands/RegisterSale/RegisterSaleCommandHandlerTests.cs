@@ -174,6 +174,25 @@ public sealed class RegisterSaleCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenTheSameGestureWinsDuringSave_ReturnsTheCommittedSale()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var command = CreateCommand(book.Isbn13.Value);
+        fixture.Context.ThrowDbUpdateExceptionAfterCommitOnNextSave = true;
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(
+            command,
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AlreadyProcessed.Should().BeTrue();
+        (await fixture.Context.Books.SingleAsync()).SalesCount.Should().Be(1);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Handle_WhenNoFairIsOpen_PersistsSaleWithoutGuessingAnAttachment()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

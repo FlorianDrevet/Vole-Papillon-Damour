@@ -165,6 +165,19 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Cash_sale_corrections_require_the_caisse_policy()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/scan/sales/{saleMovementId:guid}/void");
+
+        RequiresAuthorization(endpoint).Should().BeTrue();
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Caisse");
+    }
+
+    [Fact]
     public void Manual_request_scan_candidate_requires_the_scan_volunteer_policy()
     {
         var endpoint = RegisteredEndpoints()

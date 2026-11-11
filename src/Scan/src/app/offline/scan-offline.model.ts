@@ -59,7 +59,13 @@ export type ScanSetAsideReason =
   | 'undecided'
   | 'server-refused';
 
-export type ScanSaleOutboxStatus = 'Pending' | 'Quarantined';
+export type ScanSaleOutboxStatus =
+  | 'Pending'
+  | 'Sending'
+  | 'Cancelled'
+  | 'Synced'
+  | 'VoidPending'
+  | 'Quarantined';
 export type ScanRareSaleOutboxStatus = 'Pending' | 'Cancelled' | 'Quarantined';
 
 export type ScanFailureKind = 'transient' | 'permanent' | 'authorization';
@@ -266,6 +272,8 @@ export interface ScanSaleOutboxEntry {
   clientGestureId: string;
   isbn13: string;
   quantity: number;
+  saleMovementId?: string | null;
+  voidClientGestureId?: string | null;
   checkoutPassageId?: string | null;
   status?: ScanSaleOutboxStatus;
   occurredAt: string;
@@ -274,6 +282,11 @@ export interface ScanSaleOutboxEntry {
   lastAttemptAt: string | null;
   lastError: string | null;
   lastFailureKind?: ScanFailureKind | null;
+}
+
+export interface ScanSaleCancellationSummary {
+  localCancelledCount: number;
+  correctionQueuedCount: number;
 }
 
 export interface ScanRareSaleOutboxEntry {
@@ -391,6 +404,23 @@ export interface ScanSaleResponse {
   hadNoAvailableStock: boolean;
   hadUnreleasedAnnouncement: boolean;
   isRare: boolean;
+  clockSuspect: boolean;
+  alreadyProcessed: boolean;
+}
+
+export interface ScanSaleVoidRequest {
+  occurredAt: string;
+  clientGestureId: string;
+}
+
+export interface ScanSaleVoidResponse {
+  isbn13: string;
+  originalSaleMovementId: string;
+  reversalMovementId: string;
+  quantity: number;
+  qtyAvailable: number;
+  salesCount: number;
+  assoEventsId: string | null;
   clockSuspect: boolean;
   alreadyProcessed: boolean;
 }

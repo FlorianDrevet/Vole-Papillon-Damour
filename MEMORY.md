@@ -34,6 +34,7 @@
 | `.github/memory/17-worktree-dependency-sharing.md` | Clone-local hook for frontend dependency reuse |
 | `.github/memory/18-halloween-loto-board.md` | Live board theme behavior, motion, validation |
 | `.github/memory/19-website-event-ssr.md` | Event SSR fix and separate 40-request/300-client evidence |
+| `.github/memory/20-scan-cash-offline-reliability.md` | Dated Scan sales/catalog telemetry, offline safeguards and local E2E limitation |
 | `.github/memory/changelog.md` | Dated memory changes from the last 60 days |
 | `.github/memory/dream-state.md` | Dream gate state and Graphify selection |
 

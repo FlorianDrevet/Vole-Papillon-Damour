@@ -355,6 +355,33 @@ describe('ScanAuthService', () => {
     expect(localStorage.getItem(storageKey)).toBeNull();
   });
 
+  it('falls back to cached local authorization when silent token acquisition hangs', () => {
+    jasmine.clock().install();
+    try {
+      localStorage.removeItem('vpd-scan-local-authorization');
+      const account = createAccount('slow-token@example.org', 'Bénévole', ['Tri']);
+      const firstInstance = createMsalInstance([account]);
+      new ScanAuthService(
+        createMsalService(firstInstance, createAccessToken(['Tri'])),
+        createBroadcastService().service,
+      );
+      const slowInstance = createMsalInstance([account]);
+      const msal = createMsalService(slowInstance, createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValue(new Subject<AuthenticationResult>());
+
+      const service = new ScanAuthService(msal, createBroadcastService().service);
+      expect(service.authState.status).toBe('checking');
+
+      jasmine.clock().tick(10_000);
+
+      expect(service.authState.status).toBe('degraded');
+      expect(service.canSort).toBeTrue();
+      expect(service.isAuthorized).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
   function createBroadcastService(initialStatus: InteractionStatus = InteractionStatus.None): {
     service: MsalBroadcastService;
     subject: Subject<EventMessage>;

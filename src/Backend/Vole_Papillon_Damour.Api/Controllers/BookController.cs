@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
+using Vole_Papillon_Damour.Application.Books.Commands.VoidSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
@@ -34,6 +35,7 @@ using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Contracts.ManualRequests;
 using Vole_Papillon_Damour.Contracts.Recommendations;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
@@ -460,6 +462,35 @@ public static class BookController
                 .RequireAuthorization("Caisse");
 
             endpoints.MapPost(
+                    "/scan/sales/{saleMovementId:guid}/void",
+                    async (
+                        Guid saleMovementId,
+                        VoidSaleRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new VoidSaleCommand(
+                                BookMovementId.Create(saleMovementId),
+                                request.OccurredAt,
+                                volunteerId,
+                                request.ClientGestureId),
+                            cancellationToken);
+
+                        return result.Match(
+                            correction => Results.Ok(ToResponse(correction)),
+                            error => error.Result());
+                    })
+                .WithName("VoidBookSale")
+                .RequireAuthorization("Caisse");
+
+            endpoints.MapPost(
                     "/scan/sessions",
                     async (
                         OpenScanSessionRequest request,
@@ -857,6 +888,20 @@ public static class BookController
             result.HadNoAvailableStock,
             result.HadUnreleasedAnnouncement,
             result.IsRare,
+            result.ClockSuspect,
+            result.AlreadyProcessed);
+    }
+
+    private static VoidSaleResponse ToResponse(VoidSaleResult result)
+    {
+        return new VoidSaleResponse(
+            result.Isbn13,
+            result.OriginalSaleMovementId.Value,
+            result.ReversalMovementId.Value,
+            result.Quantity,
+            result.QuantityAvailable,
+            result.SalesCount,
+            result.AssoEventsId?.Value,
             result.ClockSuspect,
             result.AlreadyProcessed);
     }
