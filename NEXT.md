@@ -1035,16 +1035,15 @@ git pull
 
 ## En cours
 
-### Scan — écran de caisse compact — 2026-11-11
+### Scan — en-tête du compte et aperçu caméra — 2026-11-11
 
-La caisse affiche maintenant le compte client (ou « Anonyme ») et les actions de scan
-de carte / accueil dans l’en-tête. L’aperçu caméra est plus court, la liste des livres
-reste la zone principale, et le dock fixe ne garde que le nombre de livres sortis,
-« Annuler dernier », « Saisir un code » et « Valider ». Tests Scan 317/317, build de
-production et tests bootstrap 6/6 réussis. La vérification authentifiée sur appareil
-reste à faire; le flux local est protégé par MSAL. Aucun déploiement. La
-[PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381) est ouverte,
-non fusionnée.
+Le nom du compte scanné apparaît à gauche dans l’en-tête, sans préfixe « Client : »;
+il est tronqué par des points de suspension si nécessaire, et devient « Anonyme »
+sans compte. L’aperçu caméra de la caisse couvre toute la largeur, gagne de la hauteur
+(160–190 px) et n’affiche plus le message par défaut de mise au point. Tests Scan
+318/318, build de production et tests bootstrap 6/6 réussis. Aucun changement externe
+ni déploiement pour ce correctif. La [PR #382](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/382)
+est ouverte, non fusionnée.
 
 ### Coût Azure Monitor et journaux du Worker — 2026-10-30
 
@@ -2549,9 +2548,9 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
-Au 2026-11-11, la révision de la caisse Scan n’a changé aucun service externe ni
-déploiement. Le contrôle visuel authentifié du layout sur appareil reste en attente;
-les tests et le build locaux sont réussis.
+Au 2026-11-11, l’utilisateur a confirmé la fusion de la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381)
+et son déploiement. Le correctif en cours ne modifie aucun service externe; son
+déploiement reste en attente de fusion puis de lancement manuel du workflow Scan.
 
 Au 2026-10-30, le workspace `vpd-law-dev-fc` est conservé 30 jours, sur Analytics. La
 rétention jusqu’à 31 jours est incluse dans le prix d’ingestion; purger l’historique ne
@@ -2787,7 +2786,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-11-11 | Windows | **Scan — écran de caisse compact.** Depuis `origin/main` dans `VPD-scan-cashier-refresh` (`feat/scan-cashier-layout-20261111`), déplacement du scan de carte client et de l’accueil dans l’en-tête, affichage du client associé/anonyme, réduction de l’aperçu caméra et du dock pour libérer la liste des livres. Actions du dock : annuler le dernier, saisir un code, valider. Tests ChromeHeadless 317/317, build Scan et tests bootstrap 6/6 réussis. Graphify a extrait l’AST mais n’a pas régénéré le rapport, qui dépasse la limite de visualisation avec 9 402 nœuds. Vérification responsive authentifiée sur appareil à faire (MSAL), aucun déploiement. [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381) ouverte, non fusionnée. |
+| 2026-11-11 | Windows | **Scan — en-tête du compte et aperçu caméra.** Depuis `origin/main` (`c493fe2f`) dans `VPD-scan-cashier-camera-followup` (`fix/scan-cashier-camera-header-20261111`), le nom du compte scanné (ou « Anonyme ») apparaît sans préfixe et se tronque proprement; la zone caméra est pleine largeur, un peu plus haute, et ne montre plus la consigne de mise au point par défaut. Tests Scan 318/318, build et bootstrap 6/6 réussis. Graphify a extrait l’AST mais le rapport HTML dépasse la limite de visualisation à 9 402 nœuds. Pas de déploiement de ce suivi. [PR #382](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/382) ouverte, non fusionnée. |
+| 2026-11-11 | Windows | **Scan — écran de caisse compact.** Depuis `origin/main` dans `VPD-scan-cashier-refresh` (`feat/scan-cashier-layout-20261111`), déplacement du scan de carte client et de l’accueil dans l’en-tête, affichage du client associé/anonyme, réduction de l’aperçu caméra et du dock pour libérer la liste des livres. Actions du dock : annuler le dernier, saisir un code, valider. Tests ChromeHeadless 317/317, build Scan et tests bootstrap 6/6 réussis. Graphify a extrait l’AST mais n’a pas régénéré le rapport, qui dépasse la limite de visualisation avec 9 402 nœuds. L’utilisateur a confirmé que la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381) a été fusionnée et déployée. |
 | 2026-10-30 | Windows | **Worker — baisse du volume de logs console.** Dans `VPD-worker-console-log-volume-20261030`, le runtime Functions passe par défaut à `Warning`, tandis que les résumés applicatifs, résultats d’exécution, avertissements et erreurs restent accessibles. En production, seuls les logs `Information` des SDK Azure/Durable sont filtrés de la console. Tests Worker 21/21; Graphify et `git diff --check` réussis. Investigation Azure en lecture seule, aucune purge ni déploiement. [PR #355](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/355) ouverte et non fusionnée. Vérifier les logs utiles et la baisse d’ingestion après déploiement. |
 | 2026-10-22 | Windows | **Catalog — compteur d’accueil.** Le compteur de la recherche couvre tous les titres publics, y compris sans stock ; le chargement des huit nouveautés disponibles est séparé et un couple `totalCount` / `hasMore` incohérent ne s’affiche pas comme valeur exacte. Build Catalog réussi ; tests non lancés. API de production HTTP 503, donc contrôle live impossible. Graphify a réextrait l’AST, mais le rendu HTML dépasse la limite de 8 546 nœuds. Aucun déploiement ni accès aux données. [PR #330](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/330) ouverte, non fusionnée. |
 | 2026-10-22 | Windows | **Scan — verdict immédiat et notice progressive.** Dans le worktree `Vole-Papillon-Damour-scan-progressive-metadata-20261022`, la décision locale « Jeter »/« Garder » arrive avec l’enregistrement; la notice et sa couverture se chargent sur squelettes, avec une icône rouge et une consigne de saisie manuelle si aucune fiche Internet n’existe. Enquête App Insights en lecture seule : endpoint metadata p95 3,50 s, SQL p95 ~5,8 ms sans échec, BnF 25 timeouts, Open Library p95 ~954 ms, Google Books 103 HTTP 400 (p95 ~670 ms); cause des 400 non confirmée faute de corps de réponse. Tests Scan 304/304, build, diff check et Graphify réussis; fixture responsive 320/390/1440 sans débordement. Smoke authentifié MSAL reste à faire. Aucune modification Azure ni aucun déploiement. [PR #321](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/321) ouverte, non fusionnée. |

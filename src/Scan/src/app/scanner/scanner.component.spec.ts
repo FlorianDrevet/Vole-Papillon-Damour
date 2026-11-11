@@ -2324,12 +2324,19 @@ describe('ScannerComponent', () => {
   it('shows the scanned client in the cashier header without exposing the signed-in volunteer', () => {
     component.openCash();
     component.accountName = 'Bénévole connecté';
-    passageState.set({kind: 'associated', displayLabel: 'Camille'});
+    const scannedName = 'Camille au nom volontairement très long';
+    passageState.set({kind: 'associated', displayLabel: scannedName});
     fixture.detectChanges();
 
     const header = fixture.nativeElement.querySelector('.cash-header') as HTMLElement;
+    const buyerName = header.querySelector('.cash-header-label') as HTMLElement;
 
-    expect(header.textContent?.replace(/\u00a0/g, ' ')).toContain('Client : Camille');
+    expect(buyerName.textContent?.trim()).toBe(scannedName);
+    expect(getComputedStyle(buyerName).overflow).toBe('hidden');
+    expect(getComputedStyle(buyerName).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(buyerName).textOverflow).toBe('ellipsis');
+    expect(header.textContent).not.toContain('Client :');
+    expect(header.textContent).not.toContain('CAISSE 2');
     expect(header.textContent).not.toContain('Bénévole connecté');
     const scanButton = header.querySelector('[data-testid="cash-member-scan"]') as HTMLButtonElement;
     const homeButton = header.querySelector('.cash-header-home') as HTMLButtonElement;
@@ -2340,6 +2347,26 @@ describe('ScannerComponent', () => {
     expect(passageAssociation.startAssociation).toHaveBeenCalledOnceWith();
     homeButton.click();
     expect(component.screen).toBe('home');
+  });
+
+  it('fills and slightly enlarges the cashier camera area without a default refocus prompt', () => {
+    component.openCash();
+    component.cameraActive = true;
+    fixture.detectChanges();
+
+    const screen = fixture.nativeElement.querySelector('.cash-screen') as HTMLElement;
+    const slot = fixture.nativeElement.querySelector('.cash-screen .camera-slot-band') as HTMLElement;
+    const preview = fixture.nativeElement.querySelector('.camera-engine-host-active') as HTMLElement;
+    const screenBounds = screen.getBoundingClientRect();
+    const slotBounds = slot.getBoundingClientRect();
+    const previewBounds = preview.getBoundingClientRect();
+
+    expect(slotBounds.left).toBeCloseTo(screenBounds.left, 0);
+    expect(slotBounds.width).toBeCloseTo(screenBounds.width, 0);
+    expect(slotBounds.height).toBeGreaterThanOrEqual(160);
+    expect(previewBounds.width).toBeCloseTo(slotBounds.width, 0);
+    expect(previewBounds.height).toBeCloseTo(slotBounds.height, 0);
+    expect(getComputedStyle(preview, '::before').content).not.toContain('Touchez');
   });
 
   it('keeps the three cashier actions in the bottom dock and shows only the compact book count', () => {
@@ -2368,13 +2395,15 @@ describe('ScannerComponent', () => {
     expect(header.querySelector('.cash-header-feedback')?.textContent).toContain('en attente du réseau');
   });
 
-  it('shows Vente anonyme and validates without an association warning', async () => {
+  it('shows an anonymous account name and validates without an association warning', async () => {
     component.openCash();
     (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = createCashWorkflow();
     component.cashItems = [createCashItem('anonymous', 'Livre vendu')];
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.cash-header')?.textContent?.replace(/\u00a0/g, ' ')).toContain('Client : Anonyme');
+    const header = fixture.nativeElement.querySelector('.cash-header') as HTMLElement;
+    expect(header.querySelector('.cash-header-label')?.textContent?.trim()).toBe('Anonyme');
+    expect(header.textContent).not.toContain('Client :');
     expect(fixture.nativeElement.textContent).not.toContain('Association en attente');
 
     await component.validateCash();

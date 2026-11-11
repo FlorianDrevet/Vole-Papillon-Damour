@@ -661,7 +661,7 @@
         <header class="cash-header mode-header">
           <h1 id="cash-title" class="visually-hidden">Caisse</h1>
           <div class="cash-header-top">
-            <span class="cash-header-label">CAISSE 2</span>
+            <span class="cash-header-label" aria-live="polite">{{ cashClientLabel }}</span>
             <div class="cash-header-actions">
               <button
                 type="button"
@@ -689,9 +689,6 @@
               </button>
             </div>
           </div>
-          <p class="cash-header-client" aria-live="polite">
-            <span>Client :</span>&nbsp;<strong>{{ cashClientLabel }}</strong>
-          </p>
           <p
             *ngIf="cashAssociationFeedback"
             class="cash-header-feedback"

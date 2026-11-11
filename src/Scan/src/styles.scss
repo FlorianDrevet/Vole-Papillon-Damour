@@ -2497,6 +2497,10 @@ input:focus-visible {
   height: min(30dvh, 220px);
 }
 
+.camera-engine-host-active.camera-engine-host-cash {
+  height: clamp(160px, 22dvh, 190px);
+}
+
 .camera-engine-host-active::after {
   position: absolute;
   top: 50%;
@@ -2518,7 +2522,7 @@ input:focus-visible {
   padding: 7px 10px;
   color: #dcecf7;
   background: rgb(4 29 48 / 76%);
-  content: "Touchez l’image pour refaire la mise au point";
+  content: none;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: .08em;
@@ -2539,10 +2543,13 @@ input:focus-visible {
 }
 
 .camera-engine-host video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 @media (min-width: 600px) {
@@ -2910,13 +2917,13 @@ input:focus-visible {
 
 .cash-header {
   display: flex;
-  min-height: 72px;
+  min-height: 56px;
   align-items: stretch;
   justify-content: center;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   flex: none;
-  padding: 7px 16px;
+  padding: 6px 16px;
   border-bottom: 1px solid #dfeaf1;
   background: #fff;
 }
@@ -2926,31 +2933,18 @@ input:focus-visible {
   min-width: 0;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
 }
 
 .cash-header-label {
-  color: var(--scan-slate);
-  font: 600 11px/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-}
-
-.cash-header-client {
-  display: flex;
   min-width: 0;
-  align-items: center;
-  gap: 4px;
+  flex: 1 1 auto;
   margin: 0;
   color: var(--scan-ink);
-  font: 500 16px/1.25 "Libre Franklin", Arial, sans-serif;
-  overflow-wrap: anywhere;
-}
-
-.cash-header-client strong {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-weight: 700;
+  overflow: hidden;
+  font: 650 16px/1.25 "Libre Franklin", Arial, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cash-header-actions {
@@ -3153,11 +3147,11 @@ input:focus-visible {
 }
 
 .cash-screen .camera-slot-band {
-  width: min(calc(100% - 32px), 560px);
-  height: clamp(124px, 18dvh, 160px);
-  min-height: 124px;
-  align-self: center;
-  margin: 8px auto 0;
+  width: 100%;
+  height: clamp(160px, 22dvh, 190px);
+  min-height: 160px;
+  align-self: stretch;
+  margin: 8px 0 0;
 }
 
 .cash-dock .decision-reject:focus-visible,
@@ -3180,7 +3174,7 @@ input:focus-visible {
     padding-inline: 7px;
   }
 
-  .cash-header-client {
+  .cash-header-label {
     font-size: 14px;
   }
 
