@@ -18,13 +18,13 @@ la revue de code et l'inspection directe des sources ; il ne les remplace pas.
 
 ## Pre-requis
 
-1. Graphify installe : `python -m graphify` doit fonctionner (`pip install graphifyy` si besoin)
+1. Le CLI Graphify est installe : `python -m graphify --help` doit fonctionner. Le package PyPI s'appelle `graphifyy` (deux y). Pour mettre a jour le CLI et les dependances du serveur MCP de ce depot : `python -m pip install --upgrade "graphifyy[mcp]"`.
 2. Graphe initial construit :
    `python -c "from pathlib import Path; from graphify.watch import _rebuild_code; import sys; ok = _rebuild_code(Path('.')); sys.exit(0 if ok else 1)"`
 3. Les fichiers `graphify-out/graph.json` et `graphify-out/GRAPH_REPORT.md` existent
    et sont a jour pour les requetes structurelles
 4. Le `.graphifyignore` a la racine exclut les sorties build et dependances
-5. Pour `python -m graphify.serve`, le package `mcp` doit etre installe
+5. Pour `python -m graphify.serve`, installer l'extra `mcp` ci-dessus dans le meme environnement Python que celui lance par `.vscode/mcp.json`.
 
 ## Commandes principales
 
@@ -33,6 +33,7 @@ la revue de code et l'inspection directe des sources ; il ne les remplace pas.
 | `python -m graphify query "concept"` | Trouver les noeuds lies a un concept |
 | `python -m graphify path "A" "B"` | Chemin entre deux concepts |
 | `python -m graphify explain "node"` | Explication contextuelle d'un noeud |
+| `python -m graphify affected "node"` | Trouver les noeuds impactes par un symbole |
 | `python -m graphify update .` | Mettre a jour le graphe |
 | `python -m graphify cluster-only .` | Recalculer les communautes a partir du graphe existant |
 | `python -m graphify watch .` | Rebuild local lors des changements de code |
@@ -85,17 +86,22 @@ Il expose `query_graph`, `get_node`, `get_neighbors`, `get_community`, `god_node
 
 Les instructions persistantes du depot sont dans `AGENTS.md`, `CLAUDE.md` et
 `.github/copilot-instructions.md`. Les skills utilisateur peuvent etre synchronises
-avec le package Graphify :
+avec le package Graphify. Pour installer ou actualiser le skill global Agent Skills :
 
 ```powershell
-graphify install --platform codex
-graphify install --platform claude
-graphify install --platform copilot
+python -m graphify install --platform agents
 ```
 
-Pour un nouveau checkout, utiliser `graphify codex install`, `graphify claude install`
-et `graphify vscode install`. Ces commandes doivent conserver les hooks et serveurs
-MCP existants.
+Dans ce depot Windows, la commande suivante synchronise le skill PowerShell et ses
+references dans `.agents/skills/graphify/` :
+
+```powershell
+python -m graphify install --project --platform antigravity-windows
+```
+
+La declaration du serveur MCP reste geree par `.vscode/mcp.json`; verifier apres une
+mise a jour de Graphify que `python -m graphify.serve` s'importe depuis l'environnement
+Python configure dans ce fichier.
 
 ## Bootstrap expectations
 
