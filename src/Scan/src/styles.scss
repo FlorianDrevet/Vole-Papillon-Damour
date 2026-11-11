@@ -1734,9 +1734,9 @@ input:focus-visible {
 }
 
 .cash-item p {
-  color: var(--scan-muted);
+  color: var(--scan-slate);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .04em;
 }
 
@@ -1803,8 +1803,8 @@ input:focus-visible {
 
 .cash-remove {
   display: inline-flex;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
   flex: none;
@@ -1872,15 +1872,15 @@ input:focus-visible {
 }
 
 .cash-empty {
-  min-height: 150px;
+  min-height: 92px;
   margin: 0;
-  padding: 52px 22px;
-  color: var(--scan-muted);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: .1em;
+  padding: 24px 18px;
+  color: var(--scan-slate);
+  font-family: "Libre Franklin", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: 0;
   text-align: center;
-  text-transform: uppercase;
 }
 
 .cash-count {
@@ -2165,19 +2165,6 @@ input:focus-visible {
 .rare-cash-picker-actions button:disabled {
   cursor: not-allowed;
   opacity: .5;
-}
-
-.cash-secondary-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
-}
-
-.cash-secondary-actions .dock-link {
-  min-height: 34px;
-  padding: 4px 7px;
-  font-size: 12px;
 }
 
 .consultation-book-card {
@@ -2704,77 +2691,138 @@ input:focus-visible {
 
 .cash-header {
   display: flex;
-  min-height: 58px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  min-height: 72px;
+  align-items: stretch;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
   flex: none;
-  padding: 0 20px;
+  padding: 7px 16px;
   border-bottom: 1px solid #dfeaf1;
   background: #fff;
 }
 
-.cash-header-label,
-.cash-header-status {
-  color: var(--scan-muted);
-  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+.cash-header-top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cash-header-label {
+  color: var(--scan-slate);
+  font: 600 11px/1.2 "IBM Plex Mono", ui-monospace, monospace;
   letter-spacing: .13em;
   text-transform: uppercase;
 }
 
-.cash-header-status {
-  display: inline-flex;
+.cash-header-client {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--scan-ink);
+  font: 500 16px/1.25 "Libre Franklin", Arial, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.cash-header-client strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.cash-header-actions {
+  display: flex;
+  flex: none;
   align-items: center;
   gap: 6px;
-  color: var(--scan-green);
 }
 
-.cash-header-status > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
+.cash-header-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid #c8dae5;
+  border-radius: 999px;
+  color: var(--scan-ink);
+  background: #fff;
+  cursor: pointer;
+  font: 650 13px/1.1 "Libre Franklin", Arial, sans-serif;
+  white-space: nowrap;
 }
 
-.cash-header-status-offline {
-  color: var(--scan-orange);
+.cash-header-action svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.cash-header-scan {
+  border-color: #00639a;
+  color: #fff;
+  background: #00639a;
+}
+
+.cash-header-action:hover {
+  border-color: #00639a;
+}
+
+.cash-header-scan:hover {
+  background: #004b78;
+}
+
+.cash-header-action:focus-visible,
+.cash-manual-button:focus-visible {
+  outline: 3px solid var(--scan-orange);
+  outline-offset: 2px;
+}
+
+.cash-header-feedback {
+  margin: 0;
+  color: #6a4b19;
+  font: 500 12px/1.35 "Libre Franklin", Arial, sans-serif;
+}
+
+.cash-header-feedback-error {
+  color: #8b262f;
 }
 
 .cash-session-summary {
   display: flex;
-  min-height: 92px;
-  flex-direction: column;
-  gap: 8px;
   justify-content: center;
   flex: none;
-  padding: 18px 22px;
-  background: #fff;
-}
-
-.cash-session-summary span {
-  color: var(--scan-muted);
-  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+  min-height: 25px;
+  padding: 0;
+  background: transparent;
 }
 
 .cash-session-summary strong {
   color: var(--scan-ink);
-  font: 500 30px/1 Newsreader, Georgia, serif;
+  font: 650 20px/1.2 "Libre Franklin", Arial, sans-serif;
 }
 
 .cash-items {
-  gap: 10px;
-  padding: 0 20px;
+  gap: 4px;
+  padding: 0 16px;
   background: #f4f9fc;
 }
 
 .cash-item {
-  min-height: 65px;
+  min-height: 58px;
   justify-content: initial;
-  padding: 12px 14px;
+  padding: 6px 12px;
   border: 1px solid #d9e7ef;
   background: #fff;
+}
+
+.cash-item h2 {
+  font-size: 20px;
 }
 
 .cash-rare-item {
@@ -2804,79 +2852,125 @@ input:focus-visible {
 .cash-rare-action-row {
   display: flex;
   flex: none;
-  padding: 12px 20px 4px;
+  padding: 4px 16px;
   background: #f4f9fc;
 }
 
 .cash-add-rare {
   width: 100%;
-  min-height: 50px;
+  min-height: 44px;
   border-radius: 999px;
   background: var(--scan-purple);
-  box-shadow: 0 18px 30px -24px rgb(95 58 134 / 90%);
-  font-size: 13px;
+  box-shadow: none;
+  font-size: 14px;
 }
 
 .cash-dock {
-  gap: 10px;
-  padding: 12px 20px 20px;
+  gap: 5px;
+  padding: 5px 12px calc(8px + env(safe-area-inset-bottom));
   box-shadow: none;
 }
 
 .cash-buttons {
-  gap: 10px;
+  gap: 7px;
 }
 
 .cash-buttons > button {
-  min-height: 52px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 5px 6px;
+  font-size: 13px;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .cash-buttons .dock-primary {
-  font-size: 14px;
+  min-height: 56px;
+  border-color: var(--scan-orange);
+  color: #041d30;
+  background: var(--scan-orange);
+  font-size: 15px;
 }
 
-.cash-secondary-actions {
-  gap: 8px;
+.cash-buttons .dock-primary:hover:not(:disabled) {
+  background: #ed7923;
 }
 
-.cash-secondary-actions .dock-link {
-  min-height: 32px;
-  font-size: 11px;
+.cash-buttons .decision-reject:hover:not(:disabled),
+.cash-manual-button:hover {
+  border-color: #00639a;
+  background: var(--scan-blue-soft);
 }
 
-.cash-screen .cash-member-banner-anonymous {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 0.75rem;
+.cash-buttons .dock-primary:disabled {
+  border-color: #c4d1d9;
+  color: #3e5360;
+  background: #e5edf2;
+  opacity: 1;
 }
 
-.cash-screen .cash-member-scan-action {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  padding-inline: 0.6rem;
-  white-space: nowrap;
+.cash-buttons .decision-reject {
+  font-size: 13px;
 }
 
-.cash-screen .cash-member-action svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex: 0 0 auto;
+.cash-buttons .decision-reject:disabled {
+  border-color: #b7c8d2;
+  color: #526875;
+  background: #f1f5f7;
+  opacity: 1;
 }
 
-.cash-screen .cash-member-banner-anonymous .cash-member-actions {
-  justify-self: end;
+.cash-manual-button {
+  min-height: 56px;
+  flex: 1 1 0;
+  border: 1px solid #9dc2da;
+  border-radius: 999px;
+  color: var(--scan-ink);
+  background: #fff;
+  cursor: pointer;
+  font: 650 13px/1.15 "Libre Franklin", Arial, sans-serif;
 }
 
-@media (max-width: 19rem) {
-  .cash-screen .cash-member-banner-anonymous {
-    grid-template-columns: minmax(0, 1fr);
+.cash-screen .camera-slot-band {
+  width: min(calc(100% - 32px), 560px);
+  height: clamp(124px, 18dvh, 160px);
+  min-height: 124px;
+  align-self: center;
+  margin: 8px auto 0;
+}
+
+.cash-dock .decision-reject:focus-visible,
+.cash-add-rare:focus-visible {
+  outline: 3px solid var(--scan-orange);
+  outline-offset: 2px;
+}
+
+@media (max-width: 360px) {
+  .cash-header {
+    padding-inline: 10px;
   }
 
-  .cash-screen .cash-member-banner-anonymous .cash-member-actions {
-    justify-self: start;
+  .cash-header-actions {
+    gap: 4px;
+  }
+
+  .cash-header-action {
+    gap: 4px;
+    padding-inline: 7px;
+  }
+
+  .cash-header-client {
+    font-size: 14px;
+  }
+
+  .cash-dock {
+    padding-inline: 8px;
+  }
+
+  .cash-buttons {
+    gap: 5px;
   }
 }
 

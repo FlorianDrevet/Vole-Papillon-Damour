@@ -810,7 +810,7 @@ describe('ScannerComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.manual-keypad')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[aria-label="Fermer la saisie"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Retour au scan"]')).not.toBeNull();
   });
 
   it('gives labeled scan containers an accessible semantic role and lets the ISBN speak its value', () => {
@@ -839,7 +839,7 @@ describe('ScannerComponent', () => {
     cashFixture.destroy();
   });
 
-  it('keeps the cash actions compact and leaves the list without helper copy', () => {
+  it('keeps the three cash actions grouped in a touch-friendly dock', () => {
     const cashFixture = TestBed.createComponent(ScannerComponent);
     cashFixture.componentInstance.screen = 'cash';
     cashFixture.detectChanges();
@@ -848,8 +848,8 @@ describe('ScannerComponent', () => {
     const buttons = Array.from(dock.querySelectorAll('.cash-buttons > button')) as HTMLButtonElement[];
 
     expect(dock.querySelector('.dock-hint')).toBeNull();
-    expect(buttons).toHaveSize(2);
-    expect(buttons.map(button => getComputedStyle(button).minHeight)).toEqual(['52px', '52px']);
+    expect(buttons).toHaveSize(3);
+    expect(buttons.map(button => getComputedStyle(button).minHeight)).toEqual(['56px', '56px', '56px']);
 
     cashFixture.destroy();
   });
@@ -2321,13 +2321,60 @@ describe('ScannerComponent', () => {
     expect(localComponent.syncError).toContain('dernier livre');
   });
 
+  it('shows the scanned client in the cashier header without exposing the signed-in volunteer', () => {
+    component.openCash();
+    component.accountName = 'Bénévole connecté';
+    passageState.set({kind: 'associated', displayLabel: 'Camille'});
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.querySelector('.cash-header') as HTMLElement;
+
+    expect(header.textContent?.replace(/\u00a0/g, ' ')).toContain('Client : Camille');
+    expect(header.textContent).not.toContain('Bénévole connecté');
+    const scanButton = header.querySelector('[data-testid="cash-member-scan"]') as HTMLButtonElement;
+    const homeButton = header.querySelector('.cash-header-home') as HTMLButtonElement;
+    expect(scanButton).not.toBeNull();
+    expect(homeButton.textContent).toContain('Accueil');
+
+    scanButton.click();
+    expect(passageAssociation.startAssociation).toHaveBeenCalledOnceWith();
+    homeButton.click();
+    expect(component.screen).toBe('home');
+  });
+
+  it('keeps the three cashier actions in the bottom dock and shows only the compact book count', () => {
+    component.openCash();
+    fixture.detectChanges();
+
+    const dockButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('.cash-dock button') as NodeListOf<HTMLButtonElement>,
+      button => button.textContent?.trim(),
+    );
+    const summary = fixture.nativeElement.querySelector('.cash-session-summary') as HTMLElement;
+
+    expect(dockButtons).toEqual(['Annuler dernier', 'Saisir un code', 'Valider']);
+    expect(summary.textContent).toContain('0 livre sorti');
+    expect(summary.textContent).not.toContain('SESSION EN COURS');
+  });
+
+  it('shows a scanned client as pending when the card cannot be resolved offline', () => {
+    component.openCash();
+    passageState.set({kind: 'pending-offline'});
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.querySelector('.cash-header') as HTMLElement;
+
+    expect(header.textContent).toContain('Compte en attente');
+    expect(header.querySelector('.cash-header-feedback')?.textContent).toContain('en attente du réseau');
+  });
+
   it('shows Vente anonyme and validates without an association warning', async () => {
     component.openCash();
     (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = createCashWorkflow();
     component.cashItems = [createCashItem('anonymous', 'Livre vendu')];
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Client : Vente anonyme');
+    expect(fixture.nativeElement.querySelector('.cash-header')?.textContent?.replace(/\u00a0/g, ' ')).toContain('Client : Anonyme');
     expect(fixture.nativeElement.textContent).not.toContain('Association en attente');
 
     await component.validateCash();

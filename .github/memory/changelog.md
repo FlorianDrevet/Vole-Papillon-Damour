@@ -1,9 +1,10 @@
 # Memory Changelog
 
-Entries are grouped by date; this file retains the 60 days through 2026-11-02.
+Entries are grouped by date; this file retains the 60 days through 2026-11-11.
 
 | Date | Change |
 |---|---|
+| 2026-11-11 | Reworked the Scan cashier screen to move buyer-card scanning and Home into the compact header, show the scanned buyer, shorten the camera preview, and make the book list the primary flexible area. The bottom dock now has only Undo, Enter code, Validate, and a compact sold count. Scan tests pass 317/317, production build passes, bootstrap tests pass 6/6; authenticated device/responsive review remains pending. See `.github/memory/04-frontend.md`. |
 | 2026-11-02 | Removed the three requested Loto Halloween 2026 photos (`photo-018.jpg`, `photo-026.jpg`, and `photo-081.jpg`) from the Website album; 95 photos remain. The catalog omits those original numbers without renumbering the others. Website production build passes with pre-existing Angular budget/CommonJS warnings; Graphify AST extraction completed, but its 9,404-node HTML visualization could not rebuild. No production rollout. See `.github/memory/04-frontend.md`. |
 | 2026-11-02 | Added a one-week top-site announcement for the Loto Halloween 2026 photos; its CTA opens that album directly and its dismissal is independent from the next-event banner. Focused Website tests pass 20/20 and the SSR build passes; full suite is 202/203 due a pre-existing event-detail test that expects “Demain” for a Nov 1 event while running on Nov 2. Graphify AST extraction completed but its 9,404-node visualization could not rebuild, even with `--no-viz`. No deployment. See `.github/memory/04-frontend.md`. |
 | 2026-11-02 | Added the Loto Halloween 2026 Website album with 98 JPEGs resized to at most 2,200 px (56.4 MB versus 507.7 MB of originals). The transfer archive and extracted originals remain in local Downloads; targeted Website tests pass 7/7, full suite is 197/198 with an existing date-sensitive event test failure, and the Website production build passes. No deployment. See `.github/memory/04-frontend.md`. |
