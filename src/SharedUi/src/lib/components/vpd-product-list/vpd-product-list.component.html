@@ -1,10 +1,32 @@
 <div class="vpd-container-products">
-  @for (p of products(); track p.id) {
-    <vpd-product-card
-      [product]="p"
-      [editable]="editable()"
-      [showPromotions]="showPromotions()"
-      (editRequested)="productEditRequested.emit($event)"
-      (deleteRequested)="productDeleteRequested.emit($event)"></vpd-product-card>
+  @for (p of products(); track p.id; let i = $index) {
+    <div class="flex min-w-0 flex-col gap-1.5">
+      @if (reorderable()) {
+        <div class="flex justify-end gap-1" role="group" [attr.aria-label]="'Ordre de ' + p.name">
+          <button
+            type="button"
+            (click)="moveProduct(i, -1)"
+            [disabled]="reorderDisabled() || i === 0"
+            [attr.aria-label]="'Monter ' + p.name"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-ink-2 hover:border-blue-2 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40">
+            <span aria-hidden="true">↑</span>
+          </button>
+          <button
+            type="button"
+            (click)="moveProduct(i, 1)"
+            [disabled]="reorderDisabled() || i === products().length - 1"
+            [attr.aria-label]="'Descendre ' + p.name"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-ink-2 hover:border-blue-2 hover:text-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:cursor-not-allowed disabled:opacity-40">
+            <span aria-hidden="true">↓</span>
+          </button>
+        </div>
+      }
+      <vpd-product-card
+        [product]="p"
+        [editable]="editable()"
+        [showPromotions]="showPromotions()"
+        (editRequested)="productEditRequested.emit($event)"
+        (deleteRequested)="productDeleteRequested.emit($event)"></vpd-product-card>
+    </div>
   }
 </div>

@@ -11,6 +11,16 @@ public class ProductRepository: BaseRepository<Product, ProjectDbContext>, IProd
     {
     }
 
+    public async Task UpdateIndicesAsync(IReadOnlyCollection<Product> products, CancellationToken cancellationToken)
+    {
+        foreach (var product in products)
+        {
+            Context.Entry(product).Property(entity => entity.Index).IsModified = true;
+        }
+
+        await Context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<Product> AddPromotionAsync(Product product, Promotion promotion)
     {
         product.AddPromotion(promotion);

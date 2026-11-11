@@ -3,6 +3,7 @@
 ## SQL persistence
 
 - `Infrastructure.DependencyInjection` configures `ProjectDbContext` with SQL Server and `ProjectDatabase`; `IProjectDbContext` exposes it to Application. Persistence interfaces live in Application and EF/repository implementations in Infrastructure.
+- Product ordering is stored in the existing `Products.Index` column. Reordering Book products updates only those tracked index fields in one `SaveChanges` transaction; no schema migration is required.
 - EF configuration owns strong-ID/ISBN conversions, UTC `datetime2` conversion, row versions, filtered unique indexes, and database-specific collation behavior. `Book.Id` maps to persisted `Books.Isbn13`; raw SQL must join on `Isbn13`, not `Id`.
 - Deployment workflows apply EF migrations before rolling out API/Worker revisions. API startup migrations run only in Development; do not assume a code change has updated a deployed schema.
 - Books ledger history is append-only. Corrections, reversals, and reassignment use signed linked movements. Hard delete is limited to unused erroneous catalogue records and removes dependent projections transactionally.

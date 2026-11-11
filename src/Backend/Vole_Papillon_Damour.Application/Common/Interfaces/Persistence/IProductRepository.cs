@@ -7,6 +7,8 @@ namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
 public interface IProductRepository: IRepository<Product>
 {
+    Task UpdateIndicesAsync(IReadOnlyCollection<Product> products, CancellationToken cancellationToken);
+
     //TODO
     //public List<Product> AllProductsOfCategory(ProductCategory category);
 }
