@@ -220,11 +220,11 @@ Si **Graphify** :
 ### Phase 9 - Initialize the code graph
 
 **Si Graphify :**
-1. Verifier que `python -m graphify` est disponible (installer si besoin : `pip install graphifyy`)
+1. Verifier que `python -m graphify --help` fonctionne (installer ou actualiser le CLI et le serveur MCP si besoin : `python -m pip install --upgrade "graphifyy[mcp]"`)
 2. Creer un `.graphifyignore` a la racine excluant `node_modules/`, `bin/`, `obj/`, `.git/`, `dist/`
 3. Executer le build code-only du graphe : `python -c "from pathlib import Path; from graphify.watch import _rebuild_code; import sys; ok = _rebuild_code(Path('.')); sys.exit(0 if ok else 1)"`
 4. Verifier que `graphify-out/graph.json` et `graphify-out/GRAPH_REPORT.md` existent
-5. Documenter la commande de mise a jour dans le skill et la memoire
+5. Synchroniser le skill dans `.agents/skills/graphify/` avec `python -m graphify install --project --platform antigravity-windows` sur Windows, puis documenter la commande de mise a jour dans le skill et la memoire
 
 ---
 

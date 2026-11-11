@@ -28,7 +28,7 @@
     "@angular/router": "^21.2.12",
     "@angular/ssr": "^21.2.10",
     "@azure/monitor-opentelemetry": "^1.20.0",
-    "@azure/msal-browser": "5.20.0",
+    "@azure/msal-browser": "5.29.0",
     "@opentelemetry/instrumentation-undici": "^0.32.0",
     "express": "^5.1.0",
     "qrcode": "^1.5.4",

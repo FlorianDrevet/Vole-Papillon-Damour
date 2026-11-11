@@ -41,6 +41,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 |-------|---------|------|
 | `memory-management` | Memory update rules and routing | `.github/skills/memory-management/SKILL.md` |
 | `graphify-corpus` | Corpus-level architecture and documentation exploration | `.github/skills/graphify-corpus/SKILL.md` |
+| `graphify` | Graphify CLI and Windows skill for repository exploration | `.agents/skills/graphify/SKILL.md` |
 | `tdd-workflow` | Mandatory TDD cycle | `.github/skills/tdd-workflow/SKILL.md` |
 | `audit-workflow` | Audit report format and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | CQRS workflow for backend features | `.github/skills/cqrs-feature/SKILL.md` |
@@ -87,6 +88,10 @@ For every request that changes this repository (code, tests, documentation, conf
 ## graphify
 
 This project has a Graphify knowledge graph at `graphify-out/`.
+
+- Install or update the CLI and stdio MCP dependencies with `python -m pip install --upgrade "graphifyy[mcp]"`.
+- The workspace skill is synced for Windows with `python -m graphify install --project --platform antigravity-windows`; its version is recorded in `.agents/skills/graphify/.graphify_version`.
+- `.vscode/mcp.json` runs `python -m graphify.serve`; use the same Python environment for the `graphifyy[mcp]` install.
 
 Rules:
 
