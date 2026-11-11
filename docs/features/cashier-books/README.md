@@ -12,4 +12,4 @@
 - [x] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
 - [x] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md) (arbitrages A1 à A3 : valeurs par défaut)
 - [x] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
-- [ ] 5. PR ouverte par Codex — à venir
+- [x] 5. PR ouverte — <https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/385> (implémentée directement par Claude, à la demande, au lieu de Codex)
