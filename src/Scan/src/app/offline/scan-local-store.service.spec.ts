@@ -9,6 +9,8 @@ import {
   ScanRareSaleOutboxEntry,
   ScanPassageAssociationEntry,
   ScanSaleOutboxEntry,
+  ScanSaleResponse,
+  ScanSaleVoidResponse,
   ScanVolunteerStatisticsRecord,
   scanDatabaseName,
   scanDatabaseVersion,
@@ -336,6 +338,109 @@ describe('ScanLocalStoreService', () => {
     });
   });
 
+  it('restores the original local stock when a pending cash sale is cancelled', async () => {
+    const entry = {
+      ...createSaleOutboxEntry(),
+    };
+    const book = {...createCatalogBook(), qtyAvailable: 0, salesCount: 5};
+    await service.addSaleOutboxEntries([entry], [book]);
+
+    const result = await service.cancelSaleOutboxEntries([entry.clientGestureId]);
+
+    expect(result.localCancelledCount).toBe(1);
+    expect(await service.getSaleOutboxEntry(entry.clientGestureId)).toBeNull();
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 1, salesCount: 4}),
+    );
+  });
+
+  it('preserves other pending sales when one local sale is cancelled', async () => {
+    const first = {
+      ...createSaleOutboxEntry('sale-1'),
+    };
+    const second = {
+      ...createSaleOutboxEntry('sale-2'),
+    };
+    const book = {...createCatalogBook(), qtyAvailable: 0, salesCount: 2};
+    await service.addSaleOutboxEntries([first, second], [book]);
+
+    await service.cancelSaleOutboxEntries([first.clientGestureId]);
+
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 1, salesCount: 1}),
+    );
+  });
+
+  it('keeps remaining local sales applied when one sale transmission completes', async () => {
+    const first = {
+      ...createSaleOutboxEntry('sale-1'),
+      status: 'Sending' as const,
+    };
+    const second = {
+      ...createSaleOutboxEntry('sale-2'),
+    };
+    const book = {...createCatalogBook(), qtyAvailable: 0, salesCount: 2};
+    await service.addSaleOutboxEntries([first, second], [book]);
+
+    await service.completeSaleTransmission(
+      first.clientGestureId,
+      createSaleResponse({qtyAvailable: 1, salesCount: 1}),
+      '2026-09-03T08:02:00.000Z',
+    );
+
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 0, salesCount: 2}),
+    );
+  });
+
+  it('keeps other pending void corrections applied when a void response arrives', async () => {
+    const first = {
+      ...createSaleOutboxEntry('sale-1'),
+      status: 'VoidPending' as const,
+      saleMovementId: 'movement-1',
+      voidClientGestureId: 'void-1',
+    };
+    const second = {
+      ...createSaleOutboxEntry('sale-2'),
+      status: 'VoidPending' as const,
+      saleMovementId: 'movement-2',
+      voidClientGestureId: 'void-2',
+    };
+    const book = {...createCatalogBook(), qtyAvailable: 2, salesCount: 0};
+    await service.addSaleOutboxEntries([first, second], [book]);
+
+    await service.completeSaleCorrection(
+      first.clientGestureId,
+      createSaleVoidResponse({qtyAvailable: 1, salesCount: 1}),
+      '2026-09-03T08:02:00.000Z',
+    );
+
+    expect(await service.getSaleOutboxEntry(first.clientGestureId)).toBeNull();
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 2, salesCount: 0}),
+    );
+  });
+
+  it('queues a traced correction when a sale is already in flight or on the server', async () => {
+    const entry = {
+      ...createSaleOutboxEntry(),
+      status: 'Sending' as const,
+      saleMovementId: null,
+    };
+    const book = {...createCatalogBook(), qtyAvailable: 0, salesCount: 5};
+    await service.addSaleOutboxEntries([entry], [book]);
+
+    const result = await service.cancelSaleOutboxEntries([entry.clientGestureId]);
+
+    expect(result.correctionQueuedCount).toBe(1);
+    expect(await service.getSaleOutboxEntry(entry.clientGestureId)).toEqual(
+      jasmine.objectContaining({status: 'Cancelled'}),
+    );
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 1, salesCount: 4}),
+    );
+  });
+
   it('stores a rare cash sale without a price and its optimistic availability atomically', async () => {
     const entry = createRareSaleOutboxEntry();
     const rareBook = createRareBook();
@@ -595,6 +700,41 @@ describe('ScanLocalStoreService', () => {
       attemptCount: 0,
       lastAttemptAt: null,
       lastError: null,
+    };
+  }
+
+  function createSaleResponse(overrides: Partial<ScanSaleResponse> = {}): ScanSaleResponse {
+    return {
+      isbn13: '9782070363735',
+      saleMovementId: 'movement-1',
+      quantity: 1,
+      qtyAvailable: 0,
+      salesCount: 1,
+      assoEventsId: null,
+      fairMatchStatus: 'None',
+      hadNoAvailableStock: false,
+      hadUnreleasedAnnouncement: false,
+      isRare: false,
+      clockSuspect: false,
+      alreadyProcessed: false,
+      ...overrides,
+    };
+  }
+
+  function createSaleVoidResponse(
+    overrides: Partial<ScanSaleVoidResponse> = {},
+  ): ScanSaleVoidResponse {
+    return {
+      isbn13: '9782070363735',
+      originalSaleMovementId: 'movement-1',
+      reversalMovementId: 'reversal-1',
+      quantity: 1,
+      qtyAvailable: 0,
+      salesCount: 0,
+      assoEventsId: null,
+      clockSuspect: false,
+      alreadyProcessed: false,
+      ...overrides,
     };
   }
 

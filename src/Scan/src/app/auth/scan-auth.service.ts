@@ -7,7 +7,7 @@ import {
   InteractionRequiredAuthError,
   InteractionStatus,
 } from '@azure/msal-browser';
-import {BehaviorSubject, defer, Observable} from 'rxjs';
+import {BehaviorSubject, defer, Observable, timeout} from 'rxjs';
 import {filter} from 'rxjs/operators';
 
 import {loginRequest} from './msal-config';
@@ -18,6 +18,7 @@ import {loginRequest} from './msal-config';
 // stayed up forever until they manually logged out and back in.
 const DEGRADED_RETRY_DELAY_MS = 15_000;
 const DEGRADED_RETRY_MAX_ATTEMPTS = 5;
+const SILENT_TOKEN_REQUEST_TIMEOUT_MS = 10_000;
 // When the refresh token itself is no longer usable, the volunteer is sent
 // straight to the sign-in page instead of landing on the home screen with a
 // "reconnect" banner. If a previous automatic redirect came back less than
@@ -239,7 +240,7 @@ export class ScanAuthService {
     this.msalService.acquireTokenSilent({
       account,
       scopes: loginRequest.scopes,
-    }).subscribe({
+    }).pipe(timeout({first: SILENT_TOKEN_REQUEST_TIMEOUT_MS})).subscribe({
       next: result => {
         if (check !== this.authorizationCheck) {
           return;
@@ -350,7 +351,7 @@ export class ScanAuthService {
     this.msalService.acquireTokenSilent({
       account,
       scopes: loginRequest.scopes,
-    }).subscribe({
+    }).pipe(timeout({first: SILENT_TOKEN_REQUEST_TIMEOUT_MS})).subscribe({
       next: result => {
         if (check !== this.authorizationCheck) {
           return;

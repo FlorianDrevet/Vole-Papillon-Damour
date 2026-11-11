@@ -75,21 +75,28 @@ export class ScanSyncService {
 
   async syncAll(): Promise<SessionSyncSummary> {
     return await this.enqueue(async () => {
+      const transfer = await this.flushOutboxInternal();
+      if (this.scanAuth?.authState.status === 'unauthenticated') {
+        return {
+          catalog: null,
+          outbox: transfer,
+          closed: false,
+        };
+      }
+
       let catalog: CatalogSyncSummary | null = null;
       try {
         catalog = await this.syncCatalogInternal();
       } catch (error: unknown) {
-        // A catalog outage must not prevent already decided gestures from being sent.
         if (this.handleServerAuthorizationFailure(error)) {
           return {
             catalog: null,
-            outbox: await this.createOutboxSummary(0, true),
+            outbox: transfer,
             closed: false,
           };
         }
       }
 
-      const transfer = await this.flushOutboxInternal();
       const localSession = await this.workflow.getSession();
       const sessionCounts = localSession
         ? await this.workflow.getSessionCounts(localSession.clientSessionId)
@@ -152,7 +159,12 @@ export class ScanSyncService {
     const reattached = await this.workflow.reattachNeedsReattachToCurrentSession();
     const entries = await this.store.listTransmittableOutboxEntries();
     const sales = (await this.store.listSaleOutboxEntries())
-      .filter(entry => (entry.status ?? 'Pending') === 'Pending');
+      .filter(entry => [
+        'Pending',
+        'Sending',
+        'Cancelled',
+        'VoidPending',
+      ].includes(entry.status ?? 'Pending'));
     const rareSales = (await this.store.listRareSaleOutboxEntries())
       .filter(entry => {
         const status = entry.status ?? 'Pending';
@@ -346,6 +358,25 @@ export class ScanSyncService {
 
     if (!authorizationFailed) {
       for (const sale of sales.filter(entry => isRetryDue(entry))) {
+        if ((sale.status ?? 'Pending') === 'VoidPending') {
+          const correction = await this.transmitSaleCorrection(sale);
+          if (correction === 'sent') {
+            sent += 1;
+          } else {
+            stoppedOnError = true;
+            authorizationFailed = correction === 'authorization';
+            if (authorizationFailed) {
+              break;
+            }
+          }
+          continue;
+        }
+
+        const startedAt = new Date().toISOString();
+        if (!await this.store.beginSaleTransmission(sale.clientGestureId, startedAt)) {
+          continue;
+        }
+
         try {
           const response = await firstValueFrom(this.api.registerSale({
             isbn: sale.isbn13,
@@ -354,15 +385,33 @@ export class ScanSyncService {
             clientGestureId: sale.clientGestureId,
             ...(sale.checkoutPassageId ? {checkoutPassageId: sale.checkoutPassageId} : {}),
           }));
-          await this.store.markSaleAttempt(
+          const completion = await this.store.completeSaleTransmission(
             sale.clientGestureId,
+            response,
             new Date().toISOString(),
-            null,
-            null,
           );
-          await this.applyServerProjection(sale.isbn13, false, response);
-          await this.store.deleteSaleOutboxEntry(sale.clientGestureId);
-          sent += 1;
+          if (completion === 'missing') {
+            stoppedOnError = true;
+            continue;
+          }
+
+          if (completion === 'cancelled') {
+            const current = await this.store.getSaleOutboxEntry(sale.clientGestureId);
+            const correction = current
+              ? await this.transmitSaleCorrection(current)
+              : 'sent';
+            if (correction === 'sent') {
+              sent += 1;
+            } else {
+              stoppedOnError = true;
+              authorizationFailed = correction === 'authorization';
+              if (authorizationFailed) {
+                break;
+              }
+            }
+          } else {
+            sent += 1;
+          }
         } catch (error: unknown) {
           stoppedOnError = true;
           const failureKind = classifyFailure(error);
@@ -374,7 +423,7 @@ export class ScanSyncService {
           );
 
           if (failureKind === 'authorization') {
-            this.handleServerAuthorizationFailure(error);
+            authorizationFailed = this.handleServerAuthorizationFailure(error);
             break;
           }
 
@@ -742,6 +791,62 @@ export class ScanSyncService {
     return true;
   }
 
+  private async transmitSaleCorrection(
+    sale: ScanSaleOutboxEntry,
+  ): Promise<'sent' | 'failed' | 'authorization'> {
+    const correctionGestureId = await this.store.ensureSaleVoidClientGestureId(
+      sale.clientGestureId,
+    );
+    if (!correctionGestureId) {
+      return 'sent';
+    }
+
+    try {
+      if (!sale.saleMovementId) {
+        throw new Error('The sale correction is missing its server movement identifier.');
+      }
+
+      const response = await firstValueFrom(this.api.voidSale(
+        sale.saleMovementId,
+        {
+          occurredAt: new Date().toISOString(),
+          clientGestureId: correctionGestureId,
+        },
+      ));
+      await this.store.completeSaleCorrection(
+        sale.clientGestureId,
+        response,
+        new Date().toISOString(),
+      );
+      return 'sent';
+    } catch (error: unknown) {
+      const failureKind = classifyFailure(error);
+      const attempted = await this.store.markSaleAttempt(
+        sale.clientGestureId,
+        new Date().toISOString(),
+        describeError(error),
+        failureKind,
+      );
+
+      if (failureKind === 'authorization') {
+        this.handleServerAuthorizationFailure(error);
+        return 'authorization';
+      }
+
+      if (
+        failureKind === 'permanent' &&
+        attempted.attemptCount >= MAX_PERMANENT_ATTEMPTS
+      ) {
+        await this.store.quarantineSaleOutboxEntry(
+          sale.clientGestureId,
+          describeError(error),
+        );
+      }
+
+      return 'failed';
+    }
+  }
+
   private async applyServerProjection(
     isbn13: string,
     isRare: boolean,
@@ -918,16 +1023,25 @@ function toCatalogBook(
     entry.catalogApplied &&
     entry.isbn13 === book.isbn13).length;
   const localSaleQuantity = optimisticSales
-    .filter(entry => entry.isbn13 === book.isbn13)
+    .filter(entry => entry.isbn13 === book.isbn13 && [
+      undefined,
+      'Pending',
+      'Sending',
+    ].includes(entry.status))
+    .reduce((total, entry) => total + entry.quantity, 0);
+  const localVoidQuantity = optimisticSales
+    .filter(entry => entry.isbn13 === book.isbn13 && (
+      entry.status === 'Cancelled' || entry.status === 'VoidPending'
+    ))
     .reduce((total, entry) => total + entry.quantity, 0);
 
   return {
     ...catalogBook,
     qtyAvailable: Math.max(0, catalogBook.qtyAvailable + (
-      sessionMode === 'AvailableNow' ? localKeptCount : 0) - localSaleQuantity),
+      sessionMode === 'AvailableNow' ? localKeptCount : 0) - localSaleQuantity + localVoidQuantity),
     qtyAnnounced: catalogBook.qtyAnnounced + (
       sessionMode === 'NextFair' ? localKeptCount : 0),
-    salesCount: catalogBook.salesCount + localSaleQuantity,
+    salesCount: Math.max(0, catalogBook.salesCount + localSaleQuantity - localVoidQuantity),
   };
 }
 

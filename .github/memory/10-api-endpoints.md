@@ -25,7 +25,7 @@
 
 - Member routes under `/catalog/me/*` derive identity from token claims, never a client-supplied member ID. They include selection, watchlist, alert preference, member card, purchase passage/history, and not-found reports. Legacy `PATCH /catalog/me/selection/{id}` returns 410; report creation accepts only an optional comment, no shelf location.
 - External bibliographic reference search is anonymous at `GET /catalog/reference/search`; edition-only and work-scope follow requests are typed and authenticated.
-- Scan uses `GET /scan/catalog/delta`, session open/scan/close routes, `POST /scan/sessions/{id}/scans/{gestureId}/remove`, `POST /scan/sales`, `GET /scan/manual-requests/candidate`, and `GET /scan/me/statistics`. The removal route requires `Tri`, scopes the gesture to the volunteer's session, and appends ledger correction history without deleting the book fiche. Client gesture/session IDs make replay idempotent.
+- Scan uses `GET /scan/catalog/delta`, session open/scan/close routes, `POST /scan/sessions/{id}/scans/{gestureId}/remove`, `POST /scan/sales`, `POST /scan/sales/{saleMovementId}/void`, `GET /scan/manual-requests/candidate`, and `GET /scan/me/statistics`. Scan removal requires `Tri`; ordinary sale creation and voiding require `Caisse`. Both correction routes append ledger movements and use client gesture IDs for idempotent replay.
 - `GET /scan/me/statistics` derives the volunteer from `oid`; durations, reader links, and revenue-share values are estimates and must be presented as such.
 
 ## Books and account administration

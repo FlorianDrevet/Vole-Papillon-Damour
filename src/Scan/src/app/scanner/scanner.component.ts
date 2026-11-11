@@ -1874,11 +1874,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     let expiredCount = 0;
     try {
       if (this.scanWorkflow) {
-        for (const saleId of saleIds) {
-          if (await this.scanWorkflow.deleteSaleOutboxEntry(saleId)) {
-            cancelledCount += 1;
-          }
-        }
+        const saleCancellation = await this.scanWorkflow.cancelSaleOutboxEntries(saleIds);
+        cancelledCount += saleCancellation.localCancelledCount;
+        remoteCancelledCount += saleCancellation.correctionQueuedCount;
+        expiredCount += saleCancellation.expiredCount;
       }
       if (this.scanRareCash) {
         for (const rareSale of rareSales) {
@@ -1901,6 +1900,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           ? 'La fenêtre de correction de cette vente est passée.'
           : 'Cette vente a déjà été transmise et ne peut plus être annulée ici.';
       await this.refreshLocalState();
+      if (remoteCancelledCount > 0) {
+        this.trySync();
+      }
     } catch (error: unknown) {
       this.cashMessage = this.describeStorageError(
         error,
