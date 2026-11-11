@@ -83,6 +83,28 @@ public sealed class ScanSession : AggregateRoot<ScanSessionId>
         }
     }
 
+    public bool RemoveScan(bool kept, DateTime correctedAt)
+    {
+        var utcCorrectedAt = DomainTime.RequireUtc(correctedAt, nameof(correctedAt));
+        if (ScannedCount <= 0 || (kept ? KeptCount <= 0 : RejectedCount <= 0))
+        {
+            return false;
+        }
+
+        ScannedCount--;
+        if (kept)
+        {
+            KeptCount--;
+        }
+        else
+        {
+            RejectedCount--;
+        }
+
+        LastSyncAt = utcCorrectedAt;
+        return true;
+    }
+
     public bool Close(ScanCloseReason closeReason, DateTime endedAt)
     {
         if (Status != ScanSessionStatus.InProgress)

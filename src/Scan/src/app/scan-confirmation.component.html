@@ -11,6 +11,31 @@
     <div class="scan-confirmation-content">
       <h2 id="scan-confirmation-title">{{ request.title }}</h2>
       <p id="scan-confirmation-message">{{ request.message }}</p>
+      <article *ngIf="request.book as book" class="scan-confirmation-book">
+        <div class="scan-confirmation-cover">
+          <span aria-hidden="true">Livre</span>
+          <picture *ngIf="book.imageUrl">
+            <source [srcset]="book.imageUrl">
+            <img src="assets/book-cover-fallback.svg" [alt]="'Couverture de ' + book.title" (error)="onCoverError($event)">
+          </picture>
+        </div>
+        <div class="scan-confirmation-book-copy">
+          <strong>{{ book.title }}</strong>
+          <span>{{ book.authors || 'Auteur non renseigné' }}</span>
+          <span>ISBN {{ book.isbn13 }}</span>
+          <span *ngIf="book.publisher || book.publicationYear">
+            {{ book.publisher || 'Éditeur non renseigné' }} · {{ book.publicationYear ?? 'Année inconnue' }}
+          </span>
+        </div>
+        <dl class="scan-confirmation-facts">
+          <div><dt>Exemplaires scannés dans la session</dt><dd>{{ book.scannedCount }}</dd></div>
+          <div><dt>Disponibles</dt><dd>{{ book.quantityAvailable }}</dd></div>
+          <div><dt>Annoncés</dt><dd>{{ book.quantityAnnounced }}</dd></div>
+          <div><dt>Déjà vendus</dt><dd>{{ book.salesCount }}</dd></div>
+          <div><dt>Décision du scan retiré</dt><dd>{{ book.kept ? 'Conservé' : 'Écarté' }}</dd></div>
+          <div><dt>Date du scan retiré</dt><dd>{{ book.scannedAt }}</dd></div>
+        </dl>
+      </article>
     </div>
     <div class="scan-confirmation-actions">
       <button type="button" class="scan-confirmation-cancel" (click)="confirmation.resolve(false)">

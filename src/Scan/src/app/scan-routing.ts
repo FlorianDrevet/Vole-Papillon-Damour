@@ -67,6 +67,7 @@ export const scanRoutes: Routes = [
       {path: 'accueil', component: ScanPageComponent, data: {screen: 'home'}},
       {path: 'reprise', component: ScanPageComponent, data: {screen: 'reprise'}},
       {path: 'tri/mode', component: ScanPageComponent, canActivate: [triGuard], data: {screen: 'session-mode'}},
+      {path: 'tri/livres', component: ScanPageComponent, canActivate: [triGuard], data: {screen: 'session-books'}},
       {path: 'tri', component: ScanPageComponent, canActivate: [triGuard], data: {screen: 'tri'}},
       {path: 'tri/fin', component: ScanPageComponent, canActivate: [triGuard, scanSessionEndGuard], data: {screen: 'session-end'}},
       {path: 'caisse', component: ScanPageComponent, canActivate: [cashGuard], data: {screen: 'cash'}},

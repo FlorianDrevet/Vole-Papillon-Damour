@@ -448,7 +448,7 @@ export class ScanLocalStoreService {
     // Undecided entries intentionally stay attached to the previous session so
     // ending a session never turns an absent choice into a published gesture.
     const decidedEntries = entries.filter(entry =>
-      entry.clientSessionId === previousClientSessionId && isBlockingScanStatus(entry.status));
+      entry.clientSessionId === previousClientSessionId && isBlockingScanEntry(entry));
     const closeRequest = closeRequests.find(request =>
       request.clientSessionId === previousClientSessionId);
 
@@ -563,6 +563,220 @@ export class ScanLocalStoreService {
       left.clientGestureId.localeCompare(right.clientGestureId));
   }
 
+  async markOutboxSynced(
+    clientGestureId: string,
+    remoteScanSessionId: string,
+  ): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      status: 'Synced',
+      remoteScanSessionId,
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+      lastFailureKind: null,
+      setAsideReason: null,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  async requestOutboxRemoval(clientGestureId: string): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+    if (entry.status === 'Removed' || entry.status === 'CancelledLocal' || entry.removalRequested) {
+      return entry;
+    }
+    if (entry.kept === null) {
+      throw new Error('Une décision est nécessaire avant de retirer ce scan de la session.');
+    }
+
+    const session = await this.getSession();
+    if (!session || session.clientSessionId !== entry.clientSessionId || session.closeRequested) {
+      throw new Error('Seuls les scans de la session en cours peuvent être retirés.');
+    }
+
+    const currentCounts = await this.getSessionCounts(session.clientSessionId);
+    const remainingMissedEntries = entry.manualRequestOutcome === 'Missed'
+      ? (await this.listOutboxEntries()).some(candidate =>
+        candidate.clientGestureId !== entry.clientGestureId &&
+        candidate.clientSessionId === entry.clientSessionId &&
+        candidate.isbn13 === entry.isbn13 &&
+        candidate.manualRequestOutcome === 'Missed' &&
+        candidate.status !== 'CancelledLocal' &&
+        candidate.status !== 'Removed' &&
+        !candidate.removalRequested)
+      : true;
+    const nextCounts: ScanSessionCounts = {
+      ...currentCounts,
+      scannedCount: Math.max(0, currentCounts.scannedCount - 1),
+      keptCount: Math.max(0, currentCounts.keptCount - (entry.kept ? 1 : 0)),
+      rejectedCount: Math.max(0, currentCounts.rejectedCount - (entry.kept ? 0 : 1)),
+      heldForManualRequestCount: Math.max(
+        0,
+        currentCounts.heldForManualRequestCount - (entry.manualRequestOutcome === 'Held' ? 1 : 0),
+      ),
+      manualRequestMissedIsbns: entry.manualRequestOutcome === 'Missed' && !remainingMissedEntries
+        ? currentCounts.manualRequestMissedIsbns.filter(isbn13 => isbn13 !== entry.isbn13)
+        : currentCounts.manualRequestMissedIsbns,
+    };
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      removalRequested: true,
+      removalError: null,
+    };
+
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.catalog, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        const currentRequest = stores[scanStoreNames.outbox].get(clientGestureId);
+        currentRequest.onsuccess = () => {
+          const current = currentRequest.result as ScanOutboxEntry | undefined;
+          if (!current || current.removalRequested || current.status === 'Removed') {
+            return;
+          }
+
+          stores[scanStoreNames.outbox].put(updated);
+          const sessionRequest = stores[scanStoreNames.session].get('active-session');
+          sessionRequest.onsuccess = () => {
+            const rawSession = sessionRequest.result as RawScanSessionRecord | undefined;
+            if (rawSession && normalizeSession(rawSession).clientSessionId === entry.clientSessionId) {
+              stores[scanStoreNames.session].put({...rawSession, counts: nextCounts});
+            }
+          };
+
+          if (entry.catalogApplied && entry.kept && entry.manualRequestOutcome !== 'Held') {
+            const bookRequest = stores[scanStoreNames.catalog].get(entry.isbn13);
+            bookRequest.onsuccess = () => {
+              const book = bookRequest.result as ScanCatalogBook | undefined;
+              if (!book) {
+                return;
+              }
+
+              stores[scanStoreNames.catalog].put({
+                ...book,
+                qtyAvailable: Math.max(0, book.qtyAvailable - (session.mode === 'AvailableNow' ? 1 : 0)),
+                qtyAnnounced: Math.max(0, book.qtyAnnounced - (session.mode === 'NextFair' ? 1 : 0)),
+                updatedAt: new Date().toISOString(),
+              });
+            };
+          }
+        };
+      },
+    );
+
+    return updated;
+  }
+
+  async completeOutboxRemoval(clientGestureId: string): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      status: 'Removed',
+      removalRequested: false,
+      removalError: null,
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+      lastFailureKind: null,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  async rejectOutboxRemoval(
+    clientGestureId: string,
+    errorMessage: string,
+  ): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+    if (!entry.removalRequested) {
+      return entry;
+    }
+
+    const session = await this.getSession();
+    const currentCounts = session?.clientSessionId === entry.clientSessionId
+      ? await this.getSessionCounts(session.clientSessionId)
+      : null;
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      removalRequested: false,
+      removalError: errorMessage,
+      lastError: errorMessage,
+      lastFailureKind: 'permanent',
+    };
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.catalog, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        stores[scanStoreNames.outbox].put(updated);
+        const sessionRequest = stores[scanStoreNames.session].get('active-session');
+        sessionRequest.onsuccess = () => {
+          const rawSession = sessionRequest.result as RawScanSessionRecord | undefined;
+          if (rawSession && currentCounts &&
+              normalizeSession(rawSession).clientSessionId === entry.clientSessionId) {
+            stores[scanStoreNames.session].put({
+              ...rawSession,
+              counts: {
+                ...currentCounts,
+                scannedCount: currentCounts.scannedCount + 1,
+                keptCount: currentCounts.keptCount + (entry.kept ? 1 : 0),
+                rejectedCount: currentCounts.rejectedCount + (entry.kept ? 0 : 1),
+                heldForManualRequestCount: currentCounts.heldForManualRequestCount +
+                  (entry.manualRequestOutcome === 'Held' ? 1 : 0),
+                manualRequestMissedIsbns: entry.manualRequestOutcome === 'Missed'
+                  ? [...new Set([...currentCounts.manualRequestMissedIsbns, entry.isbn13])]
+                  : currentCounts.manualRequestMissedIsbns,
+              },
+            });
+          }
+        };
+
+        if (entry.catalogApplied && entry.kept && entry.manualRequestOutcome !== 'Held' && session) {
+          const bookRequest = stores[scanStoreNames.catalog].get(entry.isbn13);
+          bookRequest.onsuccess = () => {
+            const book = bookRequest.result as ScanCatalogBook | undefined;
+            if (!book) {
+              return;
+            }
+
+            stores[scanStoreNames.catalog].put({
+              ...book,
+              qtyAvailable: book.qtyAvailable + (session.mode === 'AvailableNow' ? 1 : 0),
+              qtyAnnounced: book.qtyAnnounced + (session.mode === 'NextFair' ? 1 : 0),
+              updatedAt: new Date().toISOString(),
+            });
+          };
+        }
+      },
+    );
+    return updated;
+  }
+
+  async deleteSessionScanHistory(clientSessionId: string): Promise<void> {
+    const entries = await this.listOutboxEntries();
+    const history = entries.filter(entry =>
+      entry.clientSessionId === clientSessionId &&
+      (entry.status === 'Synced' || entry.status === 'Removed' || entry.status === 'CancelledLocal'));
+    for (const entry of history) {
+      await this.deleteOutboxEntry(entry.clientGestureId);
+    }
+  }
+
   async listSaleOutboxEntries(): Promise<ScanSaleOutboxEntry[]> {
     const entries = await this.runRequest<ScanSaleOutboxEntry[]>(
       scanStoreNames.sales,
@@ -640,7 +854,9 @@ export class ScanLocalStoreService {
 
   async listTransmittableOutboxEntries(): Promise<ScanOutboxEntry[]> {
     const entries = await this.listOutboxEntries();
-    return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
+    return entries.filter(entry =>
+      entry.status === 'Kept' || entry.status === 'Rejected' ||
+      (entry.status === 'Synced' && entry.removalRequested === true));
   }
 
   async listSetAsideOutboxEntries(): Promise<ScanOutboxEntry[]> {
@@ -668,7 +884,8 @@ export class ScanLocalStoreService {
       pendingTransmissionCount:
         entries.filter(entry =>
           entry.clientSessionId === clientSessionId &&
-          (entry.status === 'Kept' || entry.status === 'Rejected')).length +
+          (entry.status === 'Kept' || entry.status === 'Rejected' ||
+            (entry.status === 'Synced' && entry.removalRequested === true))).length +
         sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
         rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
         passageAssociations.filter(entry => entry.status === 'Pending').length,
@@ -684,12 +901,18 @@ export class ScanLocalStoreService {
     const entries = await this.listOutboxEntries();
     const sessionEntries = entries.filter(entry => entry.clientSessionId === clientSessionId);
     return {
-      scannedCount: sessionEntries.filter(entry => entry.status !== 'CancelledLocal').length,
-      keptCount: sessionEntries.filter(entry => entry.status === 'Kept').length,
-      rejectedCount: sessionEntries.filter(entry => entry.status === 'Rejected').length,
-      heldForManualRequestCount: sessionEntries.filter(entry => entry.manualRequestOutcome === 'Held').length,
+      scannedCount: sessionEntries.filter(entry =>
+        entry.status !== 'CancelledLocal' && entry.status !== 'Removed' && !entry.removalRequested).length,
+      keptCount: sessionEntries.filter(entry =>
+        (entry.status === 'Kept' || entry.status === 'Synced') && entry.kept === true &&
+        !entry.removalRequested).length,
+      rejectedCount: sessionEntries.filter(entry =>
+        (entry.status === 'Rejected' || entry.status === 'Synced') && entry.kept === false &&
+        !entry.removalRequested).length,
+      heldForManualRequestCount: sessionEntries.filter(entry =>
+        entry.manualRequestOutcome === 'Held' && !entry.removalRequested).length,
       manualRequestMissedIsbns: [...new Set(sessionEntries
-        .filter(entry => entry.manualRequestOutcome === 'Missed')
+        .filter(entry => entry.manualRequestOutcome === 'Missed' && !entry.removalRequested)
         .map(entry => entry.isbn13))],
     };
   }
@@ -725,6 +948,13 @@ export class ScanLocalStoreService {
               return;
             }
 
+            // A removal may have been requested while this scan was syncing.
+            // Keep the outcome for later restoration if the server rejects the
+            // removal, but do not add it back to the session counters now.
+            if (entry.removalRequested) {
+              return;
+            }
+
             const currentCounts = normalizeSessionCounts(normalizeSession(rawSession).counts);
             const counts: ScanSessionCounts = outcome === 'Held'
               ? {
@@ -752,7 +982,7 @@ export class ScanLocalStoreService {
       this.listRareSaleOutboxEntries(),
       this.listPassageAssociations(),
     ]);
-    return entries.filter(entry => isBlockingScanStatus(entry.status)).length +
+    return entries.filter(isBlockingScanEntry).length +
       sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
       rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
       passageAssociations.filter(entry => entry.status === 'Pending').length;
@@ -764,7 +994,7 @@ export class ScanLocalStoreService {
       this.listRareSaleOutboxEntries(),
     ]);
     return entries.filter(entry =>
-      entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status)).length +
+      entry.clientSessionId === clientSessionId && isBlockingScanEntry(entry)).length +
       rareSales.filter(entry =>
         entry.clientSessionId === clientSessionId &&
         (entry.status ?? 'Pending') !== 'Quarantined').length;
@@ -868,7 +1098,7 @@ export class ScanLocalStoreService {
   ): Promise<number> {
     const entries = (await this.listOutboxEntries())
       .filter(entry =>
-        entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status));
+        entry.clientSessionId === clientSessionId && isBlockingScanEntry(entry));
     if (entries.length === 0) {
       return 0;
     }
@@ -1620,8 +1850,9 @@ function sessionCloseRequestKey(clientSessionId: string): string {
   return `close-request:${clientSessionId}`;
 }
 
-function isBlockingScanStatus(status: ScanOutboxEntry['status']): boolean {
-  return status === 'Kept' || status === 'Rejected';
+function isBlockingScanEntry(entry: ScanOutboxEntry): boolean {
+  return entry.status === 'Kept' || entry.status === 'Rejected' ||
+    (entry.status === 'Synced' && entry.removalRequested === true);
 }
 
 interface RawScanSessionRecord {

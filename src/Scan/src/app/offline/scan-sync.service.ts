@@ -219,6 +219,23 @@ export class ScanSyncService {
       }
 
       for (const entry of readyEntries) {
+        if (entry.status === 'Synced') {
+          const outcome = await this.removeSyncedSessionScan(
+            entry,
+            entry.remoteScanSessionId ?? remoteSession.scanSessionId,
+          );
+          if (outcome === 'removed') {
+            sent += 1;
+          } else {
+            stoppedOnError = true;
+          }
+          if (outcome === 'authorization') {
+            authorizationFailed = true;
+            break;
+          }
+          continue;
+        }
+
         let response: ScanBookResponse | null = null;
         let transmissionError: unknown = null;
         for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -271,9 +288,33 @@ export class ScanSyncService {
               manualRequestOutcome,
             );
           }
-          await this.applyServerProjection(entry.isbn13, entry.isRare, response);
-          await this.store.deleteOutboxEntry(entry.clientGestureId);
+          const latestEntry = await this.store.getOutboxEntry(entry.clientGestureId);
+          await this.applyServerProjection(
+            entry.isbn13,
+            entry.isRare,
+            response,
+            latestEntry?.removalRequested ? session.mode : null,
+          );
+          const syncedEntry = await this.store.markOutboxSynced(
+            entry.clientGestureId,
+            response.scanSessionId,
+          );
           sent += 1;
+          if (syncedEntry.removalRequested) {
+            const outcome = await this.removeSyncedSessionScan(
+              syncedEntry,
+              response.scanSessionId,
+            );
+            if (outcome === 'removed') {
+              sent += 1;
+            } else {
+              stoppedOnError = true;
+            }
+            if (outcome === 'authorization') {
+              authorizationFailed = true;
+              break;
+            }
+          }
         } else {
           stoppedOnError = true;
           const failureKind = classifyFailure(transmissionError);
@@ -532,7 +573,10 @@ export class ScanSyncService {
         if (activeSession?.clientSessionId === session.clientSessionId) {
           await this.workflow.mergeRemoteSession(closedSession);
           await this.workflow.clearSession();
+          await this.workflow.deleteSessionScanHistory(session.clientSessionId);
           activeSessionClosed = true;
+        } else {
+          await this.workflow.deleteSessionScanHistory(session.clientSessionId);
         }
       } catch (error: unknown) {
         if (isClosedScanSessionError(error)) {
@@ -600,7 +644,42 @@ export class ScanSyncService {
     }
 
     await this.workflow.clearSession();
+    await this.workflow.deleteSessionScanHistory(session.clientSessionId);
     return true;
+  }
+
+  private async removeSyncedSessionScan(
+    entry: ScanOutboxEntry,
+    fallbackScanSessionId: string,
+  ): Promise<'removed' | 'failed' | 'authorization'> {
+    try {
+      const response = await firstValueFrom(this.api.removeScan(
+        entry.remoteScanSessionId ?? fallbackScanSessionId,
+        entry.clientGestureId,
+      ));
+      await this.applyServerProjection(entry.isbn13, entry.isRare, response);
+      await this.store.completeOutboxRemoval(entry.clientGestureId);
+      return 'removed';
+    } catch (error: unknown) {
+      const failureKind = classifyFailure(error);
+      if (failureKind === 'permanent') {
+        await this.workflow.rejectSessionScanRemoval(
+          entry.clientGestureId,
+          describeError(error),
+        );
+      } else {
+        await this.store.markOutboxAttempt(
+          entry.clientGestureId,
+          new Date().toISOString(),
+          describeError(error),
+          failureKind,
+        );
+      }
+
+      return failureKind === 'authorization' && this.handleServerAuthorizationFailure(error)
+        ? 'authorization'
+        : 'failed';
+    }
   }
 
   private addSessionDescriptor(
@@ -671,7 +750,9 @@ export class ScanSyncService {
       qtyAvailable: number;
       qtyAnnounced?: number;
       salesCount?: number;
+      heldForManualRequest?: boolean;
     },
+    pendingRemovalMode: ScanSessionSnapshot['mode'] | null = null,
   ): Promise<void> {
     const current = await this.store.getCatalogBook(response.isbn13)
       ?? await this.store.getCatalogBook(isbn13);
@@ -683,9 +764,12 @@ export class ScanSyncService {
       workKey: current?.workKey ?? null,
       publisher: current?.publisher ?? null,
       publicationYear: current?.publicationYear ?? null,
+      coverUrl: current?.coverUrl ?? null,
       otherIsbns: current?.otherIsbns,
-      qtyAvailable: response.qtyAvailable,
-      qtyAnnounced: response.qtyAnnounced ?? current?.qtyAnnounced ?? 0,
+      qtyAvailable: Math.max(0, response.qtyAvailable - (
+        pendingRemovalMode === 'AvailableNow' && !response.heldForManualRequest ? 1 : 0)),
+      qtyAnnounced: Math.max(0, (response.qtyAnnounced ?? current?.qtyAnnounced ?? 0) - (
+        pendingRemovalMode === 'NextFair' && !response.heldForManualRequest ? 1 : 0)),
       salesCount: response.salesCount ?? current?.salesCount ?? 0,
       isWanted: current?.isWanted ?? false,
       isManuallyRequested: current?.isManuallyRequested ?? false,
@@ -830,6 +914,7 @@ function toCatalogBook(
   const {isHidden: _isHidden, ...catalogBook} = book;
   const localKeptCount = optimisticEntries.filter(entry =>
     entry.status === 'Kept' &&
+    !entry.removalRequested &&
     entry.catalogApplied &&
     entry.isbn13 === book.isbn13).length;
   const localSaleQuantity = optimisticSales

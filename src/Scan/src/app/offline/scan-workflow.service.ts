@@ -12,6 +12,7 @@ import {
   ScanOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSessionCounts,
+  ScanSessionHistoryItem,
   LocalScanCloseReason,
   ScanSessionSnapshot,
   ScanSessionClosePendingError,
@@ -52,6 +53,46 @@ export class ScanWorkflowService {
 
   async getSessionCounts(clientSessionId: string): Promise<ScanSessionCounts> {
     return await this.store.getSessionCounts(clientSessionId);
+  }
+
+  async getSessionScanHistory(clientSessionId: string): Promise<ScanSessionHistoryItem[]> {
+    return await this.enqueue(async () => {
+      const entries = (await this.store.listOutboxEntries()).filter(entry =>
+        entry.clientSessionId === clientSessionId &&
+        (entry.status === 'Kept' || entry.status === 'Rejected' || entry.status === 'Synced') &&
+        !entry.removalRequested);
+
+      return await Promise.all(entries.map(async entry => ({
+        entry,
+        book: await this.store.getCatalogBook(entry.isbn13),
+      })));
+    });
+  }
+
+  async requestSessionScanRemoval(clientGestureId: string): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.requestOutboxRemoval(clientGestureId));
+  }
+
+  async markSessionScanSynced(
+    clientGestureId: string,
+    remoteScanSessionId: string,
+  ): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.markOutboxSynced(clientGestureId, remoteScanSessionId));
+  }
+
+  async completeSessionScanRemoval(clientGestureId: string): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.completeOutboxRemoval(clientGestureId));
+  }
+
+  async rejectSessionScanRemoval(
+    clientGestureId: string,
+    errorMessage: string,
+  ): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.rejectOutboxRemoval(clientGestureId, errorMessage));
+  }
+
+  async deleteSessionScanHistory(clientSessionId: string): Promise<void> {
+    return await this.enqueue(() => this.store.deleteSessionScanHistory(clientSessionId));
   }
 
   async getSetAsideCounts(): Promise<{
@@ -528,6 +569,7 @@ export class ScanWorkflowService {
         workKey: metadata.workKey ?? existing?.workKey ?? null,
         publisher: metadata.publisher ?? existing?.publisher ?? null,
         publicationYear: metadata.publicationYear ?? existing?.publicationYear ?? null,
+        coverUrl: metadata.coverUrl ?? existing?.coverUrl ?? null,
         otherIsbns: existing?.otherIsbns,
         qtyAvailable: existing?.qtyAvailable ?? 0,
         qtyAnnounced: existing?.qtyAnnounced ?? 0,

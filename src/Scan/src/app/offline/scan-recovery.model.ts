@@ -9,6 +9,9 @@ export function recoveryActionsFor(status: ScanOutboxStatus): readonly ScanRecov
     case 'Kept':
     case 'Rejected':
       return ['transmit'];
+    case 'Synced':
+    case 'Removed':
+      return [];
     case 'CancelledLocal':
       return ['delete'];
     case 'NeedsDecision':

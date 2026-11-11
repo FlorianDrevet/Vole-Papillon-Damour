@@ -10,4 +10,11 @@ import {ScanConfirmationService} from './scan-confirmation.service';
 })
 export class ScanConfirmationComponent {
   constructor(readonly confirmation: ScanConfirmationService) {}
+
+  onCoverError(event: Event): void {
+    const image = event.currentTarget as HTMLImageElement | null;
+    if (image) {
+      image.hidden = true;
+    }
+  }
 }

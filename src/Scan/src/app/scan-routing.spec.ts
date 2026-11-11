@@ -12,6 +12,7 @@ describe('scan routing', () => {
       'reprise',
       'tri/mode',
       'tri',
+      'tri/livres',
       'tri/fin',
       'caisse',
       'consulter',
@@ -28,6 +29,7 @@ describe('scan routing', () => {
 
     expect(children.find(route => route.path === 'tri')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'tri/mode')?.canActivate?.length).toBe(1);
+    expect(children.find(route => route.path === 'tri/livres')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'caisse')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'tri/fin')?.canActivate?.length).toBe(2);
     expect(children.find(route => route.path === 'livres-rares')?.canActivate?.length).toBe(1);

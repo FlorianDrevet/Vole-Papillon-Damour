@@ -5,6 +5,7 @@ import {Observable, map, timeout} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {
   ScanBookResponse,
+  ScanBookRemovalResponse,
   ScanCatalogDeltaResponse,
   ScanSaleResponse,
   ScanSessionResponse,
@@ -159,6 +160,16 @@ export class ScanApiService {
     return this.http.post<ScanBookResponse>(
       `${this.baseUrl}/scan/sessions/${encodeURIComponent(sessionId)}/scans`,
       request,
+    );
+  }
+
+  removeScan(
+    sessionId: string,
+    clientGestureId: string,
+  ): Observable<ScanBookRemovalResponse> {
+    return this.http.post<ScanBookRemovalResponse>(
+      `${this.baseUrl}/scan/sessions/${encodeURIComponent(sessionId)}/scans/${encodeURIComponent(clientGestureId)}/remove`,
+      null,
     );
   }
 
