@@ -8,6 +8,11 @@
 - Cloudflare Free is authoritative DNS. The apex, `www`, `backoffice`, `livres`, and `scan` website records point to France Central but remain DNS-only. Mail/auth records remain DNS-only. The Origin CA certificate/PFX has not been transferred to Azure; keep proxying off until certificate import and infra deployment are explicitly completed.
 - Detailed sequence and resource map: `docs/infra/migrations/migration-west-europe-france-central.md`.
 
+## Toolchain maintenance
+
+- Aspire CLI, AppHost SDK, and hosting integrations are kept together at 13.6.5; MAUI targets .NET 10 and its controls package is pinned centrally.
+- The repository uses central NuGet versions for backend and MAUI dependencies; Angular app lockfiles are maintained independently for BackOffice, Website, Catalog, and Scan.
+
 ## Runtime surfaces
 
 - API: `src/Backend/Vole_Papillon_Damour.Api/`; local orchestration: `Vole_Papillon_Damour.AppHost/`; background jobs: isolated .NET Worker. Angular delivery surfaces are BackOffice, Website, Catalog, and Scan; `MauiCashApp` is Android-only.

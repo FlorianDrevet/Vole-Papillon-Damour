@@ -1028,7 +1028,7 @@ git pull
 |---|---|---|
 | SDK .NET | `10.0.203` | Oui |
 | Node | `24.15.0` | Oui |
-| CLI Aspire | `13.5.3` | Oui |
+| CLI Aspire | `13.6.5` | Oui |
 | Azure CLI, connecté au bon abonnement | — | — |
 | PowerShell 7 + modules Microsoft.Graph | `Authentication`, `Applications`, `Identity.SignIns`, `Users` pour `infra/entra/` | Oui — PowerShell `7.6.5`, modules Graph `2.39.0` installés localement |
 | Docker | pour les images | — |
