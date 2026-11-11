@@ -11,6 +11,19 @@ import {
   ZxingCameraScannerEngine,
 } from './camera-scanner.service';
 
+function attachFakeCameraTrack(video: HTMLVideoElement, track: EventTarget): void {
+  let source: MediaStream | null = {
+    getVideoTracks: () => [track as unknown as MediaStreamTrack],
+  } as unknown as MediaStream;
+  Object.defineProperty(video, 'srcObject', {
+    configurable: true,
+    get: () => source,
+    set: (value: MediaStream | null) => {
+      source = value;
+    },
+  });
+}
+
 describe('CameraScannerService', () => {
   let engine: jasmine.SpyObj<CameraScannerEngine>;
   let createEngine: jasmine.Spy<CameraScannerEngineFactory>;
@@ -57,7 +70,11 @@ describe('CameraScannerService', () => {
     const handle = await service.start(container, onDetected);
 
     expect(createEngine as jasmine.Spy).toHaveBeenCalledOnceWith();
-    expect(engine.start as jasmine.Spy).toHaveBeenCalledOnceWith(container, jasmine.any(Function));
+    expect(engine.start as jasmine.Spy).toHaveBeenCalledOnceWith(
+      container,
+      jasmine.any(Function),
+      jasmine.any(Function),
+    );
 
     await handle.stop();
 
@@ -116,6 +133,24 @@ describe('CameraScannerService', () => {
 
     await expectAsync(service.start(container, jasmine.createSpy('onDetected')))
       .toBeRejectedWithError('Autorisez l’accès à la caméra dans les réglages du navigateur, puis réessayez.');
+  });
+
+  it('surfaces a recoverable error reported after the camera has started', async () => {
+    const onCameraError = jasmine.createSpy('onCameraError');
+    const onDetected = jasmine.createSpy('onDetected');
+    const handle = await service.start(container, onDetected, onCameraError);
+    const reportCameraError = engine.start.calls.mostRecent().args[2] as (error: unknown) => void;
+    const decodeValue = engine.start.calls.mostRecent().args[1] as (rawValue: string) => void;
+
+    reportCameraError({name: 'NotAllowedError'});
+    decodeValue('9782070363735');
+
+    expect(onCameraError).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      message: 'Autorisez l’accès à la caméra dans les réglages du navigateur, puis réessayez.',
+    }));
+    expect(onDetected).not.toHaveBeenCalled();
+
+    await handle.stop();
   });
 });
 
@@ -219,6 +254,143 @@ describe('ZxingCameraScannerEngine', () => {
 
     expect(onDetected).toHaveBeenCalledTimes(2);
     expect(controls.stop).not.toHaveBeenCalled();
+  });
+
+  it('reacquires a new camera stream when the active video track ends', async () => {
+    const tracks: EventTarget[] = [];
+    const decodeCallbacks: Array<(result: Result | undefined) => void> = [];
+    reader.decodeFromConstraints.and.callFake(async (_constraints, preview, callback) => {
+      const track = new EventTarget();
+      tracks.push(track);
+      attachFakeCameraTrack(preview as HTMLVideoElement, track);
+      decodeCallbacks.push(result => callback(result, undefined, controls));
+      return controls;
+    });
+    const onDetected = jasmine.createSpy('onDetected');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, onDetected);
+    const firstPreview = container.querySelector('video');
+    tracks[0].dispatchEvent(new Event('ended'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(reader.decodeFromConstraints).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('video')).not.toBe(firstPreview);
+
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9780306406157');
+    decodeCallbacks[1](result);
+    expect(onDetected).toHaveBeenCalledOnceWith('9780306406157');
+
+    await engine.stop();
+  });
+
+  it('preserves the paused-after-detection state when reacquiring an ended track', async () => {
+    const tracks: EventTarget[] = [];
+    const decodeCallbacks: Array<(result: Result | undefined) => void> = [];
+    reader.decodeFromConstraints.and.callFake(async (_constraints, preview, callback) => {
+      const track = new EventTarget();
+      tracks.push(track);
+      attachFakeCameraTrack(preview as HTMLVideoElement, track);
+      decodeCallbacks.push(result => callback(result, undefined, controls));
+      return controls;
+    });
+    const onDetected = jasmine.createSpy('onDetected');
+    const engine = new ZxingCameraScannerEngine(createReader);
+    const firstResult = jasmine.createSpyObj<Result>('Result', ['getText']);
+    firstResult.getText.and.returnValue('9782070363735');
+
+    await engine.start(container, onDetected);
+    decodeCallbacks[0](firstResult);
+    tracks[0].dispatchEvent(new Event('ended'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(reader.decodeFromConstraints).toHaveBeenCalledTimes(2);
+    const secondResult = jasmine.createSpyObj<Result>('Result', ['getText']);
+    secondResult.getText.and.returnValue('9780306406157');
+    decodeCallbacks[1](secondResult);
+    expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
+
+    engine.resume();
+    decodeCallbacks[1](secondResult);
+    expect(onDetected).toHaveBeenCalledTimes(2);
+
+    await engine.stop();
+  });
+
+  it('does not reacquire a camera after a voluntary stop', async () => {
+    const track = new EventTarget();
+    reader.decodeFromConstraints.and.callFake(async (_constraints, preview) => {
+      attachFakeCameraTrack(preview as HTMLVideoElement, track);
+      return controls;
+    });
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, jasmine.createSpy('onDetected'));
+    await engine.stop();
+    track.dispatchEvent(new Event('ended'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(reader.decodeFromConstraints).toHaveBeenCalledOnceWith(
+      {video: {facingMode: 'environment'}},
+      jasmine.any(HTMLVideoElement),
+      jasmine.any(Function),
+    );
+  });
+
+  it('reports a recoverable error when reacquiring an ended track fails', async () => {
+    const track = new EventTarget();
+    let cameraStartCount = 0;
+    reader.decodeFromConstraints.and.callFake(async (_constraints, preview) => {
+      cameraStartCount += 1;
+      if (cameraStartCount > 1) {
+        throw {name: 'NotAllowedError'};
+      }
+
+      attachFakeCameraTrack(preview as HTMLVideoElement, track);
+      return controls;
+    });
+    const onCameraError = jasmine.createSpy('onCameraError');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, jasmine.createSpy('onDetected'), onCameraError);
+    track.dispatchEvent(new Event('ended'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(cameraStartCount).toBe(2);
+    expect(onCameraError).toHaveBeenCalledOnceWith({name: 'NotAllowedError'});
+    expect(container.querySelector('video')).toBeNull();
+
+    await engine.stop();
+  });
+
+  it('reports the ended track as a recoverable error without looping when the new stream is already ended', async () => {
+    const tracks: EventTarget[] = [];
+    let cameraStartCount = 0;
+    reader.decodeFromConstraints.and.callFake(async (_constraints, preview) => {
+      cameraStartCount += 1;
+      const track = new EventTarget();
+      if (cameraStartCount > 1) {
+        Object.defineProperty(track, 'readyState', {value: 'ended'});
+      }
+      tracks.push(track);
+      attachFakeCameraTrack(preview as HTMLVideoElement, track);
+      return controls;
+    });
+    const onCameraError = jasmine.createSpy('onCameraError');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, jasmine.createSpy('onDetected'), onCameraError);
+    tracks[0].dispatchEvent(new Event('ended'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(cameraStartCount).toBe(2);
+    expect(onCameraError).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      message: jasmine.stringMatching(/caméra/i),
+    }));
+    expect(container.querySelector('video')).toBeNull();
+
+    await engine.stop();
   });
 
   it('asks the active video track to refocus when the browser exposes focus modes', async () => {

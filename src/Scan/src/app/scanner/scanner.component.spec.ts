@@ -1137,6 +1137,7 @@ describe('ScannerComponent', () => {
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
       jasmine.any(Function),
+      jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();
     expect(fixture.nativeElement.querySelector('.scan-dock .dock-primary')).toBeNull();
@@ -1153,8 +1154,38 @@ describe('ScannerComponent', () => {
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
       jasmine.any(Function),
+      jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();
+  });
+
+  it('offers a retry after the cashier camera cannot reacquire an ended stream', async () => {
+    let reportCameraError: ((error: Error) => void) | undefined;
+    const stop = jasmine.createSpy('stop').and.resolveTo();
+    cameraService.start.and.callFake(async (_container, _onDetected, onCameraError) => {
+      reportCameraError = onCameraError;
+      return {resume: () => undefined, refocus: async () => true, stop};
+    });
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    reportCameraError?.(new Error('La caméra s’est interrompue après sa reconnexion.'));
+    fixture.detectChanges();
+
+    expect(stop).toHaveBeenCalledOnceWith();
+    expect(component.cameraActive).toBeFalse();
+    expect(component.cameraError).toContain('interrompue');
+    expect(fixture.nativeElement.querySelector('.cash-screen .camera-retry')?.textContent)
+      .toContain('Réessayer la caméra');
+
+    (fixture.nativeElement.querySelector('.cash-screen .camera-retry') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(cameraService.start).toHaveBeenCalledTimes(2);
+    expect(component.cameraActive).toBeTrue();
+    expect(component.cameraError).toBeNull();
   });
 
   it('adds a rare book from the local picker and displays its firm price without a total', async () => {
@@ -1213,6 +1244,7 @@ describe('ScannerComponent', () => {
 
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
+      jasmine.any(Function),
       jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();

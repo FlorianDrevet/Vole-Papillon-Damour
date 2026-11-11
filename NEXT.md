@@ -1035,6 +1035,15 @@ git pull
 
 ## En cours
 
+### Scan — reprise de la caméra caisse — 2026-11-11
+
+Le scanner détecte l’arrêt inattendu de la piste vidéo et tente une seule réacquisition
+en conservant la pause anti-double-scan. Si Android ne fournit pas de nouveau flux, la
+caisse affiche « Réessayer la caméra » sans quitter l’écran. Suite Scan 336/336, build
+Scan réussi (budget bundle initial dépassé de 13,62 kB), bootstrap 6/6. Graphify mis à jour
+à 19 082 nœuds. La [PR #389](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/389)
+est ouverte et non fusionnée. Aucun déploiement.
+
 ### Scan — en-tête du compte et aperçu caméra — 2026-11-11
 
 Le nom du compte scanné apparaît à gauche dans l’en-tête, sans préfixe « Client : »;
@@ -2786,6 +2795,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-11 | Windows | **Scan — reprise de la caméra caisse.** Depuis `origin/main` (`6723b05d`) dans `VPD-scan-cashier-camera-continuity-20261111`, réacquisition unique après une piste vidéo terminée, pause de lecture conservée pendant le traitement d’un scan, et bouton « Réessayer la caméra » si la réouverture échoue. Suite Scan 336/336, build et bootstrap 6/6 passent; le bundle initial dépasse son budget existant de 13,62 kB. Graphify 19 082 nœuds. La [PR #389](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/389) est ouverte, non fusionnée; aucun déploiement. |
 | 2026-11-11 | Windows | **Scan — en-tête du compte et aperçu caméra.** Depuis `origin/main` (`c493fe2f`) dans `VPD-scan-cashier-camera-followup` (`fix/scan-cashier-camera-header-20261111`), le nom du compte scanné (ou « Anonyme ») apparaît sans préfixe et se tronque proprement; la zone caméra est pleine largeur, un peu plus haute, et ne montre plus la consigne de mise au point par défaut. Tests Scan 318/318, build et bootstrap 6/6 réussis. Graphify a extrait l’AST mais le rapport HTML dépasse la limite de visualisation à 9 402 nœuds. Pas de déploiement de ce suivi. [PR #382](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/382) ouverte, non fusionnée. |
 | 2026-11-11 | Windows | **Scan — écran de caisse compact.** Depuis `origin/main` dans `VPD-scan-cashier-refresh` (`feat/scan-cashier-layout-20261111`), déplacement du scan de carte client et de l’accueil dans l’en-tête, affichage du client associé/anonyme, réduction de l’aperçu caméra et du dock pour libérer la liste des livres. Actions du dock : annuler le dernier, saisir un code, valider. Tests ChromeHeadless 317/317, build Scan et tests bootstrap 6/6 réussis. Graphify a extrait l’AST mais n’a pas régénéré le rapport, qui dépasse la limite de visualisation avec 9 402 nœuds. L’utilisateur a confirmé que la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381) a été fusionnée et déployée. |
 | 2026-10-30 | Windows | **Worker — baisse du volume de logs console.** Dans `VPD-worker-console-log-volume-20261030`, le runtime Functions passe par défaut à `Warning`, tandis que les résumés applicatifs, résultats d’exécution, avertissements et erreurs restent accessibles. En production, seuls les logs `Information` des SDK Azure/Durable sont filtrés de la console. Tests Worker 21/21; Graphify et `git diff --check` réussis. Investigation Azure en lecture seule, aucune purge ni déploiement. [PR #355](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/355) ouverte et non fusionnée. Vérifier les logs utiles et la baisse d’ingestion après déploiement. |

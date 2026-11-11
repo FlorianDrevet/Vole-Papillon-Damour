@@ -784,6 +784,9 @@
           Annuler la dernière vente
         </button>
         <p *ngIf="cameraError" class="cash-camera-error" role="alert">{{ cameraError }}</p>
+        <button *ngIf="cameraError" type="button" class="camera-retry" (click)="retryCamera()">
+          Réessayer la caméra
+        </button>
         <p *ngIf="storageError" class="cash-storage-error" role="alert">{{ storageError }}</p>
 
         <div class="cash-rare-action-row">
