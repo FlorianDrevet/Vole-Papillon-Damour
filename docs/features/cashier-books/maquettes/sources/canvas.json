@@ -1,0 +1,20 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-11T12:59:00Z"},
+  "title": "Caisse Android — section Livres",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 720, "title": "E1 · E2 — Onglet Livres, tablette paysage"},
+    "Panier.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 720, "title": "E3 — Panier mixte buvette et livres, tablette paysage"},
+    "Etats.dc.html": {"x": 0, "y": 840, "w": 1280, "h": 720, "title": "E4 — États de la grille Livres, tablette paysage"}
+  },
+  "order": ["Main.dc.html", "Panier.dc.html", "Etats.dc.html"],
+  "notes": {
+    "n-cl01": {"x": 1360, "y": 840, "text": "CL-01 · Seuls les livres disponibles apparaissent, cache hors ligne compris.", "w": 320, "fill": "blue"},
+    "n-cl04": {"x": 1720, "y": 840, "text": "CL-04 · Le prix affiché est celui de la fiche produit existante.", "w": 320, "fill": "green"},
+    "n-cl06": {"x": 1360, "y": 1040, "text": "CL-06 · Dérogation à RG-50 : la tablette affiche le prix et le total, sans rien enregistrer.", "w": 320, "fill": "orange"},
+    "n-cl05": {"x": 1720, "y": 1040, "text": "CL-05 · Aucune sortie de livre sur la tablette : elle se fait dans la nouvelle application.", "w": 320, "fill": "purple"}
+  },
+  "designSystems": []
+}

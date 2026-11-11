@@ -4,12 +4,12 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-cashier-books`
 - Branche : `feat/cashier-books`
-- Canvas Claude Design : à venir, phase 2
+- Canvas Claude Design : <https://claude.ai/artifact/PM852dSJ4h46j5578w46Uw>
 
 ## Statut
 
-- [ ] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md) (**révisée : Q-01 tranchée, en attente de validation**)
-- [ ] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
+- [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md) (validée le 2026-11-11, option A : calculette de prix)
+- [x] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md)
 - [ ] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md)
 - [ ] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
 - [ ] 5. PR ouverte par Codex — à venir
