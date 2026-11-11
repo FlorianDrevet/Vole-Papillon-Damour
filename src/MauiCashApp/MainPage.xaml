@@ -92,12 +92,43 @@
                                          HorizontalItemSpacing="15" />
                     </CollectionView.ItemsLayout>
 
+                    <CollectionView.Header>
+                        <Label Text="Hors ligne : catalogue de la tablette"
+                               IsVisible="{Binding IsLivresBannerVisible}"
+                               BackgroundColor="{StaticResource Tertiary}"
+                               TextColor="{StaticResource White}"
+                               FontAttributes="Bold"
+                               Padding="12,8"
+                               Margin="0,0,0,15" />
+                    </CollectionView.Header>
+
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <views:ProductCard />
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+
+                <!-- ETATS DE LA GRILLE LIVRES : chargement et vide -->
+                <VerticalStackLayout Grid.Row="1"
+                                     IsVisible="{Binding IsLivresLoadingVisible}"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsLivresLoadingVisible}" />
+                    <Label Text="Chargement du catalogue…"
+                           HorizontalOptions="Center"
+                           FontSize="18"
+                           TextColor="{StaticResource Primary}" />
+                </VerticalStackLayout>
+
+                <Label Grid.Row="1"
+                       Text="Aucun livre disponible pour le moment."
+                       IsVisible="{Binding IsLivresEmptyVisible}"
+                       FontSize="18"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
 
                 <!-- BARRE DES CATEGORIES DE NOURRITURE-->
                 <FlexLayout Grid.Row="2"

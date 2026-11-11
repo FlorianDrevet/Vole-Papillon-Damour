@@ -10,38 +10,44 @@ namespace ShopAppVpd.Tests;
 public sealed class CashierProductFilterTests
 {
     [Fact]
-    public void FromApi_OnlyIncludesAvailableBuvetteAndLotoProducts()
+    public void FromApi_OnlyIncludesAvailableBuvetteLotoAndLivresProducts()
     {
         var products = CashierProductFilter.FromApi(
         [
             CreateResponse("Boisson disponible", ProductSection.Bar, isAvailable: true),
             CreateResponse("Carton loto", ProductSection.Bingo, isAvailable: true),
             CreateResponse("Produit désactivé", ProductSection.Bar, isAvailable: false),
-            CreateResponse("Livre disponible", ProductSection.Book, isAvailable: true)
+            CreateResponse("Livre disponible", ProductSection.Book, isAvailable: true),
+            CreateResponse("Livre désactivé", ProductSection.Book, isAvailable: false)
         ]);
 
-        Assert.Equal(["Boisson disponible", "Carton loto"], products.Select(product => product.Name));
+        Assert.Equal(
+            ["Boisson disponible", "Carton loto", "Livre disponible"],
+            products.Select(product => product.Name));
     }
 
     [Fact]
-    public void FromCache_OnlyIncludesAvailableBuvetteAndLotoProducts()
+    public void FromCache_OnlyIncludesAvailableBuvetteLotoAndLivresProducts()
     {
         var products = CashierProductFilter.FromCache(
         [
             CreateProduct("Boisson disponible", ProductSection.Bar, isAvailable: true),
             CreateProduct("Carton loto", ProductSection.Bingo, isAvailable: true),
             CreateProduct("Produit désactivé", ProductSection.Bar, isAvailable: false),
-            CreateProduct("Livre disponible", ProductSection.Book, isAvailable: true)
+            CreateProduct("Livre disponible", ProductSection.Book, isAvailable: true),
+            CreateProduct("Livre désactivé", ProductSection.Book, isAvailable: false)
         ]);
 
-        Assert.Equal(["Boisson disponible", "Carton loto"], products.Select(product => product.Name));
+        Assert.Equal(
+            ["Boisson disponible", "Carton loto", "Livre disponible"],
+            products.Select(product => product.Name));
     }
 
     [Fact]
-    public void Categories_OnlyExposeBuvetteAndLoto()
+    public void Categories_ExposeBuvetteLotoEtLivres()
     {
         Assert.Equal(
-            [ProductSection.Bar, ProductSection.Bingo],
+            [ProductSection.Bar, ProductSection.Bingo, ProductSection.Book],
             ShopAppVpd.Constants.Categories.All.Select(category => category.Section));
     }
 

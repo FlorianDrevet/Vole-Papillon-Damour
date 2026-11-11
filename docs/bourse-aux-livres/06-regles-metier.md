@@ -496,7 +496,10 @@ Deux moyens d'accélérer, ni l'un ni l'autre obligatoire :
 
 ### `RG-50` — Le système ne compte aucun argent
 Pour les livres ordinaires, aucun prix n'est stocké, affiché, calculé ni totalisé par
-l'application. Pour les livres rares, l'association fixe un **prix ferme** qui est
+l'application de la bourse. **Exception, pour la calculette de la caisse Android uniquement :**
+elle affiche le prix de la fiche produit et totalise la buvette, le loto et les livres pour
+le paiement physique ; elle n'enregistre aucune vente ni aucune sortie de livre. Les sorties
+sont enregistrées dans la nouvelle application. Pour les livres rares, l'association fixe un **prix ferme** qui est
 stocké sur la fiche et affiché en vitrine et en caisse pour être lu. Ce prix rare n'est
 jamais calculé, totalisé ou utilisé pour enregistrer un montant.
 

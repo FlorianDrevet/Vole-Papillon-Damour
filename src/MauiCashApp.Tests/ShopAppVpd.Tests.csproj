@@ -29,6 +29,7 @@
     <Compile Include="..\MauiCashApp\Apis\Responses\PromotionResponse.cs" Link="Production\PromotionResponse.cs" />
     <Compile Include="..\MauiCashApp\Services\CashierProductFilter.cs" Link="Production\CashierProductFilter.cs" />
     <Compile Include="..\MauiCashApp\Interfaces\IProductService.cs" Link="Production\IProductService.cs" />
+    <Compile Include="..\MauiCashApp\Models\ProductCatalog.cs" Link="Production\ProductCatalog.cs" />
     <Compile Include="..\MauiCashApp\Models\Product.cs" Link="Production\Product.cs" />
     <Compile Include="..\MauiCashApp\Models\Category.cs" Link="Production\Category.cs" />
     <Compile Include="..\MauiCashApp\Models\Promotion.cs" Link="Production\Promotion.cs" />

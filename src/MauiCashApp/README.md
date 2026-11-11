@@ -1,7 +1,7 @@
 # Caisse – ShopAppVpd
 
 An Android product picker for the event cash desks of [Vole Papillon D'amour](volepapillondamour.fr).
-It loads the public product catalog, shows only available Buvette and Loto items, and keeps an available-product cache on the tablet.
+It loads the public product catalog, shows only available Buvette, Loto and Livres items (Livres show their price only; book exits are recorded in the scan app), and keeps an available-product cache on the tablet.
 The basket calculates a total for manual payment; this app does not persist completed sales.
 
 # ✨ Features

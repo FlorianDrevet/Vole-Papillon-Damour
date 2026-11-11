@@ -16,7 +16,7 @@ internal sealed class ProductService: IProductService
         _productDatabase = productDatabase;
     }
 
-    public async Task<IEnumerable<Product>> GetProductsAsync(CancellationToken cancellationToken)
+    public async Task<ProductCatalog> GetProductsAsync(CancellationToken cancellationToken)
     {
         if (Connectivity.Current.NetworkAccess == NetworkAccess.Internet)
         {
@@ -28,7 +28,7 @@ internal sealed class ProductService: IProductService
                 {
                     var cashierProducts = CashierProductFilter.FromApi(productsResponse.Content);
                     await _productDatabase.SaveProductsAsync(cashierProducts);
-                    return cashierProducts;
+                    return new ProductCatalog(cashierProducts, IsFromCache: false);
                 }
                 else
                 {
@@ -46,9 +46,9 @@ internal sealed class ProductService: IProductService
         }
     }
 
-    private async Task<IEnumerable<Product>> GetAvailableCachedProductsAsync()
+    private async Task<ProductCatalog> GetAvailableCachedProductsAsync()
     {
         var cachedProducts = await _productDatabase.GetProductsAsync();
-        return CashierProductFilter.FromCache(cachedProducts);
+        return new ProductCatalog(CashierProductFilter.FromCache(cachedProducts), IsFromCache: true);
     }
 }

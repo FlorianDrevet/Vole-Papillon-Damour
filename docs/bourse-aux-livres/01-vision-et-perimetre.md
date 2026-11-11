@@ -77,7 +77,7 @@ exprimée par le public. Il arbitre donc à l'intuition quels titres intégrer a
 | Livres sans ISBN | Décision explicite. Angle mort assumé, à mesurer pendant le palier 0 — voir `Q-03`. |
 | Suivi de l'exemplaire physique individuel | Le suivi se fait par ISBN avec une quantité. Voir §6 et `Q-04`. |
 | Gestion des dons en amont (donateurs, reçus fiscaux) | Sujet distinct. |
-| Intégration à l'application MAUI de caisse buvette | Les livres ont leur propre mode vente dans l'application de scan. Les deux caisses restent séparées. |
+| Sorties et ventes de livres dans l'application MAUI de caisse buvette | Les sorties de livres se font dans l'application de scan. La caisse buvette affiche seulement le prix des livres pour le paiement (calculette, `RG-50`). |
 | Notifications push | Reportées en v2. L'e-mail seul en v1. |
 | **Gestion des prix et encaissement** | Les prix sont décidés au comptoir ; le système n'en connaît aucun et ne calcule aucun total (`RG-50`). La caisse reste physique. Seule la recette globale d'une bourse peut être saisie à la main (`RG-51`). |
 | **Estimation automatique de la valeur marchande** | Reportée : non prioritaire, et aucune source fiable identifiée. Quand elle existera, elle sera **asynchrone** — jamais pendant le scan — et ses résultats apparaîtront en fin de session et en administration. Voir `Q-02` et `RG-14`. Le marquage manuel « rare », lui, existe dès la v1. |

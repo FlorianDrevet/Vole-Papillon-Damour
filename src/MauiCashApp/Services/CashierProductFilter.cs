@@ -18,5 +18,5 @@ internal static class CashierProductFilter
             .ToList();
 
     private static bool IsCashierSection(string section)
-        => section is nameof(ProductSection.Bar) or nameof(ProductSection.Bingo);
+        => section is nameof(ProductSection.Bar) or nameof(ProductSection.Bingo) or nameof(ProductSection.Book);
 }

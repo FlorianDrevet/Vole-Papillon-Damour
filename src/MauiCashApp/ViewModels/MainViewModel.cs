@@ -18,16 +18,28 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<ShoppedProductViewModel> ShoppedProducts { get; } = new();
 
     public List<Category> Categories { get; } = Constants.Categories.All;
-    
+
     public List<FoodSection> FoodSections { get; } = Constants.FoodSections.All;
 
     [ObservableProperty] private Category _selectedCategory = Constants.Categories.Buvette;
-    
+
     [ObservableProperty] private FoodSection _selectedFoodSection = Constants.FoodSections.Salt;
-    
+
+    [ObservableProperty] private bool _isLoading;
+
+    [ObservableProperty] private bool _isCatalogFromCache;
+
     public double CartTotal => ShoppedProducts.Sum(c => c.Total);
-    
+
     public bool IsFoodSectionVisible => SelectedCategory.Section == ProductSection.Bar;
+
+    public bool IsLivresSelected => SelectedCategory.Section == ProductSection.Book;
+
+    public bool IsLivresEmptyVisible => IsLivresSelected && !IsLoading && FilteredProducts.Count == 0;
+
+    public bool IsLivresLoadingVisible => IsLivresSelected && IsLoading;
+
+    public bool IsLivresBannerVisible => IsLivresSelected && IsCatalogFromCache;
 
     public MainViewModel(IProductService productService)
     {
@@ -35,7 +47,7 @@ public partial class MainViewModel : ObservableObject
 
         LoadProductsCommand.Execute(null);
     }
-    
+
     [RelayCommand]
     private void AddToCart(Product product)
     {
@@ -55,28 +67,37 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadProductsAsync(CancellationToken cancellationToken)
     {
-        var products = await _productService.GetProductsAsync(cancellationToken);
+        IsLoading = true;
+        try
+        {
+            var catalog = await _productService.GetProductsAsync(cancellationToken);
 
-        Products.Clear();
-        foreach (var p in products)
-            Products.Add(p);
+            Products.Clear();
+            foreach (var p in catalog.Products)
+                Products.Add(p);
 
-        ApplyFilter(SelectedCategory.Section, SelectedFoodSection.Section);
+            IsCatalogFromCache = catalog.IsFromCache;
+            ApplyCurrentCategoryFilter();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
-    
+
     [RelayCommand]
     private void SetSelectedCategory(Category category)
     {
         SelectedCategory = category;
         OnPropertyChanged(nameof(IsFoodSectionVisible));
     }
-    
+
     [RelayCommand]
     private void SetSelectedFoodSection(FoodSection foodSection)
     {
         SelectedFoodSection = foodSection;
     }
-    
+
     [RelayCommand]
     private void IncreaseQuantity(ShoppedProductViewModel item)
     {
@@ -91,10 +112,10 @@ public partial class MainViewModel : ObservableObject
             item.DecrementQuantity();
         else
             ShoppedProducts.Remove(item);
-        
+
         OnPropertyChanged(nameof(CartTotal));
     }
-    
+
     [RelayCommand]
     private void ValidateCart()
     {
@@ -106,10 +127,19 @@ public partial class MainViewModel : ObservableObject
     {
         ApplyFilter(value.Section, value.Section == ProductSection.Bar ? SelectedFoodSection.Section : null);
     }
-    
+
     partial void OnSelectedFoodSectionChanged(FoodSection value)
     {
         ApplyFilter(ProductSection.Bar, value.Section);
+    }
+
+    partial void OnIsLoadingChanged(bool value) => NotifyLivresState();
+
+    partial void OnIsCatalogFromCacheChanged(bool value) => NotifyLivresState();
+
+    private void ApplyCurrentCategoryFilter()
+    {
+        ApplyFilter(SelectedCategory.Section, SelectedCategory.Section == ProductSection.Bar ? SelectedFoodSection.Section : null);
     }
 
     private void ApplyFilter(ProductSection section, ProductCategory? foodSection = null)
@@ -123,5 +153,15 @@ public partial class MainViewModel : ObservableObject
 
         foreach (var p in filtered)
             FilteredProducts.Add(p);
+
+        NotifyLivresState();
+    }
+
+    private void NotifyLivresState()
+    {
+        OnPropertyChanged(nameof(IsLivresSelected));
+        OnPropertyChanged(nameof(IsLivresEmptyVisible));
+        OnPropertyChanged(nameof(IsLivresLoadingVisible));
+        OnPropertyChanged(nameof(IsLivresBannerVisible));
     }
 }

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Caisse — panier mixte buvette et livres</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+</style>
+</helmet>
+<div style="width:1280px;height:720px;box-sizing:border-box;display:flex;flex-direction:column;background:#E9F3FF;font-family:'Open Sans',sans-serif;color:#012F5F;overflow:hidden">
+  <header style="height:64px;flex:none;background:#012F5F;display:flex;align-items:center;justify-content:center;gap:14px;color:#FFFFFF">
+    <span style="font-family:'Caveat Brush',cursive;font-size:40px;line-height:1">Vole Papillon D'Amour</span>
+    <span aria-hidden="true" style="width:44px;height:44px;border:2px dashed #1ACDF8;border-radius:50%;box-sizing:border-box"></span>
+  </header>
+
+  <div style="flex:1;min-height:0;display:flex">
+    <section style="width:880px;flex:none;display:flex;flex-direction:column;background:#FFFFFF">
+      <nav aria-label="Catégories" style="height:60px;flex:none;background:#1ACDF8;display:flex">
+        <button type="button" aria-pressed="true" style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px;background:#FFFFFF;color:#012F5F;font-family:'Caveat Brush',cursive;font-size:30px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14l-1.5 18h-11z"/><path d="M6.2 9h11.6"/></svg>Buvette</button>
+        <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:30px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Loto</button>
+        <button type="button" data-zone="E1-onglet-livres" aria-pressed="false" style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:30px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg>Livres</button>
+      </nav>
+
+      <div style="flex:1;min-height:0;padding:28px 32px;box-sizing:border-box;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-content:start">
+        <button type="button" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:12px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-height:200px;box-sizing:border-box">
+          <span style="font-size:17px;font-weight:600;line-height:1.2;min-height:40px;display:flex;align-items:center">Frites</span>
+          <span aria-hidden="true" style="width:110px;height:110px;background:#E1E1E1;color:#404040;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px">image</span>
+          <span style="font-size:18px;font-weight:700">2,00€</span>
+        </button>
+        <button type="button" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:12px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-height:200px;box-sizing:border-box">
+          <span style="font-size:17px;font-weight:600;line-height:1.2;min-height:40px;display:flex;align-items:center">Panini</span>
+          <span aria-hidden="true" style="width:110px;height:110px;background:#E1E1E1;color:#404040;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px">image</span>
+          <span style="font-size:18px;font-weight:700">3,00€</span>
+        </button>
+        <button type="button" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:12px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-height:200px;box-sizing:border-box">
+          <span style="font-size:17px;font-weight:600;line-height:1.2;min-height:40px;display:flex;align-items:center">Saucisses frites</span>
+          <span aria-hidden="true" style="width:110px;height:110px;background:#E1E1E1;color:#404040;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px">image</span>
+          <span style="font-size:18px;font-weight:700">3,00€</span>
+        </button>
+        <button type="button" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:12px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-height:200px;box-sizing:border-box">
+          <span style="font-size:17px;font-weight:600;line-height:1.2;min-height:40px;display:flex;align-items:center">Hot Dog</span>
+          <span aria-hidden="true" style="width:110px;height:110px;background:#E1E1E1;color:#404040;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:4px">image</span>
+          <span style="font-size:18px;font-weight:700">3,00€</span>
+        </button>
+      </div>
+
+      <nav aria-label="Sous-catégories" style="height:60px;flex:none;background:#1ACDF8;display:flex">
+        <button type="button" aria-pressed="true" style="flex:1;display:flex;align-items:center;justify-content:center;background:#FFFFFF;color:#012F5F;font-family:'Caveat Brush',cursive;font-size:28px">Salé</button>
+        <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:28px">Sucré</button>
+        <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:28px">Froid</button>
+        <button type="button" style="flex:1;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:28px">Chaude</button>
+      </nav>
+    </section>
+
+    <aside style="flex:1;min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border-left:4px solid #012F5F">
+      <h2 style="margin:0;padding:18px 0 8px;text-align:center;font-family:'Caveat Brush',cursive;font-weight:400;font-size:46px;line-height:1.1;color:#012F5F">Le Panier</h2>
+      <div style="flex:1;min-height:0;padding:8px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;border:1px solid #F67700;border-radius:10px;padding:10px 12px;box-sizing:border-box">
+          <span aria-hidden="true" style="width:56px;height:56px;background:#E1E1E1;border-radius:4px;flex:none"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-size:17px;font-weight:600">Frites</span>
+            <span style="display:block;font-size:15px">2,00€</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex:none">
+            <button type="button" aria-label="Diminuer la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">−</button>
+            <span style="font-size:20px;font-weight:700;min-width:20px;text-align:center">1</span>
+            <button type="button" aria-label="Augmenter la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">+</button>
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;border:1px solid #F67700;border-radius:10px;padding:10px 12px;box-sizing:border-box">
+          <span aria-hidden="true" style="width:56px;height:56px;background:#E1E1E1;border-radius:4px;flex:none"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-size:17px;font-weight:600">Panini</span>
+            <span style="display:block;font-size:15px">3,00€</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex:none">
+            <button type="button" aria-label="Diminuer la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">−</button>
+            <span style="font-size:20px;font-weight:700;min-width:20px;text-align:center">2</span>
+            <button type="button" aria-label="Augmenter la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">+</button>
+          </span>
+        </div>
+        <div data-zone="E3-ligne-livre" style="display:flex;align-items:center;gap:12px;border:1px solid #F67700;border-radius:10px;padding:10px 12px;box-sizing:border-box">
+          <span aria-hidden="true" style="width:56px;height:56px;background:#E1E1E1;border-radius:4px;flex:none"></span>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-size:17px;font-weight:600">Roman</span>
+            <span style="display:block;font-size:15px">1,00€</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex:none">
+            <button type="button" aria-label="Diminuer la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">−</button>
+            <span style="font-size:20px;font-weight:700;min-width:20px;text-align:center">1</span>
+            <button type="button" aria-label="Augmenter la quantité" style="width:44px;height:44px;border-radius:8px;background:#F67700;color:#FFFFFF;font-size:22px;font-weight:700">+</button>
+          </span>
+        </div>
+      </div>
+      <button type="button" data-zone="E3-total" aria-label="Valider le panier, total 9,00€" style="margin:20px;height:64px;flex:none;border-radius:32px;background:#F67700;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:40px;line-height:1">9,00€</button>
+    </aside>
+  </div>
+
+  <footer style="height:40px;flex:none;background:#012F5F;color:#FFFFFF;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Caveat Brush',cursive;font-size:26px">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="1"/><path d="M7 9V5h10v4M9 13h6"/></svg>
+    Caisse
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

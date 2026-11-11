@@ -4,5 +4,5 @@ namespace ShopAppVpd.Interfaces;
 
 public interface IProductService
 {
-    Task<IEnumerable<Product>> GetProductsAsync(CancellationToken cancellationToken);
+    Task<ProductCatalog> GetProductsAsync(CancellationToken cancellationToken);
 }

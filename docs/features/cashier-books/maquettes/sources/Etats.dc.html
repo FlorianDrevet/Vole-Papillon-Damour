@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Caisse — états de la grille Livres</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+body{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+</style>
+</helmet>
+<div style="width:1280px;height:720px;box-sizing:border-box;padding:40px;display:flex;gap:27px;background:#E9F3FF;font-family:'Open Sans',sans-serif;color:#012F5F;overflow:hidden">
+
+  <article style="flex:1;min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #C8C8C8">
+    <h3 style="margin:0;padding:14px 18px;font-family:'Caveat Brush',cursive;font-weight:400;font-size:30px;color:#012F5F;border-bottom:1px solid #E1E1E1">Vide</h3>
+    <nav aria-label="Catégories" style="height:56px;flex:none;background:#1ACDF8;display:flex">
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Buvette</button>
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Loto</button>
+      <button type="button" aria-pressed="true" style="flex:1;background:#FFFFFF;color:#012F5F;font-family:'Caveat Brush',cursive;font-size:24px">Livres</button>
+    </nav>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box;text-align:center">
+      <p data-zone="E4-etat-vide" style="margin:0;font-size:18px;line-height:1.4;color:#404040">Aucun livre disponible pour le moment.</p>
+    </div>
+  </article>
+
+  <article style="flex:1;min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #C8C8C8">
+    <h3 style="margin:0;padding:14px 18px;font-family:'Caveat Brush',cursive;font-weight:400;font-size:30px;color:#012F5F;border-bottom:1px solid #E1E1E1">Chargement</h3>
+    <nav aria-label="Catégories" style="height:56px;flex:none;background:#1ACDF8;display:flex">
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Buvette</button>
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Loto</button>
+      <button type="button" aria-pressed="true" style="flex:1;background:#FFFFFF;color:#012F5F;font-family:'Caveat Brush',cursive;font-size:24px">Livres</button>
+    </nav>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px;box-sizing:border-box;text-align:center">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true"><circle cx="28" cy="28" r="22" stroke="#E1E1E1" stroke-width="6"/><path d="M28 6a22 22 0 0 1 22 22" stroke="#012F5F" stroke-width="6" stroke-linecap="round"/></svg>
+      <p data-zone="E4-etat-chargement" style="margin:0;font-size:18px;line-height:1.4;color:#404040">Chargement du catalogue…</p>
+    </div>
+  </article>
+
+  <article style="flex:1;min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #C8C8C8">
+    <h3 style="margin:0;padding:14px 18px;font-family:'Caveat Brush',cursive;font-weight:400;font-size:30px;color:#012F5F;border-bottom:1px solid #E1E1E1">Hors ligne</h3>
+    <nav aria-label="Catégories" style="height:56px;flex:none;background:#1ACDF8;display:flex">
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Buvette</button>
+      <button type="button" style="flex:1;color:#FFFFFF;font-family:'Caveat Brush',cursive;font-size:24px">Loto</button>
+      <button type="button" aria-pressed="true" style="flex:1;background:#FFFFFF;color:#012F5F;font-family:'Caveat Brush',cursive;font-size:24px">Livres</button>
+    </nav>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;padding:16px;box-sizing:border-box">
+      <div data-zone="E4-bandeau-hors-ligne" role="status" style="background:#F67700;color:#FFFFFF;padding:10px 14px;border-radius:8px;font-size:15px;font-weight:600">Hors ligne : catalogue de la tablette</div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-content:start">
+        <button type="button" data-zone="E2-carte-livre" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:10px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-sizing:border-box">
+          <span style="font-size:15px;font-weight:600;line-height:1.2">Roman</span>
+          <span aria-hidden="true" style="width:80px;height:80px;background:#E1E1E1;color:#404040;font-size:11px;display:flex;align-items:center;justify-content:center;border-radius:4px">couverture</span>
+          <span style="font-size:16px;font-weight:700">1,00€</span>
+        </button>
+        <button type="button" data-zone="E2-carte-livre" style="background:#FFFFFF;border:1.5px solid #F67700;border-radius:12px;padding:10px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-sizing:border-box">
+          <span style="font-size:15px;font-weight:600;line-height:1.2">Poche</span>
+          <span aria-hidden="true" style="width:80px;height:80px;background:#E1E1E1;color:#404040;font-size:11px;display:flex;align-items:center;justify-content:center;border-radius:4px">couverture</span>
+          <span style="font-size:16px;font-weight:700">1,50€</span>
+        </button>
+      </div>
+    </div>
+  </article>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
