@@ -45,6 +45,7 @@
 
 ## Recent validation
 
+- 2026-11-11 — Scan’s shared manual ISBN keypad now places `0` before `Vider`, keeps `Valider` and `Retour` side by side, and hides the unreadable-barcode notice during manual entry. The code-recovery hint remains. The local Scan build passes; the unchanged `scanner.component.scss` exceeds its style budget by 498 bytes. Automated tests were not run, and authenticated mobile visual verification remains pending. Graphify extracted 1,913 files but could not render its 9,404-node report. No deployment.
 - The Loto Halloween photo announcement passes its focused Website tests (20/20) and the SSR production build. The full Website suite is 202/203 because the pre-existing event-detail test still expects “Demain” for a Nov 1 event while the test clock uses Nov 2; no deployment. Desktop and mobile SSR screenshots were reviewed. `graphify update . --no-viz` completed AST extraction but could not rebuild the report because the existing 9,404-node graph exceeded its visualization limit.
 - The 2026-10-31 event SSR correction passes Website 197/197, SEO HTTP checks 14/14, and the SSR production build (existing Angular budget/CommonJS warnings). Its local concurrent request evidence and limits are in `.github/memory/19-website-event-ssr.md`.
 - The Halloween loto board and E6 banner validation is in `.github/memory/18-halloween-loto-board.md`; deployment still requires the `AddEventLiveTheme` migration first.

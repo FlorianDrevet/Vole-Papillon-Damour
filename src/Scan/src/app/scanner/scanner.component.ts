@@ -128,7 +128,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     '1', '2', '3',
     '4', '5', '6',
     '7', '8', '9',
-    'X', 'clear', '0',
+    'X', '0', 'clear',
     'backspace',
   ];
 
