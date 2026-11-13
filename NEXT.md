@@ -1052,6 +1052,8 @@ arrière-plan. Elle émet scan_cash_lookup, scan_catalog_lookup et scan_cash_met
 avec les durées de chaque phase et sans ISBN, compte ni identifiant de bénévole. Ces
 nouvelles mesures ne seront visibles qu’après fusion et déploiement de Scan. Aucun
 déploiement ni changement Azure n’a été fait.
+La [PR #391](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/391) est ouverte,
+non fusionnée.
 
 Après déploiement, requête Kusto pour comparer les étapes sur la dernière journée :
 
@@ -2836,6 +2838,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-13 | Windows | **Scan — latence de la caisse.** Depuis origin/main (1716dc5a) dans VPD-scan-cash-lookup-latency-20261113, la ligne caisse apparaît dès le résultat local sans attendre les métadonnées; App Insights mesure séparément le catalogue IndexedDB, la fiche rare, l’enrichissement et la mise en cache. Le navigateur mesurait l’endpoint metadata à p95 1,695 s contre ~0,31 s côté API. Scan 338/338, bootstrap 6/6 et build passent; le budget initial reste dépassé de 16,86 kB. Graphify actualisé. La [PR #391](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/391) est ouverte, non fusionnée; aucun déploiement ni changement Azure. Examiner les événements le lendemain de la fusion et du déploiement Scan. |
 | 2026-11-11 | Windows | **Scan — reprise de la caméra caisse.** Depuis `origin/main` (`6723b05d`) dans `VPD-scan-cashier-camera-continuity-20261111`, réacquisition unique après une piste vidéo terminée, pause de lecture conservée pendant le traitement d’un scan, et bouton « Réessayer la caméra » si la réouverture échoue. Suite Scan 336/336, build et bootstrap 6/6 passent; le bundle initial dépasse son budget existant de 13,62 kB. Graphify 19 082 nœuds. La [PR #389](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/389) est ouverte, non fusionnée; aucun déploiement. |
 | 2026-11-11 | Windows | **Scan — en-tête du compte et aperçu caméra.** Depuis `origin/main` (`c493fe2f`) dans `VPD-scan-cashier-camera-followup` (`fix/scan-cashier-camera-header-20261111`), le nom du compte scanné (ou « Anonyme ») apparaît sans préfixe et se tronque proprement; la zone caméra est pleine largeur, un peu plus haute, et ne montre plus la consigne de mise au point par défaut. Tests Scan 318/318, build et bootstrap 6/6 réussis. Graphify a extrait l’AST mais le rapport HTML dépasse la limite de visualisation à 9 402 nœuds. Pas de déploiement de ce suivi. [PR #382](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/382) ouverte, non fusionnée. |
 | 2026-11-11 | Windows | **Scan — écran de caisse compact.** Depuis `origin/main` dans `VPD-scan-cashier-refresh` (`feat/scan-cashier-layout-20261111`), déplacement du scan de carte client et de l’accueil dans l’en-tête, affichage du client associé/anonyme, réduction de l’aperçu caméra et du dock pour libérer la liste des livres. Actions du dock : annuler le dernier, saisir un code, valider. Tests ChromeHeadless 317/317, build Scan et tests bootstrap 6/6 réussis. Graphify a extrait l’AST mais n’a pas régénéré le rapport, qui dépasse la limite de visualisation avec 9 402 nœuds. L’utilisateur a confirmé que la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381) a été fusionnée et déployée. |
