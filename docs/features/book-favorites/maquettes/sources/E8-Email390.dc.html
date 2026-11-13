@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E8 · E-mail avant la bourse — 390 px</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&amp;family=Libre+Franklin:wght@400;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0c6ea6}a:hover{color:#072b45}
+</style>
+</helmet>
+<div style="width: 430px; min-height: 2350px; box-sizing: border-box; padding: 20px; background: #e6edf2; font-family: 'Libre Franklin', Arial, sans-serif; color: #072b45;">
+  <div style="width: 390px; background: #ffffff; border: 1px solid #d9e9f4;">
+    <div data-zone="E8-entete" style="padding: 20px 20px 0;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div role="img" aria-label="Vole Papillon d'Amour" style="width: 44px; height: 44px; border-radius: 50%; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);"></div>
+        <div><div style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 600;">Vole Papillon d'Amour</div><div style="font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #0c6ea6; margin-top: 2px;">Bourse aux livres</div></div>
+      </div>
+      <div style="display: flex; height: 4px; margin-top: 18px;"><div style="flex: 1; background: #7fd8f5;"></div><div style="flex: 1; background: #1497d6;"></div><div style="flex: 1; background: #f0801c;"></div></div>
+    </div>
+    <div data-zone="E8-accroche" style="padding: 24px 20px 4px;">
+      <p style="margin: 0 0 8px; font-size: 15px;">Bonjour Marie, voici ce qui vous attend samedi.</p>
+      <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 26px; font-weight: 400; line-height: 1.2; color: #041d30;">6 livres qui pourraient vous plaire</h1>
+    </div>
+    <div data-zone="E8-encart-bourse" style="margin: 16px 20px 0; background: #e9f4fb; border: 1px solid #d9e9f4; border-top: 4px solid #f0801c; padding: 16px;">
+      <div style="font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #0c6ea6;">Prochaine bourse</div>
+      <div style="margin-top: 6px; font-family: 'Newsreader', Georgia, serif; font-size: 21px; line-height: 1.25; color: #041d30;">À la bourse du <strong style="font-weight: 600;">samedi 14&#160;mars 2027</strong></div>
+      <div style="margin-top: 10px; font-size: 14px; line-height: 1.5;">9 h 00 – 17 h 00<br>[ADRESSE DE LA BOURSE]</div>
+    </div>
+    <div data-zone="E8-section-nouveautes" style="padding: 24px 20px 0;">
+      <div style="font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #c8364e;">Nouveautés pour vous</div>
+      <sc-for list="{{news}}" as="b" hint-placeholder-count="4">
+        <div data-zone="E8-carte-livre" style="margin-top: 12px; border: 1px solid #d9e9f4; padding: 14px; display: flex; gap: 14px; align-items: flex-start;">
+          <div role="img" aria-label="Couverture : {{b.title}}" style="width: 64px; height: 96px; flex-shrink: 0; background: #f4efe3; border: 1px solid #d9d2c0;"></div>
+          <div style="flex: 1; min-width: 0;">
+            <div data-zone="E8-coeurs" style="font-size: 12px; color: #a3263e;"><span style="letter-spacing: 1px; font-size: 15px; color: #c8364e;">{{b.heartsText}}</span> {{b.heartsLabel}}</div>
+            <div style="margin-top: 3px; font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1.25; color: #041d30;">{{b.title}}</div>
+            <div style="margin-top: 2px; font-size: 14px; color: #33546b;">{{b.author}}</div>
+            <div data-zone="E8-raison" style="margin-top: 6px; font-size: 13px; color: #33546b;">{{b.reason}}</div>
+            <div style="margin-top: 8px;"><a data-zone="E8-lien-fiche" href="#" style="display: inline-block; padding: 6px 0; font-size: 15px; font-weight: 600;">Voir la fiche</a></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div data-zone="E8-section-de-retour" style="padding: 24px 20px 0;">
+      <div style="font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #0c6ea6;">De retour à la bourse</div>
+      <sc-for list="{{back}}" as="b" hint-placeholder-count="2">
+        <div data-zone="E8-carte-livre" style="margin-top: 10px; border: 1px solid #d9e9f4; padding: 12px 14px; display: flex; gap: 12px; align-items: center;">
+          <div role="img" aria-label="Couverture : {{b.title}}" style="width: 44px; height: 66px; flex-shrink: 0; background: #f4efe3; border: 1px solid #d9d2c0;"></div>
+          <div style="flex: 1; min-width: 0;">
+            <span data-zone="E8-etiquette-tres-demande" style="display: inline-block; font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #ffffff; background: #072b45; padding: 3px 7px;">Très demandé</span>
+            <div style="margin-top: 5px; font-family: 'Newsreader', Georgia, serif; font-size: 17px; color: #041d30;">{{b.title}}</div>
+            <div style="font-size: 13.5px; color: #33546b;">{{b.author}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div data-zone="E8-non-reservation" style="margin: 22px 20px 0; background: #fff4e8; border: 1px solid #f6d2ab; padding: 12px 14px; font-size: 14px; line-height: 1.5; color: #6b3305;"><strong>Ces livres ne sont pas mis de côté.</strong> Premier arrivé, premier servi.</div>
+    <div style="padding: 22px 20px 28px;"><a data-zone="E8-bouton-suggestions" href="#" style="display: block; text-align: center; background: #0c6ea6; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 15px 20px; border-radius: 4px;">Voir toutes mes suggestions</a></div>
+    <div data-zone="E8-pied" style="background: #f7fbfe; border-top: 1px solid #e2eef7; padding: 20px; font-size: 13px; line-height: 1.6; color: #4a6478;">
+      <div style="font-family: 'Newsreader', Georgia, serif; font-size: 15px; color: #072b45;">Vole Papillon d'Amour — Bourse aux livres</div>
+      <p data-zone="E8-raison-envoi" style="margin: 10px 0 0;">Vous recevez cet e-mail parce que vous avez demandé une sélection avant chaque bourse.</p>
+      <p style="margin: 6px 0 0;"><a data-zone="E8-desabonnement" href="#" style="display: inline-block; padding: 6px 0; color: #4a6478;">Se désabonner</a></p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":430,"height":2350}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const h = (n) => '♥'.repeat(n) + '♡'.repeat(5 - n);
+    const news = [
+      { title: 'Hypérion', author: 'Dan Simmons', n: 5, reason: 'Parce que vous avez aimé Dune' },
+      { title: 'La Horde du Contrevent', author: 'Alain Damasio', n: 4, reason: 'Parce que vous avez aimé Dune' },
+      { title: 'Fondation', author: 'Isaac Asimov', n: 4, reason: 'Parce que vous avez aimé Dune et 1 autre' },
+      { title: 'Miséricorde', author: 'Jussi Adler-Olsen', n: 3, reason: "Parce que vous avez aimé Les hommes qui n'aimaient pas les femmes" }
+    ].map((b) => ({ ...b, heartsText: h(b.n), heartsLabel: b.n + ' cœurs sur 5' }));
+    return { news, back: [ { title: 'Le Petit Prince', author: 'Antoine de Saint-Exupéry' }, { title: "L'Arabe du futur", author: 'Riad Sattouf' } ] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>E2 · Trouver mon prochain livre — mobile, membre</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</helmet>
+<div style="width: 390px; min-height: 2150px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <header style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #d9e9f4;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 36px; height: 36px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; color: #ffffff;">VPD</span></div>
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 17px;">Vole Papillon d'Amour</span>
+    </div>
+    <button type="button" aria-label="Ouvrir le menu" style="width: 44px; height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#072b45" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+  </header>
+
+  <section data-zone="E2-entete" style="padding: 28px 16px 26px; background: #072b45;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #7fd8f5;">Trouver mon prochain livre</span>
+    <h1 style="margin: 12px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 500; line-height: 1.08; color: #ffffff;">Dites-nous ce que vous avez aimé, <em style="color: #f9a93c;">on cherche à la bourse.</em></h1>
+  </section>
+
+  <div data-zone="E2-preference-email" style="margin: 20px 16px 0; padding: 16px; background: #ffffff; border: 1px solid #d9e9f4; display: flex; gap: 12px; align-items: flex-start;">
+    <input id="opt-mail" type="checkbox" style="flex: none; width: 22px; height: 22px; margin: 2px 0 0; accent-color: #c8364e;">
+    <label for="opt-mail" style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 15px; font-weight: 600;">Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire</span>
+      <span style="font-size: 13px; line-height: 1.45; color: #4e6c84;">Un e-mail trois jours avant l'ouverture, avec les nouveautés qui ressemblent à vos coups de cœur. Désabonnement en un clic.</span>
+    </label>
+  </div>
+
+  <section data-zone="E2-coups-de-coeur" aria-labelledby="m-cdc" style="padding: 28px 16px 8px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <h2 id="m-cdc" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 25px; font-weight: 500;">Mes coups de cœur</h2>
+      <span data-zone="E2-compteur" style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: #6d8ba2;">3 / 200</span>
+    </div>
+    <a data-zone="E2-bouton-ajouter" href="E3-Mobile.dc.html" style="margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; border-radius: 999px; background: #072b45; color: #ffffff; font-size: 15px; font-weight: 600;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7fd8f5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Ajouter un coup de cœur</a>
+    <ul style="list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid #d9e9f4;">
+      <sc-for list="{{favorites}}" as="f" hint-placeholder-count="3">
+        <li data-zone="E2-coup-de-coeur" style="display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid #d9e9f4;">
+          <div style="flex: none; width: 44px; height: 64px; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 16.5px; font-weight: 500; line-height: 1.2;">{{f.title}}</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">{{f.author}}</span>
+            <sc-if value="{{f.dispo}}" hint-placeholder-val="{{false}}"><span data-zone="E2-pastille-disponibilite" style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #18703a;">● {{f.dispo}}</span></sc-if>
+          </div>
+          <button data-zone="E2-retirer" type="button" aria-label="Retirer {{f.title}} de mes coups de cœur" aria-pressed="true" style="flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #f1c9d1; border-radius: 999px; background: #fdf0f2;"><svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="#c8364e"></path></svg></button>
+        </li>
+      </sc-for>
+    </ul>
+  </section>
+
+  <section data-zone="E2-suggestions" aria-labelledby="m-sugg" style="padding: 28px 16px 40px;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">À la bourse aux livres</span>
+    <h2 id="m-sugg" style="margin: 8px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500;">Ils pourraient vous plaire.</h2>
+    <div data-zone="E2-curseur-exigence" role="group" aria-label="Exigence des suggestions" style="margin-top: 16px; padding: 12px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #4e6c84;"><span>Plus de découvertes</span><span>Plus sûr</span></div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px;">
+        <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13px; font-weight: 600; color: #33536e;">1+</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13px; font-weight: 600; color: #33536e;">2+</button>
+        <button type="button" aria-pressed="true" style="min-height: 44px; border: 1px solid #c8364e; border-radius: 999px; background: #c8364e; font-size: 13px; font-weight: 600; color: #ffffff;">3+</button>
+        <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13px; font-weight: 600; color: #33536e;">4+</button>
+      </div>
+      <p data-zone="E2-nombre-suggestions" style="margin: 10px 0 0; font-size: 12.5px; color: #4e6c84;">6 suggestions à 3 cœurs ou plus</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+      <sc-for list="{{shown}}" as="s" hint-placeholder-count="6">
+        <a data-zone="E2-carte-suggestion" href="E5-Mobile.dc.html" style="display: flex; gap: 12px; padding: 12px; border: 1px solid #d9e9f4; background: #ffffff; color: #072b45;">
+          <div style="flex: none; width: 76px; height: 112px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+            <span data-zone="E2-coeurs" role="img" aria-label="{{s.heartsLabel}}" style="display: flex; gap: 2px;"><sc-for list="{{s.hearts}}" as="h" hint-placeholder-count="5"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="{{h.fill}}" stroke="{{h.stroke}}" stroke-width="1.6"></path></svg></sc-for></span>
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 17px; font-weight: 500; line-height: 1.15;">{{s.title}}</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">{{s.author}} · <span style="color: {{s.dispoColor}};">{{s.dispo}}</span></span>
+            <span data-zone="E2-raison" style="font-size: 12px; line-height: 1.4; color: #33536e;">{{s.reason}}</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const hearts = (n) => [1,2,3,4,5].map((i) => i <= n ? { fill: '#c8364e', stroke: '#c8364e' } : { fill: 'none', stroke: '#c9d6e1' });
+    const shown = [
+      { title: "La fille qui rêvait d'un bidon d'essence et d'une allumette", author: 'Stieg Larsson', n: 5, dispo: '1 dispo.', dispoColor: '#18703a', reason: "La suite de Les hommes qui n'aimaient pas les femmes" },
+      { title: 'Hypérion', author: 'Dan Simmons', n: 5, dispo: '2 dispo.', dispoColor: '#18703a', reason: 'Parce que vous avez aimé Dune' },
+      { title: 'La Horde du Contrevent', author: 'Alain Damasio', n: 4, dispo: 'dès le 14 mars', dispoColor: '#0c6ea6', reason: 'Parce que vous avez aimé Dune' },
+      { title: 'Fondation', author: 'Isaac Asimov', n: 4, dispo: '3 dispo.', dispoColor: '#18703a', reason: 'Parce que vous avez aimé Dune et 1 autre' },
+      { title: 'Miséricorde', author: 'Jussi Adler-Olsen', n: 3, dispo: '2 dispo.', dispoColor: '#18703a', reason: "Parce que vous avez aimé Les hommes qui n'aimaient pas les femmes" },
+      { title: 'Le Problème à trois corps', author: 'Liu Cixin', n: 3, dispo: '1 dispo.', dispoColor: '#18703a', reason: 'Parce que vous avez aimé Dune' }
+    ].map((c) => ({ ...c, hearts: hearts(c.n), heartsLabel: c.n + ' cœurs sur 5' }));
+    return {
+      favorites: [
+        { title: "L'Amie prodigieuse", author: 'Elena Ferrante', dispo: '' },
+        { title: "Les hommes qui n'aimaient pas les femmes", author: 'Stieg Larsson', dispo: '1 dispo. à la bourse' },
+        { title: 'Dune', author: 'Frank Herbert', dispo: '' }
+      ],
+      shown
+    };
+  }
+}
+</script>
+</body>
+</html>

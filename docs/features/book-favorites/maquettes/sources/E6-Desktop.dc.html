@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>E6 · Mes achats — J'ai aimé</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</helmet>
+<div style="width: 1440px; height: 1000px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <header style="display: flex; align-items: center; justify-content: space-between; padding: 20px 80px; border-bottom: 1px solid #d9e9f4;">
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px;">Vole Papillon d'Amour</span>
+    <nav aria-label="Mon compte" style="display: flex; gap: 24px; font-size: 14px;"><a href="#" style="color: #4e6c84;">Ma sélection</a><a href="#" aria-current="page" style="color: #072b45; font-weight: 600; border-bottom: 2px solid #f0801c;">Mes achats</a><a href="#" style="color: #4e6c84;">Liste de recherche</a><a href="E7-Desktop.dc.html" style="color: #4e6c84;">Compte et données</a></nav>
+  </header>
+  <div style="padding: 44px 80px 0; max-width: 1000px;">
+    <span style="width: 56px; height: 3px; display: block; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <h1 style="margin: 16px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500;">Mes achats</h1>
+    <p data-zone="E6-explication" style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.55; color: #33536e;">Vous avez aimé un de ces livres&nbsp;? Dites-le d'un clic&nbsp;: il rejoint vos coups de cœur et sert à vous proposer des livres qui lui ressemblent. <a href="Main.dc.html">Voir mes suggestions</a></p>
+  </div>
+  <section aria-labelledby="b-nov" style="padding: 30px 80px 0; max-width: 1000px;">
+    <h2 id="b-nov" style="margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Bourse du samedi 8 novembre 2026 · 4 livres</h2>
+    <ul style="list-style: none; margin: 12px 0 0; padding: 0; border-top: 1px solid #d9e9f4;">
+      <sc-for list="{{lines}}" as="l" hint-placeholder-count="4">
+        <li data-zone="E6-ligne-achat" style="display: flex; gap: 18px; align-items: center; padding: 16px 0; border-bottom: 1px solid #d9e9f4;">
+          <div style="flex: none; width: 52px; height: 76px; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 500;">{{l.title}}</span>
+            <span style="font-size: 14px; color: #4e6c84;">{{l.author}}</span>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: #6d8ba2;">{{l.edition}}</span>
+          </div>
+          <button data-zone="E6-bouton-jai-aime" type="button" aria-pressed="{{l.pressed}}" style="{{l.style}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="{{l.fill}}" stroke="{{l.stroke}}" stroke-width="1.8"></path></svg>{{l.label}}</button>
+        </li>
+      </sc-for>
+    </ul>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const base = 'flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 1px solid #c8364e; border-radius: 999px; font-size: 14px; font-weight: 600; ';
+    const on = { pressed: 'true', label: "J'ai aimé", style: base + 'background: #c8364e; color: #ffffff;', fill: '#ffffff', stroke: '#ffffff' };
+    const off = { pressed: 'false', label: "J'ai aimé", style: base + 'background: #ffffff; color: #a3263e;', fill: 'none', stroke: '#c8364e' };
+    return {
+      lines: [
+        { title: "Les hommes qui n'aimaient pas les femmes", author: 'Stieg Larsson', edition: 'Actes Sud · Babel · 2010', ...on },
+        { title: 'Dune', author: 'Frank Herbert', edition: 'Pocket · 2012 · Poche', ...on },
+        { title: 'Guide du Routard Bretagne', author: 'Collectif', edition: 'Hachette · 2019', ...off },
+        { title: 'Le Petit Prince', author: 'Antoine de Saint-Exupéry', edition: 'Folio · 1999 · Poche', ...off }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

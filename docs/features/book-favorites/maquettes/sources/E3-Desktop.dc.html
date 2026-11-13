@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>E3 · Ajouter un coup de cœur — desktop</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1000px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: #072b45; opacity: .06;"></div>
+  <div aria-hidden="true" style="position: absolute; left: 80px; top: 60px; width: 700px; display: flex; flex-direction: column; gap: 16px; opacity: .35;">
+    <div style="height: 44px; width: 420px; background: #d9e9f4;"></div>
+    <div style="height: 160px; background: #e9f4fb;"></div>
+    <div style="height: 300px; background: #e9f4fb;"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(4, 29, 48, .45);"></div>
+
+  <aside data-zone="E3-panneau" role="dialog" aria-modal="true" aria-labelledby="add-title" style="position: absolute; top: 0; right: 0; bottom: 0; width: 600px; display: flex; flex-direction: column; background: #f7fbfe; box-shadow: -24px 0 48px -24px rgba(4, 29, 48, .5);">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 26px 32px 18px; border-bottom: 1px solid #d9e9f4; background: #ffffff;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: #c8364e;">Mes coups de cœur</span>
+        <h2 id="add-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 500;">Ajouter un coup de cœur</h2>
+      </div>
+      <button data-zone="E3-fermer" type="button" aria-label="Fermer" style="width: 44px; height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072b45" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+
+    <div style="padding: 20px 32px 0;">
+      <label for="cdc-search" style="font-size: 13.5px; font-weight: 600;">Un livre que vous avez aimé</label>
+      <div style="display: flex; gap: 10px; margin-top: 8px;">
+        <input data-zone="E3-recherche" id="cdc-search" type="search" value="seigneur des anneaux" placeholder="Titre, auteur ou ISBN" style="flex: 1 1 auto; min-height: 50px; padding: 0 18px; border: 1px solid #9dc2da; border-radius: 999px; background: #ffffff; font-family: inherit; font-size: 15.5px; color: #072b45;">
+        <button type="button" style="min-height: 50px; padding: 0 22px; border: 0; border-radius: 999px; background: #072b45; color: #ffffff; font-size: 15px; font-weight: 600;">Chercher</button>
+      </div>
+      <p data-zone="E3-aide-edition" style="margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: #4e6c84;">Choisissez l'édition que vous avez lue. Elle compte pour toute l'œuvre&nbsp;: inutile d'ajouter les autres éditions.</p>
+    </div>
+
+    <div style="flex: 1 1 auto; overflow: auto; padding: 18px 32px 28px; display: flex; flex-direction: column; gap: 22px;">
+      <div data-zone="E3-resultats-bourse" style="display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Déjà à la bourse aux livres</span>
+        <div data-zone="E3-resultat" style="display: flex; gap: 14px; align-items: center; padding: 12px 14px; background: #ffffff; border: 1px solid #d9e9f4;">
+          <div style="flex: none; width: 46px; height: 68px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 17px; font-weight: 500;">La Communauté de l'anneau</span>
+            <span style="font-size: 13px; color: #4e6c84;">J. R. R. Tolkien</span>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">Pocket · 2002 · Poche · <span style="color: #18703a;">1 dispo.</span></span>
+          </div>
+          <button data-zone="E3-bouton-ajouter-edition" type="button" aria-pressed="true" style="flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px; border: 1px solid #c8364e; border-radius: 999px; background: #c8364e; color: #ffffff; font-size: 14px; font-weight: 600;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="#ffffff"></path></svg>Ajouté</button>
+        </div>
+      </div>
+
+      <div data-zone="E3-resultats-externes" style="display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Pas encore à la bourse aux livres</span>
+        <sc-for list="{{external}}" as="r" hint-placeholder-count="4">
+          <div data-zone="E3-resultat" style="display: flex; gap: 14px; align-items: center; padding: 12px 14px; background: #ffffff; border: 1px solid #d9e9f4;">
+            <div style="flex: none; width: 46px; height: 68px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+            <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-family: 'Newsreader', Georgia, serif; font-size: 17px; font-weight: 500;">{{r.title}}</span>
+              <span style="font-size: 13px; color: #4e6c84;">{{r.author}}</span>
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">{{r.edition}}</span>
+            </div>
+            <button data-zone="E3-bouton-ajouter-edition" type="button" aria-pressed="false" aria-label="Ajouter {{r.title}}, {{r.edition}}, à mes coups de cœur" style="flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px; border: 1px solid #c8364e; border-radius: 999px; background: #ffffff; color: #a3263e; font-size: 14px; font-weight: 600;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="none" stroke="#c8364e" stroke-width="1.8"></path></svg>Ajouter</button>
+          </div>
+        </sc-for>
+      </div>
+
+      <div data-zone="E3-voir-autres-editions" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; background: #e9f4fb; border: 1px solid #d9e9f4;">
+        <span style="font-size: 14px; color: #33536e;">Vous n'avez pas trouvé l'édition que vous cherchez&nbsp;?</span>
+        <button type="button" style="flex: none; min-height: 44px; padding: 0 18px; border: 1px solid #0c6ea6; border-radius: 999px; background: #ffffff; color: #0c6ea6; font-size: 14px; font-weight: 600;">Voir d'autres éditions</button>
+      </div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      external: [
+        { title: 'Le Seigneur des anneaux — intégrale', author: 'J. R. R. Tolkien', edition: 'Christian Bourgois · 2014 · Relié' },
+        { title: 'Les Deux Tours', author: 'J. R. R. Tolkien', edition: 'Pocket · 2019 · Poche' },
+        { title: 'Le Retour du roi', author: 'J. R. R. Tolkien', edition: 'Pocket · 2019 · Poche' },
+        { title: 'La Fraternité de l’Anneau', author: 'J. R. R. Tolkien', edition: 'Christian Bourgois · 2016 · Broché' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E9 · Administration — e-mail avant la bourse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div style="width: 1440px; height: 1100px; overflow: hidden; display: flex; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <nav aria-label="Administration" style="flex: none; width: 260px; padding: 28px 20px; background: #072b45; display: flex; flex-direction: column; gap: 4px; font-size: 14px;">
+    <span style="padding: 0 12px 18px; font-family: 'Newsreader', Georgia, serif; font-size: 18px; color: #ffffff;">Administration</span>
+    <a href="#" style="padding: 10px 12px; color: #c9e3f3;">Tableau de bord</a>
+    <a href="#" style="padding: 10px 12px; color: #c9e3f3;">Sessions de scan</a>
+    <a href="#" style="padding: 10px 12px; color: #c9e3f3;">Catalogue</a>
+    <a href="#" style="padding: 10px 12px; color: #c9e3f3;">Bourses</a>
+    <a data-zone="E9-lien-menu" href="#" aria-current="page" style="padding: 10px 12px; border-radius: 4px; background: rgba(127, 216, 245, .14); color: #ffffff; font-weight: 600;">E-mail avant la bourse</a>
+    <a href="#" style="padding: 10px 12px; color: #c9e3f3;">Paramètres</a>
+  </nav>
+  <main style="flex: 1 1 auto; min-width: 0; padding: 40px 48px; display: flex; flex-direction: column; gap: 22px;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">Coups de cœur</span>
+        <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 36px; font-weight: 500;">E-mail avant la bourse</h1>
+      </div>
+      <span data-zone="E9-interrupteur" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #b9dfc6; border-radius: 999px; background: #eaf6ee; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #18703a;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #18703a;"></span>Envoi activé</span>
+    </div>
+
+    <section data-zone="E9-prochain-envoi" aria-labelledby="next-send" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+      <h2 id="next-send" style="position: absolute; width: 1px; height: 1px; overflow: hidden;">Prochain envoi</h2>
+      <div style="padding: 20px 22px; background: #ffffff; border: 1px solid #d9e9f4; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Prochaine bourse</span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">Samedi 14 mars 2027</span>
+      </div>
+      <div data-zone="E9-date-envoi" style="padding: 20px 22px; background: #ffffff; border: 1px solid #d9e9f4; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Envoi prévu</span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">Mercredi 11 mars, 10 h</span>
+        <span style="font-size: 13px; color: #4e6c84;">J-3 · heure de Paris</span>
+      </div>
+      <div data-zone="E9-destinataires" style="padding: 20px 22px; background: #ffffff; border: 1px solid #d9e9f4; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Destinataires estimés</span>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">142 membres</span>
+        <span style="font-size: 13px; color: #4e6c84;">consentement donné et au moins un coup de cœur</span>
+      </div>
+    </section>
+
+    <div style="display: flex; gap: 12px;">
+      <button data-zone="E9-bouton-test" type="button" style="min-height: 46px; padding: 0 20px; border: 0; border-radius: 999px; background: #072b45; color: #ffffff; font-size: 14.5px; font-weight: 600;">M'envoyer un test</button>
+      <button data-zone="E9-bouton-suspendre" type="button" style="min-height: 46px; padding: 0 20px; border: 1px solid #c4532a; border-radius: 999px; background: #ffffff; color: #a3401d; font-size: 14.5px; font-weight: 600;">Suspendre l'envoi pour cette bourse</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 24px; flex: 1 1 auto; min-height: 0;">
+      <section data-zone="E9-apercu" aria-labelledby="prev-title" style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+        <h2 id="prev-title" style="margin: 0; font-size: 16px; font-weight: 600;">Aperçu <span style="font-weight: 400; color: #4e6c84;">— avec vos coups de cœur</span></h2>
+        <div style="flex: 1 1 auto; padding: 20px; background: #e6edf2; border: 1px solid #d9e9f4; overflow: hidden;">
+          <div style="background: #ffffff; border: 1px solid #d9e9f4; padding: 22px 26px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; height: 4px;"><div style="flex: 1; background: #7fd8f5;"></div><div style="flex: 1; background: #1497d6;"></div><div style="flex: 1; background: #f0801c;"></div></div>
+            <span style="font-size: 14px;">Bonjour Claire, voici ce qui vous attend samedi.</span>
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">5 livres qui pourraient vous plaire</span>
+            <div style="padding: 12px 14px; background: #e9f4fb; border-top: 3px solid #f0801c; font-family: 'Newsreader', Georgia, serif; font-size: 17px;">À la bourse du samedi 14 mars 2027</div>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #c8364e;">Nouveautés pour vous</span>
+            <div style="height: 70px; border: 1px solid #d9e9f4;"></div>
+            <div style="height: 70px; border: 1px solid #d9e9f4;"></div>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #0c6ea6;">De retour à la bourse</span>
+            <div style="height: 50px; border: 1px solid #d9e9f4;"></div>
+          </div>
+        </div>
+      </section>
+      <section data-zone="E9-compte-rendu" aria-labelledby="report-title" style="display: flex; flex-direction: column; gap: 10px;">
+        <h2 id="report-title" style="margin: 0; font-size: 16px; font-weight: 600;">Dernier envoi <span style="font-weight: 400; color: #4e6c84;">— bourse du 8 novembre 2026</span></h2>
+        <div style="background: #ffffff; border: 1px solid #d9e9f4;">
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #e2eef7;"><span style="font-size: 14px;">Envoyé le</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px;">5 nov. 2026, 10:00</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #e2eef7;"><span style="font-size: 14px;">Envoyés</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; color: #18703a;">118</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #e2eef7;"><span style="font-size: 14px;">Non envoyés, rien à proposer</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600;">17</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px;"><span style="font-size: 14px;">Erreurs</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; color: #b02a33;">1</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>
