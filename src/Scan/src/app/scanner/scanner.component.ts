@@ -50,6 +50,7 @@ import {
   ScanRareCashService,
   ScanRareSaleReference,
 } from '../offline/scan-rare-cash.service';
+import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanConfirmationRequest, ScanConfirmationService} from '../scan-confirmation.service';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
@@ -234,6 +235,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly scanRareCash: ScanRareCashService | null = null,
     @Optional() private readonly scanPassageAssociation: ScanPassageAssociationService | null = null,
     @Optional() private readonly scanManualRequest: ScanManualRequestService | null = null,
+    @Optional() private readonly scanTelemetry: ScanTelemetryService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -893,13 +895,29 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.isLoading = true;
     this.refreshView();
 
+    const lookupStartedAt = performance.now();
+    if (destination === 'cash') {
+      const localLookupStartedAt = performance.now();
+      const localPromise = this.scanWorkflow
+        ? this.scanWorkflow.lookupCatalog(normalizedIsbn)
+        : Promise.resolve(null);
+      await this.lookupCashBook(
+        normalizedIsbn,
+        localPromise,
+        lookupVersion,
+        lookupStartedAt,
+        localLookupStartedAt,
+      );
+      return;
+    }
+
     const metadataPromise = firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
     if (destination === 'tri') {
       this.startManualRequestLookup(normalizedIsbn, lookupVersion);
     }
     const localPromise = destination === 'tri' && this.scanWorkflow
       ? this.scanWorkflow.recordScan(normalizedIsbn)
-      : (destination === 'cash' || destination === 'consultation') && this.scanWorkflow
+      : destination === 'consultation' && this.scanWorkflow
         ? this.scanWorkflow.lookupCatalog(normalizedIsbn)
         : Promise.resolve(null);
 
@@ -937,14 +955,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    const rarePromise = destination === 'cash' && this.scanRareCash
-      ? this.scanRareCash.findByIsbn(normalizedIsbn)
-      : Promise.resolve<ScanRareBook | null>(null);
-
-    const [localOutcome, metadataOutcome, rareOutcome] = await Promise.allSettled([
+    const [localOutcome, metadataOutcome] = await Promise.allSettled([
       localPromise,
       metadataPromise,
-      rarePromise,
     ]);
 
     if (lookupVersion !== this.lookupVersion) {
@@ -956,9 +969,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     } else {
       this.setStorageError('critical', this.describeStorageError(
         localOutcome.reason,
-        destination === 'cash'
-          ? 'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.'
-          : 'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.',
+        'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.',
       ));
     }
 
@@ -981,35 +992,182 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         : 'La notice ne peut pas être chargée pour le moment.';
     }
 
-    if (destination === 'cash' && localOutcome.status === 'fulfilled') {
-      if (rareOutcome.status === 'rejected') {
-        this.setStorageError(
-          'warning',
-          'La fiche rare associée n’a pas pu être vérifiée. Aucune ligne de caisse n’a été créée.',
-        );
+    this.isLoading = false;
+    this.refreshView();
+  }
+
+  private async lookupCashBook(
+    isbn13: string,
+    localPromise: Promise<LocalCatalogResult | null>,
+    lookupVersion: number,
+    lookupStartedAt: number,
+    localLookupStartedAt: number,
+  ): Promise<void> {
+    let localLookupMs = 0;
+    const measuredLocalPromise = localPromise.finally(() => {
+      localLookupMs = performance.now() - localLookupStartedAt;
+    });
+
+    const rareLookupStartedAt = performance.now();
+    let rareLookupMs = 0;
+    const rarePromise = this.scanRareCash
+      ? this.scanRareCash.findByIsbn(isbn13)
+      : Promise.resolve(null);
+    const measuredRarePromise = rarePromise.finally(() => {
+      rareLookupMs = performance.now() - rareLookupStartedAt;
+    });
+
+    const [localOutcome, rareOutcome] = await Promise.allSettled([
+      measuredLocalPromise,
+      measuredRarePromise,
+    ]);
+
+    if (lookupVersion !== this.lookupVersion) {
+      this.trackCashLookup('superseded', lookupStartedAt, localLookupMs, rareLookupMs, 'unknown', 'unknown');
+      return;
+    }
+
+    if (localOutcome.status === 'rejected') {
+      this.setStorageError('critical', this.describeStorageError(
+        localOutcome.reason,
+        'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.',
+      ));
+      this.isLoading = false;
+      this.refreshView();
+      this.trackCashLookup('catalog_error', lookupStartedAt, localLookupMs, rareLookupMs, 'error', 'unknown');
+      return;
+    }
+
+    const localResult = localOutcome.value;
+    this.consultationResult = localResult;
+    const catalogResult = localResult?.catalogBook ? 'found' : 'not_found';
+
+    if (rareOutcome.status === 'rejected') {
+      this.setStorageError(
+        'warning',
+        'La fiche rare associée n’a pas pu être vérifiée. Aucune ligne de caisse n’a été créée.',
+      );
+      this.isLoading = false;
+      this.refreshView();
+      this.trackCashLookup('rare_lookup_error', lookupStartedAt, localLookupMs, rareLookupMs, catalogResult, 'error');
+      return;
+    }
+
+    const rareBook = rareOutcome.value;
+    let result = 'book_added';
+    let itemToEnrich: CashScanItem | null = null;
+    const rareResult = this.scanRareCash ? (rareBook ? 'found' : 'not_found') : 'unavailable';
+    if (rareBook) {
+      if (
+        rareBook.serverId &&
+        rareBook.status === 'Published' &&
+        !rareBook.isSold &&
+        !this.cashItems.some(item => item.rareBookId === rareBook.serverId)
+      ) {
+        this.cashItems = [...this.cashItems, this.createRareCashItem(rareBook)];
+        result = 'rare_added';
+      } else if (rareBook.serverId && this.cashItems.some(item => item.rareBookId === rareBook.serverId)) {
+        this.cashMessage = 'Ce livre rare est déjà dans la vente.';
+        result = 'already_in_sale';
       } else {
-        const rareBook = rareOutcome.value;
-        if (rareBook) {
-          if (
-            rareBook.serverId &&
-            rareBook.status === 'Published' &&
-            !rareBook.isSold &&
-            !this.cashItems.some(item => item.rareBookId === rareBook.serverId)
-          ) {
-            this.cashItems = [...this.cashItems, this.createRareCashItem(rareBook)];
-          } else if (rareBook.serverId && this.cashItems.some(item => item.rareBookId === rareBook.serverId)) {
-            this.cashMessage = 'Ce livre rare est déjà dans la vente.';
-          } else {
-            this.cashMessage = 'Ce livre rare n’est plus disponible.';
-          }
-        } else {
-          this.cashItems = [...this.cashItems, this.createCashItem(normalizedIsbn, metadata)];
-        }
+        this.cashMessage = 'Ce livre rare n’est plus disponible.';
+        result = 'rare_unavailable';
       }
+    } else {
+      itemToEnrich = this.createCashItem(isbn13, null, localResult);
+      this.cashItems = [...this.cashItems, itemToEnrich];
     }
 
     this.isLoading = false;
     this.refreshView();
+    this.trackCashLookup(result, lookupStartedAt, localLookupMs, rareLookupMs, catalogResult, rareResult);
+
+    if (itemToEnrich) {
+      void this.resolveCashItemMetadata(isbn13, itemToEnrich.id);
+    }
+  }
+
+  private trackCashLookup(
+    result: string,
+    lookupStartedAt: number,
+    localLookupMs: number,
+    rareLookupMs: number,
+    catalogResult: string,
+    rareResult: string,
+  ): void {
+    this.trackScanEvent('scan_cash_lookup', {
+      result,
+      catalogResult,
+      rareResult,
+      online: String(this.isOnline),
+      totalMs: String(Math.round(performance.now() - lookupStartedAt)),
+      localLookupMs: String(Math.round(localLookupMs)),
+      rareLookupMs: String(Math.round(rareLookupMs)),
+    });
+  }
+
+  private trackScanEvent(name: string, properties: Record<string, string>): void {
+    try {
+      this.scanTelemetry?.trackEvent(name, properties);
+    } catch {
+      // A telemetry failure must not interrupt the cashier workflow.
+    }
+  }
+
+  private async resolveCashItemMetadata(isbn13: string, itemId: string): Promise<void> {
+    const startedAt = performance.now();
+    let metadataMs = 0;
+    let cacheMs = 0;
+    let result = 'failed';
+    let cacheResult = 'skipped';
+
+    try {
+      const metadata = await firstValueFrom(this.metadataService.getMetadata(isbn13));
+      metadataMs = performance.now() - startedAt;
+      result = 'found';
+
+      const currentItem = this.cashItems.find(item => item.id === itemId);
+      if (currentItem) {
+        this.cashItems = this.cashItems.map(item => item.id === itemId
+          ? {
+            ...item,
+            title: metadata.title ?? item.title,
+            authors: metadata.authors ?? item.authors,
+            publisher: metadata.publisher ?? item.publisher,
+            publicationYear: metadata.publicationYear ?? item.publicationYear,
+          }
+          : item);
+        this.refreshView();
+      }
+
+      if (this.scanWorkflow) {
+        const cacheStartedAt = performance.now();
+        try {
+          await this.scanWorkflow.cacheMetadata(metadata);
+          cacheResult = 'stored';
+        } catch {
+          cacheResult = 'failed';
+        } finally {
+          cacheMs = performance.now() - cacheStartedAt;
+        }
+      }
+    } catch (error) {
+      metadataMs = performance.now() - startedAt;
+      result = error instanceof HttpErrorResponse && error.status === 404 ? 'not_found' : 'failed';
+      const currentItem = this.cashItems.find(item => item.id === itemId);
+      if (result === 'not_found' && currentItem?.title === `ISBN ${isbn13}`) {
+        this.cashItems = this.cashItems.map(item => item.id === itemId ? {...item, title: null} : item);
+        this.refreshView();
+      }
+    }
+
+    this.trackScanEvent('scan_cash_metadata', {
+      result,
+      cacheResult,
+      metadataMs: String(Math.round(metadataMs)),
+      cacheMs: String(Math.round(cacheMs)),
+      totalMs: String(Math.round(performance.now() - startedAt)),
+    });
   }
 
   startSorting(): void {
@@ -2731,19 +2889,24 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     );
   }
 
-  private createCashItem(isbn13: string, metadata: BookMetadata | null): CashScanItem {
-    const book = this.activeBook;
+  private createCashItem(
+    isbn13: string,
+    metadata: BookMetadata | null,
+    localResult: LocalCatalogResult | null = this.consultationResult,
+  ): CashScanItem {
+    const book = localResult?.catalogBook ?? this.activeBook;
+    const verdict = localResult?.verdict ?? this.activeVerdict;
     return {
       id: `${isbn13}-${Date.now()}-${this.cashItems.length}`,
       isbn13,
       rareBookId: null,
       price: null,
       thumbnail: null,
-      title: metadata?.title ?? book?.title ?? null,
+      title: metadata?.title ?? book?.title ?? `ISBN ${isbn13}`,
       authors: metadata?.authors ?? book?.authors ?? null,
       publisher: metadata?.publisher ?? null,
       publicationYear: metadata?.publicationYear ?? null,
-      isRare: this.activeVerdict?.isRare ?? book?.isRare ?? false,
+      isRare: verdict?.isRare ?? book?.isRare ?? false,
       quantityAvailable: book?.qtyAvailable ?? 0,
       quantityAnnounced: book?.qtyAnnounced ?? 0,
     };
