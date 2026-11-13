@@ -1,6 +1,7 @@
 import {TestBed} from '@angular/core/testing';
 
 import {ScanLocalStoreService} from './scan-local-store.service';
+import {ScanTelemetryService} from './scan-telemetry.service';
 import {ScanAssociationSettings, ScanCatalogBook} from './scan-offline.model';
 import {ScanVerdictService} from './scan-verdict.service';
 import {ScanWorkflowService} from './scan-workflow.service';
@@ -9,10 +10,17 @@ import {clearScanCatalogForTest} from './scan-test.utils';
 describe('ScanWorkflowService', () => {
   let service: ScanWorkflowService;
   let store: ScanLocalStoreService;
+  let telemetry: jasmine.SpyObj<ScanTelemetryService>;
 
   beforeEach(async () => {
+    telemetry = jasmine.createSpyObj<ScanTelemetryService>('ScanTelemetryService', ['trackEvent']);
     TestBed.configureTestingModule({
-      providers: [ScanLocalStoreService, ScanVerdictService, ScanWorkflowService],
+      providers: [
+        ScanLocalStoreService,
+        ScanVerdictService,
+        {provide: ScanTelemetryService, useValue: telemetry},
+        ScanWorkflowService,
+      ],
     });
     service = TestBed.inject(ScanWorkflowService);
     store = TestBed.inject(ScanLocalStoreService);
@@ -420,6 +428,28 @@ describe('ScanWorkflowService', () => {
     expect(result.catalogBook?.title).toBe('Livre à consulter');
     expect(result.verdict.totalKnownQuantity).toBe(2);
     expect(await store.listOutboxEntries()).toHaveSize(0);
+  });
+
+  it('tracks phase durations for a local catalog lookup', async () => {
+    await store.saveSettings(createSettings(10, 10));
+    await store.putCatalogBooks([createBook({title: 'Local book', qtyAvailable: 2})]);
+
+    await service.lookupCatalog('9782070363735');
+
+    expect(telemetry.trackEvent).toHaveBeenCalledOnceWith(
+      'scan_catalog_lookup',
+      jasmine.objectContaining({
+        result: 'completed',
+        bookFound: 'true',
+        catalogSize: '1',
+        queueWaitMs: jasmine.any(String),
+        catalogBookReadMs: jasmine.any(String),
+        settingsReadMs: jasmine.any(String),
+        catalogReadMs: jasmine.any(String),
+        verdictMs: jasmine.any(String),
+        totalMs: jasmine.any(String),
+      }),
+    );
   });
 
   it('records a cash sale durably and decrements the local quantity immediately', async () => {

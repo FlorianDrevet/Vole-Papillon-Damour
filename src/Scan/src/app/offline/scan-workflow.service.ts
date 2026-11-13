@@ -21,6 +21,7 @@ import {
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {ScanVerdictService} from './scan-verdict.service';
 import {createScanClientId} from './scan-client-id';
+import {ScanTelemetryService} from './scan-telemetry.service';
 
 @Injectable({providedIn: 'root'})
 export class ScanWorkflowService {
@@ -29,6 +30,7 @@ export class ScanWorkflowService {
   constructor(
     private readonly store: ScanLocalStoreService,
     private readonly verdictService: ScanVerdictService,
+    private readonly telemetry: ScanTelemetryService,
   ) {}
 
   async initialize(): Promise<PersistentStorageStatus> {
@@ -161,14 +163,52 @@ export class ScanWorkflowService {
   }
 
   async lookupCatalog(isbn13: string): Promise<LocalCatalogResult> {
+    const queuedAt = performance.now();
     return await this.enqueue(async () => {
-      const catalogBook = await this.store.getCatalogBook(isbn13);
-      const [settings, catalog] = await Promise.all([
-        this.store.getSettings(),
-        this.store.getCatalogBooks(),
-      ]);
-      const verdict = this.verdictService.calculate(catalogBook, settings, catalog);
-      return {catalogBook, verdict};
+      const startedAt = performance.now();
+      const queueWaitMs = startedAt - queuedAt;
+      let catalogBookReadMs = 0;
+      let settingsReadMs = 0;
+      let catalogReadMs = 0;
+      let verdictMs = 0;
+      let catalogSize = 'unknown';
+      let bookFound = 'unknown';
+      let result = 'failed';
+
+      try {
+        const bookReadStartedAt = performance.now();
+        const catalogBook = await this.store.getCatalogBook(isbn13);
+        catalogBookReadMs = performance.now() - bookReadStartedAt;
+        bookFound = String(catalogBook !== null);
+
+        const [settings, catalog] = await Promise.all([
+          measurePromise(() => this.store.getSettings(), duration => { settingsReadMs = duration; }),
+          measurePromise(() => this.store.getCatalogBooks(), duration => { catalogReadMs = duration; }),
+        ]);
+        catalogSize = String(catalog.length);
+
+        const verdictStartedAt = performance.now();
+        const verdict = this.verdictService.calculate(catalogBook, settings, catalog);
+        verdictMs = performance.now() - verdictStartedAt;
+        result = 'completed';
+        return {catalogBook, verdict};
+      } finally {
+        try {
+          this.telemetry.trackEvent('scan_catalog_lookup', {
+            result,
+            bookFound,
+            catalogSize,
+            queueWaitMs: String(Math.round(queueWaitMs)),
+            catalogBookReadMs: String(Math.round(catalogBookReadMs)),
+            settingsReadMs: String(Math.round(settingsReadMs)),
+            catalogReadMs: String(Math.round(catalogReadMs)),
+            verdictMs: String(Math.round(verdictMs)),
+            totalMs: String(Math.round(performance.now() - queuedAt)),
+          });
+        } catch {
+          // Telemetry must not prevent an offline catalog lookup.
+        }
+      }
     });
   }
 
@@ -721,4 +761,16 @@ function createSession(now: Date, mode: 'AvailableNow' | 'NextFair'): ScanSessio
     closeRequested: false,
     closeReason: null,
   };
+}
+
+async function measurePromise<T>(
+  operation: () => Promise<T>,
+  recordDuration: (durationMs: number) => void,
+): Promise<T> {
+  const startedAt = performance.now();
+  try {
+    return await operation();
+  } finally {
+    recordDuration(performance.now() - startedAt);
+  }
 }

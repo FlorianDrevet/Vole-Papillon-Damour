@@ -1035,6 +1035,47 @@ git pull
 
 ## En cours
 
+### Scan caisse — latence d’ajout d’un livre — 2026-11-13
+
+Lecture seule d’Application Insights sur vpd-scan-appi-dev-fc et vpd-api-appi-dev-fc
+(les ressources *-dev* portent la production, selon l’état ci-dessus). Sur les données
+disponibles des dernières 24 h, le navigateur a mesuré GET /books/{isbn13}/metadata
+sur 41 appels, p95 1,695 s et maximum 1,861 s; le p95 de la requête API correspondante
+était d’environ 0,31 s. Le code caisse attendait la réponse metadata, en plus du résultat
+local, avant d’ajouter la ligne. Le temps réseau du navigateur retenait donc inutilement
+l’ajout. Les lectures du catalogue IndexedDB et de la fiche rare n’étaient pas mesurées;
+elles ne peuvent pas encore être exclues comme source de latence supplémentaire.
+
+La branche fix/scan-cash-lookup-latency retire l’attente metadata : la caisse ajoute
+d’abord le livre depuis le catalogue local (ou son ISBN), puis complète la ligne en
+arrière-plan. Elle émet scan_cash_lookup, scan_catalog_lookup et scan_cash_metadata,
+avec les durées de chaque phase et sans ISBN, compte ni identifiant de bénévole. Ces
+nouvelles mesures ne seront visibles qu’après fusion et déploiement de Scan. Aucun
+déploiement ni changement Azure n’a été fait.
+
+Après déploiement, requête Kusto pour comparer les étapes sur la dernière journée :
+
+~~~kusto
+customEvents
+| where timestamp > ago(1d)
+| where name in ("scan_cash_lookup", "scan_catalog_lookup", "scan_cash_metadata")
+| extend result = tostring(customDimensions.result),
+         totalMs = tolong(customDimensions.totalMs),
+         localLookupMs = tolong(customDimensions.localLookupMs),
+         rareLookupMs = tolong(customDimensions.rareLookupMs),
+         catalogReadMs = tolong(customDimensions.catalogReadMs),
+         metadataMs = tolong(customDimensions.metadataMs)
+| summarize events = count(),
+            p50TotalMs = percentile(totalMs, 50),
+            p95TotalMs = percentile(totalMs, 95),
+            p95LocalMs = percentile(localLookupMs, 95),
+            p95RareMs = percentile(rareLookupMs, 95),
+            p95CatalogReadMs = percentile(catalogReadMs, 95),
+            p95MetadataMs = percentile(metadataMs, 95)
+  by name, result
+| order by name asc, result asc
+~~~
+
 ### Scan — reprise de la caméra caisse — 2026-11-11
 
 Le scanner détecte l’arrêt inattendu de la piste vidéo et tente une seule réacquisition

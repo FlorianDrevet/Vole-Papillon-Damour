@@ -26,6 +26,7 @@ import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
 import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
+import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
 import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
@@ -912,8 +913,9 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
   });
 
-  it('shows that a live camera scan was found while the book lookup is pending', async () => {
+  it('adds a live camera scan before metadata resolves', async () => {
     const metadataResponse = new Subject<BookMetadata>();
+    const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
     let onDetected: ((rawValue: string) => void) | undefined;
     cameraService.start.and.callFake(async (_container, callback) => {
@@ -926,19 +928,20 @@ describe('ScannerComponent', () => {
     component.openCash();
     await fixture.whenStable();
     onDetected?.('9782070363735');
+    await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(component.isLoading).toBeTrue();
-    expect(fixture.nativeElement.querySelector('.scan-progress')?.textContent)
-      .toContain('Scan détecté');
+    expect(component.isLoading).toBeFalse();
+    expect(component.cashItems).toHaveSize(1);
+    expect(component.cashItems[0]?.title).toBe('ISBN 9782070363735');
+    expect(fixture.nativeElement.querySelector('.scan-progress')).toBeNull();
 
-    metadataResponse.next(createMetadata());
+    metadataResponse.next(metadata);
     metadataResponse.complete();
     await fixture.whenStable();
-    await Promise.resolve();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.scan-progress')).toBeNull();
+    expect(component.cashItems[0]?.title).toBe(metadata.title);
   });
 
   it('shows the scan progress in the tri screen while the lookup is pending', async () => {
@@ -1012,6 +1015,69 @@ describe('ScannerComponent', () => {
 
     expect(component.cameraFocusStatus).toBe('unavailable');
     expect(fixture.nativeElement.querySelector('.camera-engine-host-focus-unavailable')).not.toBeNull();
+  });
+
+  it('adds a cash line before waiting for network metadata', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['lookupCatalog', 'cacheMetadata'],
+    );
+    workflow.lookupCatalog.and.resolveTo({
+      catalogBook: {
+        isbn13: '9782070363735',
+        title: 'Titre du catalogue local',
+        authors: 'Auteur local',
+        workId: null,
+        qtyAvailable: 1,
+        qtyAnnounced: 0,
+        salesCount: 0,
+        isWanted: false,
+        isRare: false,
+        updatedAt: '2026-09-03T08:00:00Z',
+      },
+      verdict: createLocalScanResult().verdict,
+    });
+    workflow.cacheMetadata.and.resolveTo();
+    const pendingMetadata = new Subject<BookMetadata>();
+    metadataService.getMetadata.and.returnValue(pendingMetadata);
+    const cashComponent = createCashComponent(workflow);
+    const telemetry = jasmine.createSpyObj<ScanTelemetryService>('ScanTelemetryService', ['trackEvent']);
+    Object.defineProperty(cashComponent, 'scanTelemetry', {value: telemetry});
+
+    const lookup = cashComponent.lookup('9782070363735', 'cash');
+    const finishedBeforeMetadata = await Promise.race([
+      lookup.then(() => true),
+      new Promise<boolean>(resolve => setTimeout(() => resolve(false), 0)),
+    ]);
+
+    expect(finishedBeforeMetadata).toBeTrue();
+    expect(cashComponent.cashItems[0]?.title).toBe('Titre du catalogue local');
+    expect(telemetry.trackEvent).toHaveBeenCalledWith(
+      'scan_cash_lookup',
+      jasmine.objectContaining({
+        result: 'book_added',
+        catalogResult: 'found',
+        rareResult: 'not_found',
+        totalMs: jasmine.any(String),
+        localLookupMs: jasmine.any(String),
+        rareLookupMs: jasmine.any(String),
+      }),
+    );
+
+    pendingMetadata.next(createMetadata('Titre enrichi'));
+    pendingMetadata.complete();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(cashComponent.cashItems[0]?.title).toBe('Titre enrichi');
+    expect(telemetry.trackEvent).toHaveBeenCalledWith(
+      'scan_cash_metadata',
+      jasmine.objectContaining({
+        result: 'found',
+        cacheResult: 'stored',
+        metadataMs: jasmine.any(String),
+        cacheMs: jasmine.any(String),
+      }),
+    );
   });
 
   it('does not add a cash line when the local catalog lookup fails', async () => {
