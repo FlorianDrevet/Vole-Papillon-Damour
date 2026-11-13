@@ -8,7 +8,7 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-favorites`
 - Branche : `feat/book-favorites`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/B8E7vxXGYMmvF6uRJCsaNw (22 artboards, E1 à E11)
 
 ## Statut
 

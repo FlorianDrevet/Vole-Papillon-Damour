@@ -99,8 +99,10 @@ visite).
 ### P2 — Il crée un compte pour garder sa liste
 
 1. Dans le bandeau navigateur de E2, il clique « Créer un compte pour garder ma liste ».
-2. Le formulaire de création de compte propose la case « Recevoir avant chaque bourse
-   une sélection de livres qui pourraient me plaire » (non cochée, `RG-146`).
+2. Une étape intermédiaire, sur le site, rappelle les coups de cœur qui seront repris et
+   propose la case « Recevoir avant chaque bourse une sélection de livres qui pourraient
+   me plaire » (non cochée, `RG-146`). « Créer mon compte » mène ensuite à la page
+   sécurisée de création de compte (Entra), qui ne peut pas porter cette case.
 3. Après la création du compte (ou une connexion à un compte existant), ses coups de cœur
    locaux sont **ajoutés automatiquement** au compte (`RG-141`). Un message confirme :
    « 3 coups de cœur ajoutés à votre compte ».
@@ -151,7 +153,7 @@ Sauf mention contraire, chaque écran est maquetté en desktop 1440 px et en mob
 | **E1** | **Accueil** : rangée « Pour vous » remontée juste sous la barre de recherche, avec cœurs et lien « Voir toutes mes suggestions » ; sans coup de cœur, encart d'entrée « Trouver un livre qui pourrait vous plaire » au même endroit | *modifié* | accueil du catalogue, section « Pour vous » (`07` R4, R5) |
 | **E2** | **Trouver mon prochain livre** : en-tête, partie « Mes coups de cœur » (liste, ajout, retrait, pastille de disponibilité), partie « Ils pourraient vous plaire » (cartes avec cœurs et raison, curseur d'exigence), bandeau navigateur et bouton de création de compte pour l'anonyme, préférence e-mail pour le membre | *nouveau* | même grammaire que l'accueil et *Ma sélection* |
 | **E3** | **Ajouter un coup de cœur** : recherche (titre, auteur, ISBN), résultats du catalogue et des sources externes, choix de l'édition, ajout ; panneau latéral sur desktop, plein écran sur mobile | *nouveau* | même grammaire que la recherche du catalogue (`catalog-search-page`) |
-| **E4** | **Création de compte et connexion** : case de consentement à l'e-mail avant la bourse (si l'on vient des coups de cœur), message de reprise « N coups de cœur ajoutés à votre compte » | *modifié* | pages de création de compte et de connexion du catalogue |
+| **E4** | **Création de compte et reprise** : étape intermédiaire avant la page Entra (rappel des coups de cœur repris, case de consentement à l'e-mail avant la bourse, « Créer mon compte », « J'ai déjà un compte ») ; au retour, message « N coups de cœur ajoutés à votre compte » et sa variante plafond atteint | *nouveau* (étape) / *modifié* (retour) | bouton de connexion du catalogue, redirection Entra |
 | **E5** | **Fiche livre** : bouton « Coup de cœur » (ajout et retrait) près des actions existantes | *modifié* | fiche publique du livre (`04` §5) |
 | **E6** | **Mes achats** : bouton « J'ai aimé » sur chaque ligne ; retrait du bandeau « Pour prolonger vos lectures » | *modifié* | *Mes achats* (`07` R6) |
 | **E7** | **Compte et données** : préférence « Suggestions personnalisées » au texte réécrit, nouvelle préférence « E-mail avant chaque bourse », réglage d'exigence | *modifié* | Compte et données (`07` R7) |
@@ -389,6 +391,7 @@ affiche, **sous le verdict**, un bandeau **rouge avec un cœur** :
 - « Ce livre a déjà plu à un lecteur de la bourse » ;
 - « Ce livre a déjà plu à 3 lecteurs de la bourse ».
 
+Le détail sous la fiche gagne la ligne « Coups de cœur » avec le même nombre.
 Le nombre est affiché, **jamais l'identité** (`RG-13`). Le bandeau est un complément : il
 ne remplace pas le verdict et ne change pas sa priorité (`RG-15`, `RG-16`). Il apparaît
 aussi en mode Consultation, pas en Caisse.
@@ -467,9 +470,12 @@ par défaut, pour pouvoir ouvrir les coups de cœur avant l'e-mail.
 - **Scanette** : le compteur de coups de cœur est une donnée de plus dans la
   synchronisation existante. Aucun appel réseau supplémentaire au moment du scan.
 - **Couleur du bandeau** : le rouge est déjà la couleur du verdict « Inutile d'en
-  garder » (`03` §3.3). Le bandeau coup de cœur doit rester distinct : bandeau fin sous le
-  bloc de verdict, icône cœur, libellé explicite. La maquette vérifiera qu'on ne les
-  confond pas.
+  garder » (`03` §3.3, `#b02a33`, pleine largeur). Le bandeau coup de cœur reste distinct :
+  rouge framboise plus clair (`#d6304f`), arrondi, posé sur une bande blanche sous le
+  verdict, icône cœur, libellé explicite (maquette E10, variante « Inutile d'en garder »).
+  Sur le site, la couleur des cœurs est `#c8364e`.
+- **Création de compte** : elle se fait sur la page Entra, qui ne peut pas porter la case
+  de consentement ; d'où l'étape intermédiaire de E4.
 
 ## 10. Décisions
 
