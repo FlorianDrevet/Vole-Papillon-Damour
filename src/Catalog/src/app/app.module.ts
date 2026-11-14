@@ -44,6 +44,7 @@ import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-fou
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
 import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
+import {AddFavoritePanelComponent} from './features/favorites/add-favorite-panel/add-favorite-panel.component';
 import {CatalogCoverDirective} from './shared/catalog-cover.directive';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
@@ -89,6 +90,7 @@ registerLocaleData(localeFr);
     CatalogRareBooksPageComponent,
     CatalogRareBookDetailPageComponent,
     CatalogRareBookCardComponent,
+    AddFavoritePanelComponent,
     CatalogCoverDirective,
   ],
   imports: [

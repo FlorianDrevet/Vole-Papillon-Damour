@@ -1,0 +1,174 @@
+@if (open) {
+  <div class="favorite-panel-backdrop" (click)="onBackdropClick($event)">
+    <aside
+      #dialog
+      class="favorite-panel"
+      data-zone="E3-panneau"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="favorite-panel-title"
+      tabindex="-1">
+      <header class="favorite-panel-header">
+        <div class="favorite-panel-heading">
+          <span class="favorite-panel-kicker">Mes coups de cœur</span>
+          <h2 id="favorite-panel-title">Ajouter un coup de cœur</h2>
+        </div>
+        <button
+          class="favorite-panel-close"
+          data-zone="E3-fermer"
+          type="button"
+          aria-label="Fermer"
+          (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="favorite-panel-search">
+        <form (submit)="onSearchSubmit($event)">
+          <label for="favorite-panel-search-input">Un livre que vous avez aimé</label>
+          <div class="favorite-panel-search-row">
+            <input
+              #searchInput
+              data-zone="E3-recherche"
+              id="favorite-panel-search-input"
+              type="search"
+              autocomplete="off"
+              placeholder="Titre, auteur ou ISBN"
+              [value]="query"
+              (input)="onQueryInput($event)">
+            <button class="favorite-panel-search-button" type="submit" [disabled]="searching()">
+              {{ searching() ? 'Recherche…' : 'Chercher' }}
+            </button>
+          </div>
+        </form>
+        <p class="favorite-panel-help" data-zone="E3-aide-edition">
+          Choisissez l'édition que vous avez lue. Elle compte pour toute l'œuvre : inutile d'ajouter les autres éditions.
+        </p>
+      </div>
+
+      <div class="favorite-panel-results" [attr.aria-busy]="searching() || isbndbLoading()">
+        @if (searching()) {
+          <p class="favorite-panel-status" role="status">Recherche en cours…</p>
+        }
+        @if (searchError()) {
+          <p class="favorite-panel-error" role="alert">La recherche n'a pas abouti. Réessayez.</p>
+        }
+
+        @if (searchPerformed()) {
+          <section class="favorite-result-group" data-zone="E3-resultats-bourse" aria-labelledby="favorite-catalog-results-title">
+            <h3 id="favorite-catalog-results-title">Déjà à la bourse aux livres</h3>
+            @for (book of catalogResults(); track book.isbn13) {
+              <article class="favorite-result" data-zone="E3-resultat">
+                <div class="favorite-cover" aria-hidden="true">
+                  @if (book.coverUrl) {
+                    <img [src]="book.coverUrl" alt="">
+                  }
+                </div>
+                <div class="favorite-result-copy">
+                  <h4>{{ book.title }}</h4>
+                  @if (book.authors) {
+                    <p class="favorite-result-author">{{ book.authors }}</p>
+                  }
+                  <p class="favorite-result-meta">
+                    @if (book.publisher) { <span>{{ book.publisher }}</span> }
+                    @if (book.publicationYear) { <span>{{ book.publicationYear }}</span> }
+                    @if (book.physicalFormat) { <span>{{ book.physicalFormat }}</span> }
+                    @if (availabilityLabel(book)) {
+                      <span class="favorite-availability">{{ availabilityLabel(book) }}</span>
+                    }
+                  </p>
+                </div>
+                <button
+                  class="favorite-add-button"
+                  data-zone="E3-bouton-ajouter-edition"
+                  type="button"
+                  [attr.aria-pressed]="isAdded(book.isbn13)"
+                  [attr.aria-label]="favoriteActionLabel(book)"
+                  (click)="toggleFavorite(book)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z"></path>
+                  </svg>
+                  <span class="favorite-add-label">{{ isAdded(book.isbn13) ? 'Ajouté' : 'Ajouter' }}</span>
+                </button>
+              </article>
+            } @empty {
+              <p class="favorite-panel-empty">Aucun livre trouvé à la bourse aux livres.</p>
+            }
+          </section>
+
+          <section class="favorite-result-group" data-zone="E3-resultats-externes" aria-labelledby="favorite-reference-results-title">
+            <h3 id="favorite-reference-results-title">Pas encore à la bourse aux livres</h3>
+            @for (book of allReferenceResults(); track book.isbn13) {
+              <article class="favorite-result" data-zone="E3-resultat">
+                <div class="favorite-cover" aria-hidden="true">
+                  @if (book.coverUrl) {
+                    <img [src]="book.coverUrl" alt="">
+                  }
+                </div>
+                <div class="favorite-result-copy">
+                  <h4>{{ book.title }}</h4>
+                  @if (book.authors) {
+                    <p class="favorite-result-author">{{ book.authors }}</p>
+                  }
+                  <p class="favorite-result-meta">
+                    @if (book.publisher) { <span>{{ book.publisher }}</span> }
+                    @if (book.publicationYear) { <span>{{ book.publicationYear }}</span> }
+                    @if (book.physicalFormat) { <span>{{ book.physicalFormat }}</span> }
+                  </p>
+                </div>
+                <button
+                  class="favorite-add-button"
+                  data-zone="E3-bouton-ajouter-edition"
+                  type="button"
+                  [attr.aria-pressed]="isAdded(book.isbn13)"
+                  [attr.aria-label]="favoriteActionLabel(book)"
+                  (click)="toggleFavorite(book)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z"></path>
+                  </svg>
+                  <span class="favorite-add-label">{{ isAdded(book.isbn13) ? 'Ajouté' : 'Ajouter' }}</span>
+                </button>
+              </article>
+            }
+            @if (allReferenceResults().length === 0 && !isbndbUnavailable()) {
+              <p class="favorite-panel-empty">Aucune autre édition trouvée pour cette recherche.</p>
+            }
+          </section>
+        }
+
+        @if (query.trim().length >= 3 && searchPerformed()) {
+          <section class="favorite-other-editions" data-zone="E3-voir-autres-editions">
+            <p>Vous n'avez pas trouvé l'édition que vous cherchez&nbsp;?</p>
+            <button type="button" [disabled]="isbndbLoading()" (click)="searchOtherEditions()">
+              {{ isbndbLoading() ? 'Recherche des éditions…' : "Voir d'autres éditions" }}
+            </button>
+            @if (isbndbUnavailable()) {
+              <p class="favorite-panel-error" role="status">La recherche d'autres éditions est momentanément indisponible.</p>
+            }
+          </section>
+        }
+
+        @if (listLimitReached()) {
+          <div class="favorite-panel-alert" data-zone="E11-plafond-liste" role="alert">
+            @if (favorites.mode() === 'remote') {
+              <strong>Vous avez atteint 200 coups de cœur.</strong>
+              <span>Retirez-en un pour en ajouter un autre.</span>
+            } @else {
+              <strong>Vous avez atteint 50 coups de cœur.</strong>
+              <span>Retirez-en un pour en ajouter un autre, ou créez un compte pour aller jusqu'à 200.</span>
+              <a href="/compte">Créer un compte</a>
+            }
+          </div>
+        }
+        @if (additionUnavailable()) {
+          <div class="favorite-panel-alert favorite-panel-alert--plain" data-zone="E11-livre-introuvable" role="alert">
+            <strong>Ajout impossible</strong>
+            <span>Nous ne trouvons pas assez d'informations sur ce livre pour vous proposer des suggestions.</span>
+          </div>
+        }
+      </div>
+    </aside>
+  </div>
+}
