@@ -1302,7 +1302,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getSettings).toHaveBeenCalled();
   });
 
-  it('loads every book in the catalogue workspace without work-queue filters', async () => {
+  it('loads available books in the catalogue workspace with server-side paging', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getBooks.and.returnValue(of({
@@ -1319,11 +1319,12 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(api.getBooks).toHaveBeenCalledWith('access-token', {
       search: undefined,
+      availableOnly: true,
       page: 1,
       pageSize: 5,
     });
     expect(fixture.nativeElement.querySelector('[data-testid="catalogue-book-list"]')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
+    expect(fixture.nativeElement.textContent).toContain('Livres disponibles');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Remise à plat');
     const booksZone = fixture.nativeElement.querySelector('.catalogue-books-zone') as HTMLElement;
@@ -1551,6 +1552,7 @@ describe('CatalogAdministrationPageComponent', () => {
       expect(fixture.componentInstance.cataloguePage).toBe(1);
       expect(api.getBooks).toHaveBeenCalledWith('access-token', {
         search: 'prince',
+        availableOnly: true,
         page: 1,
         pageSize: 5,
       });

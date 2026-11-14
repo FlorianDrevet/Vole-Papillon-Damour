@@ -189,6 +189,7 @@ public static class BookAdministrationController
                         bool? rare,
                         bool? hidden,
                         bool? undated,
+                        bool? availableOnly,
                         int? page,
                         int? pageSize,
                         IMediator mediator,
@@ -202,7 +203,8 @@ public static class BookAdministrationController
                                 hidden,
                                 page ?? 1,
                                 pageSize ?? 50,
-                                undated),
+                                undated,
+                                availableOnly),
                             cancellationToken);
                         return result.Match(
                             books => Results.Ok(ToResponse(books)),
