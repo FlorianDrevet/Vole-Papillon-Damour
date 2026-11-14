@@ -9,7 +9,7 @@
 
 ## Statut
 
-- [ ] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md)
+- [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md) (validée le 2026-11-14 avec les recommandations `Q-01` à `Q-07`)
 - [ ] 2. Maquettes validées et exportées — `maquettes/`
 - [ ] 3. Plan validé, `check_zones.py` vert — `02-plan.md`
 - [ ] 4. Handoff Codex remis — `HANDOFF.md`
