@@ -15,5 +15,9 @@ public sealed class GetMyRecommendationsQueryValidator : AbstractValidator<GetMy
 
         RuleFor(query => query.Limit)
             .InclusiveBetween(1, settings.PersonalMaxCount);
+
+        RuleFor(query => query.MinimumHearts)
+            .InclusiveBetween(1, 4)
+            .When(query => query.MinimumHearts.HasValue);
     }
 }

@@ -17,4 +17,6 @@ public sealed class RecommendationSettings(IOptions<RecommendationOptions> optio
     public int SimilarMinCount => Values.SimilarMinCount;
     public int PersonalMaxCount => Values.PersonalMaxCount;
     public int PersonalMinCount => Values.PersonalMinCount;
+    public IReadOnlyList<float> HeartThresholds => Values.HeartThresholds;
+    public int DefaultMinimumHearts => Values.DefaultMinimumHearts;
 }

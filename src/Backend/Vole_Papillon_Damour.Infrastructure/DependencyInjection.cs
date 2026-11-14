@@ -132,8 +132,17 @@ public static class DependencyInjection
             builderConfiguration.GetSection(InstagramOptions.SectionName));
         services.Configure<TitleGenerationOptions>(
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
-        services.Configure<RecommendationOptions>(
-            builderConfiguration.GetSection(RecommendationOptions.SectionName));
+        services.AddOptions<RecommendationOptions>()
+            .Bind(builderConfiguration.GetSection(RecommendationOptions.SectionName))
+            .Validate(options =>
+                    options.HeartThresholds is { Length: 5 } thresholds &&
+                    thresholds.All(value => float.IsFinite(value) && value is > 0 and <= 1) &&
+                    thresholds.Distinct().Count() == thresholds.Length &&
+                    thresholds.SequenceEqual(thresholds.OrderBy(value => value)),
+                "Recommendations:HeartThresholds must contain five distinct, increasing scores between 0 and 1.")
+            .Validate(options => options.DefaultMinimumHearts is >= 1 and <= 4,
+                "Recommendations:DefaultMinimumHearts must be between 1 and 4.")
+            .ValidateOnStart();
         services.AddMemoryCache();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<RateLimiter>(serviceProvider =>

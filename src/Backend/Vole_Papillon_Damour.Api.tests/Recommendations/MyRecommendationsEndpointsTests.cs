@@ -70,6 +70,22 @@ public sealed class MyRecommendationsEndpointsTests
     }
 
     [Fact]
+    public async Task GetRecommendations_WhenMemberHasNoFavoritesSerializesNoFavoritesStatus()
+    {
+        var mediator = CreateMediator();
+        mediator.Send(Arg.Any<GetMyRecommendationsQuery>(), Arg.Any<CancellationToken>())
+            .Returns(ErrorOrFactory.From(new MyRecommendationsResult(RecommendationStatus.NoFavorites, [])));
+        await using var application = CreateApplication(mediator);
+        var endpoint = FindEndpoint(application, "/catalog/me/recommendations", "GET");
+
+        var context = await InvokeAsync(application, endpoint, "GET");
+
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.OK);
+        using var document = await JsonDocument.ParseAsync(context.Response.Body);
+        document.RootElement.GetProperty("status").GetString().Should().Be("NoFavorites");
+    }
+
+    [Fact]
     public async Task GetPreference_ReturnsPreferenceNoStoreAndRequiresAuthorization()
     {
         var mediator = CreateMediator();

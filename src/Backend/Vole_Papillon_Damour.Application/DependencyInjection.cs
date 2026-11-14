@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Application.MemberCards.Common;
 using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Application.Favorites.Common;
+using Vole_Papillon_Damour.Application.Recommendations.Common;
 
 namespace Vole_Papillon_Damour.Application;
 
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddAccountDeletionProcessing();
         services.AddScoped<BookAlertDeliveryService>();
         services.AddScoped<FavoriteReferenceService>();
+        services.AddScoped<PersonalSuggestionEngine>();
         services.AddScoped<MemberIdentityService>();
         services.AddScoped<MemberCardIssuer>();
         services.AddScoped<CheckoutPassageRecorder>();

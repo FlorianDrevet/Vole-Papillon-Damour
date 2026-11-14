@@ -19,6 +19,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
@@ -100,6 +101,15 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         Context.Users.Add(member);
         await Context.SaveChangesAsync();
         return member;
+    }
+
+    public async Task AddFavoriteAsync(User member, string isbnValue, DateTime? addedAt = null)
+    {
+        Context.MemberFavoriteBooks.Add(MemberFavoriteBook.Create(
+            member.Id,
+            ParseIsbn(isbnValue),
+            addedAt ?? _now));
+        await Context.SaveChangesAsync();
     }
 
     public async Task<Book> AddCatalogBookAsync(
@@ -364,6 +374,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
 
     public DbSet<User> Users => Set<User>();
     public DbSet<MemberGenreFavorite> MemberGenreFavorites => Set<MemberGenreFavorite>();
+    public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
     public DbSet<Book> Books => Set<Book>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
@@ -405,6 +416,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
             : RecommendationGenerations;
     DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference>
         IProjectDbContext.MemberRecommendationPreferences => MemberRecommendationPreferences;
+    DbSet<MemberFavoriteBook> IProjectDbContext.MemberFavoriteBooks => MemberFavoriteBooks;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -424,6 +436,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.ApplyConfiguration(new BookConfiguration());
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.ApplyConfiguration(new MemberGenreFavoriteConfiguration());
+        modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());
         modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.ManuallyEditedFields).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.RowVersion)

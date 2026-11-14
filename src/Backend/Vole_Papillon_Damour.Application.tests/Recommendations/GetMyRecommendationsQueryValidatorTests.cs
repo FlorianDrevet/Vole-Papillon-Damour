@@ -27,4 +27,26 @@ public sealed class GetMyRecommendationsQueryValidatorTests
 
         result.IsValid.Should().Be(expectedValid);
     }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(4, true)]
+    [InlineData(5, false)]
+    public void Validate_BoundsExplicitMinimumHearts(int minimumHearts, bool expectedValid)
+    {
+        var settings = Substitute.For<IRecommendationSettings>();
+        settings.PersonalMaxCount.Returns(8);
+        var validator = new GetMyRecommendationsQueryValidator(settings);
+
+        var result = validator.Validate(new GetMyRecommendationsQuery(
+            "00000000-0000-0000-0000-000000000001",
+            "member@example.test",
+            null,
+            null,
+            4,
+            minimumHearts));
+
+        result.IsValid.Should().Be(expectedValid);
+    }
 }

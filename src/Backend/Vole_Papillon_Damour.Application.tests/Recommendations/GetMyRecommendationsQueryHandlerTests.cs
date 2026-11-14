@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Common;
 using Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendations;
 using Vole_Papillon_Damour.Application.tests.CheckoutPassages;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
@@ -38,33 +39,37 @@ public sealed class GetMyRecommendationsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenMemberHasNoAssociatedPurchases_ReturnsNoPurchases()
+    public async Task Handle_WhenMemberHasPurchasesButNoFavorites_ReturnsNoFavorites()
     {
         await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
         var member = await fixture.AddMemberAsync();
+        await fixture.AddAssociatedPassageAsync(member, Now, RecentSeed);
 
         var result = await CreateHandler(fixture).Handle(QueryFor(member), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Status.Should().Be(RecommendationStatus.NoPurchases);
+        result.Value.Status.Should().Be(RecommendationStatus.NoFavorites);
         result.Value.Items.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Handle_DoesNotUseVoidedPurchaseLinesAsSeeds()
+    public async Task Handle_DoesNotExcludeVoidedPurchasesFromSuggestions()
     {
         await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
         var member = await fixture.AddMemberAsync();
-        var passage = await fixture.AddAssociatedPassageAsync(member, Now, RecentSeed);
+        await fixture.AddFavoriteAsync(member, RecentSeed);
+        await fixture.AddCatalogBookAsync(SharedCandidate, "Suggestion après retrait", available: true);
+        var passage = await fixture.AddAssociatedPassageAsync(member, Now, SharedCandidate);
         (await fixture.Context.CheckoutPassageLines.SingleAsync()).Void(Now.AddMinutes(1));
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
+        fixture.AddRecommendationNeighbor(CurrentGeneration, RecentSeed, 1, SharedCandidate, 0.9f, NeighborReason.NextTome);
         await fixture.Context.SaveChangesAsync();
 
         var result = await CreateHandler(fixture).Handle(QueryFor(member), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Status.Should().Be(RecommendationStatus.NoPurchases);
-        result.Value.Items.Should().BeEmpty();
+        result.Value.Status.Should().Be(RecommendationStatus.Enabled);
+        result.Value.Items.Should().ContainSingle().Which.Book.Isbn13.Should().Be(SharedCandidate);
         passage.Status.Should().Be(CheckoutPassageStatus.Associated);
     }
 
@@ -73,6 +78,7 @@ public sealed class GetMyRecommendationsQueryHandlerTests
     {
         await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
         var member = await fixture.AddMemberAsync();
+        await fixture.AddFavoriteAsync(member, RecentSeed);
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-1), RecentSeed);
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-2), SharedCandidate);
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
@@ -110,6 +116,7 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         }
 
         await fixture.AddAssociatedPassageAsync(member, Now.AddHours(-3), purchaseIsbns[20]);
+        await fixture.AddFavoriteAsync(member, purchaseIsbns[0]);
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
         fixture.AddRecommendationNeighbor(
             CurrentGeneration,
@@ -133,6 +140,7 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         var member = await fixture.AddMemberAsync();
         await fixture.AddCatalogBookAsync(RecentSeed, "Graine récente", available: false);
         await fixture.AddCatalogBookAsync(SharedCandidate, "Dans ma sélection");
+        await fixture.AddFavoriteAsync(member, RecentSeed);
         await fixture.AddAssociatedPassageAsync(member, Now, RecentSeed);
         await fixture.AddSelectionAsync(member, SharedCandidate);
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
@@ -163,6 +171,7 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         redirected.RedirectTo(canonical.Id);
         await fixture.Context.SaveChangesAsync();
         await fixture.AddAssociatedPassageAsync(member, Now, RecentSeed);
+        await fixture.AddFavoriteAsync(member, RecentSeed);
         await fixture.AddRecommendationAnnouncementAsync(SingleCandidate, quantity: 2);
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
         fixture.AddRecommendationNeighbor(CurrentGeneration, RecentSeed, 1, SharedCandidate, 0.9f, NeighborReason.Theme);
@@ -190,6 +199,8 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         await fixture.AddCatalogBookAsync(SingleCandidate, "Voisin simple");
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-1), RecentSeed);
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-2), OlderSeed);
+        await fixture.AddFavoriteAsync(member, RecentSeed, Now.AddMinutes(-1));
+        await fixture.AddFavoriteAsync(member, OlderSeed, Now.AddMinutes(-2));
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
         fixture.AddRecommendationNeighbor(CurrentGeneration, RecentSeed, 1, SharedCandidate, 0.7f, NeighborReason.Theme);
         fixture.AddRecommendationNeighbor(CurrentGeneration, OlderSeed, 1, SharedCandidate, 0.7f, NeighborReason.SameAuthor);
@@ -219,6 +230,8 @@ public sealed class GetMyRecommendationsQueryHandlerTests
                 [Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.BookMetadataField.Title]),
             Now);
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-2), OlderSeed);
+        await fixture.AddFavoriteAsync(member, RecentSeed, Now.AddMinutes(-1));
+        await fixture.AddFavoriteAsync(member, OlderSeed, Now.AddMinutes(-2));
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
         fixture.AddRecommendationNeighbor(CurrentGeneration, RecentSeed, 1, SharedCandidate, 0.8f, NeighborReason.NextTome);
         fixture.AddRecommendationNeighbor(CurrentGeneration, OlderSeed, 1, SharedCandidate, 0.9f, NeighborReason.SameAuthor);
@@ -228,8 +241,8 @@ public sealed class GetMyRecommendationsQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         var recommendation = result.Value.Items.Should().ContainSingle().Which;
-        recommendation.SeedTitle.Should().Be("Titre historique récent");
-        recommendation.Reason.Should().Be(NeighborReason.NextTome);
+        recommendation.SeedTitle.Should().Be("Titre historique ancien");
+        recommendation.Reason.Should().Be(NeighborReason.SameAuthor);
     }
 
     [Fact]
@@ -242,6 +255,8 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         await fixture.AddCatalogBookAsync(SharedCandidate, "Voisin sous le seuil");
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-1), RecentSeed);
         await fixture.AddAssociatedPassageAsync(member, Now.AddMinutes(-2), OlderSeed);
+        await fixture.AddFavoriteAsync(member, RecentSeed, Now.AddMinutes(-1));
+        await fixture.AddFavoriteAsync(member, OlderSeed, Now.AddMinutes(-2));
         await fixture.SetCurrentRecommendationGenerationAsync(CurrentGeneration);
         fixture.AddRecommendationNeighbor(CurrentGeneration, RecentSeed, 1, SharedCandidate, 0.4f, NeighborReason.Theme);
         fixture.AddRecommendationNeighbor(CurrentGeneration, OlderSeed, 1, SharedCandidate, 0.4f, NeighborReason.Theme);
@@ -263,12 +278,15 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         var settings = Substitute.For<IRecommendationSettings>();
         settings.Enabled.Returns(enabled);
         settings.SimilarMinScore.Returns(similarMinScore);
+        settings.HeartThresholds.Returns([0.50f, 0.58f, 0.66f, 0.74f, 0.82f]);
+        settings.DefaultMinimumHearts.Returns(3);
         settings.PersonalMaxCount.Returns(personalMaxCount);
         return new GetMyRecommendationsQueryHandler(
             fixture.Context,
             new MemberIdentityService(fixture.Context, new CheckoutPassageTestClock(Now)),
             settings,
-            new CheckoutPassageTestClock(Now));
+            new CheckoutPassageTestClock(Now),
+            new PersonalSuggestionEngine(settings));
     }
 
     private static GetMyRecommendationsQuery QueryFor(User member, int limit = 4) => new(

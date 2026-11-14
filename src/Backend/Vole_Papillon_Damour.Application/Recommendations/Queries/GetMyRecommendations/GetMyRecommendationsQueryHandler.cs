@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
@@ -15,10 +16,11 @@ public sealed class GetMyRecommendationsQueryHandler(
     IProjectDbContext dbContext,
     MemberIdentityService memberIdentityService,
     IRecommendationSettings settings,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    PersonalSuggestionEngine suggestionEngine)
     : IRequestHandler<GetMyRecommendationsQuery, ErrorOr<MyRecommendationsResult>>
 {
-    private const int SeedLimit = 20;
+    private const int SeedLimit = 200;
 
     public async Task<ErrorOr<MyRecommendationsResult>> Handle(
         GetMyRecommendationsQuery query,
@@ -40,15 +42,17 @@ public sealed class GetMyRecommendationsQueryHandler(
 
         if (!settings.Enabled)
         {
-            return Empty(RecommendationStatus.Disabled);
+            return Empty(RecommendationStatus.Disabled, query.MinimumHearts ?? DefaultMinimumHearts);
         }
 
         var preference = await dbContext.MemberRecommendationPreferences
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.UserId == member.Id, cancellationToken);
+        var minimumHearts = query.MinimumHearts ?? preference?.MinimumHearts ?? DefaultMinimumHearts;
+
         if (preference is { Enabled: false })
         {
-            return Empty(RecommendationStatus.Disabled);
+            return Empty(RecommendationStatus.Disabled, minimumHearts);
         }
 
         var nowUtc = dateTimeProvider.UtcNow;
@@ -59,6 +63,18 @@ public sealed class GetMyRecommendationsQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
+        var favoriteBooks = await dbContext.MemberFavoriteBooks
+            .AsNoTracking()
+            .Where(favorite => favorite.UserId == member.Id)
+            .OrderByDescending(favorite => favorite.AddedAt)
+            .ThenBy(favorite => favorite.Isbn13)
+            .Take(SeedLimit)
+            .ToListAsync(cancellationToken);
+        if (favoriteBooks.Count == 0)
+        {
+            return Empty(RecommendationStatus.NoFavorites, minimumHearts);
+        }
+
         var purchasedLines = await (
                 from passage in dbContext.CheckoutPassages.AsNoTracking()
                 join line in dbContext.CheckoutPassageLines.AsNoTracking()
@@ -67,46 +83,35 @@ public sealed class GetMyRecommendationsQueryHandler(
                       passage.Status == CheckoutPassageStatus.Associated &&
                       line.VoidedAt == null &&
                       line.Isbn13 != null
-                orderby line.OccurredAt descending, line.Id descending
-                select new PurchaseLineSnapshot(line.Isbn13, line.Title, line.OccurredAt))
+                select new PurchaseLineSnapshot(line.Isbn13, line.Title))
             .ToListAsync(cancellationToken);
+        var purchasedIsbns = purchasedLines
+            .Where(line => line.Isbn13.HasValue)
+            .Select(line => line.Isbn13!.Value.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        var purchasedWorkIds = await ReadPurchasedWorkIdsAsync(purchasedLines, cancellationToken);
 
-        var purchasedIsbns = new HashSet<string>(StringComparer.Ordinal);
-        var seeds = new List<Seed>(SeedLimit);
-        foreach (var line in purchasedLines)
-        {
-            if (line.Isbn13 is not { } isbn)
-            {
-                continue;
-            }
-
-            purchasedIsbns.Add(isbn.Value);
-            if (seeds.Count >= SeedLimit || !seeds.All(seed => seed.Isbn13 != isbn.Value))
-            {
-                continue;
-            }
-
-            seeds.Add(new Seed(isbn.Value, line.Title, seeds.Count));
-        }
-
-        if (seeds.Count == 0)
-        {
-            return Empty(RecommendationStatus.NoPurchases);
-        }
-
-        var generationId = await dbContext.RecommendationGenerations
+        var favoriteIsbns = favoriteBooks.Select(favorite => favorite.Isbn13).ToArray();
+        var favoriteIsbnValues = favoriteIsbns.Select(isbn => isbn.Value).ToArray();
+        var favoriteBookDetails = await dbContext.Books
             .AsNoTracking()
-            .Where(generation => generation.Id == 1)
-            .Select(generation => generation.CurrentGenerationId)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (generationId is null)
-        {
-            return Empty(RecommendationStatus.Enabled);
-        }
-
-        var purchasedWorkIds = await ReadPurchasedWorkIdsAsync(
-            purchasedLines,
-            cancellationToken);
+            .Where(book => favoriteIsbns.Contains(book.Id))
+            .Select(book => new { Isbn13 = book.Id.Value, book.Title, book.WorkId })
+            .ToListAsync(cancellationToken);
+        var favoriteDetailByIsbn = favoriteBookDetails.ToDictionary(
+            book => book.Isbn13,
+            StringComparer.Ordinal);
+        var seeds = favoriteBooks
+            .Select(favorite => new PersonalSuggestionSeed(
+                favorite.Isbn13.Value,
+                favoriteDetailByIsbn.TryGetValue(favorite.Isbn13.Value, out var detail)
+                    ? detail.Title ?? favorite.Isbn13.Value
+                    : favorite.Isbn13.Value))
+            .ToArray();
+        var favoriteWorkIds = favoriteBookDetails
+            .Where(book => !string.IsNullOrWhiteSpace(book.WorkId))
+            .Select(book => book.WorkId!)
+            .ToHashSet(StringComparer.Ordinal);
         var selectionIsbns = (await dbContext.MemberSelectionItems
                 .AsNoTracking()
                 .Where(item => item.UserId == member.Id && item.Isbn13 != null)
@@ -115,7 +120,17 @@ public sealed class GetMyRecommendationsQueryHandler(
             .Where(isbn => isbn.HasValue)
             .Select(isbn => isbn!.Value.Value)
             .ToHashSet(StringComparer.Ordinal);
-        var seedByIsbn = seeds.ToDictionary(seed => seed.Isbn13, StringComparer.Ordinal);
+
+        var generationId = await dbContext.RecommendationGenerations
+            .AsNoTracking()
+            .Where(generation => generation.Id == 1)
+            .Select(generation => generation.CurrentGenerationId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (generationId is null)
+        {
+            return Empty(RecommendationStatus.Enabled, minimumHearts);
+        }
+
         var seedIsbns = seeds.Select(seed => seed.Isbn13).ToArray();
         var neighbors = await dbContext.BookNeighbors
             .AsNoTracking()
@@ -125,104 +140,64 @@ public sealed class GetMyRecommendationsQueryHandler(
             .OrderBy(neighbor => neighbor.Isbn13)
             .ThenBy(neighbor => neighbor.Rank)
             .ToListAsync(cancellationToken);
-
-        var candidates = new Dictionary<string, CandidateScore>(StringComparer.Ordinal);
-        foreach (var neighbor in neighbors)
-        {
-            if (!seedByIsbn.TryGetValue(neighbor.Isbn13, out var seed))
-            {
-                continue;
-            }
-
-            var contribution = neighbor.Score * seed.Weight(seeds.Count);
-            if (!candidates.TryGetValue(neighbor.NeighborIsbn13, out var candidate))
-            {
-                candidate = new CandidateScore();
-                candidates.Add(neighbor.NeighborIsbn13, candidate);
-            }
-
-            candidate.TotalScore += contribution;
-            candidate.HasQualifyingNeighbor |= neighbor.Score >= settings.SimilarMinScore;
-            if (contribution > candidate.StrongestContribution ||
-                (contribution == candidate.StrongestContribution && seed.Index < candidate.Seed.Index))
-            {
-                candidate.StrongestContribution = contribution;
-                candidate.Seed = seed;
-                candidate.Reason = neighbor.Reason;
-            }
-        }
-
-        if (candidates.Count == 0)
-        {
-            return Empty(RecommendationStatus.Enabled);
-        }
-
-        var candidateIsbns = candidates.Keys
-            .Where(isbn =>
-                !purchasedIsbns.Contains(isbn) &&
-                !selectionIsbns.Contains(isbn) &&
-                candidates[isbn].HasQualifyingNeighbor &&
-                Isbn13.TryCreate(isbn, out _))
+        var neighborInputs = neighbors
+            .Select(neighbor => new PersonalSuggestionNeighbor(
+                neighbor.Isbn13,
+                neighbor.NeighborIsbn13,
+                neighbor.Score,
+                neighbor.Reason))
+            .ToArray();
+        var candidateIsbns = neighbors
+            .Select(neighbor => neighbor.NeighborIsbn13)
+            .Distinct(StringComparer.Ordinal)
+            .Where(isbn => Isbn13.TryCreate(isbn, out _))
             .Select(isbn => Isbn13.TryCreate(isbn, out var parsed) ? parsed : (Isbn13?)null)
             .Where(isbn => isbn.HasValue)
             .Select(isbn => isbn!.Value)
             .ToArray();
-        if (candidateIsbns.Length == 0)
-        {
-            return Empty(RecommendationStatus.Enabled);
-        }
-
-        var books = await dbContext.Books
-            .AsNoTracking()
-            .Where(book =>
-                candidateIsbns.Contains(book.Id) &&
-                !book.IsHiddenFromCatalog &&
-                book.RedirectedToIsbn13 == null &&
-                (book.MetadataStatus == BookMetadataStatus.Resolved ||
-                 book.MetadataStatus == BookMetadataStatus.Manual) &&
-                book.Title != null &&
-                book.Title.Trim() != string.Empty)
-            .ToListAsync(cancellationToken);
-        var announcements = await dbContext.BookAnnouncements
-            .AsNoTracking()
-            .Where(announcement => candidateIsbns.Contains(announcement.Isbn13))
-            .ToListAsync(cancellationToken);
+        var candidateBooks = candidateIsbns.Length == 0
+            ? []
+            : await dbContext.Books
+                .AsNoTracking()
+                .Where(book =>
+                    candidateIsbns.Contains(book.Id) &&
+                    !book.IsFavoriteReference &&
+                    !book.IsHiddenFromCatalog &&
+                    book.RedirectedToIsbn13 == null &&
+                    (book.MetadataStatus == BookMetadataStatus.Resolved ||
+                     book.MetadataStatus == BookMetadataStatus.Manual) &&
+                    book.Title != null &&
+                    book.Title.Trim() != string.Empty)
+                .ToListAsync(cancellationToken);
+        var announcements = candidateIsbns.Length == 0
+            ? []
+            : await dbContext.BookAnnouncements
+                .AsNoTracking()
+                .Where(announcement => candidateIsbns.Contains(announcement.Isbn13))
+                .ToListAsync(cancellationToken);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
-        var projectedBooks = PublicCatalogProjector.Project(
-                books,
-                announcements,
-                fairs,
-                new HashSet<string>(StringComparer.Ordinal),
-                nowUtc)
-            .ToDictionary(book => book.Isbn13, StringComparer.Ordinal);
+        var publicBooks = PublicCatalogProjector.Project(
+            candidateBooks,
+            announcements,
+            fairs,
+            new HashSet<string>(StringComparer.Ordinal),
+            nowUtc);
+        var suggestions = suggestionEngine.Suggest(
+            seeds,
+            neighborInputs,
+            new PersonalSuggestionExclusions(
+                purchasedIsbns,
+                purchasedWorkIds,
+                favoriteIsbnValues.ToHashSet(StringComparer.Ordinal),
+                favoriteWorkIds,
+                selectionIsbns),
+            publicBooks,
+            minimumHearts,
+            query.Limit);
 
-        var orderedCandidates = candidates
-            .Where(pair =>
-                pair.Value.HasQualifyingNeighbor &&
-                !purchasedIsbns.Contains(pair.Key) &&
-                !selectionIsbns.Contains(pair.Key))
-            .OrderByDescending(pair => pair.Value.TotalScore)
-            .ThenBy(pair => pair.Key, StringComparer.Ordinal);
-        var results = new List<PersonalRecommendation>(Math.Max(0, query.Limit));
-        foreach (var (isbn, candidate) in orderedCandidates)
-        {
-            if (!projectedBooks.TryGetValue(isbn, out var book) ||
-                (book.QuantityAvailable <= 0 && book.QuantityAnnounced <= 0) ||
-                (book.WorkId is not null && purchasedWorkIds.Contains(book.WorkId)))
-            {
-                continue;
-            }
-
-            results.Add(new PersonalRecommendation(book, candidate.Reason, candidate.Seed.Title));
-            if (results.Count >= query.Limit)
-            {
-                break;
-            }
-        }
-
-        return new MyRecommendationsResult(RecommendationStatus.Enabled, results);
+        return new MyRecommendationsResult(RecommendationStatus.Enabled, suggestions, minimumHearts);
     }
 
     private async Task<HashSet<string>> ReadPurchasedWorkIdsAsync(
@@ -254,22 +229,12 @@ public sealed class GetMyRecommendationsQueryHandler(
         return workIds;
     }
 
-    private static MyRecommendationsResult Empty(RecommendationStatus status) => new(status, []);
+    private int DefaultMinimumHearts => settings.DefaultMinimumHearts is >= 1 and <= 4
+        ? settings.DefaultMinimumHearts
+        : 3;
 
-    private sealed record PurchaseLineSnapshot(Isbn13? Isbn13, string Title, DateTime OccurredAt);
+    private static MyRecommendationsResult Empty(RecommendationStatus status, int minimumHearts) =>
+        new(status, [], minimumHearts);
 
-    private sealed record Seed(string Isbn13, string Title, int Index)
-    {
-        public float Weight(int seedCount) =>
-            1f - 0.5f * Index / Math.Max(1, seedCount - 1);
-    }
-
-    private sealed class CandidateScore
-    {
-        public float TotalScore { get; set; }
-        public float StrongestContribution { get; set; } = float.NegativeInfinity;
-        public bool HasQualifyingNeighbor { get; set; }
-        public Seed Seed { get; set; } = null!;
-        public Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects.NeighborReason Reason { get; set; }
-    }
+    private sealed record PurchaseLineSnapshot(Isbn13? Isbn13, string Title);
 }
