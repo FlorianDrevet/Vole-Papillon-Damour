@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 interface DiseaseCard {
   code: string;
@@ -11,6 +11,7 @@ interface DiseaseCard {
 @Component({
   selector: 'app-maladies-list',
   templateUrl: './maladies-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class MaladiesListComponent {

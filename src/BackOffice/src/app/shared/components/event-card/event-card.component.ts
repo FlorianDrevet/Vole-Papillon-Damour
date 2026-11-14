@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { VpdEventModel } from '../../models/vpdEvent.model';
@@ -13,6 +13,7 @@ import { VpdEventsFacadeService } from '../../facades/vpd-events.facade.service'
 @Component({
   selector: 'app-event-card',
   templateUrl: './event-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class EventCardComponent {

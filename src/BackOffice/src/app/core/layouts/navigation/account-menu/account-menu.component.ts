@@ -1,4 +1,4 @@
-import {Component, ElementRef, HostListener, inject, signal} from '@angular/core';
+import {Component, ElementRef, HostListener, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 
 import {AuthSessionService} from '../../../../shared/auth/auth-session.service';
 
@@ -13,6 +13,7 @@ import {AuthSessionService} from '../../../../shared/auth/auth-session.service';
 @Component({
   selector: 'app-account-menu',
   templateUrl: './account-menu.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class AccountMenuComponent {

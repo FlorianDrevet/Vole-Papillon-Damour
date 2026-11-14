@@ -1,10 +1,11 @@
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, input, signal, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventPartieLineModel} from "../../../../../../shared/models/vpdEvent.model";
 
 @Component({
     selector: 'app-lot-card',
     templateUrl: './lot-card.component.html',
     styleUrl: './lot-card.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LotCardComponent {

@@ -1,4 +1,4 @@
-import {Component, computed, DestroyRef, HostListener, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, DestroyRef, HostListener, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from '@angular/router';
 import {buildLotoTableauView, LotoCell} from '@vpd/ui';
@@ -26,6 +26,7 @@ type Overlay = 'none' | 'numero' | 'pause';
   templateUrl: './tableau.component.html',
   // Styles : src/scss/_loto-projection.scss.
   host: {class: 'loto-projection'},
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class TableauComponent implements OnInit {

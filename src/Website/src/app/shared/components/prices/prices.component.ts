@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ProductFacadeService } from '../../facades/product.facade.service';
 import { ProductSectionEnum } from '../../enums/productSection.enum';
 import { ProductModel } from '../../models/product.model';
@@ -12,6 +12,7 @@ import { ProductCategoryEnum } from '../../enums/productCategory.enum';
   selector: 'app-prices',
   templateUrl: './prices.component.html',
   styleUrl: './prices.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PricesComponent implements OnInit {

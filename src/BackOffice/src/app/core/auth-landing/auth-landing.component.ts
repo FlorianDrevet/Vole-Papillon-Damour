@@ -1,4 +1,4 @@
-import {Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Router} from '@angular/router';
 import {MsalBroadcastService} from '@azure/msal-angular';
@@ -28,6 +28,7 @@ const REDIRECT_TIMEOUT_MS = 12_000;
 @Component({
   selector: 'app-auth-landing',
   templateUrl: './auth-landing.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class AuthLandingComponent implements OnInit {

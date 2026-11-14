@@ -1,4 +1,4 @@
-import { Component, HostBinding, input } from '@angular/core';
+import { Component, HostBinding, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Emplacement de substitution pour une photo qui n'existe pas encore
@@ -8,6 +8,7 @@ import { Component, HostBinding, input } from '@angular/core';
 @Component({
   selector: 'app-photo-placeholder',
   templateUrl: './photo-placeholder.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PhotoPlaceholderComponent {

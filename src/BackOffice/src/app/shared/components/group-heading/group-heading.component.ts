@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Titre de sous-groupe (mois d'actualités, "Les lotos" / "Les bourses aux
@@ -8,6 +8,7 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-group-heading',
   templateUrl: './group-heading.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class GroupHeadingComponent {

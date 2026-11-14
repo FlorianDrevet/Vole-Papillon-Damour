@@ -7,7 +7,7 @@
       Chaque fiche explique la maladie en général, puis ce qu'elle change concrètement au quotidien.
     </p>
   </div>
-  <div class="flex flex-col gap-3 rounded bg-white px-7 py-7 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.5)]">
+  <div class="flex flex-col gap-3 rounded-sm bg-white px-7 py-7 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.5)]">
     <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">La cause commune</span>
     <h2 class="font-serif text-xl font-medium text-ink-2">C’est la mutation du gène ERBB3</h2>
     <p class="text-sm leading-relaxed text-slate-2">
@@ -21,7 +21,7 @@
   @for (disease of diseases; track disease.route; let i = $index) {
     <a
       [routerLink]="disease.route"
-      class="flex flex-col gap-3 rounded-sm px-6 py-6 transition"
+      class="flex flex-col gap-3 rounded-xs px-6 py-6 transition"
       [class]="i === 0 ? 'bg-ink-2 text-paper' : 'border border-line-2 text-ink-2 hover:border-blue-2'">
       <span class="font-mono text-[10px] uppercase tracking-[.14em]" [class]="i === 0 ? 'text-cyan' : 'text-orange-3'">{{ disease.code }} · {{ disease.category }}</span>
       <h3 class="font-serif text-xl font-medium leading-snug">{{ disease.name }}</h3>
@@ -32,7 +32,7 @@
 </section>
 
 <section class="bg-paper px-shell py-12 lg:py-14" aria-labelledby="nutrition-title">
-  <div class="mx-auto flex max-w-[1180px] flex-col gap-5 rounded-sm border border-line-2 bg-white px-6 py-7 lg:flex-row lg:items-center lg:justify-between lg:px-9">
+  <div class="mx-auto flex max-w-[1180px] flex-col gap-5 rounded-xs border border-line-2 bg-white px-6 py-7 lg:flex-row lg:items-center lg:justify-between lg:px-9">
     <div class="flex max-w-[60ch] flex-col gap-3">
       <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-3">Maxence · nutrition</span>
       <h2 id="nutrition-title" class="font-serif text-2xl font-medium leading-snug text-ink-2 lg:text-[28px]">La gastrostomie, une forme de nutrition</h2>

@@ -1,10 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Component, effect, inject, input, PLATFORM_ID, Renderer2, signal } from '@angular/core';
+import { Component, effect, inject, input, PLATFORM_ID, Renderer2, signal, ChangeDetectionStrategy } from '@angular/core';
 import { SiteNavItem } from '../nav-items';
 
 @Component({
   selector: 'app-navigation-mobile',
   templateUrl: './navigation-mobile.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class NavigationMobileComponent {

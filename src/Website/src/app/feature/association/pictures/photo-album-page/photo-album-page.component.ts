@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { findPhotoAlbum, PHOTO_ALBUMS_ROUTE, PhotoAlbum } from '../photo-album-catalog';
@@ -6,6 +6,7 @@ import { findPhotoAlbum, PHOTO_ALBUMS_ROUTE, PhotoAlbum } from '../photo-album-c
 @Component({
   selector: 'app-photo-album-page',
   templateUrl: './photo-album-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PhotoAlbumPageComponent {

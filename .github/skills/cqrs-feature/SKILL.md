@@ -33,3 +33,10 @@ Charger ce skill pour toute tache backend qui touche `Api`, `Application`, `Cont
 
 - Tester d'abord le comportement du handler, du validator, ou de la regle de domaine modifiee.
 - Si le test project n'existe pas pour la couche cible, documenter la dette dans `.github/test-debt.md` avant de continuer sans TDD strict.
+- Pour une nouvelle feature, verifier que les tests rouges echouent pour la bonne raison avant l'implementation, puis relancer les tests cibles apres chaque couche modifiee.
+- Apres les suites de tests vertes, executer Stryker.NET sur les fichiers métier modifies (Domain, Application, ou Worker), avec un filtre `-m` par fichier. Depuis `src/Backend/` :
+  ```powershell
+  dotnet tool restore
+  dotnet stryker -s Vole_Papillon_Damour.slnx -r json -r html -m '**/<Feature>Handler.cs' -m '**/<Feature>Validator.cs'
+  ```
+  Remplacer les motifs par les fichiers reels du changement. Cette solution utilise xUnit v2 avec VSTest : conserver le runner par defaut et ne pas reprendre `-t mtp` du template. Ne pas muter le cablage DI, `Program.cs`, les configurations EF ou les migrations. Examiner `StrykerOutput/*/reports/mutation-report.json` : ajouter des tests comportementaux pour les survivants utiles, ou justifier les mutants equivalents et `NoCoverage`; ne pas viser un score arbitraire. Les bornes FluentValidation (`MaximumLength`, `GreaterThan`, etc.) restent couvertes par des tests explicites.

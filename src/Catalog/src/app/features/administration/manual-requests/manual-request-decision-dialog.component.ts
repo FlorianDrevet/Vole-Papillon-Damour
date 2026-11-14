@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, ViewChild, inject, signal} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, ViewChild, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 
 import {CatalogManualRequestItem} from '../../../core/catalog.models';
 
@@ -9,6 +9,7 @@ export type ManualRequestDecisionMode = 'given' | 'refuse' | 'cancel-found';
   selector: 'app-manual-request-decision-dialog',
   standalone: false,
   templateUrl: './manual-request-decision-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./manual-request-decision-dialog.component.scss'],
 })
 export class ManualRequestDecisionDialogComponent implements AfterViewInit, OnDestroy {

@@ -6,16 +6,16 @@
 <div class="mx-auto flex max-w-[860px] flex-col gap-14 px-6 pb-16 lg:px-11 lg:pb-20">
   @if (isLoading()) {
     <div class="flex flex-col gap-3" role="status" aria-label="Chargement de l'agenda">
-      <span class="skeleton h-8 w-32 rounded-sm" aria-hidden="true"></span>
+      <span class="skeleton h-8 w-32 rounded-xs" aria-hidden="true"></span>
       <div class="flex flex-col" aria-hidden="true">
         @for (card of loadingCards; track card) {
           <div class="vpd-all-event-skeleton grid grid-cols-1 items-center gap-2 border-b border-line-2 py-5 sm:grid-cols-[110px_1fr_auto] sm:gap-6 sm:px-3">
-            <span class="skeleton h-8 w-12 rounded-sm"></span>
+            <span class="skeleton h-8 w-12 rounded-xs"></span>
             <span class="flex flex-col gap-2">
-              <span class="skeleton h-4 w-4/5 rounded-sm"></span>
-              <span class="skeleton h-3 w-2/5 rounded-sm"></span>
+              <span class="skeleton h-4 w-4/5 rounded-xs"></span>
+              <span class="skeleton h-3 w-2/5 rounded-xs"></span>
             </span>
-            <span class="skeleton h-3 w-16 rounded-sm"></span>
+            <span class="skeleton h-3 w-16 rounded-xs"></span>
           </div>
         }
       </div>

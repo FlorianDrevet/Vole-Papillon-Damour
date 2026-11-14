@@ -7,7 +7,7 @@
   </app-page-header>
 
   @if (draftCount() > 0) {
-    <section class="flex flex-col gap-3 rounded-sm border border-orange-200 bg-orange-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
+    <section class="flex flex-col gap-3 rounded-xs border border-orange-200 bg-orange-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
       <div>
         <p class="font-semibold text-ink-2">
           {{ draftCount() }} brouillon{{ draftCount() > 1 ? 's' : '' }} à relire

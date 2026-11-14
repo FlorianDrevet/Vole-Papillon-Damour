@@ -1,4 +1,4 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventPartieModel} from "../../../../../../shared/models/vpdEvent.model";
 import {compareNumberLines} from "../../../../../../shared/enums/numberLine.enum";
 import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
@@ -7,6 +7,7 @@ import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
     selector: 'app-partie-card',
     templateUrl: './partie-card.component.html',
     styleUrl: './partie-card.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PartieCardComponent {

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Carte "chiffre clé" flottante et légèrement inclinée (animation vpdFloat).
@@ -7,6 +7,7 @@ import { Component, computed, input } from '@angular/core';
 @Component({
   selector: 'app-stat-card',
   templateUrl: './stat-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class StatCardComponent {

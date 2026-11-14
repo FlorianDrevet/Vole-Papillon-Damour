@@ -1,10 +1,11 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 export type PapillonMood = 'vol' | 'pose';
 
 @Component({
   selector: 'vpd-papillon',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './papillon.component.html',
 })
 export class VpdPapillonComponent {

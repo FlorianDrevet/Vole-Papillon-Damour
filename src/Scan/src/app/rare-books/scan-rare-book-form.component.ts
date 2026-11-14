@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 
@@ -18,6 +18,7 @@ export type ScanRareBookFormStep = 'choice' | 'candidate' | 'identify' | 'descri
   selector: 'app-scan-rare-book-form',
   templateUrl: './scan-rare-book-form.component.html',
   styleUrls: ['./scan-rare-book-form.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanRareBookFormComponent implements OnInit, OnDestroy {

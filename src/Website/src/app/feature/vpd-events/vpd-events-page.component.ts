@@ -1,4 +1,4 @@
-import {Component, computed, inject, OnInit, PendingTasks, PLATFORM_ID, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, PendingTasks, PLATFORM_ID, signal, ChangeDetectionStrategy} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {VpdEventsFacadeService} from '../../shared/facades/vpd-events.facade.service';
 import {VpdEventModel} from '../../shared/models/vpdEvent.model';
@@ -14,6 +14,7 @@ const AGENDA_VIEW_STORAGE_KEY = 'vpd.agenda.vue';
 @Component({
   selector: 'app-vpd-events',
   templateUrl: './vpd-events-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class VpdEventsPageComponent implements OnInit {

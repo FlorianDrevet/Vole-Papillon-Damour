@@ -28,6 +28,8 @@
 
 ## Configuration and commands
 
+- `global.json`, CI, and API/Worker SDK container images pin .NET SDK 10.0.404. Restore the local .NET tool manifest from `src/Backend/` with `dotnet tool restore` before targeted Stryker runs.
+- Frontend lockfiles are npm lockfile v3 files for the four Angular 22 apps. Use Node 24.15.0, run `npm ci`, then `npm run build` in each app; BackOffice and Website additionally resolve Tailwind through their local PostCSS config.
 - API config comes from appsettings, environment variables, and local secrets. Aspire injects SQL/Azurite; keep SQL's persisted-volume password stable via its User Secret and let the Functions integration provide its own host-storage connection.
 - Frontend API/site URLs and Entra values are environment/build inputs. Docker builds use `src/` as context for `@vpd/ui`; never commit local connection strings or tokens.
 - Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`.

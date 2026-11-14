@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { IconName } from '../icon/icon.component';
 
 export type IconButtonVariant = 'default' | 'danger';
@@ -14,6 +14,7 @@ export type IconButtonVariant = 'default' | 'danger';
 @Component({
   selector: 'app-icon-button',
   templateUrl: './icon-button.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class IconButtonComponent {

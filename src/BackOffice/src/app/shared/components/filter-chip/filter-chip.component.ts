@@ -1,4 +1,4 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, ChangeDetectionStrategy} from '@angular/core';
 
 export type FilterChipVariant = 'tab' | 'chip';
 
@@ -12,6 +12,7 @@ export type FilterChipVariant = 'tab' | 'chip';
 @Component({
   selector: 'app-filter-chip',
   templateUrl: './filter-chip.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class FilterChipComponent {

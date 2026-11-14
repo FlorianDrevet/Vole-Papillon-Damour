@@ -40,7 +40,7 @@
               <div
                 [hidden]="isMenuSuppressed(item.url)"
                 class="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 translate-y-1 pt-3 opacity-0 transition-[opacity,transform] duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <div class="w-[302px] overflow-hidden rounded-sm border border-line bg-white shadow-[0_22px_44px_-24px_rgba(7,43,69,.45)]">
+                <div class="w-[302px] overflow-hidden rounded-xs border border-line bg-white shadow-[0_22px_44px_-24px_rgba(7,43,69,.45)]">
                   <span class="block h-[3px] w-full bg-vpd-brand" aria-hidden="true"></span>
                   <ul class="flex flex-col divide-y divide-line-2 py-1" [attr.aria-label]="item.label">
                     @for (child of item.children; track child.url) {

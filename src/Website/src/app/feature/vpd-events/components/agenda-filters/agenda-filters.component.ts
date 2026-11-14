@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventEnum} from '../../../../shared/enums/vpdEvent.enum';
 import {VpdEventModel} from '../../../../shared/models/vpdEvent.model';
 
@@ -15,6 +15,7 @@ interface AgendaFilterOption {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './agenda-filters.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './agenda-filters.component.scss',
 })
 export class AgendaFiltersComponent {

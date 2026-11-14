@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, inject, Input} from '@angular/core';
+import {Component, inject, Input, ChangeDetectionStrategy} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {countdownLabel} from '../../../../shared/events/countdown';
 import {eventIdentity, EventIdentity} from '../../../../shared/events/event-identity';
@@ -24,6 +24,7 @@ import {VpdPapillonComponent} from '../../../../shared/components/mascots/papill
     VpdPapillonComponent,
   ],
   templateUrl: './agenda-liste.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './agenda-liste.component.scss',
 })
 export class AgendaListComponent {

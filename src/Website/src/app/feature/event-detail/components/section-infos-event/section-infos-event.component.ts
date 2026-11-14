@@ -1,9 +1,10 @@
-import {Component, input} from '@angular/core';
+import {Component, input, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
     selector: 'app-section-infos-event',
     templateUrl: './section-infos-event.component.html',
     styleUrl: './section-infos-event.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SectionInfosEventComponent {

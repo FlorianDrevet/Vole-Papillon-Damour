@@ -12,6 +12,7 @@ import {
   OnInit,
   Optional,
   ViewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import {Router} from '@angular/router';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -119,6 +120,7 @@ const STORAGE_PERSISTENCE_ERROR_FEEDBACK = 'La demande de protection n’a pas p
   selector: 'app-scanner',
   templateUrl: './scanner.component.html',
   styleUrl: './scanner.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDestroy {

@@ -1,4 +1,4 @@
-import {Component, computed, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
@@ -11,6 +11,7 @@ import {
 @Component({
     selector: 'app-vpd-events',
     templateUrl: './vpd-events.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class VpdEventsComponent implements OnInit {

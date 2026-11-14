@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { CookieConsentService } from '../../../shared/services/cookie-consent.service';
@@ -6,6 +6,7 @@ import { CookieConsentService } from '../../../shared/services/cookie-consent.se
 @Component({
   selector: 'app-footer',
   templateUrl: './footer.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class FooterComponent {

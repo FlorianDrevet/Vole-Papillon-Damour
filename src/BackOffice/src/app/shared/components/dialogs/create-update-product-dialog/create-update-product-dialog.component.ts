@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {FileUploadInterface} from "../../../interfaces/fileUpload.interface";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -16,6 +16,7 @@ import {ProductCategoryEnum} from "../../../enums/productCategory.enum";
     selector: 'app-create-update-product-dialog',
     templateUrl: './create-update-product-dialog.component.html',
     styleUrl: './create-update-product-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateUpdateProductDialogComponent implements OnInit {

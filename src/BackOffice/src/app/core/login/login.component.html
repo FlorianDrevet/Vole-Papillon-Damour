@@ -44,14 +44,14 @@
       </div>
 
       @if (wasSessionRejected() && !hasFailed()) {
-        <p class="rounded-sm border border-orange/30 bg-orange/5 px-4 py-3 text-sm leading-relaxed text-ink-2">
+        <p class="rounded-xs border border-orange/30 bg-orange/5 px-4 py-3 text-sm leading-relaxed text-ink-2">
           Votre session n'est plus acceptée par le serveur. Reconnectez-vous pour
           reprendre là où vous en étiez.
         </p>
       }
 
       @if (hasFailed()) {
-        <div class="flex flex-col gap-3 rounded-sm border border-danger/30 bg-danger-soft px-4 py-4">
+        <div class="flex flex-col gap-3 rounded-xs border border-danger/30 bg-danger-soft px-4 py-4">
           <p class="text-sm font-semibold text-danger">La connexion n'a pas pu démarrer.</p>
           @if (isKeycloak) {
             <p class="text-sm leading-relaxed text-slate">
@@ -75,7 +75,7 @@
       }
 
       @if (isAuthenticated()) {
-        <div class="flex items-center gap-3.5 rounded-sm border border-line bg-white px-4 py-3.5">
+        <div class="flex items-center gap-3.5 rounded-xs border border-line bg-white px-4 py-3.5">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-2 font-mono text-[13px] font-medium text-blue">
             {{ initials() }}
           </span>
@@ -123,7 +123,7 @@
       <a
         href="/apks/caisse-app-v1.4.apk"
         download="caisse-app-v1.4.apk"
-        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-mist bg-white px-5 py-3 text-sm font-semibold text-blue transition hover:bg-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2">
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-mist bg-white px-5 py-3 text-sm font-semibold text-blue transition hover:bg-blue/5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2">
         <app-icon name="download" [size]="17"></app-icon>
         Télécharger la caisse Android
       </a>

@@ -1,11 +1,11 @@
 import 'zone.js';
-import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
+import {platformBrowser} from '@angular/platform-browser';
 
 import {AppModule} from './app/app.module';
 import {initApplicationInsights} from './app/application-insights';
 
 void initApplicationInsights();
 
-platformBrowserDynamic()
+platformBrowser()
   .bootstrapModule(AppModule)
   .catch(error => console.error(error));

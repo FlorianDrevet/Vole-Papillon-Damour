@@ -26,7 +26,7 @@
       <img
         class="recovery-cover"
         [src]="'https://covers.openlibrary.org/b/isbn/' + view.entry.isbn13 + '-L.jpg?default=false'"
-        [alt]="view.book?.title ? 'Couverture de ' + view.book?.title : 'Couverture indisponible'"
+        [alt]="view.book?.title ? 'Couverture de ' + $safeNavigationMigration(view.book?.title) : 'Couverture indisponible'"
         loading="lazy">
       <div class="recovery-copy">
         <p class="recovery-status">{{ view.entry.status }}</p>

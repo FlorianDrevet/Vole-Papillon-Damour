@@ -1,4 +1,4 @@
-import {Component, input} from '@angular/core';
+import {Component, input, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {ProductSectionEnum} from "../../../../shared/enums/productSection.enum";
 
@@ -6,6 +6,7 @@ import {ProductSectionEnum} from "../../../../shared/enums/productSection.enum";
     selector: 'app-bingo-event',
     templateUrl: './bingo-event.component.html',
     styleUrl: './bingo-event.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BingoEventComponent {

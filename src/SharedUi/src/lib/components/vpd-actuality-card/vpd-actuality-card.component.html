@@ -1,4 +1,4 @@
-<div class="relative flex w-full flex-col gap-3.5 rounded-sm border border-line bg-white p-4 sm:w-[280px]">
+<div class="relative flex w-full flex-col gap-3.5 rounded-xs border border-line bg-white p-4 sm:w-[280px]">
   @if (editable()) {
     <div class="absolute right-3 top-3 z-10 flex gap-2">
       <button
@@ -22,7 +22,7 @@
     </div>
   }
 
-  <img [src]="actuality().urlPrincipalImage" [alt]="actuality().title" class="h-44 w-full rounded object-cover">
+  <img [src]="actuality().urlPrincipalImage" [alt]="actuality().title" class="h-44 w-full rounded-sm object-cover">
   <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ actuality().date | date:'d MMM yyyy' }}</span>
   <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ actuality().title }}</h3>
   <p #article class="article-box text-sm leading-relaxed text-slate-2">{{ actuality().article }}</p>

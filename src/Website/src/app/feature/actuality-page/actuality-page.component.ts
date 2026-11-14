@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {AxiosService} from "../../shared/services/axios.service";
 import {ActualityModel} from "../../shared/models/actuality.model";
 import {MethodEnum} from "../../shared/enums/method.enum";
@@ -7,6 +7,7 @@ import { groupBy } from 'lodash';
 @Component({
     selector: 'app-actuality-page',
     templateUrl: './actuality-page.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActualityPageComponent implements OnInit{

@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { ProductModel } from '../../../../models/product.model';
 
 /**
@@ -8,6 +8,7 @@ import { ProductModel } from '../../../../models/product.model';
   selector: 'app-product',
   templateUrl: './product.component.html',
   styleUrl: './product.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ProductComponent {

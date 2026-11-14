@@ -1,4 +1,4 @@
-import {HttpErrorResponse, provideHttpClient} from '@angular/common/http';
+import {HttpErrorResponse, provideHttpClient, withXhr} from '@angular/common/http';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
@@ -416,7 +416,7 @@ describe('CatalogAdministrationPageComponent', () => {
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogAdminApiService, useValue: api},
         {provide: CatalogApiService, useValue: catalogApi},
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         {
           provide: ActivatedRoute,

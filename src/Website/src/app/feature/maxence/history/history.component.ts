@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, afterNextRender, inject } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, inject, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -48,6 +48,7 @@ const DAILY_LIFE_LINKS: SectionLink[] = [
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [HistoryReaderService],
 })
 export class HistoryComponent {

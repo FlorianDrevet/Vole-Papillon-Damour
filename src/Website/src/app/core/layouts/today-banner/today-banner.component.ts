@@ -1,5 +1,5 @@
 import {isPlatformBrowser} from '@angular/common';
-import {Component, computed, DestroyRef, inject, OnInit, PLATFORM_ID, signal} from '@angular/core';
+import {Component, computed, DestroyRef, inject, OnInit, PLATFORM_ID, signal, ChangeDetectionStrategy} from '@angular/core';
 import {TodayEventService} from '../../../shared/services/today-event.service';
 import {
   HALLOWEEN_PHOTOS_DISMISSED_STORAGE_KEY,
@@ -17,6 +17,7 @@ import {
 @Component({
   selector: 'app-today-banner',
   templateUrl: './today-banner.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class TodayBannerComponent implements OnInit {

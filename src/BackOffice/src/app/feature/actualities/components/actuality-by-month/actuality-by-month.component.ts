@@ -1,9 +1,10 @@
-import {Component, input, output} from '@angular/core';
+import {Component, input, output, ChangeDetectionStrategy} from '@angular/core';
 import {ActualityModel} from "../../../../shared/models/actuality.model";
 
 @Component({
     selector: 'app-actuality-by-month',
     templateUrl: './actuality-by-month.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActualityByMonthComponent {

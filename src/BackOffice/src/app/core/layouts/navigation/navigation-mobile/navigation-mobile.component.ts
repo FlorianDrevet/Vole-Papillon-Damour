@@ -1,4 +1,4 @@
-import {Component, effect, inject, input, Renderer2, signal} from '@angular/core';
+import {Component, effect, inject, input, Renderer2, signal, ChangeDetectionStrategy} from '@angular/core';
 import {Router} from "@angular/router";
 
 import {NavigationItemInterface} from "../../../../shared/interfaces/navigationItem.interface";
@@ -7,6 +7,7 @@ import {AuthSessionService} from "../../../../shared/auth/auth-session.service";
 @Component({
     selector: 'app-navigation-mobile',
     templateUrl: './navigation-mobile.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NavigationMobileComponent {

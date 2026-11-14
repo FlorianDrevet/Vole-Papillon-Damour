@@ -1,10 +1,11 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 export type CitrouilleMood = 'idle' | 'sourire' | 'rire' | 'dort' | 'salut';
 
 @Component({
   selector: 'vpd-citrouille',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './vpd-citrouille.component.html',
 })
 export class VpdCitrouilleComponent {

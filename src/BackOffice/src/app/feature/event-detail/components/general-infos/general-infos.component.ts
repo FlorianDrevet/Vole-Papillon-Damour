@@ -1,4 +1,4 @@
-import {Component, input} from '@angular/core';
+import {Component, input, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {BackgroundColorEnum} from '../../../../shared/enums/backgroundColor.enum';
 
@@ -7,6 +7,7 @@ import {BackgroundColorEnum} from '../../../../shared/enums/backgroundColor.enum
     templateUrl: './general-infos.component.html',
     styleUrl: './general-infos.component.scss',
     host: {class: 'block w-full min-w-0'},
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class GeneralInfosComponent {

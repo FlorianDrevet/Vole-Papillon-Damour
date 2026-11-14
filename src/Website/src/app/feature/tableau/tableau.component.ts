@@ -1,4 +1,4 @@
-import {Component, computed, DestroyRef, inject, OnInit} from '@angular/core';
+import {Component, computed, DestroyRef, inject, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute} from "@angular/router";
 import {buildLotoTableauView} from '@vpd/ui';
@@ -11,6 +11,7 @@ import {HalloweenPreferences} from '../../shared/components/mascots/halloween-pr
     templateUrl: './tableau.component.html',
     styleUrl: './tableau.component.scss',
     providers: [SseClientService],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class TableauComponent implements OnInit {

@@ -33,8 +33,20 @@ $custom-theme: mat.define-theme((
 }
 
 /* You can add global styles to this file, and also import other style files */
-@tailwind base;
 @layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  ::placeholder {
+    color: var(--color-gray-400, #9ca3af);
+    opacity: 1;
+  }
+
   :root {
     // Largeur maximale du contenu d'une bande de page, et gouttière minimale.
     // Utilisées par l'utilitaire `px-shell` (voir tailwind.config.js) : les bandes
@@ -61,11 +73,17 @@ $custom-theme: mat.define-theme((
   // peint le fond de `html`, pas celui de `body` : sans ça elle reste blanche et
   // la page paraît décalée à gauche.
   html {
-    @apply bg-paper;
+    background-color: #f7fbfe;
   }
 
   body {
-    @apply m-0 p-0 flex flex-col bg-paper text-ink-2 font-sans;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f7fbfe;
+    color: #072b45;
+    font-family: 'Libre Franklin', system-ui, sans-serif;
     scroll-behavior: smooth;
   }
 
@@ -83,22 +101,19 @@ $custom-theme: mat.define-theme((
   }
 
   a:focus-visible, button:focus-visible {
-    outline: 3px solid theme('colors.blue-2' / 55%);
+    outline: 3px solid rgba(20, 151, 214, 0.55);
     outline-offset: 3px;
   }
 
   ::selection {
-    background: theme('colors.cyan' / 40%);
-    color: theme('colors.ink-2');
+    background: rgba(127, 216, 245, 0.4);
+    color: #072b45;
   }
 
   .no-scroll {
     overflow: hidden !important;
   }
 }
-
-@tailwind components;
-@tailwind utilities;
 
 // Le tableau Live Loto est conçu pour tenir sur l'écran des joueurs sans bouton flottant.
 @media (max-width: 767px) {

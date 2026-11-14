@@ -1,4 +1,4 @@
-import {Component, computed, inject, input, output} from '@angular/core';
+import {Component, computed, inject, input, output, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel, VpdEventPartieModel} from "../../../../../../shared/models/vpdEvent.model";
 import {MatDialog} from "@angular/material/dialog";
 import {CreationUpdatePartieComponent} from "../dialogs/creation-partie/creation-update-partie.component";
@@ -21,6 +21,7 @@ import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
     selector: 'app-partie-card',
     templateUrl: './partie-card.component.html',
     host: {class: 'block w-full min-w-0'},
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PartieCardComponent {

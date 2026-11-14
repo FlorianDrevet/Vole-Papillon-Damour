@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { VpdEventModel } from '../../models/vpdEvent.model';
 
 /**
@@ -7,6 +7,7 @@ import { VpdEventModel } from '../../models/vpdEvent.model';
 @Component({
   selector: 'app-event-card',
   templateUrl: './event-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class EventCardComponent {

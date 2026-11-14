@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {ActualityFacadeService} from "../../shared/facades/actuality.facade.service";
 import {ActivatedRoute} from "@angular/router";
 import {ActualityModel} from "../../shared/models/actuality.model";
@@ -6,6 +6,7 @@ import {ActualityModel} from "../../shared/models/actuality.model";
 @Component({
     selector: 'app-actuality-detail',
     templateUrl: './actuality-detail.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActualityDetailComponent implements OnInit {

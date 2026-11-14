@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Router} from '@angular/router';
 
 import {ScanRareBook} from '../offline/scan-offline.model';
@@ -10,6 +10,7 @@ type RareBookListFilter = 'all' | 'drafts';
   selector: 'app-scan-rare-book-list',
   templateUrl: './scan-rare-book-list.component.html',
   styleUrls: ['./scan-rare-book-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanRareBookListComponent implements OnInit {

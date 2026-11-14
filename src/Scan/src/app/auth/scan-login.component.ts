@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {Component, signal, ChangeDetectionStrategy} from '@angular/core';
 import {AccountInfo} from '@azure/msal-browser';
 
 import {ScanAuthService} from './scan-auth.service';
@@ -7,6 +7,7 @@ import {ScanAuthService} from './scan-auth.service';
   selector: 'app-scan-login',
   templateUrl: './scan-login.component.html',
   styleUrl: './scan-login.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanLoginComponent {

@@ -1,5 +1,5 @@
 @if (consent.bannerVisible$ | async) {
-  <div class="fixed inset-x-4 bottom-4 z-50 rounded border border-line-2 bg-white p-5 shadow-[0_24px_50px_-24px_rgba(7,43,69,0.45)] lg:left-6 lg:right-auto lg:max-w-[480px]">
+  <div class="fixed inset-x-4 bottom-4 z-50 rounded-sm border border-line-2 bg-white p-5 shadow-[0_24px_50px_-24px_rgba(7,43,69,0.45)] lg:left-6 lg:right-auto lg:max-w-[480px]">
     @if (!(consent.panelOpen$ | async)) {
       <p class="font-serif text-base font-medium text-ink-2">Cookies</p>
       <p class="mt-2 text-sm leading-relaxed text-slate-2">

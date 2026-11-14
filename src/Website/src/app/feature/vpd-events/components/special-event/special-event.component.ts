@@ -1,4 +1,4 @@
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, input, signal, ChangeDetectionStrategy} from '@angular/core';
 
 /** Teinte d'accent d'un rendez-vous permanent : orange pour le loto, bleu pour les livres. */
 export type SpecialEventAccent = 'orange' | 'blue';
@@ -6,6 +6,7 @@ export type SpecialEventAccent = 'orange' | 'blue';
 @Component({
   selector: 'app-special-event',
   templateUrl: './special-event.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class SpecialEventComponent {

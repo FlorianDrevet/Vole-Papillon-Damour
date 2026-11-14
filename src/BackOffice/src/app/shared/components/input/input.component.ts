@@ -1,10 +1,11 @@
-import {Component, input} from '@angular/core';
+import {Component, input, ChangeDetectionStrategy} from '@angular/core';
 import {FormGroup} from "@angular/forms";
 
 @Component({
     selector: 'app-input',
     templateUrl: './input.component.html',
     styleUrl: './input.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class InputComponent {

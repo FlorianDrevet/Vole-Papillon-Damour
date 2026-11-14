@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, OnInit, Output, ChangeDetectionStrategy} from '@angular/core';
 
 import {ScanCatalogBook, ScanOutboxEntry} from './scan-offline.model';
 import {recoveryActionsFor, ScanRecoveryAction} from './scan-recovery.model';
@@ -15,6 +15,7 @@ export interface ScanRecoveryViewEntry {
   selector: 'app-scan-recovery',
   templateUrl: './scan-recovery.component.html',
   styleUrls: ['./scan-recovery.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanRecoveryComponent implements OnInit {

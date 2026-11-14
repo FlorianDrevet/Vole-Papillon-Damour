@@ -1,4 +1,4 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {EVENT_EDITORIAL_PHOTOS} from '../../../../shared/data/event-editorial-content';
 
@@ -10,6 +10,7 @@ import {EVENT_EDITORIAL_PHOTOS} from '../../../../shared/data/event-editorial-co
     selector: 'app-general-infos',
     templateUrl: './general-infos.component.html',
     styleUrl: './general-infos.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class GeneralInfosComponent {

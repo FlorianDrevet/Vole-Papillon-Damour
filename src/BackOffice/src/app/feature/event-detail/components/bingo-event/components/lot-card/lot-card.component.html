@@ -1,12 +1,12 @@
-<div class="flex w-full items-center gap-2 rounded-sm border border-line-2 bg-paper-2 p-3">
+<div class="flex w-full items-center gap-2 rounded-xs border border-line-2 bg-paper-2 p-3">
   @if (LinePartie().lots.length > 1) {
     <button type="button" (click)="previousLot()" aria-label="Lot précédent" class="shrink-0 text-slate-3 hover:text-blue">
       <app-icon name="chevron-right" [size]="14" class="rotate-180 block"></app-icon>
     </button>
   }
 
-  <div class="flex w-full items-center gap-4 rounded-sm bg-white p-3">
-    <div class="flex h-[64px] w-[64px] shrink-0 items-center justify-center rounded-sm bg-paper-2 p-1.5">
+  <div class="flex w-full items-center gap-4 rounded-xs bg-white p-3">
+    <div class="flex h-[64px] w-[64px] shrink-0 items-center justify-center rounded-xs bg-paper-2 p-1.5">
       <img [src]="currentLot().urlImage" class="h-full w-full object-contain" alt="">
     </div>
 

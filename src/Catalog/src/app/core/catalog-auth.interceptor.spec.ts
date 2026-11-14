@@ -1,4 +1,4 @@
-import {HttpClient, HttpErrorResponse, HttpHeaders, provideHttpClient, withInterceptors} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpHeaders, provideHttpClient, withInterceptors, withXhr} from '@angular/common/http';
 import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
 import {firstValueFrom} from 'rxjs';
@@ -20,7 +20,7 @@ describe('catalogAuthInterceptor', () => {
     TestBed.configureTestingModule({
       providers: [
         {provide: CatalogAuthService, useValue: auth},
-        provideHttpClient(withInterceptors([catalogAuthInterceptor])),
+        provideHttpClient(withXhr(), withInterceptors([catalogAuthInterceptor])),
         provideHttpClientTesting(),
       ],
     });

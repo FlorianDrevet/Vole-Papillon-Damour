@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import {ImageOrientationEnum} from "../../../../../shared/enums/imageOrientation.enum";
 import {BackgroundColorEnum} from "../../../../../shared/enums/backgroundColor.enum";
 
@@ -6,6 +6,7 @@ import {BackgroundColorEnum} from "../../../../../shared/enums/backgroundColor.e
     selector: 'app-year-2007',
     templateUrl: './year-2007.component.html',
     styleUrl: './year-2007.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class Year2007Component {

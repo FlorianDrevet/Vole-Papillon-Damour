@@ -6,7 +6,7 @@
 </section>
 
 <section class="grid grid-cols-1 gap-8 bg-paper px-shell pb-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pb-20">
-  <form class="flex flex-col gap-5 rounded bg-white px-7 py-8 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.35)]" (submit)="$event.preventDefault(); send(nameInput.value, emailInput.value, messageInput.value)">
+  <form class="flex flex-col gap-5 rounded-sm bg-white px-7 py-8 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.35)]" (submit)="$event.preventDefault(); send(nameInput.value, emailInput.value, messageInput.value)">
     <div class="flex flex-wrap gap-2">
       @for (r of reasons; track r) {
         <button
@@ -19,17 +19,17 @@
 
     <label class="flex flex-col gap-1.5 text-sm text-slate-2">
       Prénom et nom
-      <input #nameInput type="text" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2">
+      <input #nameInput type="text" required class="rounded-sm border border-line-2 px-4 py-2.5 text-ink-2 outline-hidden focus:border-blue-2">
     </label>
 
     <label class="flex flex-col gap-1.5 text-sm text-slate-2">
       Adresse e-mail
-      <input #emailInput type="email" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2">
+      <input #emailInput type="email" required class="rounded-sm border border-line-2 px-4 py-2.5 text-ink-2 outline-hidden focus:border-blue-2">
     </label>
 
     <label class="flex flex-col gap-1.5 text-sm text-slate-2">
       Message
-      <textarea #messageInput rows="5" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2"></textarea>
+      <textarea #messageInput rows="5" required class="rounded-sm border border-line-2 px-4 py-2.5 text-ink-2 outline-hidden focus:border-blue-2"></textarea>
     </label>
 
     <label class="flex items-start gap-2.5 text-xs text-slate-3">
@@ -44,7 +44,7 @@
   </form>
 
   <div class="flex flex-col gap-5">
-    <div class="flex flex-col gap-3 rounded bg-ink-2 px-7 py-7 text-mist-2">
+    <div class="flex flex-col gap-3 rounded-sm bg-ink-2 px-7 py-7 text-mist-2">
       <span class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan">En direct</span>
       <a href="mailto:volepapillondamour@sfr.fr" class="text-lg text-white hover:underline">volepapillondamour&#64;sfr.fr</a>
       <span class="text-sm leading-relaxed text-mist">46 route de Saint-Marcellin<br>42170 Saint-Just-Saint-Rambert</span>
@@ -57,7 +57,7 @@
         </a>
       </span>
     </div>
-    <div class="flex flex-col gap-2 rounded border border-line-2 px-7 py-7 text-sm text-slate-2">
+    <div class="flex flex-col gap-2 rounded-sm border border-line-2 px-7 py-7 text-sm text-slate-2">
       <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">Dépôt de livres</span>
       <span>Dépôt de cartons de livres 24h/24 au 46 route de Saint-Marcellin.</span>
       <span class="text-slate-3">Horaires de permanence à confirmer.</span>

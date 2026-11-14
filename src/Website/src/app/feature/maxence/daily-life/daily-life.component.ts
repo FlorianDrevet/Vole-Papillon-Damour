@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 interface DailyLifeSection {
   id: string;
@@ -14,6 +14,7 @@ interface DailyLifeSection {
   selector: 'app-daily-life',
   templateUrl: './daily-life.component.html',
   styleUrl: './daily-life.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false
 })
 export class DailyLifeComponent {

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit, signal} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {ScanAuthService} from '../auth/scan-auth.service';
@@ -17,6 +17,7 @@ type ScanStatisticsRole = 'tri' | 'cash';
   selector: 'app-scan-statistics',
   templateUrl: './scan-statistics.component.html',
   styleUrls: ['./scan-statistics.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanStatisticsComponent implements OnInit {

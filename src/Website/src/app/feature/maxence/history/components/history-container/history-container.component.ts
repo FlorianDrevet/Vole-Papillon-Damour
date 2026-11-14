@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { HistoryReaderService } from '../../history-reader.service';
 import { maxenceAlbumSlug, PHOTO_ALBUMS_ROUTE } from '../../../../association/pictures/photo-album-catalog';
@@ -15,6 +15,7 @@ import { maxenceAlbumSlug, PHOTO_ALBUMS_ROUTE } from '../../../../association/pi
   selector: 'app-history-container',
   templateUrl: './history-container.component.html',
   styleUrl: './history-container.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class HistoryContainerComponent {

@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {ErrorsEnum} from "../../../enums/errors.enum";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -12,6 +12,7 @@ import {ImageUtils} from "../../../utils/image.utils";
     selector: 'app-create-update-actuality-dialog',
     templateUrl: './create-update-actuality-dialog.component.html',
     styleUrl: './create-update-actuality-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateUpdateActualityDialogComponent {

@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {countdownLabel} from '../../../../shared/events/countdown';
 import {VpdEventEnum} from '../../../../shared/enums/vpdEvent.enum';
@@ -10,6 +10,7 @@ import {VpdEventModel} from '../../../../shared/models/vpdEvent.model';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './next-events.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './next-events.component.scss',
 })
 export class NextEventsComponent {

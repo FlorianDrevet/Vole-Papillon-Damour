@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {ActualityModel} from "../../../../shared/models/actuality.model";
 import {AxiosService} from "../../../../shared/services/axios.service";
 import {MethodEnum} from "../../../../shared/enums/method.enum";
@@ -7,6 +7,7 @@ import {MethodEnum} from "../../../../shared/enums/method.enum";
     selector: 'app-actuality',
     templateUrl: './actuality.component.html',
     styleUrl: './actuality.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActualityComponent implements OnInit{

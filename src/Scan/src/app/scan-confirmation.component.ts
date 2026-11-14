@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 
 import {ScanConfirmationService} from './scan-confirmation.service';
 
@@ -6,6 +6,7 @@ import {ScanConfirmationService} from './scan-confirmation.service';
   selector: 'app-scan-confirmation',
   templateUrl: './scan-confirmation.component.html',
   styleUrl: './scan-confirmation.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanConfirmationComponent {

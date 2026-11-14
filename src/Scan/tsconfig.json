@@ -17,7 +17,6 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "baseUrl": ".",
     "paths": {
       "@vpd/ui": ["../SharedUi/src/public-api.ts"],
       "@vpd/ui/*": ["../SharedUi/src/*"]

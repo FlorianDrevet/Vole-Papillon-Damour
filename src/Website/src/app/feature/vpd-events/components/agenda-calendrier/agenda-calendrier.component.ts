@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {AgendaMonth, CalendarDayCell, CalendarEventOccurrence, agendaMonths, calendarMonth} from '../../../../shared/events/agenda';
 import {eventIdentity, EventIdentity} from '../../../../shared/events/event-identity';
 import {VpdEventEnum} from '../../../../shared/enums/vpdEvent.enum';
@@ -23,6 +23,7 @@ type AgendaMonthView = AgendaMonth & {cells: CalendarDayCell[]};
     AgendaListComponent,
   ],
   templateUrl: './agenda-calendrier.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './agenda-calendrier.component.scss',
 })
 export class AgendaCalendarComponent implements OnChanges {

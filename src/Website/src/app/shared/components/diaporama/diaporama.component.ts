@@ -1,9 +1,10 @@
-import {Component, input, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, input, OnDestroy, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
     selector: 'app-diaporama',
     templateUrl: './diaporama.component.html',
     styleUrl: './diaporama.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DiaporamaComponent implements OnInit, OnDestroy {

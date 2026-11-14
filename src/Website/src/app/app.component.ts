@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {Component, HostBinding, Inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, HostBinding, Inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router} from '@angular/router';
 import {Subject, filter, takeUntil} from 'rxjs';
 import {WEBSITE_ORIGIN} from '../website-origin';
@@ -9,6 +9,7 @@ import {HalloweenPreferences} from './shared/components/mascots/halloween-prefer
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AppComponent implements OnInit, OnDestroy {

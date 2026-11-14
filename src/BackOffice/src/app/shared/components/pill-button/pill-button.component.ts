@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 export type PillButtonVariant = 'primary' | 'secondary' | 'danger';
 
@@ -16,6 +16,7 @@ export type PillButtonVariant = 'primary' | 'secondary' | 'danger';
 @Component({
   selector: 'app-pill-button',
   templateUrl: './pill-button.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PillButtonComponent {
