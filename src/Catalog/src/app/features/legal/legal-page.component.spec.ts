@@ -70,12 +70,20 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Portabilité');
     expect(content).toContain('un mois');
     expect(content).toContain('Ne joignez pas de pièce d’identité');
-    expect(content).toContain('Ma sélection est supprimée');
+    expect(content).toContain('Ma sélection et les coups de cœur sont supprimés');
     expect(content).toContain('Le lien personnel avec le passage est anonymisé');
     expect(content.toLowerCase()).toContain('les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable');
-    expect(content).toContain('Les suggestions personnalisées utilisent uniquement les achats que vous avez associés à votre compte et votre préférence');
-    expect(content).toContain('vous pouvez désactiver ce traitement à tout moment depuis les préférences de votre compte');
-    expect(content).toContain('Aucune donnée de votre compte ni aucun achat n’est transmis au fournisseur du service d’IA');
+    expect(content).toContain('Les coups de cœur enregistrés dans votre compte sont des données personnelles');
+    expect(content).toContain('supprimés avec le compte et inclus dans l’export de vos données');
+    expect(content).toContain('Les coups de cœur anonymes restent dans votre navigateur');
+    expect(content).toContain('le serveur reçoit uniquement les ISBN, sans identifiant');
+    expect(content).toContain('La scanette affiche ce compteur agrégé, jamais l’identité d’un membre');
+    expect(content).toContain('Nous vous proposons des livres de la bourse qui ressemblent à vos coups de cœur');
+    expect(content).toContain('Le calcul se fait sur nos serveurs, à partir des notices des livres ; aucune donnée personnelle n’est envoyée à un service extérieur');
+    expect(content).toContain('L’e-mail avant la bourse repose sur votre consentement explicite');
+    expect(content).toContain('La case est décochée par défaut et le consentement est enregistré avec sa date');
+    expect(content).toContain('retirer votre consentement en un clic depuis l’e-mail');
+    expect(content).toContain('ou « Compte et données »');
 
     const requestLink = fixture.nativeElement.querySelector(
       '[data-testid="rights-request"]',

@@ -112,14 +112,16 @@ score = cos(Q, C)
 
 ### 3.2 « Pour vous » (R4, R5, R6, R8)
 
+> La base de calcul et ses règles sont désormais définies dans la
+> [spécification fonctionnelle des coups de cœur](../features/book-favorites/01-fonctionnel.md)
+> (`RG-136` à `RG-144`). Les achats associés ne sont plus des points de départ.
+
 | Règle | Valeur |
 |---|---|
-| Graines | lignes de passages **associés** du membre, non annulées, avec ISBN ; les **20** plus récentes |
-| Score d'un candidat | somme, sur les graines, de `score(graine → candidat) × poids`, poids 1,0 pour l'achat le plus récent, décroissant linéairement jusqu'à 0,5 |
-| Exclus | toute édition d'une œuvre déjà achetée ; les ISBN présents dans Ma sélection ; les livres non disponibles et non annoncés ; les voisins sous le seuil |
-| Raison | graine qui contribue le plus : « La suite de *X* » si la raison est `NextTome`, sinon « Parce que vous avez aimé *X* » (R4-raison) |
-| Accueil (R4) | 4 cartes desktop, défilement mobile (R5) ; section absente si moins de **3** suggestions, si la préférence est désactivée, ou pour un visiteur |
-| Mes achats (R6) | 4 cartes compactes en tête ; sans achat associé : invitation à présenter sa carte (R8-sans-achat) ; préférence désactivée : bandeau absent |
+| Point de départ | Les coups de cœur du membre ; chacun a le même poids. Le calcul et les raisons suivent `RG-136`. |
+| Exclus | Toute édition d'une œuvre déjà achetée ou déjà en coup de cœur, les ISBN présents dans Ma sélection, les livres non disponibles et non annoncés et les voisins sous le seuil (`RG-137`). |
+| Accueil (R4) | 4 cartes desktop, défilement mobile ; section absente si moins de **3** suggestions au niveau choisi ou si la préférence est désactivée (`RG-143`, `RG-154`). |
+| Mes achats (R6) | Pas de rangée de suggestions ; chaque ligne propose « J'ai aimé » pour ajouter ou retirer un coup de cœur (`RG-142`). |
 | Lien | « Pourquoi ces suggestions ? » / « Gérer ces suggestions » → Compte et données (R4-pourquoi) |
 
 ### 3.3 Préférence (R7, R8-B)
@@ -127,22 +129,25 @@ score = cos(Q, C)
 - **Activée par défaut** (base : intérêt légitime, profilage à faible enjeu, sans effet
   juridique).
 - Désactivable et réactivable en un clic (R7-bouton). Désactivée : l'API ne calcule
-  rien et renvoie un état `Disabled` ; accueil et Mes achats n'affichent rien.
+  rien et renvoie un état `Disabled` ; l'accueil, E2 et la section de suggestions de
+  l'e-mail avant la bourse n'affichent rien. Les coups de cœur restent gérables.
 - Stockage : une ligne `MemberRecommendationPreferences` **n'existe que si le membre a
   changé la valeur** (même principe que `Watchlists`, `DT-14`). Supprimée en cascade
   avec le compte.
-- Texte d'information (R7-explication) : seuls les achats associés servent ; calcul sur
-  nos serveurs ; aucune donnée personnelle envoyée à un service extérieur ; aucun
-  e-mail.
+- Texte d'information (R7-explication), défini par `RG-154` : « Nous vous proposons des
+  livres de la bourse qui ressemblent à vos coups de cœur. Le calcul se fait sur nos
+  serveurs, à partir des notices des livres ; aucune donnée personnelle n'est envoyée à
+  un service extérieur. »
+- L'e-mail avant la bourse est une préférence distincte, facultative, fondée sur le
+  consentement et retirée en un clic (`RG-146`).
 
 ## 4. RGPD
 
 - « Dans le même esprit » : aucune donnée personnelle, pas de profilage.
-- « Pour vous » : profilage à faible enjeu. À faire avant ouverture :
-  - ajouter la ligne « Suggestions personnalisées » au tableau des traitements de
-    `docs/bourse-aux-livres/09-rgpd-compte-et-droits.md` (base : intérêt légitime ;
-    opposition par la préférence) ;
-  - mettre à jour la page publique « Vos données et le RGPD » du catalogue.
+- « Pour vous » : profilage à faible enjeu à partir des coups de cœur, fondé sur l'intérêt
+  légitime avec opposition par la préférence. Le tableau des traitements et la page
+  publique sont décrits dans `docs/bourse-aux-livres/09-rgpd-compte-et-droits.md` §2 et
+  dans la page « Vos données et le RGPD ».
 - **Aucune donnée personnelle ne part vers Azure OpenAI** : seuls les textes des notices
   bibliographiques sont vectorisés ; l'agrégation par membre se fait dans SQL.
 - La suppression du compte supprime la préférence (cascade) ; les voisins ne contiennent
