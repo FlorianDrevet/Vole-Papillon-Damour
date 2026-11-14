@@ -93,6 +93,14 @@ public sealed class MergeMyFavoritesCommandHandler(
             count.Decrement(now);
         }
 
+        var favoriteBooks = await dbContext.Books
+            .Where(book => canonicalIsbns.Contains(book.Id))
+            .ToListAsync(cancellationToken);
+        foreach (var book in favoriteBooks)
+        {
+            book.RecordFavoriteCountChanged(now);
+        }
+
         dbContext.MemberFavoriteBooks.AddRange(favoritesToAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
 

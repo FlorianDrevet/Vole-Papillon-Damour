@@ -127,6 +127,14 @@ public sealed class Book : AggregateRoot<Isbn13>
         UpdatedAt = utcOccurredAt;
     }
 
+    public void RecordFavoriteCountChanged(DateTime changedAt)
+    {
+        var utcChangedAt = DomainTime.RequireUtc(changedAt, nameof(changedAt));
+        UpdatedAt = utcChangedAt > UpdatedAt
+            ? utcChangedAt
+            : UpdatedAt.AddTicks(1);
+    }
+
     public bool ComputeWorkKeyIfMissing()
     {
         if (WorkKey is not null)

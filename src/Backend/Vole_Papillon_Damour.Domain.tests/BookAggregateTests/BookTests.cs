@@ -99,6 +99,27 @@ public sealed class BookTests
     }
 
     [Fact]
+    public void RecordFavoriteCountChanged_UpdatesTheBookDeltaTimestamp()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var changedAt = FirstSeenAt.AddMinutes(2);
+
+        book.RecordFavoriteCountChanged(changedAt);
+
+        book.UpdatedAt.Should().Be(changedAt);
+    }
+
+    [Fact]
+    public void RecordFavoriteCountChanged_AdvancesTimestampWhenClockHasNotMoved()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordFavoriteCountChanged(FirstSeenAt);
+
+        book.UpdatedAt.Should().BeAfter(FirstSeenAt);
+    }
+
+    [Fact]
     public void RecordSale_WhenQuantityIsZero_KeepsQuantityAtZeroAndCountsTheSale()
     {
         var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);

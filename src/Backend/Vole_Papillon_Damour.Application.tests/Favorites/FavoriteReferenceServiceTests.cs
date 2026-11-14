@@ -10,6 +10,8 @@ using Vole_Papillon_Damour.Application.Favorites.Common;
 using Vole_Papillon_Damour.Application.Favorites.Queries.GetMyFavorites;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.Favorites.Commands.DeclareAnonymousFavorite;
+using Vole_Papillon_Damour.Application.Favorites.Commands.WithdrawAnonymousFavorite;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -167,6 +169,61 @@ public sealed class FavoriteReferenceServiceTests
         work.IsComputingSuggestions.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task DeclareAnonymousFavorite_CreatesReferenceAndIncrementsWithoutStoringAVisitorId()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var (references, queue, _) = CreateReferenceService(fixture.Context);
+        var handler = new DeclareAnonymousFavoriteCommandHandler(
+            fixture.Context,
+            references,
+            CreateClock());
+
+        var result = await handler.Handle(
+            new DeclareAnonymousFavoriteCommand("9782070612758"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Count.Should().Be(1);
+        var count = await fixture.Context.AnonymousFavoriteCounts.SingleAsync();
+        count.Count.Should().Be(1);
+        fixture.Context.Model.FindEntityType(typeof(AnonymousFavoriteCount))!
+            .GetProperties().Select(property => property.Name)
+            .Should().NotContain("VisitorId");
+        var book = await fixture.Context.Books.SingleAsync();
+        book.IsFavoriteReference.Should().BeTrue();
+        book.UpdatedAt.Should().BeAfter(Now);
+        queue.Received(1).Enqueue(ParseIsbn("9782070612758"), IsbndbUsage.Favorites, false);
+    }
+
+    [Fact]
+    public async Task WithdrawAnonymousFavorite_DecrementsToZeroAndIsIdempotentAtZero()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var isbn = ParseIsbn("9782070612758");
+        var book = Book.Create(isbn, Now.AddDays(-2));
+        var count = AnonymousFavoriteCount.Create(isbn, Now.AddDays(-1));
+        count.Increment(Now.AddDays(-1));
+        fixture.Context.Books.Add(book);
+        fixture.Context.AnonymousFavoriteCounts.Add(count);
+        await fixture.Context.SaveChangesAsync();
+        var handler = new WithdrawAnonymousFavoriteCommandHandler(fixture.Context, CreateClock());
+
+        var withdrawn = await handler.Handle(
+            new WithdrawAnonymousFavoriteCommand(isbn.Value),
+            CancellationToken.None);
+        var repeated = await handler.Handle(
+            new WithdrawAnonymousFavoriteCommand(isbn.Value),
+            CancellationToken.None);
+
+        withdrawn.IsError.Should().BeFalse();
+        withdrawn.Value.Count.Should().Be(0);
+        repeated.IsError.Should().BeFalse();
+        repeated.Value.Count.Should().Be(0);
+        (await fixture.Context.AnonymousFavoriteCounts.SingleAsync()).Count.Should().Be(0);
+        (await fixture.Context.Books.SingleAsync()).UpdatedAt.Should().BeAfter(Now.AddDays(-1));
+    }
+
     private static FavoriteReferenceService CreateService(
         TestDbContext context,
         IBookMetadataEnrichmentQueue queue,
@@ -184,6 +241,32 @@ public sealed class FavoriteReferenceServiceTests
             quotaGuard,
             clock,
             Options.Create(new FavoritesOptions { ReferenceDailyIsbndbCredits = favoritesCredits }));
+    }
+
+    private static (FavoriteReferenceService Service, IBookMetadataEnrichmentQueue EnrichmentQueue,
+        IBookRecommendationWorkQueue Recommendations) CreateReferenceService(TestDbContext context)
+    {
+        var queue = Substitute.For<IBookMetadataEnrichmentQueue>();
+        var recommendations = Substitute.For<IBookRecommendationWorkQueue>();
+        var quotaGuard = Substitute.For<IIsbndbQuotaGuard>();
+        quotaGuard.IsExhaustedAsync(Now, Arg.Any<CancellationToken>()).Returns(false);
+        return (
+            new FavoriteReferenceService(
+                context,
+                queue,
+                recommendations,
+                quotaGuard,
+                CreateClock(),
+                Options.Create(new FavoritesOptions())),
+            queue,
+            recommendations);
+    }
+
+    private static IDateTimeProvider CreateClock()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        return clock;
     }
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)

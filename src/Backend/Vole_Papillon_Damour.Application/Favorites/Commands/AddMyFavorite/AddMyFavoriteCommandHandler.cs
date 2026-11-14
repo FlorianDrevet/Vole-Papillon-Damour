@@ -74,10 +74,20 @@ public sealed class AddMyFavoriteCommandHandler(
             return Errors.Favorites.LimitReached(options.Value.AccountMax);
         }
 
+        var addedAt = dateTimeProvider.UtcNow;
+        if (addedAt.Kind != DateTimeKind.Utc)
+        {
+            return Error.Validation("Favorites.InvalidClock", "The favorites clock must be expressed in UTC.");
+        }
+
         dbContext.MemberFavoriteBooks.Add(MemberFavoriteBook.Create(
             user.Id,
             canonicalIsbn13,
-            dateTimeProvider.UtcNow));
+            addedAt));
+        var book = await dbContext.Books.SingleOrDefaultAsync(
+            candidate => candidate.Id == canonicalIsbn13,
+            cancellationToken);
+        book?.RecordFavoriteCountChanged(addedAt);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new FavoriteAddedResult(canonicalIsbn13, AlreadyPresent: false, itemCount + 1);

@@ -37,6 +37,7 @@ public sealed class MemberFavoriteCommandHandlerTests
         repeated.IsError.Should().BeFalse();
         repeated.Value.AlreadyPresent.Should().BeTrue();
         (await fixture.Context.MemberFavoriteBooks.CountAsync()).Should().Be(1);
+        (await fixture.Context.Books.SingleAsync()).UpdatedAt.Should().BeAfter(Now);
     }
 
     [Fact]
@@ -73,6 +74,7 @@ public sealed class MemberFavoriteCommandHandlerTests
             "Membre",
             null,
             CancellationToken.None);
+        fixture.Context.Books.Add(Vole_Papillon_Damour.Domain.BookAggregate.Book.Create(isbn, Now.AddDays(-2)));
         fixture.Context.MemberFavoriteBooks.Add(MemberFavoriteBook.Create(identity.Id, isbn, Now));
         await fixture.Context.SaveChangesAsync();
 
@@ -82,6 +84,7 @@ public sealed class MemberFavoriteCommandHandlerTests
         removed.IsError.Should().BeFalse();
         repeated.IsError.Should().BeFalse();
         (await fixture.Context.MemberFavoriteBooks.CountAsync()).Should().Be(0);
+        (await fixture.Context.Books.SingleAsync()).UpdatedAt.Should().BeAfter(Now.AddDays(-2));
     }
 
     [Fact]
@@ -120,6 +123,8 @@ public sealed class MemberFavoriteCommandHandlerTests
         result.Value.Total.Should().Be(3);
         (await fixture.Context.MemberFavoriteBooks.CountAsync()).Should().Be(3);
         (await fixture.Context.AnonymousFavoriteCounts.SingleAsync()).Count.Should().Be(0);
+        (await fixture.Context.Books.Where(book => new[] { firstNew, secondNew }.Contains(book.Id))
+            .AllAsync(book => book.UpdatedAt > Now)).Should().BeTrue();
     }
 
     [Fact]
@@ -163,7 +168,7 @@ public sealed class MemberFavoriteCommandHandlerTests
     }
 
     private static RemoveMyFavoriteCommandHandler CreateRemoveHandler(TestDbContext context) =>
-        new(context, CreateIdentity(context));
+        new(context, CreateIdentity(context), CreateClock());
 
     private static MergeMyFavoritesCommandHandler CreateMergeHandler(
         TestDbContext context,
