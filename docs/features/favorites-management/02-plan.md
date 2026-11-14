@@ -52,15 +52,13 @@ nouveaux contrats. L'inverse casse le flux d'avancement.
 - **Valeurs de départ :** sondage serveur 2 s ; durée maximale d'un flux 10 min (`RG-168`) ;
   heartbeat `ping` à 15 s. Elles vont dans `FavoritesOptions`, réglables sans republier.
 
-## 3. Points à arbitrer avant exécution
+## 3. Arbitrages retenus
 
-- **A. Retrait depuis E3 (panneau d'ajout).** Le bouton de retrait du panneau d'ajout
-  (`add-favorite-panel.component.ts:219`) n'est couvert ni par `RG-134` ni par E12. Choix
-  recommandé : le faire passer par E12, comme E2, E5 et E6. Il reste immédiat dans les deux cas.
-- **B. Taille d'une requête du flux visiteur.** Le visiteur n'a plus de plafond, donc sa
-  liste ISBN peut être longue. Proposition : limiter la requête à 500 ISBN, côté API, comme
-  limite technique et non comme plafond produit. Au-delà, le client envoie la liste en plusieurs
-  flux. À confirmer.
+- **A. Retrait depuis E3 (panneau d'ajout) : fenêtre E12.** Le bouton de retrait du panneau
+  d'ajout (`add-favorite-panel.component.ts:219`) passe par E12, comme E2, E5 et E6. Le retrait
+  reste immédiat après confirmation.
+- **B. Requête du flux visiteur : 500 ISBN au plus.** Limite technique de requête, pas un
+  plafond de coups de cœur. Au-delà, le client envoie la liste en plusieurs flux.
 
 ## 4. Tâche 0 — État initial
 
@@ -152,7 +150,7 @@ accents (décomposition Unicode, suppression des marques diacritiques). Le filtr
 
 **Contrat** — `POST /catalog/favorites/progress/stream`, anonyme, politique de limitation `RateLimitingPolicies.PublicCatalog` comme `/catalog/favorites/suggestions` (`BookController.cs`, vers la ligne 117). Corps : `{isbn13s, minimumHearts}`, validé comme `FavoriteSuggestionsRequest`. Mêmes événements que la tâche 4.
 
-Limite technique de la requête, selon l'arbitrage B. Aucun identifiant n'est conservé côté serveur (`RG-156`, `RG-139`).
+Limite technique : 500 ISBN par requête (arbitrage B). Aucun identifiant n'est conservé côté serveur (`RG-156`, `RG-139`).
 
 **Fichiers** : `BookController.cs`, `Api/Favorites/FavoriteProgressStream.cs` (réutilisé), la lecture anonyme dans `Application/Favorites/Queries/...`.
 
@@ -185,7 +183,7 @@ Limite technique de la requête, selon l'arbitrage B. Aucun identifiant n'est co
   - E2 : `catalog-favorites-page.component.html`, `(removeRequested)` ouvre la fenêtre au lieu d'appeler `remove`.
   - E5 : `features/book-detail/catalog-book-detail-page.component.ts`, ligne 139.
   - E6 : `features/account/purchases/account-purchases.component.ts`, ligne 122.
-  - E3 : selon l'arbitrage A.
+  - E3 : `add-favorite-panel.component.ts`, ligne 219 : la fenêtre s'ouvre avant `remove` (arbitrage A).
 
 **Tests d'abord** : `favorite-removal-dialog.component.spec.ts` (focus initial, Échap, confirmation). Mettre à jour les specs des pages E2, E5 et E6.
 
@@ -278,5 +276,4 @@ figurer dans la section « Zones non implémentées », avec sa raison.
 
 ## 9. Zones non implémentées
 
-Aucune à ce stade. Si l'arbitrage A retient l'option « immédiat » pour E3, ce bouton ne
-prend pas la fenêtre E12, et la raison doit être ajoutée ici.
+Aucune. Le retrait depuis E3 passe par E12 (arbitrage A).

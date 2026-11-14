@@ -11,6 +11,6 @@
 
 - [x] 1. Spécification fonctionnelle validée — [`01-fonctionnel.md`](01-fonctionnel.md) (validée le 2026-11-14 avec les recommandations `Q-01` à `Q-07`)
 - [x] 2. Maquettes validées et exportées — [`maquettes/`](maquettes/README.md) (validées le 2026-11-14)
-- [ ] 3. Plan validé, `check_zones.py` vert — `02-plan.md`
-- [ ] 4. Handoff Codex remis — `HANDOFF.md`
+- [x] 3. Plan validé, `check_zones.py` vert — [`02-plan.md`](02-plan.md) (validé le 2026-11-14, arbitrages A et B retenus)
+- [x] 4. Handoff Codex remis — [`HANDOFF.md`](HANDOFF.md)
 - [ ] 5. PR ouverte par Codex — à compléter
