@@ -23,6 +23,35 @@ public sealed class BookTests
     }
 
     [Fact]
+    public void CreateFavoriteReference_WithValidIsbn_HasNoStockAndIsMarkedAsReference()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.IsFavoriteReference.Should().BeTrue();
+        book.QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
+    public void RecordAvailableEntry_OnFavoriteReference_MakesItAnOrdinaryBook()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordAvailableEntry(FirstSeenAt.AddMinutes(1));
+
+        book.IsFavoriteReference.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RecordAnnouncementEntry_OnFavoriteReference_MakesItAnOrdinaryBook()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordAnnouncementEntry(FirstSeenAt.AddMinutes(1));
+
+        book.IsFavoriteReference.Should().BeFalse();
+    }
+
+    [Fact]
     public void RedirectTo_WithDifferentCanonicalIsbn_PreservesAbsorbedBook()
     {
         var source = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
