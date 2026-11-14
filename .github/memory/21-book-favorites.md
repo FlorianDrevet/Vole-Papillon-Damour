@@ -7,7 +7,8 @@
 - `LocalFavoritesStore` conserve les entrées anonymes dans le navigateur, sans identifiant de visiteur transmis avec la liste. Les plafonds sont 50 entrées locales et 200 entrées membre.
 - Les composants de feature vivent dans `src/Catalog/src/app/features/favorites/`; le panneau d’ajout recherche d’abord le catalogue. ISBNdb n’est utilisé qu’au flux d’ajout/éditions supplémentaires, jamais pendant la recherche E3.
 - La recherche des livres à ajouter ne garde que les résultats dont la langue est explicitement française. Le catalogue expose `language`; BnF lit le champ UNIMARC `101$a`; Open Library retourne la langue des éditions; la recherche ISBNdb publique demande `language=fr`. Un résultat sans langue française vérifiée est écarté. Le filtre est propre aux coups de cœur et ne change pas la recherche bibliographique partagée par Catalog et l’administration.
-- Les préférences membre comprennent l’exigence minimale de cœurs, l’activation des suggestions et le consentement séparé à l’e-mail de bourse.
+- Le seuil `MinimumHearts` reste réglable sur `/trouver-mon-prochain-livre`; le profil ne l’affiche pas. L’e-mail utilise toujours trois cœurs, quel que soit ce seuil.
+- Les préférences membre comprennent l’activation des suggestions et celle de l’e-mail avant chaque bourse. L’e-mail est activé par défaut; `FairDigestEnabled = false` représente une désactivation explicite.
 
 ## Domaine, API et persistance
 
@@ -15,10 +16,12 @@
 - `Book.IsFavoriteReference` distingue une fiche de référence créée pour un coup de cœur. L’arrivée d’un exemplaire la transforme en fiche ordinaire. Les références ne doivent pas apparaître dans la recherche publique, les voisins ni le sitemap.
 - Les handlers CQRS sont sous `Application/Favorites/` et `Application/Recommendations/`. Les déclarations anonymes utilisent `/catalog/favorites/declarations` et `/catalog/favorites/suggestions`; les opérations membre sont sous `/catalog/me/favorites` et `/catalog/me/recommendations`.
 - La migration additive `20261114004906_AddBookFavorites` ajoute les tables et colonnes nécessaires. Elle doit être appliquée par `Books runtime - deploy` avec `run_migrations: true`; ne pas l’appliquer à une base distante depuis un poste de développement.
+- La migration `20261114221716_EnableFairDigestByDefault` ajoute `MemberRecommendationPreferences.FairDigestEnabled` nullable. `null` signifie le défaut activé; `false` est la désactivation explicite enregistrée.
 
 ## E-mail avant la bourse
 
-- `FairDigestCampaign` sélectionne nouveautés et retours, conserve les consentements et déduplique l’envoi par bourse et membre. Le Worker utilise `FairDigestFunction`; le contenu et le rendu vivent dans `Application/FairDigest/` et `Infrastructure/Services/FairDigest/`.
+- `FairDigestCampaign` sélectionne nouveautés et retours, respecte les désactivations explicites et déduplique l’envoi par bourse et membre. Le Worker utilise `FairDigestFunction`; le contenu et le rendu vivent dans `Application/FairDigest/` et `Infrastructure/Services/FairDigest/`.
+- `FairDigestContentService` demande les suggestions à partir de trois cœurs, indépendamment de `MinimumHearts`; cette valeur n’est pas configurable pour les e-mails. Une préférence e-mail absente ou `FairDigestEnabled = null` est activée par défaut.
 - L’administration Catalog appelle les routes `/books/admin/fair-digest`, `/preview`, `/test`, `/suspend` et `/resume`. L’aperçu est isolé dans un iframe `sandbox`.
 - `FairDigest:Enabled` reste `false` par défaut. Ne pas appeler l’envoi de test pendant une validation; examiner l’aperçu avec une vraie bourse avant activation publique.
 

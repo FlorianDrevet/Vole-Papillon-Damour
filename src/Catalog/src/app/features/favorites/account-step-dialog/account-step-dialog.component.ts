@@ -28,7 +28,7 @@ export class AccountStepDialogComponent implements AfterViewChecked {
 
   @ViewChild('dialogPanel') private dialogPanel?: ElementRef<HTMLElement>;
 
-  readonly fairDigestConsent = signal(false);
+  readonly fairDigestConsent = signal(true);
   private isOpen = false;
   private wasOpen = false;
   private previouslyFocused: HTMLElement | null = null;
@@ -36,7 +36,7 @@ export class AccountStepDialogComponent implements AfterViewChecked {
   @Input()
   set open(value: boolean) {
     if (value && !this.isOpen) {
-      this.fairDigestConsent.set(false);
+      this.fairDigestConsent.set(true);
     }
     this.isOpen = value;
   }

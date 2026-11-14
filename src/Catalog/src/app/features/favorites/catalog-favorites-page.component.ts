@@ -94,8 +94,8 @@ export class CatalogFavoritesPageComponent implements OnInit {
       if (this.auth.isAuthenticated()) {
         await this.favorites.onSignedIn();
         if (registrationReturn) {
-          if (registrationReturn.fairDigestConsent) {
-            await this.favorites.setFairDigestConsent(true);
+          if (!registrationReturn.fairDigestConsent) {
+            await this.favorites.setFairDigestConsent(false);
           }
           this.accountRecoveryNotice.set(this.favorites.syncNotice() ?? {
             added: 0,

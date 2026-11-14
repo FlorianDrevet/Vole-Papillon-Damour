@@ -8,4 +8,5 @@ public sealed record RecommendationPreferenceRequest(
 public sealed record RecommendationPreferenceResponse(
     bool Enabled,
     int MinimumHearts,
-    DateTimeOffset? FairDigestConsentedAt);
+    DateTimeOffset? FairDigestConsentedAt,
+    bool FairDigestEnabled);

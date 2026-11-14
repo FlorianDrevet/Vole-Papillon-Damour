@@ -19,7 +19,6 @@ import {AccountCardComponent} from './card/account-card.component';
 import {AccountPurchasesComponent} from './purchases/account-purchases.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
-import {MinimumHeartsControlComponent} from '../favorites/minimum-hearts-control.component';
 import {LocalFavoriteEntry} from '../../core/favorites/local-favorites.store';
 import {VpdLoaderComponent} from '@vpd/ui';
 
@@ -192,7 +191,7 @@ describe('CatalogAccountPageComponent', () => {
     api.getVolunteerStatistics.and.returnValue(of(volunteerStatistics));
     api.getPurchases.and.returnValue(of({passages: [], nextCursor: null}));
     api.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
-    api.getRecommendationPreference.and.returnValue(of({enabled: true}));
+    api.getRecommendationPreference.and.returnValue(of({enabled: true, fairDigestEnabled: true}));
     api.setRecommendationPreference.and.returnValue(of(void 0));
     api.removeWatchlistItem.and.returnValue(of(void 0));
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
@@ -218,14 +217,12 @@ describe('CatalogAccountPageComponent', () => {
     selection.remove.and.resolveTo();
     accountFavorites = signal<LocalFavoriteEntry[]>([]);
     favorites = jasmine.createSpyObj<CatalogFavoritesService>(
-      'CatalogFavoritesService', ['onSignedIn', 'setMinimumHearts'],
+      'CatalogFavoritesService', ['onSignedIn'],
       {
         favorites: accountFavorites,
-        currentMinimumHearts: signal(3),
       },
     );
     favorites.onSignedIn.and.resolveTo();
-    favorites.setMinimumHearts.and.resolveTo();
 
     await TestBed.configureTestingModule({
       declarations: [
@@ -234,7 +231,6 @@ describe('CatalogAccountPageComponent', () => {
         AccountSelectionComponent,
         AccountCardComponent,
         AccountPurchasesComponent,
-        MinimumHeartsControlComponent,
         VpdLoaderComponent,
       ],
       imports: [RouterModule.forRoot([])],
@@ -860,6 +856,7 @@ describe('CatalogAccountPageComponent', () => {
       enabled: true,
       minimumHearts: 3,
       fairDigestConsentedAt: null,
+      fairDigestEnabled: false,
     }));
     await openRecommendationPreferences();
 
@@ -879,6 +876,7 @@ describe('CatalogAccountPageComponent', () => {
       enabled: true,
       minimumHearts: 3,
       fairDigestConsentedAt: '2026-11-13T10:00:00Z',
+      fairDigestEnabled: true,
     }));
     await openRecommendationPreferences();
 
@@ -893,7 +891,7 @@ describe('CatalogAccountPageComponent', () => {
       .toContain('Désactivé');
   });
 
-  it('links to the member favorites and reuses the four-level suggestion threshold', async () => {
+  it('links to the member favorites without exposing the suggestion threshold in the profile', async () => {
     await openRecommendationPreferences();
     accountFavorites.set([{
       isbn13: '9782070612758',
@@ -906,12 +904,7 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[data-zone="E7-preference-suggestions"] a')?.textContent)
       .toContain('Gérer mes coups de cœur (1)');
-    expect(fixture.nativeElement.querySelector('[data-zone="E7-exigence"]')).not.toBeNull();
-
-    (fixture.nativeElement.querySelector('[data-zone="E2-exigence-4"]') as HTMLButtonElement).click();
-    await settleAccountPage();
-
-    expect(favorites.setMinimumHearts).toHaveBeenCalledOnceWith(4);
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-exigence"]')).toBeNull();
   });
 
   it('disables the preference button while the update is in progress', async () => {

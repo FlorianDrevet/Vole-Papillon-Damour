@@ -1692,8 +1692,7 @@ h3 {
   font: 500 24px/1.2 var(--catalog-display, Georgia, serif);
 }
 
-.favorite-preference-card,
-.favorite-preference-threshold {
+.favorite-preference-card {
   border: 1px solid #d9e9f4;
   background: #fff;
 }
@@ -1715,8 +1714,7 @@ h3 {
   gap: 8px;
 }
 
-.favorite-preference-card h3,
-.favorite-preference-threshold h3 {
+.favorite-preference-card h3 {
   margin: 0;
   color: #072b45;
   font: 600 18px/1.35 var(--catalog-body, system-ui, sans-serif);
@@ -1769,8 +1767,7 @@ h3 {
 }
 
 .recommendation-independent-copy,
-.favorite-preference-card p,
-.favorite-preference-threshold > p {
+.favorite-preference-card p {
   margin: 0;
   color: #33536e;
   font-size: 14px;
@@ -1821,19 +1818,6 @@ h3 {
   opacity: .65;
 }
 
-.favorite-preference-threshold {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 24px 26px;
-}
-
-.favorite-preference-threshold app-minimum-hearts-control {
-  display: block;
-  width: 100%;
-  margin-top: 4px;
-}
-
 .recommendation-privacy-link {
   display: inline-block;
   margin-top: 10px;
@@ -1868,10 +1852,6 @@ h3 {
 
   .favorite-preference-switch {
     align-self: flex-end;
-  }
-
-  .favorite-preference-threshold {
-    padding: 22px 18px;
   }
 }
 

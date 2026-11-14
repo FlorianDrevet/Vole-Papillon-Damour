@@ -42,7 +42,7 @@ describe('CatalogFavoritesService', () => {
     api.withdrawAnonymousFavorite.and.returnValue(of({isbn13: '9782070612758', count: 0}));
     memberApi.getFavorites.and.returnValue(of(emptyFavorites()));
     memberApi.getRecommendations.and.returnValue(of({status: 'Enabled', minimumHearts: 3, items: []}));
-    memberApi.getRecommendationPreference.and.returnValue(of({enabled: true, minimumHearts: 3}));
+    memberApi.getRecommendationPreference.and.returnValue(of({enabled: true, minimumHearts: 3, fairDigestEnabled: true}));
     memberApi.setRecommendationPreference.and.returnValue(of(void 0));
     memberApi.addFavorite.and.returnValue(of({isbn13: '9782070612758', alreadyPresent: false, total: 1}));
     memberApi.removeFavorite.and.returnValue(of(void 0));
@@ -125,6 +125,7 @@ describe('CatalogFavoritesService', () => {
       enabled: false,
       minimumHearts: 2,
       fairDigestConsentedAt: null,
+      fairDigestEnabled: false,
     }));
     const service = TestBed.inject(CatalogFavoritesService);
 
@@ -133,7 +134,7 @@ describe('CatalogFavoritesService', () => {
 
     expect(memberApi.setRecommendationPreference)
       .toHaveBeenCalledOnceWith('member-token', false, 2, true);
-    expect(service.fairDigestConsent()).toBeTrue();
+    expect(service.fairDigestEnabled()).toBeTrue();
   });
 
   it('preserves local favorites when the account merge fails', async () => {

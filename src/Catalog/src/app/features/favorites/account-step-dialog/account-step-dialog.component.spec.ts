@@ -19,22 +19,22 @@ describe('AccountStepDialogComponent', () => {
     fixture.detectChanges();
   });
 
-  it('starts with email consent unchecked and emits the selected value before registration', () => {
+  it('starts with email enabled and emits the selected value before registration', () => {
     const consent = fixture.nativeElement.querySelector('[data-zone="E4-consentement-email"] input') as HTMLInputElement;
-    expect(consent.checked).toBeFalse();
+    expect(consent.checked).toBeTrue();
     expect(fixture.nativeElement.querySelector('[data-zone="E4-recap-liste"]')?.textContent)
       .toContain('L’Amie prodigieuse');
 
     const register = jasmine.createSpy('register');
     fixture.componentInstance.registerRequested.subscribe(register);
     (fixture.nativeElement.querySelector('[data-zone="E4-bouton-continuer"]') as HTMLButtonElement).click();
-    expect(register).toHaveBeenCalledOnceWith(false);
+    expect(register).toHaveBeenCalledOnceWith(true);
 
-    consent.checked = true;
+    consent.checked = false;
     consent.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('[data-zone="E4-bouton-continuer"]') as HTMLButtonElement).click();
-    expect(register).toHaveBeenCalledWith(true);
+    expect(register).toHaveBeenCalledWith(false);
   });
 });
 

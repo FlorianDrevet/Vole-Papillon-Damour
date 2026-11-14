@@ -28,7 +28,7 @@ describe('CatalogFavoritesPageComponent', () => {
     computingByIsbn: WritableSignal<Readonly<Record<string, boolean>>>;
     suggestionStatus: WritableSignal<string>;
     currentMinimumHearts: WritableSignal<number>;
-    fairDigestConsent: WritableSignal<boolean>;
+    fairDigestEnabled: WritableSignal<boolean>;
     syncNotice: WritableSignal<CatalogFavoriteMergeResult | null>;
   };
   let localStore: jasmine.SpyObj<LocalFavoritesStore> & {available: boolean};
@@ -52,7 +52,7 @@ describe('CatalogFavoritesPageComponent', () => {
       computingByIsbn: signal<Readonly<Record<string, boolean>>>({}),
       suggestionStatus: signal('Enabled'),
       currentMinimumHearts: signal(3),
-      fairDigestConsent: signal(false),
+      fairDigestEnabled: signal(true),
       syncNotice: signal<CatalogFavoriteMergeResult | null>(null),
     });
     localStore = Object.assign(jasmine.createSpyObj<LocalFavoritesStore>(
@@ -115,11 +115,11 @@ describe('CatalogFavoritesPageComponent', () => {
     expect(dialog).not.toBeNull();
     expect(dialog.getAttribute('role')).toBe('dialog');
     expect((dialog.querySelector('[data-zone="E4-consentement-email"] input') as HTMLInputElement).checked)
-      .toBeFalse();
+      .toBeTrue();
 
     (dialog.querySelector('[data-zone="E4-bouton-continuer"]') as HTMLButtonElement).click();
     await fixture.whenStable();
-    expect(auth.registerFromFavorites).toHaveBeenCalledOnceWith('/trouver-mon-prochain-livre', false);
+    expect(auth.registerFromFavorites).toHaveBeenCalledOnceWith('/trouver-mon-prochain-livre', true);
   });
 
   it('keeps the fair email preference in the member profile instead of the favorites page', () => {
@@ -156,13 +156,13 @@ describe('CatalogFavoritesPageComponent', () => {
       .not.toBeNull();
   });
 
-  it('consents only after merge and shows the number returned by the API on return', async () => {
+  it('applies an explicit email opt-out after merging favorites on return', async () => {
     fixture.destroy();
     auth.isAuthenticated.set(true);
     favorites.mode.set('remote');
     auth.consumeFavoriteRegistrationReturn.and.returnValue({
       returnUrl: '/trouver-mon-prochain-livre',
-      fairDigestConsent: true,
+      fairDigestConsent: false,
     } satisfies CatalogFavoriteRegistrationReturn);
     const operations: string[] = [];
     favorites.onSignedIn.and.callFake(async () => {
@@ -171,7 +171,7 @@ describe('CatalogFavoritesPageComponent', () => {
     });
     favorites.setFairDigestConsent.and.callFake(async consented => {
       operations.push(consented ? 'consent' : 'withdraw');
-      favorites.fairDigestConsent.set(consented);
+      favorites.fairDigestEnabled.set(consented);
     });
 
     fixture = TestBed.createComponent(CatalogFavoritesPageComponent);
@@ -183,9 +183,9 @@ describe('CatalogFavoritesPageComponent', () => {
 
     expect(auth.consumeFavoriteRegistrationReturn.calls.mostRecent().returnValue).toEqual({
       returnUrl: '/trouver-mon-prochain-livre',
-      fairDigestConsent: true,
+      fairDigestConsent: false,
     });
-    expect(operations).toEqual(['merge', 'consent']);
+    expect(operations).toEqual(['merge', 'withdraw']);
     expect(fixture.nativeElement.querySelector('[data-zone="E4-message-reprise"]')?.textContent)
       .toContain('3 coups de cœur ajoutés à votre compte');
     expect(fixture.nativeElement.textContent)

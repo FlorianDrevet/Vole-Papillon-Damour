@@ -80,9 +80,9 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('La scanette affiche ce compteur agrégé, jamais l’identité d’un membre');
     expect(content).toContain('Nous vous proposons des livres de la bourse qui ressemblent à vos coups de cœur');
     expect(content).toContain('Le calcul se fait sur nos serveurs, à partir des notices des livres ; aucune donnée personnelle n’est envoyée à un service extérieur');
-    expect(content).toContain('L’e-mail avant la bourse repose sur votre consentement explicite');
-    expect(content).toContain('La case est décochée par défaut et le consentement est enregistré avec sa date');
-    expect(content).toContain('retirer votre consentement en un clic depuis l’e-mail');
+    expect(content).toContain('L’e-mail avant chaque bourse est activé par défaut');
+    expect(content).toContain('à partir de 3 cœurs');
+    expect(content).toContain('Vous pouvez désactiver ce réglage dans « Compte et données »');
     expect(content).toContain('ou « Compte et données »');
 
     const requestLink = fixture.nativeElement.querySelector(

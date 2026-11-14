@@ -9,6 +9,7 @@ public sealed class MemberRecommendationPreference
     public UserId UserId { get; private set; } = null!;
     public bool Enabled { get; private set; }
     public int? MinimumHearts { get; private set; }
+    public bool? FairDigestEnabled { get; private set; }
     public DateTime? FairDigestConsentedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -54,12 +55,14 @@ public sealed class MemberRecommendationPreference
     public void GrantFairDigestConsent(DateTime now)
     {
         var utcNow = DomainTime.RequireUtc(now, nameof(now));
+        FairDigestEnabled = true;
         FairDigestConsentedAt = utcNow;
         UpdatedAt = utcNow;
     }
 
     public void RevokeFairDigestConsent()
     {
+        FairDigestEnabled = false;
         FairDigestConsentedAt = null;
     }
 

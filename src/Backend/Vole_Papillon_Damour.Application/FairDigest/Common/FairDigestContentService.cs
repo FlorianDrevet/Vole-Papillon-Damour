@@ -26,6 +26,8 @@ public sealed class FairDigestContentService(
     IOptions<FairDigestOptions> options,
     FairDigestContentBuilder contentBuilder) : IFairDigestContentService
 {
+    private const int MinimumHeartsForFairDigest = 3;
+
     public async Task<ErrorOr<FairDigestMemberContent>> BuildAsync(
         User member,
         FairDigestScheduleResult schedule,
@@ -96,6 +98,7 @@ public sealed class FairDigestContentService(
                     member.Name?.FirstName,
                     member.Name?.LastName,
                     options.Value.NewsMax,
+                    MinimumHearts: MinimumHeartsForFairDigest,
                     CandidateIsbns: publicArrivals.Select(book => book.Isbn13).ToArray()),
                 cancellationToken);
             if (!recommendationResult.IsError)

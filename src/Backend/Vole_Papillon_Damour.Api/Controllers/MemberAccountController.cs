@@ -528,7 +528,8 @@ public static class MemberAccountController
                             preference => Results.Ok(new RecommendationPreferenceResponse(
                                 preference.Enabled,
                                 preference.MinimumHearts,
-                                preference.FairDigestConsentedAt)),
+                                preference.FairDigestConsentedAt,
+                                preference.FairDigestEnabled)),
                             error => error.Result());
                     })
                 .WithName("GetMyRecommendationPreference")
