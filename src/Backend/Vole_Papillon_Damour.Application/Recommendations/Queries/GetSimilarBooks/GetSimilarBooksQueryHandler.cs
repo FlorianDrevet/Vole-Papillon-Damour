@@ -73,9 +73,12 @@ public sealed class GetSimilarBooksQueryHandler(
             return Array.Empty<SimilarBookResult>();
         }
 
+        var inProgressScanIsbns = await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+            dbContext,
+            cancellationToken);
         var books = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
                 dbContext.Books.AsNoTracking(),
-                dbContext)
+                inProgressScanIsbns)
             .Where(book => candidateIsbns.Contains(book.Id))
             .ToListAsync(cancellationToken);
         var announcements = await dbContext.BookAnnouncements

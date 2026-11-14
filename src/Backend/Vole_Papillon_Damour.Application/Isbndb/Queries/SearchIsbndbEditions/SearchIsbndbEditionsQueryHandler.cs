@@ -124,7 +124,9 @@ public sealed class SearchIsbndbEditionsQueryHandler : IRequestHandler<SearchIsb
             ? new HashSet<Isbn13>()
             : (await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
                     _dbContext.Books.AsNoTracking(),
-                    _dbContext)
+                    await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+                        _dbContext,
+                        cancellationToken))
                 .Where(book => isbn13s.Contains(book.Id))
                 .Select(book => book.Id)
                 .ToListAsync(cancellationToken))

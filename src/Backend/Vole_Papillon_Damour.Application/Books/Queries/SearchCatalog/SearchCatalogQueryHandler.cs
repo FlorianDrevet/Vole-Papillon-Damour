@@ -40,9 +40,12 @@ public sealed class SearchCatalogQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
+        var inProgressScanIsbns = await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+            dbContext,
+            cancellationToken);
         var catalogBooksQuery = PublicCatalogBookVisibility.FilterPublicCatalogBooks(
             dbContext.Books.AsNoTracking(),
-            dbContext);
+            inProgressScanIsbns);
         var normalizedSearch = Normalize(query.Search);
         var searchTerms = query.Search?
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

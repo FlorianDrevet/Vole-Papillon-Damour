@@ -520,6 +520,27 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_WhenNoScanIsInProgress_DoesNotQueryBookMovementsForEachBook()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Alpha", "Auteur");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Alpha");
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("BookMovements", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenFinalPageHasRows_InfersExactTotalWithoutCountQuery()
     {
         var sql = new SqlCaptureInterceptor();
