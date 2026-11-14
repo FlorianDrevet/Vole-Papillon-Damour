@@ -69,6 +69,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.IsHiddenFromCatalog)
             .HasDefaultValue(false)
             .IsRequired();
+        builder.Property(book => book.IsFavoriteReference)
+            .HasDefaultValue(false)
+            .IsRequired();
 
         builder.Property(book => book.MetadataStatus)
             .HasConversion<byte>()
@@ -139,6 +142,9 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         // Scanette catalog delta: RowVersion > @since AND RowVersion < MIN_ACTIVE_ROWVERSION().
         builder.HasIndex(book => book.RowVersion);
         builder.HasIndex(book => book.UpdatedAt);
+        builder.HasIndex(book => book.IsFavoriteReference)
+            .HasFilter("[IsFavoriteReference] = 1")
+            .HasDatabaseName("IX_Books_IsFavoriteReference");
 
         // Public catalog pages only read visible canonical fiches and fetch a
         // small TOP N in these orders. Keying on (date, Title) — Isbn13 being the

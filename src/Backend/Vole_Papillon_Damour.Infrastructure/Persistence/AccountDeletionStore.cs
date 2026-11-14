@@ -251,6 +251,23 @@ public sealed class AccountDeletionStore(
             .ToListAsync(cancellationToken);
         dbContext.MemberSelectionItems.RemoveRange(selectionItems);
 
+        var favoriteBooks = await dbContext.MemberFavoriteBooks
+            .Where(favorite => favorite.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.MemberFavoriteBooks.RemoveRange(favoriteBooks);
+
+        var fairDigestDeliveries = await dbContext.FairDigestDeliveries
+            .Where(delivery => delivery.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.FairDigestDeliveries.RemoveRange(fairDigestDeliveries);
+
+        var recommendationPreference = await dbContext.MemberRecommendationPreferences
+            .SingleOrDefaultAsync(preference => preference.UserId == userId, cancellationToken);
+        if (recommendationPreference is not null)
+        {
+            dbContext.MemberRecommendationPreferences.Remove(recommendationPreference);
+        }
+
         var memberCards = await dbContext.MemberCards
             .Where(card => card.UserId == userId)
             .ToListAsync(cancellationToken);

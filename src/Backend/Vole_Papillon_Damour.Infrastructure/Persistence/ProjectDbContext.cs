@@ -22,6 +22,8 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.IsbndbAggregate;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
+using Vole_Papillon_Damour.Domain.FairDigestAggregate;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
 
 namespace Vole_Papillon_Damour.Infrastructure.Persistence;
@@ -63,6 +65,10 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
     public DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => Set<MemberRecommendationPreference>();
+    public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
+    public DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => Set<AnonymousFavoriteCount>();
+    public DbSet<FairDigestCampaign> FairDigestCampaigns => Set<FairDigestCampaign>();
+    public DbSet<FairDigestDelivery> FairDigestDeliveries => Set<FairDigestDelivery>();
     public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
     public DbSet<ManualBookRequest> ManualBookRequests => Set<ManualBookRequest>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)

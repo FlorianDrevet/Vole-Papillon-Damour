@@ -308,6 +308,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsFavoriteReference")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsHiddenFromCatalog")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -426,6 +431,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("Genre")
                         .HasDatabaseName("IX_Books_PublicCatalog_Genre")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    b.HasIndex("IsFavoriteReference")
+                        .HasDatabaseName("IX_Books_IsFavoriteReference")
+                        .HasFilter("[IsFavoriteReference] = 1");
 
                     b.HasIndex("RedirectedToIsbn13");
 
@@ -854,6 +863,120 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasFilter("[RareBookId] IS NOT NULL");
 
                     b.ToTable("CheckoutPassageLines", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FairDigestAggregate.FairDigestCampaign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssoEventsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FailedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("PlannedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("SkippedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SuspendedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SuspendedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssoEventsId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_FairDigestCampaigns_AssoEventsId");
+
+                    b.HasIndex("SuspendedBy");
+
+                    b.ToTable("FairDigestCampaigns", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FairDigestAggregate.FairDigestDelivery", b =>
+                {
+                    b.Property<Guid>("CampaignId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("CampaignId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("FairDigestDeliveries", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FavoriteBookAggregate.AnonymousFavoriteCount", b =>
+                {
+                    b.Property<string>("Id")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)")
+                        .HasColumnName("Isbn13");
+
+                    b.Property<int>("Count")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AnonymousFavoriteCounts", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FavoriteBookAggregate.MemberFavoriteBook", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "Isbn13");
+
+                    b.HasIndex("Isbn13")
+                        .HasDatabaseName("IX_MemberFavoriteBooks_Isbn13");
+
+                    b.ToTable("MemberFavoriteBooks", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.IsbndbAggregate.IsbndbCatchUpRun", b =>
@@ -1585,6 +1708,12 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<bool>("Enabled")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("FairDigestConsentedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("MinimumHearts")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -2197,6 +2326,44 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasOne("Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.CheckoutPassage", null)
                         .WithMany()
                         .HasForeignKey("CheckoutPassageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FairDigestAggregate.FairDigestCampaign", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
+                        .WithMany()
+                        .HasForeignKey("AssoEventsId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("SuspendedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FairDigestAggregate.FairDigestDelivery", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.FairDigestAggregate.FairDigestCampaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.FavoriteBookAggregate.MemberFavoriteBook", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

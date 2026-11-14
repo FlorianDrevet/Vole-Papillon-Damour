@@ -20,6 +20,8 @@ using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.IsbndbAggregate;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
+using Vole_Papillon_Damour.Domain.FairDigestAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -62,6 +64,10 @@ public interface IProjectDbContext
     DbSet<BookNeighbor> BookNeighbors => throw new NotSupportedException();
     DbSet<RecommendationGeneration> RecommendationGenerations => throw new NotSupportedException();
     DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => throw new NotSupportedException();
+    DbSet<MemberFavoriteBook> MemberFavoriteBooks => throw new NotSupportedException();
+    DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => throw new NotSupportedException();
+    DbSet<FairDigestCampaign> FairDigestCampaigns => throw new NotSupportedException();
+    DbSet<FairDigestDelivery> FairDigestDeliveries => throw new NotSupportedException();
     DbSet<ManualRequester> ManualRequesters => throw new NotSupportedException();
     DbSet<ManualBookRequest> ManualBookRequests => throw new NotSupportedException();
 }
