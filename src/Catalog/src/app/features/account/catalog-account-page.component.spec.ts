@@ -19,6 +19,8 @@ import {AccountCardComponent} from './card/account-card.component';
 import {AccountPurchasesComponent} from './purchases/account-purchases.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
+import {MinimumHeartsControlComponent} from '../favorites/minimum-hearts-control.component';
+import {LocalFavoriteEntry} from '../../core/favorites/local-favorites.store';
 import {VpdLoaderComponent} from '@vpd/ui';
 
 describe('CatalogAccountPageComponent', () => {
@@ -42,6 +44,7 @@ describe('CatalogAccountPageComponent', () => {
   let api: jasmine.SpyObj<CatalogMemberApiService>;
   let selection: jasmine.SpyObj<CatalogSelectionService>;
   let favorites: jasmine.SpyObj<CatalogFavoritesService>;
+  let accountFavorites: WritableSignal<LocalFavoriteEntry[]>;
 
   const account = (name: string): AccountInfo => ({
     homeAccountId: 'home-account-id',
@@ -213,10 +216,16 @@ describe('CatalogAccountPageComponent', () => {
     selection.refresh.and.callFake(async () => snapshot());
     selection.confirmMerge.and.resolveTo({added: 0, alreadyPresent: 0, rejected: []});
     selection.remove.and.resolveTo();
+    accountFavorites = signal<LocalFavoriteEntry[]>([]);
     favorites = jasmine.createSpyObj<CatalogFavoritesService>(
-      'CatalogFavoritesService', ['onSignedIn'],
+      'CatalogFavoritesService', ['onSignedIn', 'setMinimumHearts'],
+      {
+        favorites: accountFavorites,
+        currentMinimumHearts: signal(3),
+      },
     );
     favorites.onSignedIn.and.resolveTo();
+    favorites.setMinimumHearts.and.resolveTo();
 
     await TestBed.configureTestingModule({
       declarations: [
@@ -225,6 +234,7 @@ describe('CatalogAccountPageComponent', () => {
         AccountSelectionComponent,
         AccountCardComponent,
         AccountPurchasesComponent,
+        MinimumHeartsControlComponent,
         VpdLoaderComponent,
       ],
       imports: [RouterModule.forRoot([])],
@@ -827,7 +837,8 @@ describe('CatalogAccountPageComponent', () => {
     expect(api.getRecommendationPreference).toHaveBeenCalledWith('member-token');
     expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
       .toContain('Activées');
-    expect(button.textContent).toContain('Désactiver les suggestions');
+    expect(button.getAttribute('role')).toBe('switch');
+    expect(button.getAttribute('aria-checked')).toBe('true');
   });
 
   it('disables personalized recommendations after the member opts out', async () => {
@@ -838,10 +849,69 @@ describe('CatalogAccountPageComponent', () => {
     expect(api.setRecommendationPreference).toHaveBeenCalledOnceWith('member-token', false);
     expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
       .toContain('Désactivées');
-    expect(fixture.nativeElement.querySelector('[data-zone="R7-bouton"]')?.textContent)
-      .toContain('Réactiver les suggestions');
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-suggestions"]')?.getAttribute('aria-checked'))
+      .toBe('false');
     expect(fixture.nativeElement.textContent)
       .toContain('Les suggestions « Dans le même esprit » des fiches restent visibles');
+  });
+
+  it('enables the pre-fair email and shows the server consent date', async () => {
+    api.getRecommendationPreference.and.returnValue(of({
+      enabled: true,
+      minimumHearts: 3,
+      fairDigestConsentedAt: null,
+    }));
+    await openRecommendationPreferences();
+
+    const toggle = fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-email"]') as HTMLButtonElement;
+    toggle.click();
+    await settleAccountPage();
+
+    expect(api.setRecommendationPreference).toHaveBeenCalledWith(
+      'member-token', true, undefined, true,
+    );
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-date-consentement"]')?.textContent)
+      .toContain('Accepté le');
+  });
+
+  it('withdraws the pre-fair email consent and removes its accepted date', async () => {
+    api.getRecommendationPreference.and.returnValue(of({
+      enabled: true,
+      minimumHearts: 3,
+      fairDigestConsentedAt: '2026-11-13T10:00:00Z',
+    }));
+    await openRecommendationPreferences();
+
+    const toggle = fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-email"]') as HTMLButtonElement;
+    toggle.click();
+    await settleAccountPage();
+
+    expect(api.setRecommendationPreference).toHaveBeenCalledWith(
+      'member-token', true, undefined, false,
+    );
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-date-consentement"]')?.textContent)
+      .toContain('Désactivé');
+  });
+
+  it('links to the member favorites and reuses the four-level suggestion threshold', async () => {
+    await openRecommendationPreferences();
+    accountFavorites.set([{
+      isbn13: '9782070612758',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      coverUrl: null,
+      addedAt: '2026-11-14T10:00:00Z',
+    }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-preference-suggestions"] a')?.textContent)
+      .toContain('Gérer mes coups de cœur (1)');
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-exigence"]')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('[data-zone="E2-exigence-4"]') as HTMLButtonElement).click();
+    await settleAccountPage();
+
+    expect(favorites.setMinimumHearts).toHaveBeenCalledOnceWith(4);
   });
 
   it('disables the preference button while the update is in progress', async () => {
@@ -852,7 +922,7 @@ describe('CatalogAccountPageComponent', () => {
     button.click();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement).disabled)
+    expect((fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-suggestions"]') as HTMLButtonElement).disabled)
       .toBeTrue();
 
     await new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -874,7 +944,7 @@ describe('CatalogAccountPageComponent', () => {
 
     (fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement).click();
     await settleAccountPage();
-    (fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-suggestions"]') as HTMLButtonElement).click();
     await settleAccountPage();
 
     purchasesTab.click();
@@ -893,8 +963,8 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
       .toContain('Activées');
-    expect(fixture.nativeElement.querySelector('[data-zone="R7-bouton"]')?.textContent)
-      .toContain('Désactiver les suggestions');
+    expect(fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-suggestions"]')?.getAttribute('aria-checked'))
+      .toBe('true');
     expect(fixture.nativeElement.querySelector('[data-testid="recommendation-preference-error"]')?.getAttribute('role'))
       .toBe('alert');
   });
@@ -907,7 +977,7 @@ describe('CatalogAccountPageComponent', () => {
     const preferencesTab = fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement;
     preferencesTab.click();
     await settleAccountPage();
-    return fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement;
+    return fixture.nativeElement.querySelector('[data-zone="E7-interrupteur-suggestions"]') as HTMLButtonElement;
   }
 
   async function settleAccountPage(): Promise<void> {

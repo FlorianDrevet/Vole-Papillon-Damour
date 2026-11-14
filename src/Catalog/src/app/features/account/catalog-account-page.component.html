@@ -545,15 +545,17 @@
         }
 
         @if (recommendationsEnabled() !== null) {
-          <section
-            class="alert-settings-panel recommendations-preference-panel"
-            data-zone="R7-suggestions"
-            aria-labelledby="recommendations-settings-title"
-            [attr.aria-busy]="recommendationPreferencePending()">
-            <div class="recommendations-preference-copy">
-              <div class="settings-heading recommendation-settings-heading">
-                <div class="recommendation-settings-labels">
-                  <p class="eyebrow">Préférences</p>
+          <section class="favorite-preferences" aria-labelledby="favorite-preferences-title">
+            <h2 id="favorite-preferences-title" class="favorite-preferences-title">Suggestions et coups de cœur.</h2>
+
+            <section
+              class="favorite-preference-card"
+              data-zone="E7-preference-suggestions"
+              aria-labelledby="recommendations-settings-title"
+              [attr.aria-busy]="recommendationPreferencePending()">
+              <div class="favorite-preference-copy">
+                <div class="settings-heading recommendation-settings-heading">
+                  <h3 id="recommendations-settings-title">Suggestions personnalisées</h3>
                   <span
                     class="recommendation-preference-status"
                     [class.recommendation-preference-status--disabled]="!recommendationsEnabled()"
@@ -562,48 +564,79 @@
                     {{ recommendationsEnabled() ? 'Activées' : 'Désactivées' }}
                   </span>
                 </div>
-              </div>
-              <h2 id="recommendations-settings-title">Suggestions personnalisées.</h2>
-              @if (recommendationsEnabled()) {
-                <p>Sur l'accueil et dans Mes achats, nous vous proposons des livres proches de ceux que vous avez achetés avec votre carte de compte.</p>
-                <ul class="recommendation-explanation" data-zone="R7-explication">
-                  <li>Seuls vos achats associés servent de point de départ.</li>
-                  <li>Le calcul se fait sur nos serveurs. Aucune donnée vous concernant n'est envoyée à un service extérieur.</li>
-                  <li>Aucun e-mail n'est envoyé à partir de ces suggestions.</li>
-                </ul>
-                <a class="recommendation-privacy-link" routerLink="/donnees-personnelles">
-                  En savoir plus : vos données et le RGPD →
-                </a>
-              } @else {
-                <p>Vos achats ne servent plus à vous proposer des livres. Les suggestions « Dans le même esprit » des fiches restent visibles : elles ne dépendent pas de votre compte.</p>
-              }
-              @if (recommendationPreferenceError(); as preferenceError) {
-                <p class="recommendation-preference-error" data-testid="recommendation-preference-error" role="alert">
-                  {{ preferenceError }}
+                <p class="recommendation-explanation" data-zone="E7-explication-suggestions">
+                  Nous vous proposons des livres de la bourse qui ressemblent à vos coups de cœur. Le calcul se fait
+                  sur nos serveurs, à partir des notices des livres ; aucune donnée personnelle n'est envoyée à un
+                  service extérieur.
                 </p>
-              }
-            </div>
-            <div class="alert-settings-actions">
-              @if (recommendationsEnabled()) {
-                <button
-                  type="button"
-                  class="account-button quiet"
-                  data-zone="R7-bouton"
-                  [disabled]="recommendationPreferencePending()"
-                  (click)="setRecommendationPreferenceEnabled(false)">
-                  Désactiver les suggestions
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="account-button secondary"
-                  data-zone="R7-bouton"
-                  [disabled]="recommendationPreferencePending()"
-                  (click)="setRecommendationPreferenceEnabled(true)">
-                  Réactiver les suggestions
-                </button>
-              }
-            </div>
+                <p class="recommendation-independent-copy">
+                  Les suggestions « Dans le même esprit » des fiches restent visibles : elles ne dépendent pas de votre compte.
+                </p>
+                <a class="recommendation-privacy-link" routerLink="/trouver-mon-prochain-livre">
+                  Gérer mes coups de cœur ({{ favoriteCount() }}) →
+                </a>
+                @if (recommendationPreferenceError(); as preferenceError) {
+                  <p class="recommendation-preference-error" data-testid="recommendation-preference-error" role="alert">
+                    {{ preferenceError }}
+                  </p>
+                }
+              </div>
+              <button
+                type="button"
+                role="switch"
+                class="favorite-preference-switch"
+                data-zone="E7-interrupteur-suggestions"
+                data-testid="recommendation-preference-switch"
+                [attr.aria-checked]="recommendationsEnabled()"
+                aria-labelledby="recommendations-settings-title"
+                [disabled]="recommendationPreferencePending()"
+                (click)="setRecommendationPreferenceEnabled(!recommendationsEnabled())">
+                <span aria-hidden="true"></span>
+              </button>
+            </section>
+
+            <section
+              class="favorite-preference-card"
+              data-zone="E7-preference-email"
+              aria-labelledby="fair-digest-settings-title"
+              [attr.aria-busy]="recommendationPreferencePending()">
+              <div class="favorite-preference-copy">
+                <h3 id="fair-digest-settings-title">E-mail avant chaque bourse</h3>
+                <p>
+                  Trois jours avant l'ouverture d'une bourse, recevez les nouveautés arrivées depuis la bourse
+                  précédente qui ressemblent à vos coups de cœur, et les livres très demandés de retour. Un e-mail
+                  par bourse au plus.
+                </p>
+                <p class="fair-digest-consent-status" data-zone="E7-date-consentement">
+                  {{ fairDigestConsentLabel() }}
+                </p>
+                @if (fairDigestPreferenceError(); as preferenceError) {
+                  <p class="recommendation-preference-error" data-testid="fair-digest-preference-error" role="alert">
+                    {{ preferenceError }}
+                  </p>
+                }
+              </div>
+              <button
+                type="button"
+                role="switch"
+                class="favorite-preference-switch"
+                data-zone="E7-interrupteur-email"
+                [attr.aria-checked]="fairDigestConsentedAt() !== null"
+                aria-labelledby="fair-digest-settings-title"
+                [disabled]="recommendationPreferencePending()"
+                (click)="setFairDigestConsentEnabled(fairDigestConsentedAt() === null)">
+                <span aria-hidden="true"></span>
+              </button>
+            </section>
+
+            <section class="favorite-preference-threshold" data-zone="E7-exigence" aria-labelledby="favorite-threshold-title">
+              <h3 id="favorite-threshold-title">Exigence des suggestions</h3>
+              <p>Le nombre minimum de cœurs pour qu'un livre vous soit proposé, sur le site et dans l'e-mail.</p>
+              <app-minimum-hearts-control
+                [minimum]="minimumHearts()"
+                (minimumChange)="setMinimumHearts($event)">
+              </app-minimum-hearts-control>
+            </section>
           </section>
         } @else if (recommendationPreferenceError()) {
           <p class="recommendation-preference-error" data-testid="recommendation-preference-error" role="alert">
