@@ -6,6 +6,7 @@
 - `CatalogFavoritesService` orchestre les déclarations anonymes, la reprise de liste lors de la création de compte, les préférences membre, le calcul de suggestions et les états d’indisponibilité.
 - `LocalFavoritesStore` conserve les entrées anonymes dans le navigateur, sans identifiant de visiteur transmis avec la liste. Les plafonds sont 50 entrées locales et 200 entrées membre.
 - Les composants de feature vivent dans `src/Catalog/src/app/features/favorites/`; le panneau d’ajout recherche d’abord le catalogue. ISBNdb n’est utilisé qu’au flux d’ajout/éditions supplémentaires, jamais pendant la recherche E3.
+- La recherche des livres à ajouter ne garde que les résultats dont la langue est explicitement française. Le catalogue expose `language`; BnF lit le champ UNIMARC `101$a`; Open Library retourne la langue des éditions; la recherche ISBNdb publique demande `language=fr`. Un résultat sans langue française vérifiée est écarté. Le filtre est propre aux coups de cœur et ne change pas la recherche bibliographique partagée par Catalog et l’administration.
 - Les préférences membre comprennent l’exigence minimale de cœurs, l’activation des suggestions et le consentement séparé à l’e-mail de bourse.
 
 ## Domaine, API et persistance
@@ -20,6 +21,14 @@
 - `FairDigestCampaign` sélectionne nouveautés et retours, conserve les consentements et déduplique l’envoi par bourse et membre. Le Worker utilise `FairDigestFunction`; le contenu et le rendu vivent dans `Application/FairDigest/` et `Infrastructure/Services/FairDigest/`.
 - L’administration Catalog appelle les routes `/books/admin/fair-digest`, `/preview`, `/test`, `/suspend` et `/resume`. L’aperçu est isolé dans un iframe `sandbox`.
 - `FairDigest:Enabled` reste `false` par défaut. Ne pas appeler l’envoi de test pendant une validation; examiner l’aperçu avec une vraie bourse avant activation publique.
+
+## Suivi de mise en production — 2026-11-14
+
+- La PR #392 est fusionnée. `Books runtime - deploy` #43618534632 et `Catalog - deploy` #43618559675 ont réussi; la migration `AddBookFavorites` a été appliquée par le runtime. L’utilisateur a ensuite lancé `Infra - deploy` #43621670567, également réussi.
+- Après ce déploiement, `vpd-api-ca-dev-fc--0000032` (`vpd-api:aa39dce`) est `Unhealthy` / `ActivationFailed`, avec 100 % du trafic et un conteneur en `CrashLoopBackOff`; la dernière révision saine est `0000030` (`vpd-api:b852687`). Les journaux donnent `OptionsValidationException` sur `Recommendations:HeartThresholds`, et `GET /catalog/me/favorites` répond toujours 404.
+- Cause dans le binding .NET : l’array prérempli dans `RecommendationOptions` est concaténé aux cinq valeurs de `appsettings.json`, puis échoue à la validation des cinq seuils distincts. La correction initialise l’array vide avant le binding et applique les seuils par défaut après le binding si aucune valeur n’existe; elle ne demande pas une nouvelle migration ni un changement Bicep.
+- La branche `fix/book-favorites-production` corrige aussi les textes/états vides Catalog, place le consentement e-mail uniquement dans les préférences du profil et limite les recherches de coups de cœur aux livres français. Après fusion, déployer la nouvelle image API avec `Books runtime - deploy` (sans migration puisque la migration est déjà appliquée), déployer Catalog, puis vérifier l’état sain de la révision et la route favorites authentifiée.
+- Validation locale de cette branche : builds production Catalog, API et Worker réussis; Graphify mis à jour; capture headless du Catalog à 390 et 1 440 px sans débordement horizontal. Les tests automatisés n’ont pas été exécutés. Aucun correctif Azure ou nouveau déploiement n’a été fait par Codex.
 
 ## Scan, validation et livraison
 

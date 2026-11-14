@@ -120,12 +120,12 @@ describe('CatalogNavigationComponent', () => {
     expect(eventLink?.getAttribute('href')).toBe('/prochaines-dates');
   });
 
-  it('links to the personal book-favorites page with a heart icon', () => {
+  it('links to the personal book-favorites page without a leading heart icon', () => {
     const link = (Array.from(fixture.nativeElement.querySelectorAll('a.nav-link')) as HTMLAnchorElement[])
       .find(item => item.textContent?.includes('Trouver mon prochain livre'));
 
     expect(link?.getAttribute('href')).toBe('/trouver-mon-prochain-livre');
-    expect(link?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(link?.querySelector('svg[aria-hidden="true"]')).toBeNull();
 
     fixture.componentInstance.url.set('/trouver-mon-prochain-livre');
     fixture.detectChanges();

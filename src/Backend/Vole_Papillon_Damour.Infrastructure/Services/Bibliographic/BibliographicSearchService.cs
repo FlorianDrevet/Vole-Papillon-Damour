@@ -72,6 +72,7 @@ public sealed class BibliographicSearchService(
                     Publisher = bnfItem.Publisher ?? enrichment.Publisher,
                     PublicationYear = bnfItem.PublicationYear ?? enrichment.PublicationYear,
                     CoverUrl = bnfItem.CoverUrl ?? enrichment.CoverUrl,
+                    Language = bnfItem.Language ?? enrichment.Language,
                 }
                 : bnfItem);
         }

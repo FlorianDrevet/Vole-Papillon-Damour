@@ -327,7 +327,7 @@ public sealed class OpenLibraryClient(
         CancellationToken cancellationToken)
     {
         var fields = Uri.EscapeDataString(
-            "title,author_name,publisher,first_publish_year,cover_i,key,isbn");
+            "title,author_name,publisher,first_publish_year,cover_i,key,isbn,language");
         var requestUri = new Uri(
             $"{_options.OpenLibrarySearchEndpoint}?q={Uri.EscapeDataString(query)}&page={page}&limit={pageSize}&fields={fields}",
             UriKind.Absolute);
@@ -381,7 +381,8 @@ public sealed class OpenLibraryClient(
                 publisher,
                 ReadInt(documentElement, "first_publish_year"),
                 CreateCoverUri(coverId),
-                "OpenLibrary"));
+                "OpenLibrary",
+                ReadStrings(documentElement, "language")));
         }
 
         return results

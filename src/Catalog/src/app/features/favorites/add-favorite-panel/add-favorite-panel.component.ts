@@ -147,11 +147,14 @@ export class AddFavoritePanelComponent implements OnChanges, OnDestroy {
         return;
       }
 
-      const catalogIsbns = new Set(catalog.books.map(book => book.isbn13));
-      this.catalogResults.set(catalog.books.map(mapCatalogBook));
+      const frenchCatalogBooks = catalog.books.filter(book => isFrenchLanguage(book.language));
+      const catalogIsbns = new Set(frenchCatalogBooks.map(book => book.isbn13));
+      this.catalogResults.set(frenchCatalogBooks.map(mapCatalogBook));
       this.referenceResults.set(references.items
         .filter((reference): reference is CatalogBookReference & {isbn13: string} =>
-          Boolean(reference.isbn13) && !catalogIsbns.has(reference.isbn13!),
+          Boolean(reference.isbn13) &&
+          !catalogIsbns.has(reference.isbn13!) &&
+          isFrenchLanguage(reference.language),
         )
         .map(mapReference));
       this.searchPerformed.set(true);
@@ -365,4 +368,16 @@ function mapIsbndbEdition(edition: CatalogIsbndbEditionSearchItem): FavoritePane
     quantityAvailable: 0,
     quantityAnnounced: 0,
   };
+}
+
+function isFrenchLanguage(language: string | null | undefined): boolean {
+  return (language ?? '').split(/[,;|]/).some(value => {
+    const normalized = value.trim().toLowerCase().replace(/^\/languages\//, '');
+    return normalized === 'fre' ||
+      normalized === 'fra' ||
+      normalized === 'french' ||
+      normalized === 'français' ||
+      normalized === 'francais' ||
+      /^fr(?:[-_]|$)/.test(normalized);
+  });
 }

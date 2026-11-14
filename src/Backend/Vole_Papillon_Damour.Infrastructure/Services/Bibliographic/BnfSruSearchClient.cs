@@ -59,7 +59,8 @@ public sealed class BnfSruSearchClient(
                 BnfSruClient.Clean(BnfSruClient.FirstSubfield(dataFields, ["210", "214"], "c")),
                 BnfSruClient.ParseYear(BnfSruClient.FirstSubfield(dataFields, ["210", "214"], "d")),
                 null,
-                Source));
+                Source,
+                BnfSruClient.Clean(BnfSruClient.FirstSubfield(dataFields, ["101"], "a"))));
         }
 
         var deduped = results

@@ -720,6 +720,7 @@ export interface CatalogBookReference {
   publicationYear: number | null;
   coverUrl: string | null;
   source: string;
+  language?: string | null;
 }
 
 export interface CatalogReferenceSearchResponse {

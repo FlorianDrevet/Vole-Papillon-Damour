@@ -4,6 +4,8 @@ public sealed class RecommendationOptions
 {
     public const string SectionName = "Recommendations";
 
+    internal static float[] DefaultHeartThresholds => [0.50f, 0.58f, 0.66f, 0.74f, 0.82f];
+
     public bool Enabled { get; set; }
     public string? Endpoint { get; set; }
     public string? EmbeddingDeploymentName { get; set; } = "text-embedding-3-small";
@@ -17,6 +19,6 @@ public sealed class RecommendationOptions
     public int SimilarMinCount { get; set; } = 1;
     public int PersonalMaxCount { get; set; } = 8;
     public int PersonalMinCount { get; set; } = 3;
-    public float[] HeartThresholds { get; set; } = [0.50f, 0.58f, 0.66f, 0.74f, 0.82f];
+    public float[] HeartThresholds { get; set; } = [];
     public int DefaultMinimumHearts { get; set; } = 3;
 }
