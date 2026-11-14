@@ -243,6 +243,44 @@ describe('ScanAuthService', () => {
       localStorage.removeItem(storageKey);
     });
 
+    it('redirects on startup even when no role was remembered on the device', () => {
+      localStorage.removeItem('vpd-scan-local-authorization');
+      const account = createAccount('no-local-role@example.org', 'Tri', ['Tri']);
+      const msal = createMsalService(createMsalInstance([account]), createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValue(throwError(() => interactionRequired()));
+
+      const service = new ScanAuthService(msal, createBroadcastService().service);
+
+      expect(service.authState.status).toBe('reauthenticating');
+      expect(msal.loginRedirect).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+        loginHint: 'no-local-role@example.org',
+      }));
+    });
+
+    it('shows the sign-in screen when the guard stops a second redirect for an unknown role', () => {
+      localStorage.removeItem('vpd-scan-local-authorization');
+      sessionStorage.setItem(reauthenticationKey, String(Date.now()));
+      const account = createAccount('no-local-role@example.org', 'Tri', ['Tri']);
+      const msal = createMsalService(createMsalInstance([account]), createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValue(throwError(() => interactionRequired()));
+
+      const service = new ScanAuthService(msal, createBroadcastService().service);
+
+      expect(service.authState.status).toBe('unauthenticated');
+      expect(msal.loginRedirect).not.toHaveBeenCalled();
+    });
+
+    it('treats a hidden-iframe timeout as a session to restore with a redirect', () => {
+      const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+      const msal = createMsalService(createMsalInstance([account]), createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValue(throwError(() => ({errorCode: 'monitor_window_timeout'})));
+
+      const service = new ScanAuthService(msal, createBroadcastService().service);
+
+      expect(service.authState.status).toBe('reauthenticating');
+      expect(msal.loginRedirect).toHaveBeenCalledTimes(1);
+    });
+
     it('keeps the degraded mode while offline and redirects once back online', () => {
       const onLine = spyOnProperty(navigator, 'onLine').and.returnValue(false);
       const account = createAccount('tri@example.org', 'Tri', ['Tri']);
@@ -372,7 +410,10 @@ describe('ScanAuthService', () => {
       const service = new ScanAuthService(msal, createBroadcastService().service);
       expect(service.authState.status).toBe('checking');
 
-      jasmine.clock().tick(10_000);
+      jasmine.clock().tick(14_999);
+      expect(service.authState.status).toBe('checking');
+
+      jasmine.clock().tick(1);
 
       expect(service.authState.status).toBe('degraded');
       expect(service.canSort).toBeTrue();
