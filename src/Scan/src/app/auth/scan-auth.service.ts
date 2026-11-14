@@ -18,7 +18,22 @@ import {loginRequest} from './msal-config';
 // stayed up forever until they manually logged out and back in.
 const DEGRADED_RETRY_DELAY_MS = 15_000;
 const DEGRADED_RETRY_MAX_ATTEMPTS = 5;
-const SILENT_TOKEN_REQUEST_TIMEOUT_MS = 10_000;
+// Longer than MSAL's own hidden-iframe timeout (10 s) so that its
+// `monitor_window_timeout` surfaces first: that error means the silent path is
+// blocked (third-party cookies), not that the network is slow.
+const SILENT_TOKEN_REQUEST_TIMEOUT_MS = 15_000;
+// SPA refresh tokens expire after 24 h and the hidden-iframe fallback is
+// blocked by most mobile browsers: these errors can only be solved by a
+// top-level redirect, which Entra answers without a prompt while its own
+// session is alive.
+const TOP_LEVEL_SIGN_IN_ERROR_CODES = new Set([
+  'interaction_required',
+  'login_required',
+  'consent_required',
+  'no_tokens_found',
+  'refresh_token_expired',
+  'monitor_window_timeout',
+]);
 // When the refresh token itself is no longer usable, the volunteer is sent
 // straight to the sign-in page instead of landing on the home screen with a
 // "reconnect" banner. If a previous automatic redirect came back less than
@@ -282,13 +297,18 @@ export class ScanAuthService {
   }
 
   private publishDegradedAccount(account: AccountInfo, error: unknown): void {
-    const roles = this.getLocalAuthorizationRoles(account);
-    if (!roles || !hasScanRole(roles)) {
-      this.publishAccount(null);
+    const needsTopLevelSignIn = requiresTopLevelSignIn(error);
+    // The account is in the MSAL cache, so this person has signed in on this
+    // device before: restore the session even when no role was remembered
+    // locally, rather than showing a "Se connecter" button that would only
+    // trigger the same redirect.
+    if (needsTopLevelSignIn && this.tryReauthenticate(account)) {
       return;
     }
 
-    if (error instanceof InteractionRequiredAuthError && this.tryReauthenticate(account)) {
+    const roles = this.getLocalAuthorizationRoles(account);
+    if (!roles || !hasScanRole(roles)) {
+      this.publishAccount(null);
       return;
     }
 
@@ -307,7 +327,7 @@ export class ScanAuthService {
     // else (network hiccup, momentary MSAL/iframe issue) is worth retrying
     // silently so the banner clears on its own, the way it does after a
     // manual logout/login round-trip.
-    if (!(error instanceof InteractionRequiredAuthError)) {
+    if (!needsTopLevelSignIn) {
       this.scheduleDegradedRetry(account, 1);
     }
   }
@@ -379,7 +399,7 @@ export class ScanAuthService {
           return;
         }
 
-        if (error instanceof InteractionRequiredAuthError) {
+        if (requiresTopLevelSignIn(error)) {
           this.tryReauthenticate(account);
           return;
         }
@@ -531,6 +551,20 @@ interface LocalAuthorizationRecord {
 
 function hasRole(roles: readonly string[], expectedRole: string): boolean {
   return roles.some(role => role.toLowerCase() === expectedRole.toLowerCase());
+}
+
+function requiresTopLevelSignIn(error: unknown): boolean {
+  if (error instanceof InteractionRequiredAuthError) {
+    return true;
+  }
+
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const errorCode = (error as {errorCode?: unknown}).errorCode;
+  return typeof errorCode === 'string'
+    && TOP_LEVEL_SIGN_IN_ERROR_CODES.has(errorCode.trim().toLowerCase());
 }
 
 function hasScanRole(roles: readonly string[]): boolean {

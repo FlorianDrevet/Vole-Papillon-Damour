@@ -40,6 +40,13 @@ const ADMINISTRATION_ROUTE = '/administration';
 // cached session is treated as gone, like an explicit expiry.
 export const CATALOG_SILENT_SESSION_TIMEOUT_MS = 5000;
 const SESSION_RESUME_ATTEMPT_KEY = 'catalog-auth-session-resume-attempted';
+// SPA refresh tokens expire after 24 h and browsers block the hidden Entra
+// iframe (third-party cookies), so a recognized member is sent through a
+// top-level `prompt=none` redirect: Entra answers straight away, signed in when
+// its own session is still alive, with `login_required` otherwise.
+const SILENT_RESUME_PENDING_KEY = 'catalog-auth-silent-resume-pending';
+const SILENT_RESUME_FAILED_AT_KEY = 'catalog-auth-silent-resume-failed-at';
+export const CATALOG_SILENT_RESUME_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const FAVORITE_REGISTRATION_FLOW_KEY = 'catalog-favorite-registration-flow';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
 const RARE_BOOKS_ROLES = new Set(['livresrares']);
@@ -338,7 +345,7 @@ export class CatalogAuthService {
       this.client = new msal.PublicClientApplication(catalogMsalConfig);
       await this.client.initialize();
 
-      const result: AuthenticationResult | null = await this.client.handleRedirectPromise();
+      const result = await this.handleRedirectResponse(this.client, msal);
       const registrationReturn = result?.state
         ? this.readFavoriteRegistrationReturn(result.state)
         : null;
@@ -359,6 +366,9 @@ export class CatalogAuthService {
       }
       if (this._state() === 'authenticated') {
         writeResumeAttempted(false);
+        clearSilentResumeFailure();
+      } else {
+        await this.trySilentSessionResume();
       }
       succeeded = true;
     } catch {
@@ -372,6 +382,70 @@ export class CatalogAuthService {
       if (!succeeded) {
         this.initialization = null;
       }
+    }
+  }
+
+  private async handleRedirectResponse(
+    client: IPublicClientApplication,
+    msal: CatalogMsalModule,
+  ): Promise<AuthenticationResult | null> {
+    // Only read here: when Entra answers on the redirect URI, MSAL first
+    // navigates back to the start page — this call then never settles on that
+    // intermediate load, and the marker must survive until the start page.
+    const silentResumePending = readSilentResumePending();
+    try {
+      const result = await client.handleRedirectPromise();
+      consumeSilentResumePending();
+      if (silentResumePending && !result) {
+        // Back from the silent attempt without any answer: do not try again soon.
+        recordSilentResumeFailure();
+      }
+      return result;
+    } catch (error: unknown) {
+      consumeSilentResumePending();
+      if (silentResumePending && isInteractionRequiredError(msal, error)) {
+        // Entra has no live session for this member: they stay recognized and
+        // can sign in on purpose; no new silent attempt during the cooldown.
+        recordSilentResumeFailure();
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Restores an expired session without a click while the Entra session is still
+   * alive. Never shows the Entra page: `prompt=none` comes back immediately.
+   */
+  private async trySilentSessionResume(): Promise<void> {
+    const account = this._recognizedAccount();
+    if (
+      !account
+      // MSAL itself refuses a redirect from an iframe (`redirect_in_iframe`).
+      || globalThis.navigator?.onLine === false
+      || !canAttemptSilentResume()
+    ) {
+      return;
+    }
+
+    // The page is about to leave: keep the loading state rather than flashing
+    // the signed-out affordances.
+    this._state.set('initializing');
+    try {
+      await this.requireClient().loginRedirect({
+        ...catalogLoginRequest,
+        prompt: 'none',
+        ...(account.username ? {loginHint: account.username} : {}),
+        redirectStartPage: window.location.href,
+      });
+      // MSAL only settles once its navigation timeout has elapsed without the
+      // page leaving; the pending marker is left for the next load to judge.
+      this._state.set('signed-out');
+    } catch {
+      consumeSilentResumePending();
+      recordSilentResumeFailure();
+      this._state.set('signed-out');
     }
   }
 
@@ -501,6 +575,63 @@ function writeResumeAttempted(attempted: boolean): void {
     }
   } catch {
     // Storage can be unavailable (private mode); the guard then simply does not persist.
+  }
+}
+
+/**
+ * Marks a silent attempt as in flight. Returns false — and the attempt is then
+ * skipped — when storage cannot hold the guards, since nothing would then stop
+ * a redirect loop.
+ */
+function canAttemptSilentResume(): boolean {
+  try {
+    const storage = globalThis.localStorage;
+    const session = globalThis.sessionStorage;
+    if (!storage || !session) {
+      return false;
+    }
+
+    const failedAt = Number(storage.getItem(SILENT_RESUME_FAILED_AT_KEY));
+    if (Number.isFinite(failedAt) && Date.now() - failedAt < CATALOG_SILENT_RESUME_COOLDOWN_MS) {
+      return false;
+    }
+
+    session.setItem(SILENT_RESUME_PENDING_KEY, 'true');
+    return session.getItem(SILENT_RESUME_PENDING_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function readSilentResumePending(): boolean {
+  try {
+    return globalThis.sessionStorage?.getItem(SILENT_RESUME_PENDING_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function consumeSilentResumePending(): void {
+  try {
+    globalThis.sessionStorage?.removeItem(SILENT_RESUME_PENDING_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function recordSilentResumeFailure(): void {
+  try {
+    globalThis.localStorage?.setItem(SILENT_RESUME_FAILED_AT_KEY, String(Date.now()));
+  } catch {
+    // Without storage no silent attempt is ever started (see canAttemptSilentResume).
+  }
+}
+
+function clearSilentResumeFailure(): void {
+  try {
+    globalThis.localStorage?.removeItem(SILENT_RESUME_FAILED_AT_KEY);
+  } catch {
+    // Ignore storage failures.
   }
 }
 

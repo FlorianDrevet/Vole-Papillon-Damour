@@ -4,6 +4,7 @@ import {TestBed} from '@angular/core/testing';
 import {environment} from '../../environments/environment';
 import {
   CATALOG_MSAL_LOADER,
+  CATALOG_SILENT_RESUME_COOLDOWN_MS,
   CATALOG_SILENT_SESSION_TIMEOUT_MS,
   CatalogAuthenticationRedirectStartedError,
   CatalogMsalModule,
@@ -26,8 +27,14 @@ describe('CatalogAuthService', () => {
   let loader: jasmine.Spy;
   let msalModule: CatalogMsalModule;
 
+  const silentResumePendingKey = 'catalog-auth-silent-resume-pending';
+  const silentResumeFailedAtKey = 'catalog-auth-silent-resume-failed-at';
+
+  afterEach(() => localStorage.removeItem(silentResumeFailedAtKey));
+
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.removeItem(silentResumeFailedAtKey);
     client = jasmine.createSpyObj<IPublicClientApplication>('PublicClientApplication', [
       'initialize',
       'handleRedirectPromise',
@@ -124,6 +131,7 @@ describe('CatalogAuthService', () => {
       'interaction_required',
       'correlation-id',
     ));
+    localStorage.setItem(silentResumeFailedAtKey, String(Date.now()));
 
     await service.initialize();
     expect(service.recognizedAccount()).toBe(account);
@@ -185,6 +193,7 @@ describe('CatalogAuthService', () => {
 
   it('sends a recognized account to the login page once per browser session', async () => {
     client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+    localStorage.setItem(silentResumeFailedAtKey, String(Date.now()));
     await service.initialize();
 
     expect(await service.resumeRecognizedSession('/compte')).toBeTrue();
@@ -194,6 +203,154 @@ describe('CatalogAuthService', () => {
       ...catalogLoginRequest,
       loginHint: account.username,
       redirectStartPage: new URL('/compte', window.location.origin).href,
+    });
+  });
+
+  describe('silent session resume', () => {
+    const silentRequest = () => ({
+      ...catalogLoginRequest,
+      prompt: 'none' as const,
+      loginHint: account.username,
+      redirectStartPage: window.location.href,
+    });
+
+    it('restores an expired session through a prompt=none redirect without a click', async () => {
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+      let stateDuringRedirect: string | null = null;
+      client.loginRedirect.and.callFake(async () => {
+        stateDuringRedirect = service.state();
+      });
+
+      await service.initialize();
+
+      expect(client.loginRedirect).toHaveBeenCalledOnceWith(silentRequest());
+      expect(stateDuringRedirect as string | null).toBe('initializing');
+      expect(sessionStorage.getItem(silentResumePendingKey)).toBe('true');
+    });
+
+    it('also tries it after a silent restore timed out on the hidden iframe', async () => {
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'monitor_window_timeout'} as never);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).toHaveBeenCalledOnceWith(silentRequest());
+    });
+
+    it('keeps the member recognized without an error when Entra has no live session', async () => {
+      sessionStorage.setItem(silentResumePendingKey, 'true');
+      client.handleRedirectPromise.and.rejectWith(new msalModule.InteractionRequiredAuthError(
+        'login_required',
+        'correlation-id',
+      ));
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+
+      await service.initialize();
+
+      expect(service.error()).toBeNull();
+      expect(service.state()).toBe('signed-out');
+      expect(service.recognizedAccount()).toBe(account);
+      expect(client.loginRedirect).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem(silentResumePendingKey)).toBeNull();
+      expect(Number(localStorage.getItem(silentResumeFailedAtKey))).toBeGreaterThan(0);
+    });
+
+    it('does not try again during the cooldown after a failed attempt', async () => {
+      localStorage.setItem(
+        silentResumeFailedAtKey,
+        String(Date.now() - CATALOG_SILENT_RESUME_COOLDOWN_MS + 60_000),
+      );
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).not.toHaveBeenCalled();
+      expect(service.recognizedAccount()).toBe(account);
+    });
+
+    it('tries again once the cooldown is over', async () => {
+      localStorage.setItem(
+        silentResumeFailedAtKey,
+        String(Date.now() - CATALOG_SILENT_RESUME_COOLDOWN_MS - 60_000),
+      );
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).toHaveBeenCalledOnceWith(silentRequest());
+    });
+
+    it('keeps the attempt marker while MSAL navigates from the redirect URI to the start page', async () => {
+      sessionStorage.setItem(silentResumePendingKey, 'true');
+      client.handleRedirectPromise.and.returnValue(new Promise(() => undefined));
+
+      void service.initialize();
+      for (let i = 0; i < 20; i++) {
+        await Promise.resolve();
+      }
+
+      expect(client.handleRedirectPromise).toHaveBeenCalled();
+      expect(sessionStorage.getItem(silentResumePendingKey)).toBe('true');
+      expect(localStorage.getItem(silentResumeFailedAtKey)).toBeNull();
+    });
+
+    it('treats a return without any answer as a failed attempt', async () => {
+      sessionStorage.setItem(silentResumePendingKey, 'true');
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).not.toHaveBeenCalled();
+      expect(Number(localStorage.getItem(silentResumeFailedAtKey))).toBeGreaterThan(0);
+    });
+
+    it('forgets a previous failure once the session is restored', async () => {
+      localStorage.setItem(silentResumeFailedAtKey, String(Date.now()));
+
+      await service.initialize();
+
+      expect(service.isAuthenticated()).toBeTrue();
+      expect(localStorage.getItem(silentResumeFailedAtKey)).toBeNull();
+    });
+
+    it('still reports redirect errors that do not come from a silent attempt', async () => {
+      client.handleRedirectPromise.and.rejectWith(new msalModule.InteractionRequiredAuthError(
+        'login_required',
+        'correlation-id',
+      ));
+
+      await service.initialize();
+
+      expect(service.error()).not.toBeNull();
+    });
+
+    it('waits for the network before trying', async () => {
+      spyOnProperty(navigator, 'onLine').and.returnValue(false);
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).not.toHaveBeenCalled();
+    });
+
+    it('records a failure when the redirect cannot be started', async () => {
+      client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+      client.loginRedirect.and.rejectWith({errorCode: 'redirect_in_iframe'} as never);
+
+      await service.initialize();
+
+      expect(service.state()).toBe('signed-out');
+      expect(service.error()).toBeNull();
+      expect(sessionStorage.getItem(silentResumePendingKey)).toBeNull();
+      expect(Number(localStorage.getItem(silentResumeFailedAtKey))).toBeGreaterThan(0);
+    });
+
+    it('does not start anything for an anonymous visitor', async () => {
+      client.getActiveAccount.and.returnValue(null);
+      client.getAllAccounts.and.returnValue([]);
+
+      await service.initialize();
+
+      expect(client.loginRedirect).not.toHaveBeenCalled();
     });
   });
 
