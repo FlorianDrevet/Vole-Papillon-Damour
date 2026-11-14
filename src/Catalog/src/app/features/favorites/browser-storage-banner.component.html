@@ -13,7 +13,7 @@
         <strong>Vos coups de cœur sont enregistrés dans ce navigateur.</strong>
         <p>Si vous videz son cache ou changez d'appareil, ils seront perdus. Créez un compte pour les garder, les retrouver partout, voir vos suggestions sur l'accueil et recevoir une sélection avant chaque bourse.</p>
         <div class="banner-actions">
-          <a class="create-account" routerLink="/compte">Créer un compte pour garder ma liste</a>
+          <button class="create-account" type="button" (click)="createAccountRequested.emit()">Créer un compte pour garder ma liste</button>
           <a class="login-link" routerLink="/compte">J'ai déjà un compte</a>
         </div>
       </div>
@@ -24,6 +24,6 @@
   <section class="storage-unavailable" data-zone="E11-stockage-indisponible" role="status">
     <strong>Ce navigateur ne peut pas enregistrer vos coups de cœur.</strong>
     <span>Vous pouvez tout de même les ajouter à votre compte pour les retrouver sur vos appareils.</span>
-    <a routerLink="/compte">Créer un compte</a>
+    <button class="create-account" type="button" (click)="createAccountRequested.emit()">Créer un compte</button>
   </section>
 }

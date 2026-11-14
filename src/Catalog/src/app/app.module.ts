@@ -45,6 +45,7 @@ import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-
 import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
 import {AddFavoritePanelComponent} from './features/favorites/add-favorite-panel/add-favorite-panel.component';
 import {CatalogFavoritesPageComponent} from './features/favorites/catalog-favorites-page.component';
+import {AccountStepDialogComponent} from './features/favorites/account-step-dialog/account-step-dialog.component';
 import {FavoriteListComponent} from './features/favorites/favorite-list.component';
 import {SuggestionGridComponent} from './features/favorites/suggestion-grid.component';
 import {BrowserStorageBannerComponent} from './features/favorites/browser-storage-banner.component';
@@ -96,6 +97,7 @@ registerLocaleData(localeFr);
     CatalogRareBookCardComponent,
     AddFavoritePanelComponent,
     CatalogFavoritesPageComponent,
+    AccountStepDialogComponent,
     FavoriteListComponent,
     SuggestionGridComponent,
     BrowserStorageBannerComponent,

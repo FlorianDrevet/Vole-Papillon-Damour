@@ -8,6 +8,23 @@
     <p>Ajoutez vos coups de cœur, même s'ils ne sont jamais passés à la bourse aux livres. Nous vous proposons les livres disponibles qui leur ressemblent, du plus sûr au plus audacieux.</p>
   </header>
 
+  @if (accountRecoveryNotice(); as merge) {
+    @if (merge.skipped > 0) {
+      <div class="account-recovery-notice account-recovery-notice--limit" data-zone="E4-message-plafond" role="status">
+        <strong>{{ merge.added }} coups de cœur ajoutés à votre compte, {{ merge.skipped }} n'ont pas pu l'être.</strong>
+        <span>Votre compte compte désormais 200 coups de cœur, le maximum. Les plus anciens de ce navigateur n'ont pas été repris.</span>
+      </div>
+    } @else {
+      <div class="account-recovery-notice" data-zone="E4-message-reprise" role="status">
+        <strong>{{ merge.added }} coup{{ merge.added === 1 ? '' : 's' }} de cœur ajouté{{ merge.added === 1 ? '' : 's' }} à votre compte.</strong>
+        <span>Ils sont maintenant synchronisés. Vos suggestions apparaîtront aussi sur l'accueil.</span>
+      </div>
+    }
+  }
+  @if (registrationError(); as message) {
+    <p class="registration-error" role="alert">{{ message }}</p>
+  }
+
   @if (authReady() && isMember()) {
     <section class="fair-email-preference" data-zone="E2-preference-email" aria-label="Sélection e-mail avant chaque bourse">
       <input
@@ -24,7 +41,8 @@
     <app-browser-storage-banner
       [collapsed]="bannerCollapsed()"
       [available]="local.available"
-      (collapsedChange)="setBannerCollapsed($event)">
+      (collapsedChange)="setBannerCollapsed($event)"
+      (createAccountRequested)="openAccountStep()">
     </app-browser-storage-banner>
   }
 
@@ -68,4 +86,10 @@
   </div>
 
   <app-add-favorite-panel [open]="addPanelOpen()" (closed)="closeAddPanel()"></app-add-favorite-panel>
+  <app-account-step-dialog
+    [open]="accountStepOpen()"
+    [entries]="favorites.favorites()"
+    (closed)="closeAccountStep()"
+    (registerRequested)="createAccount($event)">
+  </app-account-step-dialog>
 </main>

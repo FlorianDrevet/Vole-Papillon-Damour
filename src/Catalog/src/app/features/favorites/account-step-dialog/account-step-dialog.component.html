@@ -1,0 +1,45 @@
+@if (open) {
+  <div class="account-step-backdrop" (keydown)="onKeydown($event)">
+    <section
+      #dialogPanel
+      class="account-step-dialog"
+      data-zone="E4-etape-compte"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-step-title"
+      tabindex="-1">
+      <button type="button" class="account-step-close" aria-label="Fermer" (click)="close()">×</button>
+      <span class="account-step-rule" aria-hidden="true"></span>
+      <h2 id="account-step-title">Gardez vos 3 coups de cœur.</h2>
+      <p class="account-step-intro">
+        Créez un compte pour retrouver vos coups de cœur sur tous vos appareils, avec vos suggestions sur l'accueil.
+      </p>
+
+      <ul class="account-step-list" data-zone="E4-recap-liste" aria-label="Vos coups de cœur">
+        @for (entry of entries; track entry.isbn13) {
+          <li><em>{{ entry.title }}</em>@if (entry.authors) { — {{ entry.authors }}}</li>
+        }
+      </ul>
+
+      <div class="account-step-consent" data-zone="E4-consentement-email">
+        <input
+          id="account-step-email-consent"
+          type="checkbox"
+          [checked]="fairDigestConsent()"
+          (change)="setEmailConsent($event)">
+        <label for="account-step-email-consent">
+          <span class="account-step-consent-title">Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire</span>
+          <span class="account-step-consent-note">Facultatif. Un e-mail trois jours avant l'ouverture. Désabonnement en un clic.</span>
+        </label>
+      </div>
+
+      <div class="account-step-actions">
+        <button type="button" data-zone="E4-bouton-continuer" (click)="requestRegistration()">Créer mon compte</button>
+        <a routerLink="/compte" (click)="close()">J'ai déjà un compte</a>
+      </div>
+      <p class="account-step-redirect-note">
+        Vous allez être redirigé vers la page sécurisée de création de compte, puis ramené ici.
+      </p>
+    </section>
+  </div>
+}

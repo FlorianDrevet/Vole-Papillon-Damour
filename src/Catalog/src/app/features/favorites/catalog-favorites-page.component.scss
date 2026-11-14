@@ -22,6 +22,10 @@
 .removal-notice { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 16px; order: 2; margin-top: -38px; padding: 14px 18px; background: var(--catalog-ink-2); color: #fff; font-size: .9rem; }
 .removal-notice em { font-family: var(--catalog-display); }
 .removal-notice button { min-height: 40px; padding: 0 14px; border: 1px solid #93bad0; border-radius: 999px; background: transparent; color: #fff; font: 600 .84rem/1 var(--catalog-body); cursor: pointer; }
+.account-recovery-notice { display: flex; flex-direction: column; gap: 4px; margin: 20px auto 0; padding: 16px 20px; max-width: 1280px; border: 1px solid #b9dfc6; background: #eaf6ee; color: #185b35; font-size: .85rem; line-height: 1.45; }
+.account-recovery-notice strong { font-weight: 600; }
+.account-recovery-notice--limit { border-color: #f6d2ab; background: #fff4e8; color: #6b3305; }
+.registration-error { margin: 16px auto 0; max-width: 1280px; color: #8e2029; font-size: .82rem; }
 button:focus-visible,
 a:focus-visible,
 input:focus-visible { outline: 3px solid var(--catalog-cyan); outline-offset: 3px; }
@@ -38,6 +42,8 @@ input:focus-visible { outline: 3px solid var(--catalog-cyan); outline-offset: 3p
   .favorites-hero .mobile-title { display: inline; }
   .favorites-hero p { margin-top: 12px; font-size: .9rem; }
   .fair-email-preference { margin: 20px 16px 0; gap: 10px; padding: 14px; }
+  .account-recovery-notice,
+  .registration-error { margin-right: 16px; margin-left: 16px; }
   .fair-email-preference label { font-size: .82rem; }
   .fair-email-preference p { font-size: .75rem; }
   .favorites-content { display: flex; width: 100%; flex-direction: column; gap: 36px; padding: 28px 16px 56px; }

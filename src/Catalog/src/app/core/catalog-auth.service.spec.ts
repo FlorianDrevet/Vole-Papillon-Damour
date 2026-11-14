@@ -257,6 +257,68 @@ describe('CatalogAuthService', () => {
     });
   });
 
+  it('carries favorite registration context in Entra state without clear query values', async () => {
+    await service.registerFromFavorites('/trouver-mon-prochain-livre', true);
+    const request = client.loginRedirect.calls.mostRecent().args[0] as {state?: string; redirectStartPage?: string};
+    const stored = JSON.parse(sessionStorage.getItem('catalog-favorite-registration-flow') || 'null') as {
+      state: string;
+      returnUrl: string;
+      fairDigestConsent: boolean;
+    };
+
+    expect(request.state).toBe(stored.state);
+    expect(request.state).toMatch(/^vpd-favorite-registration:/);
+    expect(request.state).not.toContain('trouver-mon-prochain-livre');
+    expect(request.state).not.toContain('true');
+    expect(stored.returnUrl).toBe('/trouver-mon-prochain-livre');
+    expect(stored.fairDigestConsent).toBeTrue();
+    expect(request.redirectStartPage).toBe(new URL('/trouver-mon-prochain-livre', window.location.origin).href);
+  });
+
+  it('restores favorite registration context from the state returned by Entra only once', async () => {
+    sessionStorage.setItem('catalog-favorite-registration-flow', JSON.stringify({
+      state: 'vpd-favorite-registration:opaque-state',
+      returnUrl: '/trouver-mon-prochain-livre',
+      fairDigestConsent: true,
+    }));
+    client.handleRedirectPromise.and.resolveTo({
+      account,
+      idTokenClaims: {},
+      accessToken: 'api-access-token',
+      state: 'vpd-favorite-registration:opaque-state',
+    } as never);
+
+    await service.initialize();
+
+    expect(service.consumeFavoriteRegistrationReturn()).toEqual({
+      returnUrl: '/trouver-mon-prochain-livre',
+      fairDigestConsent: true,
+    });
+    expect(service.consumeFavoriteRegistrationReturn()).toBeNull();
+    expect(sessionStorage.getItem('catalog-favorite-registration-flow')).toBeNull();
+  });
+
+  it('ignores a favorite registration return URL outside the catalog origin', async () => {
+    sessionStorage.setItem('catalog-favorite-registration-flow', JSON.stringify({
+      state: 'vpd-favorite-registration:opaque-state',
+      returnUrl: 'https://example.test/collect',
+      fairDigestConsent: true,
+    }));
+    client.handleRedirectPromise.and.resolveTo({
+      account,
+      idTokenClaims: {},
+      accessToken: 'api-access-token',
+      state: 'vpd-favorite-registration:opaque-state',
+    } as never);
+
+    await service.initialize();
+
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.error()).toBeNull();
+    expect(service.consumeFavoriteRegistrationReturn()).toBeNull();
+    expect(sessionStorage.getItem('catalog-favorite-registration-flow')).toBeNull();
+  });
+
   it('acquires an API token for the active account', async () => {
     const token = await service.getApiAccessToken();
 

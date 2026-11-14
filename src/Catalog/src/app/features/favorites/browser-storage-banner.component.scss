@@ -23,12 +23,14 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 22px;
+  border: 0;
   border-radius: 999px;
   background: #f0801c;
   color: #fff;
   font-size: .94rem;
   font-weight: 600;
-  text-decoration: none;
+  font-family: var(--catalog-body);
+  cursor: pointer;
 }
 .login-link { color: var(--catalog-blue); font-size: .91rem; font-weight: 500; }
 .collapse-button,

@@ -5,8 +5,10 @@ import {RouterModule} from '@angular/router';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {LocalFavoriteEntry, LocalFavoritesStore} from '../../core/favorites/local-favorites.store';
-import {CatalogFavoriteSuggestion} from '../../core/catalog.models';
+import {CatalogFavoriteMergeResult, CatalogFavoriteSuggestion} from '../../core/catalog.models';
+import {CatalogFavoriteRegistrationReturn} from '../../core/catalog-auth.service';
 import {CatalogFavoritesPageComponent} from './catalog-favorites-page.component';
+import {AccountStepDialogComponent} from './account-step-dialog/account-step-dialog.component';
 import {FavoriteListComponent} from './favorite-list.component';
 import {SuggestionGridComponent} from './suggestion-grid.component';
 import {BrowserStorageBannerComponent} from './browser-storage-banner.component';
@@ -27,14 +29,19 @@ describe('CatalogFavoritesPageComponent', () => {
     suggestionStatus: WritableSignal<string>;
     currentMinimumHearts: WritableSignal<number>;
     fairDigestConsent: WritableSignal<boolean>;
+    syncNotice: WritableSignal<CatalogFavoriteMergeResult | null>;
   };
   let localStore: jasmine.SpyObj<LocalFavoritesStore> & {available: boolean};
 
   beforeEach(async () => {
-    auth = Object.assign(jasmine.createSpyObj<CatalogAuthService>('CatalogAuthService', ['initialize']), {
+    auth = Object.assign(jasmine.createSpyObj<CatalogAuthService>('CatalogAuthService', [
+      'initialize', 'consumeFavoriteRegistrationReturn', 'registerFromFavorites',
+    ]), {
       isAuthenticated: signal(false),
     });
     auth.initialize.and.resolveTo();
+    auth.consumeFavoriteRegistrationReturn.and.returnValue(null);
+    auth.registerFromFavorites.and.resolveTo();
     favorites = Object.assign(jasmine.createSpyObj<CatalogFavoritesService>(
       'CatalogFavoritesService',
       ['refresh', 'onSignedIn', 'remove', 'undoRemoval', 'setMinimumHearts', 'setFairDigestConsent'],
@@ -46,6 +53,7 @@ describe('CatalogFavoritesPageComponent', () => {
       suggestionStatus: signal('Enabled'),
       currentMinimumHearts: signal(3),
       fairDigestConsent: signal(false),
+      syncNotice: signal<CatalogFavoriteMergeResult | null>(null),
     });
     localStore = Object.assign(jasmine.createSpyObj<LocalFavoritesStore>(
       'LocalFavoritesStore', ['bannerCollapsed', 'setBannerCollapsed'],
@@ -61,6 +69,7 @@ describe('CatalogFavoritesPageComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [
         CatalogFavoritesPageComponent,
+        AccountStepDialogComponent,
         FavoriteListComponent,
         SuggestionGridComponent,
         BrowserStorageBannerComponent,
@@ -81,6 +90,8 @@ describe('CatalogFavoritesPageComponent', () => {
     fixture = TestBed.createComponent(CatalogFavoritesPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    await fixture.whenStable();
     fixture.detectChanges();
   });
 
@@ -92,6 +103,23 @@ describe('CatalogFavoritesPageComponent', () => {
       .not.toBeNull();
     expect(fixture.nativeElement.textContent)
       .toContain('Vos coups de cœur sont enregistrés dans ce navigateur.');
+  });
+
+  it('opens the account-step dialog before starting registration from the storage banner', async () => {
+    favorites.favorites.set([favorite()]);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.create-account') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('[data-zone="E4-etape-compte"]') as HTMLElement;
+    expect(dialog).not.toBeNull();
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    expect((dialog.querySelector('[data-zone="E4-consentement-email"] input') as HTMLInputElement).checked)
+      .toBeFalse();
+
+    (dialog.querySelector('[data-zone="E4-bouton-continuer"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(auth.registerFromFavorites).toHaveBeenCalledOnceWith('/trouver-mon-prochain-livre', false);
   });
 
   it('shows the fair email preference to a member instead of the browser-storage banner', () => {
@@ -119,12 +147,53 @@ describe('CatalogFavoritesPageComponent', () => {
     expect(favorites.setFairDigestConsent).toHaveBeenCalledOnceWith(true);
   });
 
-  it('announces when browser storage cannot keep favorites', () => {
+  it('announces when browser storage cannot keep favorites', async () => {
+    fixture.destroy();
     localStore.available = false;
+    fixture = TestBed.createComponent(CatalogFavoritesPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-zone="E11-stockage-indisponible"]'))
       .not.toBeNull();
+  });
+
+  it('consents only after merge and shows the number returned by the API on return', async () => {
+    fixture.destroy();
+    auth.isAuthenticated.set(true);
+    favorites.mode.set('remote');
+    auth.consumeFavoriteRegistrationReturn.and.returnValue({
+      returnUrl: '/trouver-mon-prochain-livre',
+      fairDigestConsent: true,
+    } satisfies CatalogFavoriteRegistrationReturn);
+    const operations: string[] = [];
+    favorites.onSignedIn.and.callFake(async () => {
+      operations.push('merge');
+      favorites.syncNotice.set({added: 3, skipped: 0, total: 3});
+    });
+    favorites.setFairDigestConsent.and.callFake(async consented => {
+      operations.push(consented ? 'consent' : 'withdraw');
+      favorites.fairDigestConsent.set(consented);
+    });
+
+    fixture = TestBed.createComponent(CatalogFavoritesPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(auth.consumeFavoriteRegistrationReturn.calls.mostRecent().returnValue).toEqual({
+      returnUrl: '/trouver-mon-prochain-livre',
+      fairDigestConsent: true,
+    });
+    expect(operations).toEqual(['merge', 'consent']);
+    expect(fixture.nativeElement.querySelector('[data-zone="E4-message-reprise"]')?.textContent)
+      .toContain('3 coups de cœur ajoutés à votre compte');
+    expect(fixture.nativeElement.textContent)
+      .toContain("Ils sont maintenant synchronisés. Vos suggestions apparaîtront aussi sur l'accueil.");
   });
 
   it('filters every suggestion below the selected four-heart threshold', async () => {
