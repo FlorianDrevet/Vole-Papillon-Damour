@@ -1,0 +1,29 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Maquettes — Perf catalogue &amp; admin — états de chargement</title>
+<style>body{margin:0;padding:40px;font-family:'Libre Franklin',system-ui,sans-serif;background:#f7fbfe;color:#072b45}h1,h2{font-family:Georgia,serif;font-weight:500}h2{margin-top:36px}table{border-collapse:collapse;width:100%;background:#fff}td,th{border:1px solid #d9e9f4;padding:10px;text-align:left;vertical-align:top;font-size:14px}code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#e9f4fb;padding:1px 4px}.note{background:#fff;border:1px solid #d9e9f4;padding:12px 16px;margin:8px 0;font-size:14px;line-height:1.5}</style></head><body>
+<h1>Maquettes — Perf catalogue &amp; admin — états de chargement</h1>
+<p>Export du canvas Claude Design <a href="https://claude.ai/artifact/KiRVcyebJkrcLo75HZMXVb">https://claude.ai/artifact/KiRVcyebJkrcLo75HZMXVb</a>. Chaque page est autonome. Les zones à implémenter portent un attribut <code>data-zone</code>, cité par le plan.</p>
+<h2>Perf catalogue &amp; admin — états de chargement</h2><table><tr><th>Écran</th><th>Taille</th><th>Zones</th></tr>
+<tr><td><a href="Main.html">E1·E2 · Tableau de bord — premier chargement — desktop</a><br><code>preview/Main.html</code></td><td>1440 × 1040</td><td><code>E1-alertes-squelette</code> <code>E1-carte-isbndb-squelette</code> <code>E1-carte-squelette</code> <code>E1-entete</code> <code>E2-pastille-squelette</code></td></tr>
+<tr><td><a href="E1-Charge-Desktop.html">E1·E2 · Tableau de bord — chargé (4 cartes) — desktop</a><br><code>preview/E1-Charge-Desktop.html</code></td><td>1440 × 1040</td><td><code>E1-carte-disponibles</code> <code>E1-carte-jamais-vendus</code> <code>E1-carte-tries</code> <code>E1-carte-vendus</code> <code>E1-heure-calcul</code> <code>E1-tuiles-attention</code> <code>E2-pastille</code></td></tr>
+<tr><td><a href="E1-Mobile.html">E1·E2 · Tableau de bord — chargement — mobile</a><br><code>preview/E1-Mobile.html</code></td><td>390 × 1320</td><td><code>E2-selecteur-mobile</code></td></tr>
+<tr><td><a href="E1-Etats.html">E1·E2 · États — erreur, pas encore calculé, rafraîchissement</a><br><code>preview/E1-Etats.html</code></td><td>1440 × 720</td><td><code>E1-bloc-erreur</code> <code>E1-bouton-reessayer</code> <code>E1-pas-encore-calcule</code> <code>E1-rafraichissement</code></td></tr>
+<tr><td><a href="E3-Desktop.html">E3 · Listes d&#x27;administration — premier chargement et rechargement — desktop</a><br><code>preview/E3-Desktop.html</code></td><td>1440 × 1120</td><td><code>E3-indicateur-rechargement</code> <code>E3-ligne-squelette</code> <code>E3-liste-estompee</code> <code>E3-pagination</code> <code>E3-recherche</code></td></tr>
+<tr><td><a href="E3-Mobile.html">E3 · Catalogue — rechargement et erreur — mobile</a><br><code>preview/E3-Mobile.html</code></td><td>390 × 1200</td><td><code>E3-bloc-erreur</code></td></tr>
+<tr><td><a href="E4-Desktop.html">E4 · Statistiques — onglet en chargement — desktop</a><br><code>preview/E4-Desktop.html</code></td><td>1440 × 980</td><td><code>E4-bloc-squelette</code> <code>E4-graphique-squelette</code> <code>E4-onglets</code></td></tr>
+<tr><td><a href="E4-Mobile.html">E4 · Statistiques — onglet en chargement — mobile</a><br><code>preview/E4-Mobile.html</code></td><td>390 × 1160</td><td>—</td></tr>
+<tr><td><a href="E5-Desktop.html">E5 · Recherche publique — rafraîchissement — desktop</a><br><code>preview/E5-Desktop.html</code></td><td>1440 × 1060</td><td><code>E5-filtre-genre</code> <code>E5-grille-squelette</code> <code>E5-indicateur-rechargement</code> <code>E5-pagination</code> <code>E5-resultats-estompes</code></td></tr>
+<tr><td><a href="E5-Mobile.html">E5 · Recherche publique — rafraîchissement — mobile</a><br><code>preview/E5-Mobile.html</code></td><td>390 × 1240</td><td>—</td></tr>
+</table>
+<div class="note">RG-159 · RG-160
+À l&#x27;ouverture : la structure s&#x27;affiche tout de suite. Seule la section visible est chargée, plus une seule demande pour les 7 pastilles. Le portail ne s&#x27;initialise qu&#x27;une fois.</div>
+<div class="note">RG-161
+Chaque bloc a son état : squelette, chargé, erreur + « Réessayer ». Un bloc en erreur ne bloque pas les autres. Un bouton n&#x27;est désactivé que pendant sa propre action.</div>
+<div class="note">RG-162 · RG-163 · RG-168
+Pastille en chargement : emplacement neutre, jamais « 0 ». « Titres jamais vendus » : « Calculé à HH:MM » (≤ 15 min). Écart d&#x27;inventaire, E-mails en attente, Rares à expertiser et Fiches sans métadonnées sont retirés.</div>
+<div class="note">RG-156 · RG-157 · RG-167
+Premier chargement : lignes squelette. Changement de page ou de recherche : la liste précédente reste visible, estompée, avec un indicateur discret. Seule la dernière demande compte.</div>
+<div class="note">RG-161 · RG-166
+Les onglets et la structure s&#x27;affichent tout de suite ; chaque bloc chiffré a son squelette. Réponse attendue en moins de 2 s.</div>
+<div class="note">RG-155 · RG-156 · RG-157 · RG-158
+Filtre « Roman » : les résultats précédents restent visibles et estompés, &lt; 1 s. La page suivante est préparée à l&#x27;avance : pas d&#x27;attente au changement de page.</div>
+</body></html>

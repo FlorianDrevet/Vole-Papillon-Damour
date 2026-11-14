@@ -1,0 +1,44 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-15T00:30:00Z"},
+  "title": "VPD · Perf catalogue & admin — états de chargement",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1040, "title": "E1·E2 · Tableau de bord — premier chargement — desktop"},
+    "E1-Charge-Desktop.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1040, "title": "E1·E2 · Tableau de bord — chargé (4 cartes) — desktop"},
+    "E1-Mobile.dc.html": {"x": 3040, "y": 0, "w": 390, "h": 1320, "title": "E1·E2 · Tableau de bord — chargement — mobile"},
+    "E1-Etats.dc.html": {"x": 3510, "y": 0, "w": 1440, "h": 720, "title": "E1·E2 · États — erreur, pas encore calculé, rafraîchissement"},
+    "E3-Desktop.dc.html": {"x": 0, "y": 1400, "w": 1440, "h": 1120, "title": "E3 · Listes d'administration — premier chargement et rechargement — desktop"},
+    "E3-Mobile.dc.html": {"x": 1520, "y": 1400, "w": 390, "h": 1200, "title": "E3 · Catalogue — rechargement et erreur — mobile"},
+    "E4-Desktop.dc.html": {"x": 0, "y": 2900, "w": 1440, "h": 980, "title": "E4 · Statistiques — onglet en chargement — desktop"},
+    "E4-Mobile.dc.html": {"x": 1520, "y": 2900, "w": 390, "h": 1160, "title": "E4 · Statistiques — onglet en chargement — mobile"},
+    "E5-Desktop.dc.html": {"x": 0, "y": 4260, "w": 1440, "h": 1060, "title": "E5 · Recherche publique — rafraîchissement — desktop"},
+    "E5-Mobile.dc.html": {"x": 1520, "y": 4260, "w": 390, "h": 1240, "title": "E5 · Recherche publique — rafraîchissement — mobile"}
+  },
+  "order": [
+    "Main.dc.html",
+    "E1-Charge-Desktop.dc.html",
+    "E1-Mobile.dc.html",
+    "E1-Etats.dc.html",
+    "E3-Desktop.dc.html",
+    "E3-Mobile.dc.html",
+    "E4-Desktop.dc.html",
+    "E4-Mobile.dc.html",
+    "E5-Desktop.dc.html",
+    "E5-Mobile.dc.html"
+  ],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "E1·E2 — Tableau de bord et pastilles de navigation", "kind": "title1", "maxW": 4950},
+    "t3": {"x": 0, "y": 1100, "text": "E3 — Listes d'administration", "kind": "title1", "maxW": 1910},
+    "t4": {"x": 0, "y": 2600, "text": "E4 — Statistiques", "kind": "title1", "maxW": 1910},
+    "t5": {"x": 0, "y": 3960, "text": "E5 — Recherche publique", "kind": "title1", "maxW": 1910},
+    "n1": {"x": 5030, "y": 0, "w": 360, "fill": "blue", "text": "RG-159 · RG-160\nÀ l'ouverture : la structure s'affiche tout de suite. Seule la section visible est chargée, plus une seule demande pour les 7 pastilles. Le portail ne s'initialise qu'une fois."},
+    "n2": {"x": 5030, "y": 520, "w": 360, "fill": "orange", "text": "RG-161\nChaque bloc a son état : squelette, chargé, erreur + « Réessayer ». Un bloc en erreur ne bloque pas les autres. Un bouton n'est désactivé que pendant sa propre action."},
+    "n3": {"x": 5030, "y": 1040, "w": 360, "fill": "purple", "text": "RG-162 · RG-163 · RG-168\nPastille en chargement : emplacement neutre, jamais « 0 ». « Titres jamais vendus » : « Calculé à HH:MM » (≤ 15 min). Écart d'inventaire, E-mails en attente, Rares à expertiser et Fiches sans métadonnées sont retirés."},
+    "n4": {"x": 1990, "y": 1400, "w": 360, "fill": "teal", "text": "RG-156 · RG-157 · RG-167\nPremier chargement : lignes squelette. Changement de page ou de recherche : la liste précédente reste visible, estompée, avec un indicateur discret. Seule la dernière demande compte."},
+    "n5": {"x": 1990, "y": 2900, "w": 360, "fill": "green", "text": "RG-161 · RG-166\nLes onglets et la structure s'affichent tout de suite ; chaque bloc chiffré a son squelette. Réponse attendue en moins de 2 s."},
+    "n6": {"x": 1990, "y": 4260, "w": 360, "fill": "pink", "text": "RG-155 · RG-156 · RG-157 · RG-158\nFiltre « Roman » : les résultats précédents restent visibles et estompés, < 1 s. La page suivante est préparée à l'avance : pas d'attente au changement de page."}
+  },
+  "designSystems": []
+}

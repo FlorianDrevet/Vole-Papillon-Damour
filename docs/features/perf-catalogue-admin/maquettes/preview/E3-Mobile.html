@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue admin — mobile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Libre+Franklin:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;display=swap">
+<style>
+body{margin:0;background:#f7fbfe}
+a{color:#0c6ea6}a:hover{color:#072b45}
+.spin{animation:spin 1s linear infinite;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 390px; min-height: 1200px; box-sizing: border-box; padding: 24px 24px 40px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45; display: flex; flex-direction: column; gap: 18px;">
+  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">Recherche « hérisson » lancée</span>
+  <form role="search" style="display: flex; flex-direction: column; gap: 10px;">
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: #4e6c84;">Rechercher une fiche
+      <input value="hérisson" style="height: 48px; padding: 0 14px; border: 1px solid #9dc2da; border-radius: 4px; background: #ffffff; font: 15px 'Libre Franklin', sans-serif; color: #072b45;">
+    </label>
+    <button type="submit" style="height: 48px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font: 600 14.5px 'Libre Franklin', sans-serif; color: #0c6ea6;">Rechercher</button>
+  </form>
+
+  <div style="display: flex; flex-direction: column; gap: 6px;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Le fonds de livres</span>
+    <h2 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500;">Toutes les fiches</h2>
+    <span role="status" style="display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4e6c84;"><svg class="spin" aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="2.2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Recherche en cours…</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; opacity: .45;">
+    <article style="display: flex; gap: 14px; padding: 14px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span aria-hidden="true" style="flex: none; width: 40px; height: 58px; border-radius: 2px; background: #c9dceb;"></span>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><strong style="font-size: 15px;">Le Petit Prince</strong><span style="font-size: 12.5px; color: #4e6c84;">Antoine de Saint-Exupéry</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4e6c84;">Disponible 5 · 2 annoncés</span></div>
+    </article>
+    <article style="display: flex; gap: 14px; padding: 14px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span aria-hidden="true" style="flex: none; width: 40px; height: 58px; border-radius: 2px; background: #c9dceb;"></span>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><strong style="font-size: 15px;">Vingt mille lieues sous les mers</strong><span style="font-size: 12.5px; color: #4e6c84;">Jules Verne</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4e6c84;">Disponible 2 · 0 annoncé</span></div>
+    </article>
+  </div>
+
+  <span style="margin-top: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">Si la liste ne se charge pas</span>
+  <div data-zone="E3-bloc-erreur" role="alert" style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid rgba(176, 42, 51, .35); border-radius: 4px; background: #ffffff;">
+    <span style="display: flex; gap: 8px; font-size: 14px; line-height: 1.45; color: #8f1f28;"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex: none; margin-top: 1px;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>Les fiches n’ont pas pu être chargées. La dernière liste affichée est conservée.</span>
+    <button type="button" style="height: 48px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font: 600 14.5px 'Libre Franklin', sans-serif; color: #0c6ea6;">Réessayer</button>
+  </div>
+
+  <nav aria-label="Pagination" style="display: flex; align-items: center; justify-content: center; gap: 14px;">
+    <button type="button" aria-label="Page précédente" style="width: 44px; height: 44px; border: 1px solid #9dc2da; border-radius: 999px; background: #ffffff; color: #0c6ea6; font-size: 16px;">←</button>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #4e6c84;">Page 1 / 3 301</span>
+    <button type="button" aria-label="Page suivante" style="width: 44px; height: 44px; border: 1px solid #9dc2da; border-radius: 999px; background: #ffffff; color: #0c6ea6; font-size: 16px;">→</button>
+  </nav>
+</div>
+</body>
+</html>

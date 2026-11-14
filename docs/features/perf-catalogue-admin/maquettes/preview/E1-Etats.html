@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord — états</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Libre+Franklin:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;display=swap">
+<style>
+body{margin:0;background:#f7fbfe}
+a{color:#0c6ea6}a:hover{color:#072b45}
+.spin{animation:spin 1s linear infinite;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1440px; min-height: 720px; box-sizing: border-box; padding: 44px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; align-content: start;">
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">1 · Un bloc en erreur</span>
+    <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4e6c84;">Les autres cartes restent affichées. Seul ce bloc propose de réessayer ; les autres boutons de la page restent actifs.</p>
+    <article data-zone="E1-bloc-erreur" role="alert" style="display: flex; flex-direction: column; gap: 10px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid rgba(176, 42, 51, .35); border-radius: 4px; background: #ffffff;">
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;">Livres triés</span>
+      <span style="display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.45; color: #8f1f28;">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex: none; margin-top: 1px;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>
+        Ce chiffre n’a pas pu être chargé.
+      </span>
+      <button data-zone="E1-bouton-reessayer" type="button" style="align-self: flex-start; margin-top: auto; height: 44px; padding: 0 20px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font: 600 14px 'Libre Franklin', sans-serif; color: #0c6ea6; cursor: pointer;">Réessayer</button>
+    </article>
+    <article style="display: flex; flex-direction: column; justify-content: space-between; gap: 9px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .95;">4 812</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;">Disponibles et annoncés</span>
+      <span style="font-size: 13px; color: #4e6c84;">1 240 fiches disponibles · 96 annoncées</span>
+    </article>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">2 · Pas encore calculé</span>
+    <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4e6c84;">Avant le premier calcul en arrière-plan, la carte le dit au lieu d’afficher zéro. Ensuite, elle porte toujours l’heure de son calcul (15 min au plus).</p>
+    <article data-zone="E1-pas-encore-calcule" style="display: flex; flex-direction: column; justify-content: space-between; gap: 9px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid #072b45; border-radius: 4px; background: #072b45;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .95; color: #7fd8f5;">—</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #ffffff;">Titres jamais vendus</span>
+      <span style="font-size: 13px; line-height: 1.45; color: #7fd8f5;">Premier calcul en cours, disponible dans quelques minutes</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7fd8f5;">Pas encore calculé</span>
+    </article>
+    <article style="display: flex; flex-direction: column; justify-content: space-between; gap: 9px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid #072b45; border-radius: 4px; background: #072b45;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .95; color: #ffffff;">287</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #ffffff;">Titres jamais vendus</span>
+      <span style="font-size: 13px; line-height: 1.45; color: #7fd8f5;">Le principal levier de désengorgement</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7fd8f5;">Calculé à 14:05 · file de retrait</span>
+    </article>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">3 · Retour sur le tableau de bord</span>
+    <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4e6c84;">Rouvert dans la minute, il réaffiche aussitôt ses chiffres et les actualise en arrière-plan, sans repasser par les squelettes.</p>
+    <div data-zone="E1-rafraichissement" role="status" style="display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4e6c84;">
+      <svg class="spin" aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="2.2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+      Actualisation…
+    </div>
+    <article style="display: flex; flex-direction: column; justify-content: space-between; gap: 9px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .95;">1 246</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;">Livres triés</span>
+      <span style="font-size: 13px; color: #4e6c84;">1 032 gardés · 214 écartés</span>
+    </article>
+    <article style="display: flex; flex-direction: column; justify-content: space-between; gap: 9px; min-height: 172px; box-sizing: border-box; padding: 22px 22px 19px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .95;">812</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;">Livres vendus</span>
+      <span style="font-size: 13px; color: #4e6c84;">Toutes bourses confondues</span>
+    </article>
+  </section>
+</div>
+</body>
+</html>

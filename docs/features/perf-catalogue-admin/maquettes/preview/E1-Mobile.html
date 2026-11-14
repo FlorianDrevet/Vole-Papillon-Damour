@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord — chargement mobile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Libre+Franklin:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;display=swap">
+<style>
+body{margin:0;background:#f7fbfe}
+a{color:#0c6ea6}a:hover{color:#072b45}
+.sk{background:linear-gradient(90deg,#e2eef7 0%,#f1f7fb 45%,#e2eef7 90%);background-size:200% 100%;animation:sk 1.4s ease-in-out infinite;border-radius:4px}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion: reduce){.sk{animation:none;background:#e2eef7}}
+</style>
+</head>
+<body>
+<div style="width: 390px; min-height: 1320px; box-sizing: border-box; padding: 24px 24px 40px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45; display: flex; flex-direction: column; gap: 20px;">
+
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <span style="display: block; width: 38px; height: 3px; margin-bottom: 8px; background: linear-gradient(90deg, #1497d6, #f0801c);"></span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #0c6ea6;">Bourse aux livres</span>
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -.03em; line-height: 1;">Administration</span>
+  </div>
+
+  <div data-zone="E2-selecteur-mobile" style="display: flex; flex-direction: column; gap: 8px;">
+    <label for="rubrique" style="font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #4e6c84;">Aller à une rubrique</label>
+    <div style="position: relative;">
+      <select id="rubrique" style="width: 100%; height: 48px; padding: 0 44px 0 14px; border: 1px solid #9dc2da; border-radius: 4px; background: #ffffff; font: 600 15px 'Libre Franklin', sans-serif; color: #072b45; appearance: none;">
+        <option>Tableau de bord</option>
+        <option>Sessions de scan</option>
+        <option>Livres introuvables</option>
+        <option>Catalogue</option>
+      </select>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 16px; top: 16px;"><path d="M6 9l6 6 6-6"></path></svg>
+    </div>
+    <div aria-hidden="true" style="display: flex; flex-direction: column; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span style="display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #e2eef7; font-size: 13.5px; color: #4e6c84;">Sessions de scan<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4e6c84;">en chargement</span></span>
+      <span style="display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #e2eef7; font-size: 13.5px; color: #4e6c84;">Livres introuvables (6)</span>
+      <span style="display: flex; justify-content: space-between; padding: 10px 14px; font-size: 13.5px; color: #4e6c84;">Catalogue (16 504)</span>
+    </div>
+    <span style="font-size: 12px; line-height: 1.45; color: #4e6c84;">Options du sélecteur ouvertes : un nombre pas encore arrivé n'est jamais affiché comme « 0 ». Le sélecteur reste utilisable pendant le chargement.</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 4px;">
+    <span style="width: 56px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Administration</span>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 500; line-height: 1.05;">Tableau de bord.</h1>
+  </div>
+
+  <div aria-hidden="true" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span class="sk" style="width: 40%; height: 34px;"></span><span class="sk" style="width: 66%; height: 11px;"></span><span class="sk" style="width: 84%; height: 13px;"></span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span class="sk" style="width: 34%; height: 34px;"></span><span class="sk" style="width: 52%; height: 11px;"></span><span class="sk" style="width: 76%; height: 13px;"></span>
+    </div>
+    <article style="display: flex; flex-direction: column; gap: 9px; padding: 20px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 38px; font-weight: 500; line-height: .95;">812</strong>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;">Livres vendus</span>
+      <span style="font-size: 13px; color: #4e6c84;">Toutes bourses confondues</span>
+    </article>
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 4px; background: #072b45;">
+      <span style="width: 30%; height: 34px; border-radius: 4px; background: rgba(127, 216, 245, .18);"></span><span style="width: 62%; height: 11px; border-radius: 4px; background: rgba(127, 216, 245, .18);"></span><span style="width: 80%; height: 13px; border-radius: 4px; background: rgba(127, 216, 245, .12);"></span>
+    </div>
+  </div>
+
+  <div aria-hidden="true" style="display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+    <span class="sk" style="width: 50%; height: 11px;"></span><span class="sk" style="width: 88%; height: 16px;"></span><span class="sk" style="width: 60%; height: 12px;"></span>
+    <span class="sk" style="width: 100%; height: 44px; margin-top: 6px; border-radius: 999px;"></span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid #d9e9f4;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Fenêtre de rattrapage</span>
+    <h2 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500;">Alertes en attente d’envoi</h2>
+  </div>
+  <div aria-hidden="true" style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+    <span class="sk" style="width: 58%; height: 15px;"></span><span class="sk" style="width: 80%; height: 11px;"></span><span class="sk" style="width: 100%; height: 44px; margin-top: 6px; border-radius: 999px;"></span>
+  </div>
+  <span style="font-size: 12px; line-height: 1.45; color: #4e6c84;">Ici, « Livres vendus » est déjà arrivé : chaque bloc se remplit dès que sa donnée est prête, sans attendre les autres.</span>
+</div>
+</body>
+</html>
