@@ -11,4 +11,5 @@ public sealed record GetAdminBooksQuery(
     bool? Hidden,
     int Page = 1,
     int PageSize = 50,
-    bool? Undated = null) : IRequest<ErrorOr<AdminBookPageResult>>;
+    bool? Undated = null,
+    bool? AvailableOnly = null) : IRequest<ErrorOr<AdminBookPageResult>>;

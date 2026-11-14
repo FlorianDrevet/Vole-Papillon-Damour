@@ -44,6 +44,7 @@ public sealed class GetAdminBooksQueryHandler(
             .Where(book => query.Hidden == null || book.IsHiddenFromCatalog == query.Hidden)
             .Where(book => string.IsNullOrWhiteSpace(query.MetadataStatus) ||
                            book.MetadataStatus.ToString() == query.MetadataStatus)
+            .Where(book => query.AvailableOnly != true || book.QuantityAvailable > 0)
             .Where(book => query.Undated != true || dbContext.BookAnnouncements.Any(
                 announcement => announcement.Isbn13 == book.Id &&
                                 announcement.Status == BookAnnouncementStatus.Announced &&

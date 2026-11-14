@@ -29,6 +29,7 @@
 
 - Catalog is a separate SSR site. Public search/detail/work routes are crawlable; `/compte`, `/administration`, and `/desinscription` are client-only/private and `noindex,nofollow`.
 - Use typed `CatalogApiService`/admin APIs. Search, pagination, filters, and reports belong on the API; never fetch every record for client-side filtering. Keep local catalogue results distinct from external reference results.
+- `/administration/catalogue` requests `availableOnly=true`, filtering `quantityAvailable > 0` in the paged API query. The list shows available copy counts and describes entries as books; the underlying bibliographic record and editor remain available through book details.
 - `Ma sélection` is distinct from `Livres suivis` (work/edition watchlist). Availability, future announcements, and rare-book prices remain truthful and separate; no UI should invent reservations, book prices, role assignment, or physical-carton data.
 - Catalog V2 uses a pale-paper/navy editorial shell; the shared design details are in `.github/memory/11-frontend-design-system.md`. Member/admin pages use MSAL lazily and read API roles from the API access token, not the ID token.
 - Public cover URLs go through the shared allow-listed transformation helper with a direct-source fallback. Rare-book routes use UUIDs; the API retains legacy slug reads.

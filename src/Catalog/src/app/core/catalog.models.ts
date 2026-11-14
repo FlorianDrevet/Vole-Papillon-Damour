@@ -1525,6 +1525,7 @@ export interface CatalogAdminCheckoutPassageLookup {
 
 export interface CatalogAdminCatalogueFilters {
   search?: string;
+  availableOnly?: boolean;
   page?: number;
   pageSize?: number;
 }

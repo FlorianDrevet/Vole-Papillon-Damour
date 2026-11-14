@@ -403,8 +403,8 @@
             <section class="admin-view" aria-labelledby="admin-title">
               @if (selectedBook(); as book) {
                 <div class="detail-screen">
-                  <div class="breadcrumb"><button class="text-link" type="button" (click)="closeBookDetail()">{{ bookDetailReturnSection() === 'isbn-queue' ? 'ISBN en cours d’analyse' : bookDetailReturnSection() === 'isbndb-absent' ? 'Livres hors ISBNdb' : 'Catalogue' }}</button><span>· Fiche</span></div>
-                  <div class="detail-heading"><div><span class="admin-kicker">{{ book.title ? 'Catalogue · Fiche' : 'ISBN en cours d’analyse' }}</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'ISBN en cours d’analyse' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div>@if (book.title) {<a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a>}</div>
+                  <div class="breadcrumb"><button class="text-link" type="button" (click)="closeBookDetail()">{{ bookDetailReturnSection() === 'isbn-queue' ? 'ISBN en cours d’analyse' : bookDetailReturnSection() === 'isbndb-absent' ? 'Livres hors ISBNdb' : 'Catalogue' }}</button><span>· Livre</span></div>
+                  <div class="detail-heading"><div><span class="admin-kicker">{{ book.title ? 'Catalogue · Livre' : 'ISBN en cours d’analyse' }}</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'ISBN en cours d’analyse' }}</h1><p>ISBN {{ book.isbn13 }} · ajouté le {{ formatDate(book.firstSeenAt) }}</p></div>@if (book.title) {<a class="button button-outline" routerLink="/recherche">Voir la page du livre →</a>}</div>
                   <div class="detail-layout">
                     <div class="detail-main-column">
                       <section class="detail-section">
@@ -453,7 +453,7 @@
                             <input
                               type="file"
                               accept="image/jpeg,image/png,image/webp"
-                              aria-label="Choisir une couverture pour cette fiche"
+                              aria-label="Choisir une couverture pour ce livre"
                               [disabled]="loading() || !!book.redirectedToIsbn13"
                               (change)="selectBookCover($event, book)">
                           </label>
@@ -484,18 +484,18 @@
                           </div>
                         </section>
                       }
-                      <section class="side-card"><span class="section-kicker">État de la fiche</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir la fiche livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publiée' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer la fiche livre rare</strong><small>Préremplir depuis cette fiche</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification de la fiche livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>La fiche reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
-                      <section class="side-card isbndb-provenance-card" data-testid="isbndb-provenance-card"><span class="section-kicker">Provenance de la fiche</span><dl><div><dt>ISBNdb</dt><dd>{{ isbndbLookupLabel(book) }}</dd></div><div><dt>Source de secours</dt><dd>{{ provenanceSourceLabel(book.fallbackSource) }}</dd></div><div><dt>Dernière vérification</dt><dd>{{ book.isbndbCheckedAt ? formatDate(book.isbndbCheckedAt, true) : '—' }}</dd></div></dl>
+                      <section class="side-card"><span class="section-kicker">Gestion du livre</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir le livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publié' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer un livre rare</strong><small>Reprendre les données du livre</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification du statut livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>Le livre reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
+                      <section class="side-card isbndb-provenance-card" data-testid="isbndb-provenance-card"><span class="section-kicker">Provenance des données</span><dl><div><dt>ISBNdb</dt><dd>{{ isbndbLookupLabel(book) }}</dd></div><div><dt>Source de secours</dt><dd>{{ provenanceSourceLabel(book.fallbackSource) }}</dd></div><div><dt>Dernière vérification</dt><dd>{{ book.isbndbCheckedAt ? formatDate(book.isbndbCheckedAt, true) : '—' }}</dd></div></dl>
                         @if (book.isAbsentFromIsbndb) {
                           <button class="button button-outline isbndb-completion-action" data-testid="isbndb-completion-toggle" type="button" [disabled]="loading() || (!book.isbndbCompletedAt && (!metadataForm.title.trim() || !metadataForm.authors.trim()))" (click)="setIsbndbCompletion(book, !book.isbndbCompletedAt)">{{ book.isbndbCompletedAt ? 'Rouvrir' : 'Marquer comme complétée' }}</button>
-                          <small>Retire la fiche de « À compléter » et recalcule ses recommandations. Titre et auteur obligatoires.</small>
+                          <small>Retire le livre de « À compléter » et recalcule ses recommandations. Titre et auteur obligatoires.</small>
                         }
                         @if (!book.isIsbndbSourced) {
                           <button class="button button-outline isbndb-recheck-action" data-testid="isbndb-recheck" type="button" [disabled]="loading() || !canRecheckIsbndbBook(book)" (click)="recheckIsbndbBook(book)">Revérifier dans ISBNdb</button>
-                          @if (isIsbndbQuotaExhausted()) {<small>Quota épuisé jusqu'à {{ isbndbExhaustedUntil() }}</small>} @else if (book.isbndbCompletedAt) {<small>Rouvrez cette fiche avant de la revérifier.</small>} @else {<small>Gratuit si le livre reste inconnu · 1 crédit s'il est trouvé.</small>}
+                          @if (isIsbndbQuotaExhausted()) {<small>Quota épuisé jusqu'à {{ isbndbExhaustedUntil() }}</small>} @else if (book.isbndbCompletedAt) {<small>Rouvrez ce livre avant de le revérifier.</small>} @else {<small>Gratuit si le livre reste inconnu · 1 crédit s'il est trouvé.</small>}
                         }
                       </section>
-                      <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec une autre fiche</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger la fiche</button><button class="danger-link" data-testid="permanently-delete-book" type="button" [disabled]="loading() || !canPermanentlyDeleteBook(book)" (click)="permanentlyDeleteBook(book)">Supprimer définitivement la fiche</button><small>Efface la fiche, son stock et ses suivis. Indisponible après une vente, une annonce, un scan ou une fusion.</small></section>
+                      <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec un autre livre</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger vers le livre canonique</button><button class="danger-link" data-testid="permanently-delete-book" type="button" [disabled]="loading() || !canPermanentlyDeleteBook(book)" (click)="permanentlyDeleteBook(book)">Supprimer définitivement ce livre</button><small>Efface le livre, son stock et ses suivis. Indisponible après une vente, une annonce, un scan ou une fusion.</small></section>
                       <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
                     </aside>
                   </div>
@@ -505,24 +505,24 @@
                   <span class="admin-accent" aria-hidden="true"></span>
                   <span class="admin-kicker">Travail</span>
                   <h1 id="admin-title">Catalogue.</h1>
-                  <p class="admin-intro">Retrouvez toutes les fiches du fonds, ajustez les exemplaires disponibles et ajoutez une nouvelle fiche à partir d’un ISBN ou du référentiel bibliographique.</p>
+                  <p class="admin-intro">Consultez les livres disponibles, ajustez leur nombre d’exemplaires et ajoutez de nouveaux livres à partir d’un ISBN ou du référentiel bibliographique.</p>
                 </div>
                 <section class="catalogue-books-zone" aria-labelledby="catalogue-books-title">
                 <div class="section-heading section-heading-with-kicker catalogue-heading">
-                  <div><span class="section-kicker">Le fonds de livres</span><h2 id="catalogue-books-title">Toutes les fiches</h2><p>{{ catalogueBooksPage()?.totalCount ?? 0 }} fiches · les quantités annoncées restent séparées du stock disponible</p></div>
+                  <div><span class="section-kicker">Le fonds de livres</span><h2 id="catalogue-books-title">Livres disponibles</h2><p>{{ catalogueBooksPage()?.totalCount ?? 0 }} titres avec au moins un exemplaire disponible</p></div>
                   <button class="text-link catalogue-refresh-button" data-testid="catalogue-refresh" type="button" [disabled]="loading()" [attr.aria-busy]="catalogueLoading() ? 'true' : null" [attr.aria-label]="catalogueLoading() ? 'Actualisation du catalogue en cours' : 'Actualiser le catalogue'" (click)="loadCatalogue()">@if (catalogueLoading()) {<vpd-loader data-testid="catalogue-refresh-loader" variant="ring" size="small" label="Actualisation du catalogue"></vpd-loader>} @else {Actualiser}</button>
                 </div>
-                <form class="catalogue-search-toolbar" (ngSubmit)="submitCatalogueSearch()" novalidate><label class="search-field"><span>Rechercher une fiche</span><input name="catalogueSearch" data-testid="catalogue-search" [(ngModel)]="catalogueSearch" (input)="scheduleCatalogueSearch($event)" placeholder="ISBN, titre ou auteur…"></label><button class="button button-outline" type="submit" [disabled]="loading()">Rechercher</button></form>
+                <form class="catalogue-search-toolbar" (ngSubmit)="submitCatalogueSearch()" novalidate><label class="search-field"><span>Rechercher un livre</span><input name="catalogueSearch" data-testid="catalogue-search" [(ngModel)]="catalogueSearch" (input)="scheduleCatalogueSearch($event)" placeholder="ISBN, titre ou auteur…"></label><button class="button button-outline" type="submit" [disabled]="loading()">Rechercher</button></form>
                 @if (catalogueBooksPage(); as page) {
                   <div class="catalogue-book-list" data-testid="catalogue-book-list">
                     @for (book of page.books; track book.isbn13) {
                       <article class="catalogue-book-row" [class.catalogue-book-hidden]="book.isHidden" [class.catalogue-book-redirected]="!!book.redirectedToIsbn13">
                         @if (book.coverUrl) {<img class="catalogue-book-cover" [src]="book.coverUrl" alt="">} @else {<span class="catalogue-book-cover book-cover-placeholder" aria-hidden="true"></span>}
                         <div class="catalogue-book-identity"><span class="isbn-label">{{ book.isbn13 }}</span><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span><div class="catalogue-book-tags"><span>{{ book.metadataStatus }}</span>@if (book.isRare) {<span>Rare</span>}@if (book.isHidden) {<span>Masqué</span>}@if (book.redirectedToIsbn13) {<span>Redirigée vers {{ book.redirectedToIsbn13 }}</span>}</div></div>
-                        <div class="catalogue-book-stock"><span>Disponible</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong><small>{{ formatNumber(book.quantityAnnounced) }} annoncé{{ book.quantityAnnounced > 1 ? 's' : '' }}</small></div>
-                        <div class="catalogue-book-actions"><div class="catalogue-stepper" aria-label="Modifier la quantité disponible"><button class="catalogue-stepper-button catalogue-stepper-decrease" type="button" [disabled]="loading() || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="catalogue-stepper-button catalogue-stepper-increase" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'increase')">+</button></div><button class="button button-outline catalogue-book-detail" type="button" (click)="openBook(book.isbn13)">Voir la fiche</button></div>
+                        <div class="catalogue-book-stock"><span>Exemplaires</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong></div>
+                        <div class="catalogue-book-actions"><div class="catalogue-stepper" aria-label="Modifier les exemplaires disponibles"><button class="catalogue-stepper-button catalogue-stepper-decrease" type="button" [disabled]="loading() || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="catalogue-stepper-button catalogue-stepper-increase" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'increase')">+</button></div><button class="button button-outline catalogue-book-detail" type="button" (click)="openBook(book.isbn13)">Détails</button></div>
                       </article>
-                    } @empty {<div class="empty-panel"><h2>Aucune fiche trouvée</h2><p>Modifiez la recherche ou ajoutez une nouvelle fiche depuis le référentiel externe.</p></div>}
+                    } @empty {<div class="empty-panel"><h2>Aucun livre disponible</h2><p>Modifiez la recherche ou ajoutez un livre depuis le référentiel externe.</p></div>}
                   </div>
                   <div class="pagination"><button type="button" [disabled]="cataloguePage <= 1" (click)="goToCataloguePage(cataloguePage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToCataloguePage(cataloguePage + 1)">→</button></div>
                 } @else if (loading()) {<p class="admin-status" role="status">Chargement du catalogue…</p>}
@@ -621,7 +621,7 @@
                     </div>
                   }
 
-                  <p class="isbn-import-note">Seuls les ISBN valides et uniques sont envoyés. Chaque nouvelle fiche reçoit un exemplaire disponible ; les fiches déjà présentes ne sont pas modifiées.</p>
+                  <p class="isbn-import-note">Seuls les ISBN valides et uniques sont envoyés. Chaque nouveau livre reçoit un exemplaire disponible ; les livres déjà présents ne sont pas modifiés.</p>
                   @if (isbnApplicationReading()) {
                     <p class="catalogue-lookup-status" role="status">Lecture et vérification des fichiers…</p>
                   }
@@ -682,7 +682,7 @@
                     <div class="catalogue-candidate-status" data-testid="isbn-application-progress">
                       <p id="isbn-application-progress-label" role="status">
                         @if (isbnApplicationRunning()) {Import en cours : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN (lot {{ formatNumber(progress.completedBatches) }} sur {{ formatNumber(progress.totalBatches) }} terminé).}
-                        @else if (isbnApplicationStatus() === 'complete') {Import terminé : {{ formatNumber(progress.createdCount) }} fiches créées avec 1 exemplaire chacune, {{ formatNumber(progress.alreadyPresentCount) }} déjà présentes sans changement.}
+                        @else if (isbnApplicationStatus() === 'complete') {Import terminé : {{ formatNumber(progress.createdCount) }} livres ajoutés avec 1 exemplaire chacun, {{ formatNumber(progress.alreadyPresentCount) }} déjà présentes sans changement.}
                         @else {Import interrompu : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN traités.}
                       </p>
                       <progress aria-labelledby="isbn-application-progress-label" [value]="progress.processedCount" [max]="progress.totalCount" style="width: 100%"></progress>
@@ -698,7 +698,7 @@
                 <div class="catalogue-zone-heading">
                   <div>
                     <span class="section-kicker">Ajouter au fonds</span>
-                    <h2 id="catalogue-add-title">Trouver une nouvelle fiche</h2>
+                    <h2 id="catalogue-add-title">Ajouter un livre au fonds</h2>
                     <p>Recherchez un ISBN ou un titre dans les catalogues de la BnF et d’Open Library, puis vérifiez les informations avant l’ajout.</p>
                   </div>
                   <span class="catalogue-process">1 · Trouver&nbsp;&nbsp; 2 · Vérifier&nbsp;&nbsp; 3 · Ajouter</span>
@@ -728,13 +728,13 @@
                       <article class="catalogue-reference-row" [class.catalogue-reference-selected]="catalogueAddCandidate()?.isbn13 === reference.isbn13">
                         @if (reference.coverUrl) {<img class="catalogue-reference-cover" [src]="reference.coverUrl" alt="">} @else {<span class="catalogue-reference-cover book-cover-placeholder" aria-hidden="true"></span>}
                         <div class="catalogue-reference-copy"><strong>{{ reference.title || 'Titre à compléter' }}</strong><span>{{ reference.authors || 'Auteur non renseigné' }}{{ reference.publisher ? ' · ' + reference.publisher : '' }}{{ reference.publicationYear ? ' · ' + reference.publicationYear : '' }}</span><small>{{ reference.isbn13 ? 'ISBN ' + reference.isbn13 : 'ISBN non renseigné' }} · {{ reference.source }}</small></div>
-                        <button class="button button-outline" data-testid="catalogue-use-reference" type="button" [disabled]="!reference.isbn13" (click)="selectCatalogueCandidate(reference)">{{ reference.isbn13 ? 'Utiliser cette fiche' : 'ISBN manquant' }}</button>
+                        <button class="button button-outline" data-testid="catalogue-use-reference" type="button" [disabled]="!reference.isbn13" (click)="selectCatalogueCandidate(reference)">{{ reference.isbn13 ? 'Sélectionner ce livre' : 'ISBN manquant' }}</button>
                       </article>
                       @if (catalogueAddCandidate(); as candidate) {
                         @if (candidate.isbn13 === reference.isbn13) {
                           <form class="catalogue-candidate catalogue-candidate-inline" data-testid="catalogue-candidate-form" (ngSubmit)="addCatalogueCandidate()" novalidate>
-                            <div class="catalogue-candidate-copy"><span class="section-kicker">Fiche prête à ajouter</span><h3>{{ candidate.title || 'Titre à compléter' }}</h3><p>{{ candidate.authors || 'Auteur non renseigné' }}{{ candidate.publisher ? ' · ' + candidate.publisher : '' }}{{ candidate.publicationYear ? ' · ' + candidate.publicationYear : '' }}</p><small>ISBN {{ candidate.isbn13 }} · source {{ candidate.source }}</small><div class="catalogue-candidate-status" data-testid="catalogue-candidate-status" aria-live="polite">@switch (catalogueCandidateStatus()?.state) {@case ('loading') {Vérification de la présence dans le fonds…} @case ('found') {Cette fiche est déjà dans le fonds · {{ formatNumber(catalogueCandidateQuantity()) }} exemplaires disponibles.} @case ('not-found') {Cette fiche n’est pas encore dans le fonds.} @case ('error') {La présence de cette fiche n’a pas pu être vérifiée.}}</div></div>
-                            <div class="catalogue-candidate-fields"><label><span>Exemplaires à ajouter</span><div class="catalogue-quantity-stepper"><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-decrease" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity <= 0" aria-label="Diminuer le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(-1)">−</button><input type="number" name="catalogueAddQuantity" data-testid="catalogue-add-quantity" [(ngModel)]="catalogueAddQuantity" min="0" max="100000" step="1" required><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-increase" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity >= 100000" aria-label="Augmenter le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(1)">+</button></div></label><label><span>Note obligatoire</span><input name="catalogueAddNote" data-testid="catalogue-add-note" maxlength="500" [(ngModel)]="catalogueAddNote" required></label><button class="button button-primary" data-testid="catalogue-add-submit" type="submit" [disabled]="loading() || catalogueLookupLoading()">Ajouter la fiche</button></div>
+                            <div class="catalogue-candidate-copy"><span class="section-kicker">Livre prêt à ajouter</span><h3>{{ candidate.title || 'Titre à compléter' }}</h3><p>{{ candidate.authors || 'Auteur non renseigné' }}{{ candidate.publisher ? ' · ' + candidate.publisher : '' }}{{ candidate.publicationYear ? ' · ' + candidate.publicationYear : '' }}</p><small>ISBN {{ candidate.isbn13 }} · source {{ candidate.source }}</small><div class="catalogue-candidate-status" data-testid="catalogue-candidate-status" aria-live="polite">@switch (catalogueCandidateStatus()?.state) {@case ('loading') {Vérification de la présence dans le fonds…} @case ('found') {Ce livre est déjà dans le fonds · {{ formatNumber(catalogueCandidateQuantity()) }} exemplaires disponibles.} @case ('not-found') {Ce livre n’est pas encore dans le fonds.} @case ('error') {La présence de ce livre n’a pas pu être vérifiée.}}</div></div>
+                            <div class="catalogue-candidate-fields"><label><span>Exemplaires à ajouter</span><div class="catalogue-quantity-stepper"><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-decrease" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity <= 0" aria-label="Diminuer le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(-1)">−</button><input type="number" name="catalogueAddQuantity" data-testid="catalogue-add-quantity" [(ngModel)]="catalogueAddQuantity" min="0" max="100000" step="1" required><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-increase" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity >= 100000" aria-label="Augmenter le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(1)">+</button></div></label><label><span>Note obligatoire</span><input name="catalogueAddNote" data-testid="catalogue-add-note" maxlength="500" [(ngModel)]="catalogueAddNote" required></label><button class="button button-primary" data-testid="catalogue-add-submit" type="submit" [disabled]="loading() || catalogueLookupLoading()">Ajouter le livre</button></div>
                           </form>
                         }
                       }
@@ -1343,7 +1343,7 @@
             <button class="catalogue-confirmation-close" type="button" aria-label="Annuler l’ajustement" (click)="cancelCatalogueAdjustment()">×</button>
           </div>
           <h2 id="catalogue-confirmation-title">Confirmer l’ajustement</h2>
-          <p id="catalogue-confirmation-description">Vérifiez la fiche et le nouveau stock avant d’enregistrer cette correction.</p>
+          <p id="catalogue-confirmation-description">Vérifiez le livre et son stock avant d’enregistrer cette correction.</p>
         </header>
         <div class="catalogue-confirmation-body">
           <div class="catalogue-confirmation-book">
@@ -1379,7 +1379,7 @@
               <dd>{{ confirmation.note }}</dd>
             </div>
           </dl>
-          <p class="catalogue-confirmation-note">La correction sera attribuée à votre compte et inscrite dans l’historique de la fiche.</p>
+          <p class="catalogue-confirmation-note">La correction sera attribuée à votre compte et inscrite dans l’historique du livre.</p>
         </div>
         <footer class="catalogue-confirmation-footer">
           <button class="button button-outline" data-testid="catalogue-confirmation-cancel" type="button" autofocus (click)="cancelCatalogueAdjustment()">Annuler</button>

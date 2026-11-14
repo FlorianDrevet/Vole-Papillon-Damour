@@ -31,7 +31,7 @@
 
 ## Books and account administration
 
-- `/books/admin/*` requires `Administration` (or compatibility `Admin`). The surface includes paged catalogue/metadata queue, overview, dead stock, fair/revenue statistics, sessions and movement correction, alerts, members, settings, and not-found reports.
+- `/books/admin/*` requires `Administration` (or compatibility `Admin`). The surface includes paged catalogue/metadata queue, overview, dead stock, fair/revenue statistics, sessions and movement correction, alerts, members, settings, and not-found reports. `GET /books/admin/books?availableOnly=true` filters rows and `totalCount` to books with `QuantityAvailable > 0`; callers that omit it retain the full resolved catalogue.
 - `POST /books/admin/books/import` accepts 1–100 canonical ISBN-13s in one transaction per batch; new books receive one available copy and an audited `DirectEntry`, while existing ISBNs remain unchanged. `DELETE /books/admin/books/{isbn13}` is ISBN-queue discard/archive; `/permanent` is a distinct guarded deletion for unused erroneous fiches.
 - `GET/POST/PATCH/DELETE /rare-books/admin*` uses `RareBooks` policy (`LivresRares`, `Administration`, or `Admin`). Rare-book cash search is `ScanVolunteer`; ordinary sales do not carry prices.
 - `/accounts/admin*` uses `Administration` and Graph for paged account reads, create, role/status changes, password reset, and deletion. Password reset eligibility and directory permissions are rechecked server-side; generated credentials are returned only to the requesting administrator.

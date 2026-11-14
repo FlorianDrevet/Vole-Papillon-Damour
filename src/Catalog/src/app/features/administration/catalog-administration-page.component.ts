@@ -1107,7 +1107,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
             : this.describeError(error);
       const completedBatches = progress?.completedBatches ?? 0;
       this.isbnApplicationError.set(
-        `L’import s’est arrêté après ${this.formatNumber(completedBatches)} lot${completedBatches === 1 ? '' : 's'} sur ${this.formatNumber(totalBatches)}. ${description} Relancez l’import complet : les fiches déjà créées seront reconnues comme déjà présentes.`,
+        `L’import s’est arrêté après ${this.formatNumber(completedBatches)} lot${completedBatches === 1 ? '' : 's'} sur ${this.formatNumber(totalBatches)}. ${description} Relancez l’import complet : les livres déjà ajoutés seront reconnus comme déjà présents.`,
       );
     } finally {
       this.isbnApplicationRunning.set(false);
@@ -1168,7 +1168,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.catalogueAddCandidate.set(null);
       this.catalogueCandidateStatus.set(null);
       this.catalogueReferenceResults.set([]);
-      this.showSuccess('La fiche a été ajoutée au catalogue.');
+      this.showSuccess('Le livre a été ajouté au catalogue.');
       await this.loadCataloguePage(token);
     });
   }
@@ -1332,7 +1332,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         ));
       }
       await firstValueFrom(this.api.setIsbndbCompletion(token, book.isbn13, completed));
-      this.showSuccess(completed ? 'La fiche est marquée comme complétée.' : 'La fiche est rouverte.');
+      this.showSuccess(completed ? 'Le livre est marqué comme complété.' : 'Le livre est rouvert.');
       await this.loadBookDetail(token, book.isbn13);
       await this.loadIsbndbStatus(token);
       this.bookDetailReturnSection.set(returnSection);
@@ -1352,7 +1352,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
           this.showError('Le service ISBNdb est momentanément indisponible. Réessayez plus tard.');
         } else {
           this.showSuccess(result.outcome === 'Found'
-            ? 'Une notice ISBNdb a été trouvée et la fiche a été actualisée.'
+            ? 'Une notice ISBNdb a été trouvée et le livre a été actualisé.'
             : 'ISBNdb ne connaît toujours pas ce livre.');
           await this.loadBookDetail(token, book.isbn13);
           this.bookDetailReturnSection.set(returnSection);
@@ -1672,7 +1672,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   async toggleVisibility(book: CatalogAdminBook): Promise<void> {
     await this.run('visibility', async token => {
       await firstValueFrom(this.api.setVisibility(token, book.isbn13, !book.isHidden));
-      this.showSuccess(book.isHidden ? 'La fiche est à nouveau visible.' : 'La fiche est masquée du catalogue public.');
+      this.showSuccess(book.isHidden ? 'Le livre est à nouveau visible.' : 'Le livre est masqué du catalogue public.');
       await this.openBook(book.isbn13);
       await this.loadCatalogue();
     });
@@ -1694,7 +1694,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         targetIsbn13: target,
         note: this.mergeNote.trim(),
       }));
-      this.showSuccess('La fiche source est redirigée vers la fiche canonique.');
+      this.showSuccess('Le livre source est redirigé vers le livre canonique.');
       this.selectedBook.set(null);
       await this.loadCatalogue();
     });
@@ -1710,14 +1710,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async permanentlyDeleteBook(book: CatalogAdminBook): Promise<void> {
     if (!this.canPermanentlyDeleteBook(book) || !this.confirmAction(
-      `Supprimer définitivement la fiche ${book.isbn13} ? La fiche, son stock, ses mouvements et ses suivis seront effacés. Cette action est irréversible. Elle est indisponible après une vente, une annonce, un scan ou une fusion.`,
+      `Supprimer définitivement le livre ${book.isbn13} ? Le livre, son stock, ses mouvements et ses suivis seront effacés. Cette action est irréversible. Elle est indisponible après une vente, une annonce, un scan ou une fusion.`,
     )) {
       return;
     }
 
     await this.run('permanent-delete-book', async token => {
       await firstValueFrom(this.api.permanentlyDeleteBook(token, book.isbn13));
-      this.showSuccess('La fiche et ses données associées ont été supprimées définitivement.');
+      this.showSuccess('Le livre et ses données associées ont été supprimés définitivement.');
       this.selectedBook.set(null);
       await this.loadCatalogue();
     });
@@ -3053,6 +3053,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   private async loadCataloguePage(token: string): Promise<void> {
     this.catalogueBooksPage.set(await firstValueFrom(this.api.getBooks(token, {
       search: this.catalogueSearch.trim() || undefined,
+      availableOnly: true,
       page: this.cataloguePage,
       pageSize: this.cataloguePageSize,
     })));
@@ -3325,7 +3326,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         return 'La ressource demandée n’existe plus ou a été déplacée.';
       }
       if (error.status === 409) {
-        return 'Cette action est refusée car l’état du catalogue a changé. Rechargez la fiche.';
+        return 'Cette action est refusée car l’état du catalogue a changé. Rechargez le livre.';
       }
       if (error.status === 400) {
         return 'Les données saisies ne sont pas valides. Vérifiez les champs puis réessayez.';
@@ -3341,7 +3342,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         return 'Le quota ISBNdb est épuisé. Réessayez après son renouvellement.';
       }
       if (error.status === 409) {
-        return 'Cette fiche est déjà marquée comme complétée. Rouvrez-la avant de la revérifier.';
+        return 'Ce livre est déjà marqué comme complété. Rouvrez-le avant de le revérifier.';
       }
       if (error.status === 0 || error.status >= 500) {
         return 'Le service ISBNdb est momentanément indisponible. Réessayez plus tard.';
