@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E11 · États de E2 — desktop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div style="width: 1440px; min-height: 1000px; box-sizing: border-box; padding: 56px 80px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">E11 · États de « Trouver mon prochain livre »</span>
+  <h1 style="margin: 14px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500;">Les cas qui changent l'écran</h1>
+  <p style="margin: 12px 0 0; max-width: 760px; font-size: 15.5px; line-height: 1.55; color: #4e6c84;">Le calcul se lit à l'écran pendant qu'il tourne. Un échec n'est jamais présenté comme « en cours » (RG-167). Le plafond de coups de cœur n'existe plus (RG-163).</p>
+
+  <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+
+    <section data-zone="E11-calcul-en-cours" aria-label="Calcul en cours" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Calcul en cours · RG-166</span>
+      <strong style="font-size: 15px; font-weight: 600; color: #33536e;">Calcul des suggestions : 0 sur 3 coups de cœur prêts</strong>
+      <span style="display: block; height: 6px; border-radius: 999px; background: #e2eef7;"><span style="display: block; width: 0%; height: 100%; border-radius: 999px; background: #0c6ea6;"></span></span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: #0c6ea6;"><span style="width: 12px; height: 12px; border-radius: 999px; border: 2px solid #9dc2da; border-top-color: #0c6ea6;"></span>Suggestions en cours de calcul…</span>
+    </section>
+
+    <section data-zone="E11-calcul-indisponible" aria-label="Calcul indisponible" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Calcul en échec · RG-167</span>
+      <strong style="font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500;">Dune</strong>
+      <span data-zone="E11-calcul-indisponible-texte" style="font-size: 13.5px; color: #4e6c84;">Suggestions indisponibles pour ce livre</span>
+      <span style="font-size: 12.5px; color: #4e6c84;">Le livre reste dans votre liste. Rien à faire de votre côté.</span>
+    </section>
+
+    <section data-zone="E11-calcul-long" aria-label="Calcul qui dure" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Plus de 10 minutes · RG-168</span>
+      <span role="status" style="font-size: 14px; line-height: 1.5; color: #33536e;">Le calcul prend plus de temps que prévu. Vos suggestions apparaîtront ici dès qu'elles seront prêtes.</span>
+      <span style="font-size: 12.5px; color: #4e6c84;">Les suggestions déjà prêtes restent affichées au-dessus.</span>
+    </section>
+
+    <section data-zone="E11-recherche-vide" aria-label="Recherche sans résultat" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Recherche sans résultat · RG-164</span>
+      <span style="font-size: 14px; line-height: 1.5; color: #33536e;">Aucun coup de cœur ne correspond à « Tolkien ».</span>
+      <button type="button" style="align-self: flex-start; min-height: 44px; padding: 0 18px; border: 1px solid #072b45; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #072b45;">Effacer la recherche</button>
+    </section>
+
+    <section data-zone="E11-erreur-retrait" aria-label="Erreur de retrait" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #fdf0f2; border: 1px solid #f1c9d1;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #a3263e;">Retrait non enregistré · RG-161</span>
+      <div role="alert" style="display: flex; flex-direction: column; gap: 6px;">
+        <strong style="font-size: 14.5px; font-weight: 600; color: #a3263e;">Le retrait n'a pas pu être enregistré. Réessayez.</strong>
+        <span style="font-size: 13px; line-height: 1.5; color: #7a1d2d;">« Dune » est revenu dans vos coups de cœur.</span>
+      </div>
+      <button type="button" style="align-self: flex-start; min-height: 44px; padding: 0 18px; border: 1px solid #a3263e; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #a3263e;">Fermer le message</button>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
