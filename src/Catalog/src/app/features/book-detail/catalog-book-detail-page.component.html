@@ -119,11 +119,40 @@
         <p class="separation-note">Ces deux lignes ne s'additionnent pas. Si vous venez aujourd'hui, seule la première vous concerne.</p>
       }
 
-      <app-selection-button
-        class="detail-selection-action"
-        [ref]="{kind: 'edition', isbn13: item.isbn13}"
-        [title]="item.title || 'Titre à compléter'"
-        [helpText]="''"></app-selection-button>
+      <div class="detail-actions" data-zone="E5-actions">
+        <app-selection-button
+          class="detail-selection-action"
+          [ref]="{kind: 'edition', isbn13: item.isbn13}"
+          [title]="item.title || 'Titre à compléter'"
+          [helpText]="''"></app-selection-button>
+
+        <button
+          type="button"
+          class="favorite-toggle"
+          data-zone="E5-bouton-coup-de-coeur"
+          [class.favorite-toggle--active]="isFavorite(item)"
+          [attr.aria-pressed]="isFavorite(item)"
+          [disabled]="favoritePending()"
+          (click)="toggleFavorite(item)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" />
+          </svg>
+          {{ isFavorite(item) ? 'Dans vos coups de cœur' : 'Coup de cœur' }}
+        </button>
+      </div>
+
+      @if (favoriteMessage()) {
+        <p class="favorite-feedback" data-zone="E5-confirmation" role="status">
+          {{ favoriteMessage() }}
+          <a routerLink="/trouver-mon-prochain-livre">Voir mes suggestions</a>
+        </p>
+      }
+      @if (favoriteError()) {
+        <p class="favorite-feedback favorite-feedback--error" role="alert">{{ favoriteError() }}</p>
+      }
+      <p class="favorite-note">
+        Un coup de cœur dit que vous avez aimé ce livre&nbsp;: il sert à vous proposer des livres qui lui ressemblent. Il ne réserve rien.
+      </p>
 
       @if (item.physicalFormat || item.language) {
         <dl class="detail-facts">

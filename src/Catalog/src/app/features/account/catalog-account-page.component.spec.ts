@@ -17,7 +17,6 @@ import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selectio
 import {AccountSelectionComponent} from './selection/account-selection.component';
 import {AccountCardComponent} from './card/account-card.component';
 import {AccountPurchasesComponent} from './purchases/account-purchases.component';
-import {RecommendationsBandComponent} from './recommendations-band/recommendations-band.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
 import {VpdLoaderComponent} from '@vpd/ui';
@@ -226,7 +225,6 @@ describe('CatalogAccountPageComponent', () => {
         AccountSelectionComponent,
         AccountCardComponent,
         AccountPurchasesComponent,
-        RecommendationsBandComponent,
         VpdLoaderComponent,
       ],
       imports: [RouterModule.forRoot([])],
@@ -863,7 +861,7 @@ describe('CatalogAccountPageComponent', () => {
     await settleAccountPage();
   });
 
-  it('removes the already mounted purchases invitation after the member disables recommendations', async () => {
+  it('keeps the favorite explanation in purchases when recommendations are disabled', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);
     await fixture.componentInstance.initialize();
@@ -872,7 +870,7 @@ describe('CatalogAccountPageComponent', () => {
     const purchasesTab = fixture.nativeElement.querySelector('#account-purchases-tab') as HTMLButtonElement;
     purchasesTab.click();
     await settleAccountPage();
-    expect(fixture.nativeElement.querySelector('[data-zone="R8-sans-achat"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E6-explication"]')).not.toBeNull();
 
     (fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement).click();
     await settleAccountPage();
@@ -882,8 +880,8 @@ describe('CatalogAccountPageComponent', () => {
     purchasesTab.click();
     await settleAccountPage();
 
-    expect(fixture.nativeElement.querySelector('[data-zone="R6-bandeau"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-zone="R8-sans-achat"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E6-explication"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.recommendations-band')).toBeNull();
   });
 
   it('keeps the previous preference state and reports an update failure', async () => {

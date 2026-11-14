@@ -241,7 +241,6 @@
         id="account-purchases-panel"
         data-testid="account-purchases-panel"
         role="tabpanel"
-        [recommendationPreferenceEnabled]="recommendationsEnabled()"
         [hidden]="activeTab() !== 'purchases'"
         [attr.aria-hidden]="activeTab() === 'purchases' ? null : 'true'"
         aria-labelledby="account-purchases-tab"></app-account-purchases>

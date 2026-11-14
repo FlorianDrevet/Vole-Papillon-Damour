@@ -1,6 +1,13 @@
 <section class="account-purchases" aria-label="Mes achats associés à ce compte">
-  @if (recommendationPreferenceEnabled !== false) {
-    <app-recommendations-band></app-recommendations-band>
+  <div class="purchases-favorite-intro" data-zone="E6-explication">
+    <p>
+      Vous avez aimé un de ces livres&nbsp;? Dites-le d'un clic&nbsp;: il rejoint vos coups de cœur et sert à vous proposer des livres qui lui ressemblent.
+      <a routerLink="/trouver-mon-prochain-livre">Voir mes suggestions</a>
+    </p>
+  </div>
+
+  @if (favoriteError()) {
+    <p class="purchases-favorite-error" role="alert">{{ favoriteError() }}</p>
   }
 
   @if (loading() && !purchases()) {
@@ -20,7 +27,7 @@
 
             <ul class="purchase-lines" aria-label="Livres du passage">
               @for (line of passage.lines; track line.id) {
-                <li class="purchase-line" [class.cancelled]="line.state === 'Cancelled'">
+                <li class="purchase-line" [class.cancelled]="line.state === 'Cancelled'" data-zone="E6-ligne-achat">
                   @if (line.currentCoverUrl) {
                     <img class="purchase-cover" [catalogCover]="line.currentCoverUrl" alt="" loading="lazy">
                   } @else {
@@ -39,6 +46,21 @@
                   </div>
                   @if (line.state === 'Cancelled') {
                     <span class="purchase-cancelled-badge">Annulée</span>
+                  } @else if (line.isbn13) {
+                    <button
+                      type="button"
+                      class="purchase-favorite-button"
+                      data-zone="E6-bouton-jai-aime"
+                      [class.purchase-favorite-button--active]="isFavorite(line)"
+                      [attr.aria-pressed]="isFavorite(line)"
+                      [attr.aria-label]="favoriteButtonLabel(line)"
+                      [disabled]="favoritePendingIsbns().has(line.isbn13)"
+                      (click)="toggleFavorite(line)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" />
+                      </svg>
+                      <span>J'ai aimé</span>
+                    </button>
                   }
                 </li>
               }

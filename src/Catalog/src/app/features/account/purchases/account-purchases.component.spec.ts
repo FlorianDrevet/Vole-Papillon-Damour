@@ -5,14 +5,16 @@ import {of} from 'rxjs';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../../core/favorites/catalog-favorites.service';
 import {CatalogPurchasesResponse, CatalogPurchasePassage} from '../../../core/catalog.models';
 import {CatalogCoverDirective} from '../../../shared/catalog-cover.directive';
-import {RecommendationsBandComponent} from '../recommendations-band/recommendations-band.component';
 import {AccountPurchasesComponent} from './account-purchases.component';
 
 describe('AccountPurchasesComponent', () => {
   let fixture: ComponentFixture<AccountPurchasesComponent>;
   let api: jasmine.SpyObj<CatalogMemberApiService>;
+  let favorites: jasmine.SpyObj<CatalogFavoritesService>;
+  let favoriteIsbns: WritableSignal<ReadonlySet<string>>;
   let auth: {getApiAccessToken: jasmine.Spy; isAuthenticated: WritableSignal<boolean>};
 
   const passage = (overrides: Partial<CatalogPurchasePassage> = {}): CatalogPurchasePassage => ({
@@ -65,16 +67,31 @@ describe('AccountPurchasesComponent', () => {
       getApiAccessToken: jasmine.createSpy('getApiAccessToken').and.resolveTo('member-token'),
       isAuthenticated: signal(false),
     };
-    api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['getPurchases', 'getRecommendations']);
+    api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['getPurchases']);
     api.getPurchases.and.returnValue(of(response([passage()])));
-    api.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
+    favoriteIsbns = signal<ReadonlySet<string>>(new Set());
+    favorites = {
+      favoriteIsbns: favoriteIsbns.asReadonly(),
+      add: jasmine.createSpy('add').and.callFake(async (entry: {isbn13: string}) => {
+        favoriteIsbns.update(current => new Set([...current, entry.isbn13]));
+        return true;
+      }),
+      remove: jasmine.createSpy('remove').and.callFake(async (isbn13: string) => {
+        favoriteIsbns.update(current => {
+          const next = new Set(current);
+          next.delete(isbn13);
+          return next;
+        });
+      }),
+    } as unknown as jasmine.SpyObj<CatalogFavoritesService>;
 
     await TestBed.configureTestingModule({
-      declarations: [AccountPurchasesComponent, CatalogCoverDirective, RecommendationsBandComponent],
+      declarations: [AccountPurchasesComponent, CatalogCoverDirective],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: api},
+        {provide: CatalogFavoritesService, useValue: favorites},
       ],
     }).compileComponents();
   });
@@ -163,17 +180,39 @@ describe('AccountPurchasesComponent', () => {
     expect(page.nativeElement.textContent).not.toContain('€');
   });
 
-  it('keeps the recommendation card and omits the second empty purchase card', async () => {
+  it('explains favorites instead of showing the old recommendation band', async () => {
     auth.isAuthenticated.set(true);
     api.getPurchases.and.returnValue(of(response([])));
     const page = render();
     await settle(page);
 
-    expect(page.nativeElement.querySelector('.recommendations-band-empty')).not.toBeNull();
-    expect(page.nativeElement.textContent).toContain('Pour prolonger vos lectures');
+    expect(page.nativeElement.querySelector('.recommendations-band')).toBeNull();
+    expect(page.nativeElement.textContent).toContain('Vous avez aimé un de ces livres');
+    expect(page.nativeElement.textContent).toContain("Dites-le d'un clic");
+    expect(page.nativeElement.querySelector('[data-zone="E6-explication"] a')?.getAttribute('href'))
+      .toBe('/trouver-mon-prochain-livre');
     expect(page.nativeElement.querySelector('.purchases-empty')).toBeNull();
     expect(page.nativeElement.textContent).not.toContain("Aucun achat n'est encore associé à ce compte.");
     expect(page.nativeElement.textContent).toContain('Seuls les passages associés à ce compte sont visibles ici.');
+  });
+
+  it('adds a purchase to favorites with the “J’ai aimé” action', async () => {
+    const page = render();
+    await settle(page);
+
+    const button = page.nativeElement.querySelector('[data-zone="E6-bouton-jai-aime"]') as HTMLButtonElement;
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.getAttribute('aria-label')).toBe("J'ai aimé Le Petit Prince");
+    button.click();
+    await settle(page);
+
+    expect(favorites.add).toHaveBeenCalledOnceWith({
+      isbn13: '9782070612758',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      coverUrl: null,
+    });
+    expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('reveals the passage reference and association contact for a reported error', async () => {

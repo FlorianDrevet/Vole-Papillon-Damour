@@ -12,6 +12,7 @@ import {DesignSystemModule} from '@vpd/ui';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {CatalogBook} from '../../core/catalog.models';
 import {CatalogBookDetailPageComponent} from './catalog-book-detail-page.component';
@@ -36,6 +37,8 @@ describe('CatalogBookDetailPageComponent', () => {
   };
   let api: jasmine.SpyObj<CatalogApiService>;
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
+  let favorites: jasmine.SpyObj<CatalogFavoritesService>;
+  let favoriteIsbns: WritableSignal<ReadonlySet<string>>;
   let selection: jasmine.SpyObj<CatalogSelectionService>;
 
   const book: CatalogBook = {
@@ -98,6 +101,22 @@ describe('CatalogBookDetailPageComponent', () => {
       isbn13: null,
       addedAt: '2026-09-04T20:00:00Z',
     }));
+    favoriteIsbns = signal<ReadonlySet<string>>(new Set());
+    favorites = {
+      favoriteIsbns: favoriteIsbns.asReadonly(),
+      refresh: jasmine.createSpy('refresh').and.resolveTo(),
+      add: jasmine.createSpy('add').and.callFake(async (entry: {isbn13: string}) => {
+        favoriteIsbns.update(current => new Set([...current, entry.isbn13]));
+        return true;
+      }),
+      remove: jasmine.createSpy('remove').and.callFake(async (isbn13: string) => {
+        favoriteIsbns.update(current => {
+          const next = new Set(current);
+          next.delete(isbn13);
+          return next;
+        });
+      }),
+    } as unknown as jasmine.SpyObj<CatalogFavoritesService>;
     selection = jasmine.createSpyObj<CatalogSelectionService>(
       'CatalogSelectionService',
       ['add', 'remove'],
@@ -121,6 +140,7 @@ describe('CatalogBookDetailPageComponent', () => {
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
+        {provide: CatalogFavoritesService, useValue: favorites},
         {provide: CatalogSelectionService, useValue: selection},
         {
           provide: ActivatedRoute,
@@ -180,7 +200,7 @@ describe('CatalogBookDetailPageComponent', () => {
       publicationYear: 2020,
       coverUrl: null,
     });
-    expect(fixture.nativeElement.textContent).toContain('ajouté à votre liste');
+    expect(fixture.nativeElement.textContent).toContain('ajouté à vos livres suivis');
   });
 
   it('does not offer a notification for a book that is currently available', async () => {
@@ -202,6 +222,37 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(action).not.toBeNull();
     expect(action.componentInstance.ref()).toEqual({kind: 'edition', isbn13: book.isbn13});
     expect(action.componentInstance.title()).toBe(book.title);
+  });
+
+  it('toggles a book favorite without an account and confirms the add', async () => {
+    auth.isAuthenticated.set(false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('[data-zone="E5-bouton-coup-de-coeur"]') as HTMLButtonElement;
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(favorites.add).toHaveBeenCalledOnceWith({
+      isbn13: book.isbn13,
+      title: book.title ?? 'Titre à compléter',
+      authors: book.authors,
+      coverUrl: book.coverUrl,
+    });
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-zone="E5-confirmation"]')?.textContent)
+      .toContain('Ajouté à vos coups de cœur.');
+    expect(fixture.nativeElement.querySelector('[data-zone="E5-confirmation"] a')?.getAttribute('href'))
+      .toBe('/trouver-mon-prochain-livre');
+
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(favorites.remove).toHaveBeenCalledOnceWith(book.isbn13);
+    expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('does not show on-site price wording on a book detail', async () => {

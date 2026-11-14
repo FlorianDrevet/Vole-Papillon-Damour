@@ -17,6 +17,7 @@ import {environment} from '../../../environments/environment';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {CatalogBook, CatalogWatchlistScope} from '../../core/catalog.models';
 import {catalogCoverUrl} from '../../shared/catalog-cover-url';
 import {publicBookPath} from '../../shared/catalog-url';
@@ -37,6 +38,9 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
   readonly notifyPending = signal(false);
   readonly notifyMessage = signal<string | null>(null);
   readonly notifyError = signal<string | null>(null);
+  readonly favoritePending = signal(false);
+  readonly favoriteMessage = signal<string | null>(null);
+  readonly favoriteError = signal<string | null>(null);
   readonly authPromptOpen = signal(false);
 
   private readonly destroyed = new Subject<void>();
@@ -50,12 +54,14 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     private readonly title: Title,
     private readonly meta: Meta,
     private readonly auth: CatalogAuthService,
+    readonly favorites: CatalogFavoritesService,
     private readonly memberApi: CatalogMemberApiService,
     private readonly changeDetector: ChangeDetectorRef,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
   ngOnInit(): void {
+    void this.favorites.refresh().catch(() => undefined);
     this.route.paramMap
       .pipe(
         switchMap(params => {
@@ -114,6 +120,39 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
 
   onCoverError(): void {
     this.coverFailed = true;
+  }
+
+  isFavorite(item: CatalogBook): boolean {
+    return this.favorites.favoriteIsbns().has(item.isbn13);
+  }
+
+  async toggleFavorite(item: CatalogBook): Promise<void> {
+    if (this.favoritePending()) {
+      return;
+    }
+
+    this.favoriteMessage.set(null);
+    this.favoriteError.set(null);
+    this.favoritePending.set(true);
+    try {
+      if (this.isFavorite(item)) {
+        await this.favorites.remove(item.isbn13);
+      } else {
+        const added = await this.favorites.add({
+          isbn13: item.isbn13,
+          title: item.title || 'Titre à compléter',
+          authors: item.authors,
+          coverUrl: item.coverUrl,
+        });
+        if (added) {
+          this.favoriteMessage.set('Ajouté à vos coups de cœur.');
+        }
+      }
+    } catch {
+      this.favoriteError.set('Ce livre n’a pas pu être ajouté à vos coups de cœur. Réessayez.');
+    } finally {
+      this.favoritePending.set(false);
+    }
   }
 
   detailCoverUrl(coverUrl: string | null): string | null {
