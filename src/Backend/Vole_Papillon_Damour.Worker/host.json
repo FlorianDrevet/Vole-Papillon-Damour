@@ -13,6 +13,7 @@
       "Function.Sweep.User": "Information",
       "Function.IsbndbCatchUp.User": "Information",
       "Function.IsbndbCatchUpManual.User": "Information",
+      "Function.FairDigest.User": "Information",
       "Function.RecommendationsBackfill.User": "Information",
       "Function.ProcessBookRecommendations.User": "Information",
       "Function.ImportSocialActualities.User": "Information"
