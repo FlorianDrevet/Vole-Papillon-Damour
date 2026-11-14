@@ -19,6 +19,9 @@ describe('CatalogFavoritesService', () => {
 
   beforeEach(() => {
     localStorage.removeItem('vpd.catalog.favorites.v1');
+    localStorage.removeItem('vpd.catalog.favorites.v1.minimumHearts');
+    localStorage.removeItem('vpd.catalog.favorites.v1.bannerCollapsed');
+    localStorage.removeItem('vpd.catalog.favorites.v1.homeEntryDismissed');
     api = jasmine.createSpyObj<CatalogApiService>(
       'CatalogApiService',
       ['getFavoriteSuggestions', 'declareAnonymousFavorite', 'withdrawAnonymousFavorite'],
@@ -105,6 +108,32 @@ describe('CatalogFavoritesService', () => {
     expect(memberApi.setRecommendationPreference)
       .toHaveBeenCalledOnceWith('member-token', true, 4);
     expect(service.minimumHearts()).toBe(4);
+  });
+
+  it('publishes a changed local heart threshold to page signals', async () => {
+    const service = TestBed.inject(CatalogFavoritesService);
+    expect(service.currentMinimumHearts()).toBe(3);
+
+    await service.setMinimumHearts(4);
+
+    expect(service.currentMinimumHearts()).toBe(4);
+  });
+
+  it('stores fair email consent without changing the member recommendation setting', async () => {
+    auth.isAuthenticated.set(true);
+    memberApi.getRecommendationPreference.and.returnValue(of({
+      enabled: false,
+      minimumHearts: 2,
+      fairDigestConsentedAt: null,
+    }));
+    const service = TestBed.inject(CatalogFavoritesService);
+
+    await service.onSignedIn();
+    await service.setFairDigestConsent(true);
+
+    expect(memberApi.setRecommendationPreference)
+      .toHaveBeenCalledOnceWith('member-token', false, 2, true);
+    expect(service.fairDigestConsent()).toBeTrue();
   });
 
   it('preserves local favorites when the account merge fails', async () => {

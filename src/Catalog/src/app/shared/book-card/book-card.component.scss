@@ -1,3 +1,5 @@
+:host { display: block; min-width: 0; }
+
 .book-card {
   display: flex;
   min-width: 0;
@@ -419,6 +421,9 @@
   font-size: var(--book-card-home-title-size, 1.34rem);
   line-height: var(--book-card-home-title-line-height, 1.06);
 }
+
+.book-card-hearts { display: block; margin-top: 3px; }
+.book-card-recommendation-text { color: var(--catalog-ink-soft); font: .76rem/1.4 var(--catalog-body); }
 
 .book-card--home .authors {
   font-size: var(--book-card-home-author-size, .78rem);

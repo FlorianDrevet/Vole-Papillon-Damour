@@ -36,7 +36,12 @@ export class CatalogFavoritesService {
   private readonly currentComputing = signal<Readonly<Record<string, boolean>>>({});
   private readonly currentSuggestionStatus = signal<string>('Enabled');
   private readonly currentSyncNotice = signal<CatalogFavoriteMergeResult | null>(null);
-  private readonly memberPreference = signal<{enabled: boolean; minimumHearts: number} | null>(null);
+  private readonly memberPreference = signal<{
+    enabled: boolean;
+    minimumHearts: number;
+    fairDigestConsentedAt: string | null;
+  } | null>(null);
+  private readonly digestConsent = signal(false);
   private readonly currentError = signal<string | null>(null);
   private readonly refreshStartedAt = signal<number | null>(null);
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -65,6 +70,13 @@ export class CatalogFavoritesService {
   readonly suggestionStatus = this.currentSuggestionStatus.asReadonly();
   readonly syncNotice = this.currentSyncNotice.asReadonly();
   readonly error = this.currentError.asReadonly();
+  readonly fairDigestConsent = this.digestConsent.asReadonly();
+  readonly currentMinimumHearts: Signal<number> = computed(() => {
+    this.localRevision();
+    return this.mode() === 'remote'
+      ? this.memberPreference()?.minimumHearts ?? this.local.minimumHearts()
+      : this.local.minimumHearts();
+  });
 
   constructor(
     private readonly local: LocalFavoritesStore,
@@ -74,9 +86,7 @@ export class CatalogFavoritesService {
   ) {}
 
   minimumHearts(): number {
-    return this.mode() === 'remote'
-      ? this.memberPreference()?.minimumHearts ?? this.local.minimumHearts()
-      : this.local.minimumHearts();
+    return this.currentMinimumHearts();
   }
 
   async setMinimumHearts(value: number): Promise<void> {
@@ -91,7 +101,9 @@ export class CatalogFavoritesService {
         preference = {
           enabled: accountPreference.enabled,
           minimumHearts: accountPreference.minimumHearts ?? 3,
+          fairDigestConsentedAt: accountPreference.fairDigestConsentedAt ?? null,
         };
+        this.digestConsent.set(Boolean(preference.fairDigestConsentedAt));
       }
       await firstValueFrom(this.memberApi.setRecommendationPreference(
         token,
@@ -101,8 +113,38 @@ export class CatalogFavoritesService {
       this.memberPreference.set({...preference, minimumHearts: normalized});
     } else {
       this.local.setMinimumHearts(normalized);
+      this.localRevision.update(value => value + 1);
     }
     await this.refresh().catch(() => undefined);
+  }
+
+  async setFairDigestConsent(consented: boolean): Promise<void> {
+    if (this.mode() !== 'remote') {
+      return;
+    }
+
+    const token = await this.auth.getApiAccessToken();
+    let preference = this.memberPreference();
+    if (!preference) {
+      const accountPreference = await firstValueFrom(
+        this.memberApi.getRecommendationPreference(token),
+      );
+      preference = {
+        enabled: accountPreference.enabled,
+        minimumHearts: accountPreference.minimumHearts ?? 3,
+        fairDigestConsentedAt: accountPreference.fairDigestConsentedAt ?? null,
+      };
+    }
+
+    await firstValueFrom(this.memberApi.setRecommendationPreference(
+      token,
+      preference.enabled,
+      preference.minimumHearts,
+      consented,
+    ));
+    const fairDigestConsentedAt = consented ? new Date().toISOString() : null;
+    this.memberPreference.set({...preference, fairDigestConsentedAt});
+    this.digestConsent.set(consented);
   }
 
   async add(entry: Omit<LocalFavoriteEntry, 'addedAt'>): Promise<boolean> {
@@ -264,7 +306,12 @@ export class CatalogFavoritesService {
           minimumHearts,
         ));
       }
-      this.memberPreference.set({enabled: preference.enabled, minimumHearts});
+      this.memberPreference.set({
+        enabled: preference.enabled,
+        minimumHearts,
+        fairDigestConsentedAt: preference.fairDigestConsentedAt ?? null,
+      });
+      this.digestConsent.set(Boolean(preference.fairDigestConsentedAt));
     } catch {
       this.memberPreference.set(null);
       if (entries.length > 0) {
@@ -372,6 +419,9 @@ export class CatalogFavoritesService {
       authors: edition.authors,
       coverUrl: edition.coverUrl,
       addedAt: edition.addedAt,
+      editionCount: work.editionCount,
+      quantityAvailable: edition.quantityAvailable,
+      quantityAnnounced: edition.quantityAnnounced,
     }))) ?? [];
   }
 

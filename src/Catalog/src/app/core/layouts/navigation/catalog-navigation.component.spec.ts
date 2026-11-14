@@ -120,6 +120,19 @@ describe('CatalogNavigationComponent', () => {
     expect(eventLink?.getAttribute('href')).toBe('/prochaines-dates');
   });
 
+  it('links to the personal book-favorites page with a heart icon', () => {
+    const link = (Array.from(fixture.nativeElement.querySelectorAll('a.nav-link')) as HTMLAnchorElement[])
+      .find(item => item.textContent?.includes('Trouver mon prochain livre'));
+
+    expect(link?.getAttribute('href')).toBe('/trouver-mon-prochain-livre');
+    expect(link?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+
+    fixture.componentInstance.url.set('/trouver-mon-prochain-livre');
+    fixture.detectChanges();
+    expect(link?.classList).toContain('active');
+    expect(link?.getAttribute('aria-current')).toBe('page');
+  });
+
   it('opens the account menu from the trigger without changing the current page', () => {
     const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
 

@@ -1,0 +1,16 @@
+.hearts {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--catalog-heart-empty);
+}
+
+svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+svg.filled {
+  color: var(--catalog-heart);
+}

@@ -7,6 +7,9 @@ export interface LocalFavoriteEntry {
   authors: string | null;
   coverUrl: string | null;
   addedAt: string;
+  editionCount?: number;
+  quantityAvailable?: number;
+  quantityAnnounced?: number;
 }
 
 const STORAGE_KEY = 'vpd.catalog.favorites.v1';

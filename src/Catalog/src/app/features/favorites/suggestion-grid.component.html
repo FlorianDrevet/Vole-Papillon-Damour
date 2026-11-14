@@ -1,0 +1,40 @@
+<section class="suggestion-section" data-zone="E2-suggestions" aria-labelledby="suggestions-title">
+  <header class="suggestion-heading">
+    <div>
+      <span class="section-eyebrow">À la bourse aux livres</span>
+      <h2 id="suggestions-title">Ils pourraient vous plaire.</h2>
+    </div>
+    <span class="suggestion-count" data-zone="E2-nombre-suggestions">{{ suggestions.length }} suggestions à {{ minimumHearts }} cœurs ou plus</span>
+  </header>
+
+  <app-minimum-hearts-control
+    [minimum]="minimumHearts"
+    (minimumChange)="minimumHeartsChange.emit($event)">
+  </app-minimum-hearts-control>
+
+  @if (suggestions.length > 0) {
+    <div class="suggestion-cards">
+      @for (suggestion of suggestions; track suggestion.isbn13) {
+        <div class="suggestion-card" data-zone="E2-carte-suggestion" [attr.data-isbn]="suggestion.isbn13">
+          <app-book-card
+            [book]="suggestion"
+            variant="home"
+            [reason]="suggestion.reason"
+            [hearts]="suggestion.hearts ?? 0"
+            [recommendationText]="recommendationText(suggestion)">
+          </app-book-card>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="suggestion-empty" data-zone="E11-aucune-suggestion">
+      <span class="empty-title">Rien à {{ minimumHearts }} cœurs pour l'instant.</span>
+      <span>Aucun livre disponible ne ressemble assez à vos coups de cœur à ce niveau d'exigence.</span>
+      @if (minimumHearts > 2) {
+        <button type="button" (click)="showBroaderSuggestions()">Voir les suggestions à 2 cœurs et +</button>
+      }
+    </div>
+  }
+
+  <p class="suggestion-disclaimer">Les suggestions ne comprennent ni vos coups de cœur, ni les livres de votre sélection. Les livres ne sont pas mis de côté.</p>
+</section>

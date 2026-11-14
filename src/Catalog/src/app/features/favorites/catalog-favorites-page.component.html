@@ -1,0 +1,71 @@
+<main class="favorites-page">
+  <header class="favorites-hero" data-zone="E2-entete">
+    <span class="favorites-eyebrow">Trouver mon prochain livre</span>
+    <h1>
+      <span class="desktop-title">Dites-nous les livres que vous avez aimés, <em>on cherche à la bourse.</em></span>
+      <span class="mobile-title">Dites-nous ce que vous avez aimé, <em>on cherche à la bourse.</em></span>
+    </h1>
+    <p>Ajoutez vos coups de cœur, même s'ils ne sont jamais passés à la bourse aux livres. Nous vous proposons les livres disponibles qui leur ressemblent, du plus sûr au plus audacieux.</p>
+  </header>
+
+  @if (authReady() && isMember()) {
+    <section class="fair-email-preference" data-zone="E2-preference-email" aria-label="Sélection e-mail avant chaque bourse">
+      <input
+        id="fair-digest-consent"
+        type="checkbox"
+        [checked]="favorites.fairDigestConsent()"
+        (change)="setFairDigestConsent($event)">
+      <div>
+        <label for="fair-digest-consent">Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire</label>
+        <p>Un e-mail trois jours avant l'ouverture, avec les nouveautés qui ressemblent à vos coups de cœur. Désabonnement en un clic.</p>
+      </div>
+    </section>
+  } @else if (authReady() && (favoriteCount() > 0 || !local.available)) {
+    <app-browser-storage-banner
+      [collapsed]="bannerCollapsed()"
+      [available]="local.available"
+      (collapsedChange)="setBannerCollapsed($event)">
+    </app-browser-storage-banner>
+  }
+
+  <div class="favorites-content">
+    <app-favorite-list
+      [class.empty]="favoriteCount() === 0"
+      [entries]="favorites.favorites()"
+      [computingByIsbn]="favorites.computingByIsbn()"
+      [maximum]="isMember() ? 200 : 50"
+      (addRequested)="openAddPanel()"
+      (removeRequested)="remove($event)">
+    </app-favorite-list>
+
+    @if (removedTitle(); as title) {
+      <div class="removal-notice" data-zone="E11-annuler-retrait" role="status" aria-live="polite">
+        <span><em>{{ title }}</em> retiré de vos coups de cœur.</span>
+        <button type="button" (click)="undoRemoval()">Annuler</button>
+      </div>
+    }
+
+    <section class="suggestion-column">
+      @if (suggestionsDisabled()) {
+        <div class="suggestions-disabled" data-zone="E11-suggestions-desactivees">
+          <span>Vous avez désactivé les suggestions personnalisées.</span>
+          <p>Vos coups de cœur restent enregistrés. Réactivez les suggestions pour voir les livres qui leur ressemblent.</p>
+          <a routerLink="/compte" [queryParams]="{tab: 'preferences'}">Réactiver dans Compte et données →</a>
+        </div>
+      } @else if (favoriteCount() > 0 && anyFavoriteComputing() && visibleSuggestions().length === 0) {
+        <div class="computing-status" data-zone="E2-calcul-en-cours" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Suggestions en cours de calcul…</span>
+        </div>
+      } @else if (favoriteCount() > 0) {
+        <app-suggestion-grid
+          [suggestions]="visibleSuggestions()"
+          [minimumHearts]="favorites.currentMinimumHearts()"
+          (minimumHeartsChange)="setMinimumHearts($event)">
+        </app-suggestion-grid>
+      }
+    </section>
+  </div>
+
+  <app-add-favorite-panel [open]="addPanelOpen()" (closed)="closeAddPanel()"></app-add-favorite-panel>
+</main>

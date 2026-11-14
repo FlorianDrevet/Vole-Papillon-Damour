@@ -1,0 +1,61 @@
+.minimum-hearts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--catalog-line);
+  background: #fff;
+}
+
+.minimum-hearts-options {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 999px;
+  background: #f5f9fc;
+}
+
+button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--catalog-ink-soft);
+  background: transparent;
+  font: 600 .8rem/1 var(--catalog-body);
+  cursor: pointer;
+}
+
+button.selected {
+  color: #fff;
+  background: var(--catalog-heart-ink);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--catalog-cyan);
+  outline-offset: 2px;
+}
+
+.minimum-hearts-endpoint {
+  color: var(--catalog-ink-soft);
+  font-size: .8rem;
+}
+
+.minimum-hearts-mobile { display: none; }
+
+@media (max-width: 700px) {
+  .minimum-hearts {
+    gap: 7px;
+    padding: 12px 9px;
+  }
+
+  .minimum-hearts-endpoint { max-width: 74px; font-size: .67rem; line-height: 1.25; }
+  .minimum-hearts-endpoint:first-child { text-align: right; }
+  .minimum-hearts-options { gap: 1px; }
+  button { min-width: 38px; min-height: 38px; padding: 0 9px; }
+  .minimum-hearts-desktop { display: none; }
+  .minimum-hearts-mobile { display: inline; }
+}

@@ -20,6 +20,8 @@ export class BookCardComponent {
   @Input({required: true}) book!: CatalogBook;
   @Input() variant: BookCardVariant = 'grid';
   @Input() reason: CatalogNeighborReason | null = null;
+  @Input() hearts: number | null = null;
+  @Input() recommendationText: string | null = null;
 
   coverFailed = false;
 

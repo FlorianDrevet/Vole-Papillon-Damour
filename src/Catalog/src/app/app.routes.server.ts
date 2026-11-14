@@ -14,6 +14,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'trouver-mon-prochain-livre',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'desinscription',
     renderMode: RenderMode.Client,
   },

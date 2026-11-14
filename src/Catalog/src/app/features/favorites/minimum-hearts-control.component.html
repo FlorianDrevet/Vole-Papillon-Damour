@@ -1,0 +1,18 @@
+<div class="minimum-hearts" data-zone="E2-curseur-exigence" role="group" aria-label="Exigence des suggestions">
+  <span class="minimum-hearts-endpoint">Plus de découvertes</span>
+  <div class="minimum-hearts-options">
+    @for (level of levels; track level) {
+      <button
+        type="button"
+        [attr.data-zone]="'E2-exigence-' + level"
+        [attr.aria-label]="level + (level === 1 ? ' cœur et +' : ' cœurs et +')"
+        [attr.aria-pressed]="minimum === level"
+        [class.selected]="minimum === level"
+        (click)="select(level)">
+        <span class="minimum-hearts-desktop">{{ level }} {{ level === 1 ? 'cœur et +' : 'cœurs et +' }}</span>
+        <span class="minimum-hearts-mobile">{{ level }}+</span>
+      </button>
+    }
+  </div>
+  <span class="minimum-hearts-endpoint">Plus sûr</span>
+</div>

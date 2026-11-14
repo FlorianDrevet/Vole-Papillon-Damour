@@ -45,6 +45,12 @@ import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
 import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
 import {AddFavoritePanelComponent} from './features/favorites/add-favorite-panel/add-favorite-panel.component';
+import {CatalogFavoritesPageComponent} from './features/favorites/catalog-favorites-page.component';
+import {FavoriteListComponent} from './features/favorites/favorite-list.component';
+import {SuggestionGridComponent} from './features/favorites/suggestion-grid.component';
+import {BrowserStorageBannerComponent} from './features/favorites/browser-storage-banner.component';
+import {MinimumHeartsControlComponent} from './features/favorites/minimum-hearts-control.component';
+import {HeartsComponent} from './shared/components/hearts/hearts.component';
 import {CatalogCoverDirective} from './shared/catalog-cover.directive';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
@@ -91,6 +97,12 @@ registerLocaleData(localeFr);
     CatalogRareBookDetailPageComponent,
     CatalogRareBookCardComponent,
     AddFavoritePanelComponent,
+    CatalogFavoritesPageComponent,
+    FavoriteListComponent,
+    SuggestionGridComponent,
+    BrowserStorageBannerComponent,
+    MinimumHeartsControlComponent,
+    HeartsComponent,
     CatalogCoverDirective,
   ],
   imports: [
