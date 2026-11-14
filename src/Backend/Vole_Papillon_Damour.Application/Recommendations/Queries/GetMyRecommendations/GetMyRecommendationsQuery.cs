@@ -11,7 +11,8 @@ public sealed record GetMyRecommendationsQuery(
     string? FirstName,
     string? LastName,
     int Limit,
-    int? MinimumHearts = null) : IRequest<ErrorOr<MyRecommendationsResult>>;
+    int? MinimumHearts = null,
+    IReadOnlyCollection<string>? CandidateIsbns = null) : IRequest<ErrorOr<MyRecommendationsResult>>;
 
 public sealed record MyRecommendationsResult(
     RecommendationStatus Status,

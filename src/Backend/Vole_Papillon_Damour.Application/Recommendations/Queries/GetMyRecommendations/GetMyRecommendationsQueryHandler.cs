@@ -184,6 +184,14 @@ public sealed class GetMyRecommendationsQueryHandler(
             fairs,
             new HashSet<string>(StringComparer.Ordinal),
             nowUtc);
+        if (query.CandidateIsbns is not null)
+        {
+            var allowedIsbns = query.CandidateIsbns.ToHashSet(StringComparer.Ordinal);
+            publicBooks = publicBooks
+                .Where(book => allowedIsbns.Contains(book.Isbn13))
+                .ToArray();
+        }
+
         var suggestions = suggestionEngine.Suggest(
             seeds,
             neighborInputs,

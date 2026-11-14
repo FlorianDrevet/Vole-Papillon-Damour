@@ -23,6 +23,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Application.Favorites;
+using Vole_Papillon_Damour.Application.FairDigest.Common;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
@@ -128,6 +129,25 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.Configure<SocialImportOptions>(
             builderConfiguration.GetSection(SocialImportOptions.SectionName));
+        services.AddOptions<FairDigestOptions>()
+            .Bind(builderConfiguration.GetSection(FairDigestOptions.SectionName))
+            .Validate(options => options.DaysBefore is >= 0 and <= 30,
+                "FairDigest:DaysBefore must be between 0 and 30.")
+            .Validate(options => options.SendHourParis is >= 0 and <= 23,
+                "FairDigest:SendHourParis must be between 0 and 23.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Schedule),
+                "FairDigest:Schedule is required.")
+            .Validate(options => options.NewsMax is > 0 and <= 50,
+                "FairDigest:NewsMax must be between 1 and 50.")
+            .Validate(options => options.BackMax is > 0 and <= 50,
+                "FairDigest:BackMax must be between 1 and 50.")
+            .Validate(options => options.BackMinCount > 0,
+                "FairDigest:BackMinCount must be positive.")
+            .Validate(options => options.SoldOutMinSales > 0,
+                "FairDigest:SoldOutMinSales must be positive.")
+            .Validate(options => options.TopSellersCount > 0,
+                "FairDigest:TopSellersCount must be positive.")
+            .ValidateOnStart();
         services.Configure<InstagramOptions>(
             builderConfiguration.GetSection(InstagramOptions.SectionName));
         services.Configure<TitleGenerationOptions>(
