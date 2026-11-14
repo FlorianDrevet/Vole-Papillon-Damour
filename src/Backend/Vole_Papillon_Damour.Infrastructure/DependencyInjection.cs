@@ -22,6 +22,8 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Isbndb;
+using Vole_Papillon_Damour.Application.Favorites;
+using Vole_Papillon_Damour.Application.FairDigest.Common;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
@@ -31,6 +33,7 @@ using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 using Vole_Papillon_Damour.Infrastructure.Services.Isbndb;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
+using Vole_Papillon_Damour.Infrastructure.Services.FairDigest;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Infrastructure.Services.Ai;
@@ -105,6 +108,8 @@ public static class DependencyInjection
             services.AddSingleton<IMemberCardTokenService, MemberCardTokenService>();
         }
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
+        services.AddSingleton<IFairDigestEmailRenderer, FairDigestEmailRenderer>();
+        services.AddSingleton<IFairDigestEmailSender, FairDigestEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<EntraGraphUserDirectory>();
         services.AddScoped<IEntraUserDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
@@ -114,14 +119,53 @@ public static class DependencyInjection
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
         services.Configure<IsbndbOptions>(
             builderConfiguration.GetSection(IsbndbOptions.SectionName));
+        services.AddOptions<FavoritesOptions>()
+            .Bind(builderConfiguration.GetSection(FavoritesOptions.SectionName))
+            .Validate(options => options.AccountMax is > 0 and <= 200,
+                "Favorites:AccountMax must be between 1 and 200.")
+            .Validate(options => options.LocalMax is > 0 and <= 50,
+                "Favorites:LocalMax must be between 1 and 50.")
+            .Validate(options => options.ReferencesPerVisitorPerDay > 0,
+                "Favorites:ReferencesPerVisitorPerDay must be positive.")
+            .Validate(options => options.ReferenceDailyIsbndbCredits >= 0,
+                "Favorites:ReferenceDailyIsbndbCredits cannot be negative.")
+            .ValidateOnStart();
         services.Configure<SocialImportOptions>(
             builderConfiguration.GetSection(SocialImportOptions.SectionName));
+        services.AddOptions<FairDigestOptions>()
+            .Bind(builderConfiguration.GetSection(FairDigestOptions.SectionName))
+            .Validate(options => options.DaysBefore is >= 0 and <= 30,
+                "FairDigest:DaysBefore must be between 0 and 30.")
+            .Validate(options => options.SendHourParis is >= 0 and <= 23,
+                "FairDigest:SendHourParis must be between 0 and 23.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Schedule),
+                "FairDigest:Schedule is required.")
+            .Validate(options => options.NewsMax is > 0 and <= 50,
+                "FairDigest:NewsMax must be between 1 and 50.")
+            .Validate(options => options.BackMax is > 0 and <= 50,
+                "FairDigest:BackMax must be between 1 and 50.")
+            .Validate(options => options.BackMinCount > 0,
+                "FairDigest:BackMinCount must be positive.")
+            .Validate(options => options.SoldOutMinSales > 0,
+                "FairDigest:SoldOutMinSales must be positive.")
+            .Validate(options => options.TopSellersCount > 0,
+                "FairDigest:TopSellersCount must be positive.")
+            .ValidateOnStart();
         services.Configure<InstagramOptions>(
             builderConfiguration.GetSection(InstagramOptions.SectionName));
         services.Configure<TitleGenerationOptions>(
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
-        services.Configure<RecommendationOptions>(
-            builderConfiguration.GetSection(RecommendationOptions.SectionName));
+        services.AddOptions<RecommendationOptions>()
+            .Bind(builderConfiguration.GetSection(RecommendationOptions.SectionName))
+            .Validate(options =>
+                    options.HeartThresholds is { Length: 5 } thresholds &&
+                    thresholds.All(value => float.IsFinite(value) && value is > 0 and <= 1) &&
+                    thresholds.Distinct().Count() == thresholds.Length &&
+                    thresholds.SequenceEqual(thresholds.OrderBy(value => value)),
+                "Recommendations:HeartThresholds must contain five distinct, increasing scores between 0 and 1.")
+            .Validate(options => options.DefaultMinimumHearts is >= 1 and <= 4,
+                "Recommendations:DefaultMinimumHearts must be between 1 and 4.")
+            .ValidateOnStart();
         services.AddMemoryCache();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<RateLimiter>(serviceProvider =>

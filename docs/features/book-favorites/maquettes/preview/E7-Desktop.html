@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E7 · Compte et données — préférences</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div style="width: 1440px; height: 1150px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <header style="display: flex; align-items: center; justify-content: space-between; padding: 20px 80px; border-bottom: 1px solid #d9e9f4;">
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px;">Vole Papillon d'Amour</span>
+    <nav aria-label="Mon compte" style="display: flex; gap: 24px; font-size: 14px;"><a href="#" style="color: #4e6c84;">Ma sélection</a><a href="E6-Desktop.html" style="color: #4e6c84;">Mes achats</a><a href="#" style="color: #4e6c84;">Liste de recherche</a><a href="#" aria-current="page" style="color: #072b45; font-weight: 600; border-bottom: 2px solid #f0801c;">Compte et données</a></nav>
+  </header>
+  <div style="padding: 44px 80px; max-width: 900px; display: flex; flex-direction: column; gap: 22px;">
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500;">Compte et données</h1>
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #dc6412;">Suggestions et coups de cœur</span>
+
+    <section data-zone="E7-preference-suggestions" aria-labelledby="p-sugg" style="display: flex; gap: 24px; padding: 24px 26px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px;">
+        <h2 id="p-sugg" style="margin: 0; font-size: 18px; font-weight: 600;">Suggestions personnalisées</h2>
+        <p data-zone="E7-explication-suggestions" style="margin: 0; font-size: 14.5px; line-height: 1.55; color: #33536e;">Nous vous proposons des livres de la bourse qui ressemblent à vos coups de cœur. Le calcul se fait sur nos serveurs, à partir des notices des livres&nbsp;; aucune donnée personnelle n'est envoyée à un service extérieur.</p>
+        <a href="Main.html" style="font-size: 14px;">Gérer mes coups de cœur (3) →</a>
+      </div>
+      <button type="button" role="switch" aria-checked="true" aria-labelledby="p-sugg" style="flex: none; align-self: flex-start; width: 58px; height: 32px; padding: 3px; border: 0; border-radius: 999px; background: #18703a; display: flex; justify-content: flex-end;"><span style="width: 26px; height: 26px; border-radius: 999px; background: #ffffff;"></span></button>
+    </section>
+
+    <section data-zone="E7-preference-email" aria-labelledby="p-mail" style="display: flex; gap: 24px; padding: 24px 26px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px;">
+        <h2 id="p-mail" style="margin: 0; font-size: 18px; font-weight: 600;">E-mail avant chaque bourse</h2>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: #33536e;">Trois jours avant l'ouverture d'une bourse, recevez les nouveautés arrivées depuis la bourse précédente qui ressemblent à vos coups de cœur, et les livres très demandés de retour. Un e-mail par bourse au plus.</p>
+        <span data-zone="E7-date-consentement" style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: #6d8ba2;">Accepté le 13 novembre 2026</span>
+      </div>
+      <button type="button" role="switch" aria-checked="true" aria-labelledby="p-mail" style="flex: none; align-self: flex-start; width: 58px; height: 32px; padding: 3px; border: 0; border-radius: 999px; background: #18703a; display: flex; justify-content: flex-end;"><span style="width: 26px; height: 26px; border-radius: 999px; background: #ffffff;"></span></button>
+    </section>
+
+    <section data-zone="E7-exigence" aria-labelledby="p-exig" style="display: flex; flex-direction: column; gap: 12px; padding: 24px 26px; background: #ffffff; border: 1px solid #d9e9f4;">
+      <h2 id="p-exig" style="margin: 0; font-size: 18px; font-weight: 600;">Exigence des suggestions</h2>
+      <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: #33536e;">Le nombre minimum de cœurs pour qu'un livre vous soit proposé, sur le site et dans l'e-mail.</p>
+      <div role="group" aria-labelledby="p-exig" style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 13.5px; color: #4e6c84;">Plus de découvertes</span>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 460px;">
+          <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13.5px; font-weight: 600; color: #33536e;">1 cœur et +</button>
+          <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13.5px; font-weight: 600; color: #33536e;">2 cœurs et +</button>
+          <button type="button" aria-pressed="true" style="min-height: 44px; border: 1px solid #c8364e; border-radius: 999px; background: #c8364e; font-size: 13.5px; font-weight: 600; color: #ffffff;">3 cœurs et +</button>
+          <button type="button" aria-pressed="false" style="min-height: 44px; border: 1px solid #d9e9f4; border-radius: 999px; background: #f7fbfe; font-size: 13.5px; font-weight: 600; color: #33536e;">4 cœurs et +</button>
+        </div>
+        <span style="font-size: 13.5px; color: #4e6c84;">Plus sûr</span>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

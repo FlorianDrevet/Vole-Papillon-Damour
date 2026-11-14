@@ -17,9 +17,15 @@ public static class NeighborComputer
     public static IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> Compute(
         IReadOnlyList<SimilarityFeatures> features,
         IReadOnlyList<float[]> vectors,
-        int neighborsPerBook)
+        int neighborsPerBook,
+        IReadOnlySet<string>? candidateEligible = null)
     {
-        return ComputeForBooks(features, vectors, features.Select(feature => feature.Isbn13), neighborsPerBook);
+        return ComputeForBooks(
+            features,
+            vectors,
+            features.Select(feature => feature.Isbn13),
+            neighborsPerBook,
+            candidateEligible);
     }
 
     public static IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> ComputeIncremental(
@@ -27,7 +33,8 @@ public static class NeighborComputer
         IReadOnlyList<float[]> vectors,
         IReadOnlyCollection<string> changedIsbns,
         IReadOnlyDictionary<string, IReadOnlyList<NeighborCandidate>> currentNeighbors,
-        int neighborsPerBook)
+        int neighborsPerBook,
+        IReadOnlySet<string>? candidateEligible = null)
     {
         if (features.Count != vectors.Count)
         {
@@ -85,7 +92,8 @@ public static class NeighborComputer
             features,
             vectors,
             affected.Where(featuresByIsbn.ContainsKey),
-            neighborsPerBook);
+            neighborsPerBook,
+            candidateEligible);
         var result = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(StringComparer.Ordinal);
         foreach (var isbn13 in affected)
         {
@@ -101,7 +109,8 @@ public static class NeighborComputer
         IReadOnlyList<SimilarityFeatures> features,
         IReadOnlyList<float[]> vectors,
         IEnumerable<string> queryIsbns,
-        int neighborsPerBook)
+        int neighborsPerBook,
+        IReadOnlySet<string>? candidateEligible = null)
     {
         if (features.Count != vectors.Count)
         {
@@ -130,7 +139,9 @@ public static class NeighborComputer
                 NeighborPriorityComparer.Instance);
             for (var j = 0; j < features.Count; j++)
             {
-                if (i == j || SimilarityFeatureBuilder.SameWork(features[i], features[j]))
+                if (i == j ||
+                    (candidateEligible is not null && !candidateEligible.Contains(features[j].Isbn13)) ||
+                    SimilarityFeatureBuilder.SameWork(features[i], features[j]))
                 {
                     continue;
                 }

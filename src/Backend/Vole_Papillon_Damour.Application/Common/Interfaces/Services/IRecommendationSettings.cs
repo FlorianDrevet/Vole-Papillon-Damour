@@ -11,4 +11,6 @@ public interface IRecommendationSettings
     int SimilarMinCount { get; }
     int PersonalMaxCount { get; }
     int PersonalMinCount { get; }
+    IReadOnlyList<float> HeartThresholds { get; }
+    int DefaultMinimumHearts { get; }
 }

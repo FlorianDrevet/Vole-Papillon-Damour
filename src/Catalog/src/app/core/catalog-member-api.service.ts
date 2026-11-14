@@ -4,13 +4,17 @@ import {Observable} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {
+  CatalogAddedSelectionItem,
   CatalogAddedWatchlistItem,
+  CatalogFavoriteAddedResponse,
+  CatalogFavoriteMergeEntry,
+  CatalogFavoriteMergeResult,
+  CatalogMemberFavoritesResponse,
   CatalogAlertPreferencesResponse,
   CatalogMemberCard,
   CatalogMemberGenreFavorites,
   CatalogRecommendationsResponse,
   CatalogPurchasesResponse,
-  CatalogAddedSelectionItem,
   CatalogSelectionMergeEntry,
   CatalogSelectionMergeResult,
   CatalogSelectionResponse,
@@ -26,6 +30,39 @@ export class CatalogMemberApiService {
   private readonly apiUrl = environment.apiUrl.replace(/\/$/, '');
 
   constructor(private readonly http: HttpClient) {}
+
+  getFavorites(accessToken: string): Observable<CatalogMemberFavoritesResponse> {
+    return this.http.get<CatalogMemberFavoritesResponse>(
+      `${this.apiUrl}/catalog/me/favorites`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  addFavorite(accessToken: string, isbn13: string): Observable<CatalogFavoriteAddedResponse> {
+    return this.http.put<CatalogFavoriteAddedResponse>(
+      `${this.apiUrl}/catalog/me/favorites/${encodeURIComponent(isbn13)}`,
+      null,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  removeFavorite(accessToken: string, isbn13: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/catalog/me/favorites/${encodeURIComponent(isbn13)}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  mergeFavorites(
+    accessToken: string,
+    entries: readonly CatalogFavoriteMergeEntry[],
+  ): Observable<CatalogFavoriteMergeResult> {
+    return this.http.post<CatalogFavoriteMergeResult>(
+      `${this.apiUrl}/catalog/me/favorites/merge`,
+      {entries},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
 
   getSelection(accessToken: string): Observable<CatalogSelectionResponse> {
     return this.http.get<CatalogSelectionResponse>(
@@ -133,27 +170,52 @@ export class CatalogMemberApiService {
     );
   }
 
-  getRecommendations(accessToken: string, limit = 4): Observable<CatalogRecommendationsResponse> {
+  getRecommendations(
+    accessToken: string,
+    limit = 4,
+    minimumHearts?: number,
+  ): Observable<CatalogRecommendationsResponse> {
+    let params = new HttpParams().set('limit', limit);
+    if (minimumHearts !== undefined) {
+      params = params.set('minimumHearts', minimumHearts);
+    }
     return this.http.get<CatalogRecommendationsResponse>(
       `${this.apiUrl}/catalog/me/recommendations`,
       {
         headers: this.authorizationHeaders(accessToken),
-        params: new HttpParams().set('limit', limit),
+        params,
       },
     );
   }
 
-  getRecommendationPreference(accessToken: string): Observable<{enabled: boolean}> {
-    return this.http.get<{enabled: boolean}>(
+  getRecommendationPreference(accessToken: string): Observable<{
+    enabled: boolean;
+    minimumHearts?: number;
+    fairDigestConsentedAt?: string | null;
+  }> {
+    return this.http.get<{
+      enabled: boolean;
+      minimumHearts?: number;
+      fairDigestConsentedAt?: string | null;
+    }>(
       `${this.apiUrl}/catalog/me/recommendations/preference`,
       {headers: this.authorizationHeaders(accessToken)},
     );
   }
 
-  setRecommendationPreference(accessToken: string, enabled: boolean): Observable<void> {
+  setRecommendationPreference(
+    accessToken: string,
+    enabled: boolean,
+    minimumHearts?: number,
+    fairDigestConsent?: boolean,
+  ): Observable<void> {
     return this.http.put<void>(
       `${this.apiUrl}/catalog/me/recommendations/preference`,
-      {enabled},
+      {
+        enabled,
+        ...(minimumHearts === undefined ? {} : {minimumHearts}),
+        ...(fairDigestConsent === undefined ? {} : {fairDigestConsent}),
+      },
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

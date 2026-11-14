@@ -40,6 +40,7 @@ const ADMINISTRATION_ROUTE = '/administration';
 // cached session is treated as gone, like an explicit expiry.
 export const CATALOG_SILENT_SESSION_TIMEOUT_MS = 5000;
 const SESSION_RESUME_ATTEMPT_KEY = 'catalog-auth-session-resume-attempted';
+const FAVORITE_REGISTRATION_FLOW_KEY = 'catalog-favorite-registration-flow';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
 const RARE_BOOKS_ROLES = new Set(['livresrares']);
 const VOLUNTEER_ROLES = new Set(['tri', 'caisse']);
@@ -77,6 +78,15 @@ export type CatalogAuthState =
   | 'reauthentication-required'
   | 'signed-out';
 
+export interface CatalogFavoriteRegistrationReturn {
+  returnUrl: string;
+  fairDigestConsent: boolean;
+}
+
+interface StoredFavoriteRegistrationFlow extends CatalogFavoriteRegistrationReturn {
+  state: string;
+}
+
 @Injectable({providedIn: 'root'})
 export class CatalogAuthService {
   private readonly platformId = inject(PLATFORM_ID);
@@ -84,6 +94,7 @@ export class CatalogAuthService {
   private readonly _account = signal<AccountInfo | null>(null);
   private readonly _initialized = signal(false);
   private readonly _state = signal<CatalogAuthState>('initializing');
+  private readonly _favoriteRegistrationReturn = signal<CatalogFavoriteRegistrationReturn | null>(null);
   private readonly _error = signal<string | null>(null);
   private readonly _roles = signal<readonly string[]>([]);
   private readonly _recognizedAccount = signal<AccountInfo | null>(null);
@@ -95,6 +106,7 @@ export class CatalogAuthService {
   readonly account = this._account.asReadonly();
   readonly initialized = this._initialized.asReadonly();
   readonly state = this._state.asReadonly();
+  readonly favoriteRegistrationReturn = this._favoriteRegistrationReturn.asReadonly();
   readonly requiresReauthentication = computed(
     () => this._state() === 'reauthentication-required',
   );
@@ -176,14 +188,41 @@ export class CatalogAuthService {
     await this.startInteractiveLogin(catalogRegistrationRequest, startPage);
   }
 
-  private async startInteractiveLogin(request: RedirectRequest, startPage: string): Promise<void> {
+  async registerFromFavorites(returnUrl: string, fairDigestConsent: boolean): Promise<void> {
+    const safeReturnUrl = this.safeReturnUrl(returnUrl);
+    const state = `vpd-favorite-registration:${crypto.randomUUID()}`;
+    const flow: StoredFavoriteRegistrationFlow = {
+      state,
+      returnUrl: safeReturnUrl,
+      fairDigestConsent,
+    };
+    window.sessionStorage.setItem(FAVORITE_REGISTRATION_FLOW_KEY, JSON.stringify(flow));
+    await this.startInteractiveLogin(catalogRegistrationRequest, safeReturnUrl, state);
+  }
+
+  consumeFavoriteRegistrationReturn(): CatalogFavoriteRegistrationReturn | null {
+    const context = this._favoriteRegistrationReturn();
+    this._favoriteRegistrationReturn.set(null);
+    return context;
+  }
+
+  private async startInteractiveLogin(request: RedirectRequest, startPage: string, state?: string): Promise<void> {
     await this.initialize();
     const client = this.requireClient();
 
     await client.loginRedirect({
       ...request,
+      ...(state ? {state} : {}),
       redirectStartPage: new URL(startPage, window.location.origin).href,
     });
+  }
+
+  private safeReturnUrl(value: string): string {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) {
+      throw new Error('The registration return URL must stay on the catalog origin.');
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
   }
 
   async logout(): Promise<void> {
@@ -300,6 +339,12 @@ export class CatalogAuthService {
       await this.client.initialize();
 
       const result: AuthenticationResult | null = await this.client.handleRedirectPromise();
+      const registrationReturn = result?.state
+        ? this.readFavoriteRegistrationReturn(result.state)
+        : null;
+      if (registrationReturn) {
+        this._favoriteRegistrationReturn.set(registrationReturn);
+      }
       if (result?.account) {
         this.client.setActiveAccount(result.account);
       }
@@ -373,6 +418,42 @@ export class CatalogAuthService {
     this._state.set(
       active ? (idTokenClaims ? 'authenticated' : 'initializing') : 'signed-out',
     );
+  }
+
+  private readFavoriteRegistrationReturn(state: string): CatalogFavoriteRegistrationReturn | null {
+    let flow: Partial<StoredFavoriteRegistrationFlow>;
+    try {
+      const value = window.sessionStorage.getItem(FAVORITE_REGISTRATION_FLOW_KEY);
+      if (!value) {
+        return null;
+      }
+      const parsed: unknown = JSON.parse(value);
+      if (!parsed || typeof parsed !== 'object') {
+        return null;
+      }
+      flow = parsed as Partial<StoredFavoriteRegistrationFlow>;
+    } catch {
+      return null;
+    }
+
+    if (
+      flow.state !== state
+      || typeof flow.returnUrl !== 'string'
+      || typeof flow.fairDigestConsent !== 'boolean'
+    ) {
+      return null;
+    }
+
+    let returnUrl: string;
+    try {
+      returnUrl = this.safeReturnUrl(flow.returnUrl);
+    } catch {
+      window.sessionStorage.removeItem(FAVORITE_REGISTRATION_FLOW_KEY);
+      return null;
+    }
+
+    window.sessionStorage.removeItem(FAVORITE_REGISTRATION_FLOW_KEY);
+    return {returnUrl, fairDigestConsent: flow.fairDigestConsent};
   }
 
   private setTokenClaims(idTokenClaims: AccountInfo['idTokenClaims']): void {

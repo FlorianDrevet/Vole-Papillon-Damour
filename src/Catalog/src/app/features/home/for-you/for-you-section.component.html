@@ -18,31 +18,34 @@
     </div>
   </section>
 } @else if (state() === 'ready') {
-  <section class="for-you-section" data-zone="R4-section" aria-labelledby="for-you-title">
+  <section class="for-you-section" data-zone="E1-section-pour-vous" aria-labelledby="for-you-title">
     <div class="for-you-inner">
-      <div class="for-you-header" data-zone="R4-entete">
+      <div class="for-you-header">
         <div class="for-you-heading">
           <span class="for-you-rule" aria-hidden="true"></span>
           <span class="for-you-eyebrow">Pour vous@if (firstName(); as name) {, {{ name }}}</span>
-          <h2 id="for-you-title">D'après vos derniers achats.</h2>
+          <h2 id="for-you-title">D'après vos coups de cœur.</h2>
         </div>
         <a
-          data-zone="R4-pourquoi"
-          [routerLink]="['/compte']"
-          [queryParams]="{tab: 'preferences'}">
-          Pourquoi ces suggestions&nbsp;? →
+          class="for-you-link for-you-link--desktop"
+          data-zone="E1-lien-toutes"
+          routerLink="/trouver-mon-prochain-livre">
+          Voir toutes mes suggestions →
         </a>
       </div>
 
-      <div class="for-you-grid" data-zone="R4-grille">
-        <div class="for-you-list" data-zone="R5-defilement" role="list" aria-label="Suggestions pour vous">
+      <div class="for-you-grid">
+        <div class="for-you-list" data-zone="E1-defilement" role="list" aria-label="Suggestions pour vous">
           @for (item of items(); track item.isbn13) {
-            <div class="for-you-card" data-zone="R4-carte" role="listitem">
+            <div class="for-you-card" data-zone="E1-carte" role="listitem">
               <app-book-card
                 class="for-you-book-card"
                 variant="home"
-                [book]="item"></app-book-card>
-              <p class="for-you-reason" data-zone="R4-raison">
+                [book]="item"
+                [hearts]="item.hearts ?? 0"
+                heartsZone="E1-coeurs">
+              </app-book-card>
+              <p class="for-you-reason" data-zone="E1-raison">
                 @if (item.reason === 'NextTome') {
                   La suite de <em>{{ item.seedTitle }}</em>
                 } @else {
@@ -51,6 +54,31 @@
               </p>
             </div>
           }
+        </div>
+      </div>
+
+      <a
+        class="for-you-link for-you-link--mobile"
+        data-zone="E1-lien-toutes"
+        routerLink="/trouver-mon-prochain-livre">
+        Voir toutes mes suggestions →
+      </a>
+    </div>
+  </section>
+} @else if (state() === 'entry') {
+  <section class="for-you-section for-you-section--entry" aria-label="Suggestions personnalisées">
+    <div class="for-you-inner">
+      <div class="for-you-entry" data-zone="E11-encart-entree">
+        <svg class="for-you-entry-heart" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" />
+        </svg>
+        <div class="for-you-entry-copy">
+          <h2>Trouver un livre qui pourrait vous plaire</h2>
+          <p>Dites-nous les livres que vous avez aimés, même s'ils ne sont jamais passés à la bourse. Nous cherchons ceux qui leur ressemblent.</p>
+          <div class="for-you-entry-actions">
+            <a class="for-you-entry-cta" routerLink="/trouver-mon-prochain-livre">Ajouter mes coups de cœur</a>
+            <button type="button" data-zone="E11-ne-plus-afficher" (click)="dismissEntry()">Ne plus afficher</button>
+          </div>
         </div>
       </div>
     </div>

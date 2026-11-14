@@ -4,13 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Domain.BookAggregate;
-using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
+using Vole_Papillon_Damour.Domain.FairDigestAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
@@ -136,6 +142,31 @@ public sealed class AccountDeletionStoreTests
             "provider-event-1",
             UserId.Create(userId),
             Now));
+        Isbn13.TryCreate("9782070612758", out var favoriteIsbn).Should().BeTrue();
+        fixture.Context.MemberFavoriteBooks.Add(MemberFavoriteBook.Create(
+            UserId.Create(userId),
+            favoriteIsbn,
+            Now));
+        var fair = AssoEvents.Create(
+            "Test book fair",
+            null,
+            new EventsType(EventsType.EventsTypeEnum.Books),
+            new DateTimeOffset(Now),
+            new DateTimeOffset(Now.AddDays(1)),
+            null,
+            null,
+            null,
+            new Adresse(null, "Paris", "Rue de test", 75000),
+            null,
+            [],
+            string.Empty);
+        fixture.Context.AssoEvents.Add(fair);
+        var campaign = FairDigestCampaign.Create(fair.Id, Now);
+        fixture.Context.FairDigestCampaigns.Add(campaign);
+        fixture.Context.FairDigestDeliveries.Add(FairDigestDelivery.Create(campaign.CampaignId, UserId.Create(userId)));
+        var preference = MemberRecommendationPreference.Create(UserId.Create(userId), true, Now);
+        preference.GrantFairDigestConsent(Now);
+        fixture.Context.MemberRecommendationPreferences.Add(preference);
         fixture.Context.OutboxMessages.AddRange(
             new OutboxMessage
             {
@@ -173,6 +204,9 @@ public sealed class AccountDeletionStoreTests
         (await fixture.Context.WatchlistItems.CountAsync()).Should().Be(0);
         (await fixture.Context.UserAlertHistories.CountAsync()).Should().Be(0);
         (await fixture.Context.EmailBounceEvents.CountAsync()).Should().Be(0);
+        (await fixture.Context.MemberFavoriteBooks.CountAsync()).Should().Be(0);
+        (await fixture.Context.FairDigestDeliveries.CountAsync()).Should().Be(0);
+        (await fixture.Context.MemberRecommendationPreferences.CountAsync()).Should().Be(0);
         (await fixture.Context.OutboxMessages.CountAsync(message =>
                 message.Kind == OutboxMessageKind.AlertEmail && message.MemberId == userId))
             .Should()

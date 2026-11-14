@@ -1,0 +1,355 @@
+:host {
+  display: block;
+}
+
+.fair-digest-admin {
+  display: flex;
+  max-width: 1120px;
+  flex-direction: column;
+  gap: 22px;
+  padding: 8px 0 40px;
+  color: #072b45;
+}
+
+.fair-digest-heading,
+.fair-digest-preview-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.fair-digest-heading > div {
+  max-width: 670px;
+}
+
+.fair-digest-kicker,
+.fair-digest-section-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: #0c6ea6;
+  font: 500 10px/1.4 var(--catalog-mono, monospace);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.fair-digest-heading h1 {
+  margin: 0;
+  font: 500 clamp(30px, 3.2vw, 42px)/1.08 var(--catalog-display, Georgia, serif);
+}
+
+.fair-digest-heading p,
+.fair-digest-actions p {
+  margin: 10px 0 0;
+  color: #4e6c84;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.fair-digest-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #18703a;
+  border-radius: 999px;
+  color: #18703a;
+  background: #f0faf4;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.fair-digest-status > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.fair-digest-status--disabled {
+  border-color: #a9bdcb;
+  color: #4e6c84;
+  background: #f4f8fb;
+}
+
+.fair-digest-disabled-note,
+.fair-digest-loading,
+.fair-digest-preview-empty {
+  margin: 0;
+  padding: 15px 18px;
+  border: 1px solid #d9e9f4;
+  background: #f7fbfe;
+  color: #33536e;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.fair-digest-disabled-note code {
+  font-family: var(--catalog-mono, monospace);
+  font-size: .92em;
+}
+
+.fair-digest-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fair-digest-summary-card {
+  display: flex;
+  min-height: 145px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+  border: 1px solid #d9e9f4;
+  background: #fff;
+}
+
+.fair-digest-card-label {
+  color: #6d8ba2;
+  font: 500 10px/1.4 var(--catalog-mono, monospace);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.fair-digest-summary-card strong {
+  font: 500 21px/1.25 var(--catalog-display, Georgia, serif);
+}
+
+.fair-digest-card-detail {
+  margin-top: auto;
+  color: #4e6c84;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.fair-digest-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 23px 26px;
+  border: 1px solid #d9e9f4;
+  background: #f7fbfe;
+}
+
+.fair-digest-actions h2,
+.fair-digest-preview h2,
+.fair-digest-report h2 {
+  margin: 0;
+  font: 500 22px/1.2 var(--catalog-display, Georgia, serif);
+}
+
+.fair-digest-actions .fair-digest-section-kicker,
+.fair-digest-preview .fair-digest-section-kicker,
+.fair-digest-report .fair-digest-section-kicker {
+  margin-bottom: 6px;
+}
+
+.fair-digest-action-buttons {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.fair-digest-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: 600 13px/1.2 var(--catalog-body, system-ui, sans-serif);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.fair-digest-button--primary {
+  background: #f0801c;
+  color: #fff;
+}
+
+.fair-digest-button--primary:hover:not(:disabled) {
+  background: #d9680b;
+}
+
+.fair-digest-button--quiet {
+  border-color: #b9d3e4;
+  background: #fff;
+  color: #33536e;
+}
+
+.fair-digest-button--quiet:hover:not(:disabled) {
+  border-color: #0c6ea6;
+  color: #0c6ea6;
+}
+
+.fair-digest-button:focus-visible {
+  outline: 3px solid #1497d6;
+  outline-offset: 3px;
+}
+
+.fair-digest-button:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
+.fair-digest-preview,
+.fair-digest-report {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 24px;
+  border: 1px solid #d9e9f4;
+  background: #fff;
+}
+
+.fair-digest-preview-heading {
+  align-items: center;
+}
+
+.fair-digest-preview-safety,
+.fair-digest-report-date {
+  color: #6d8ba2;
+  font-size: 12px;
+}
+
+.fair-digest-frame {
+  overflow: hidden;
+  border: 1px solid #d9e9f4;
+  background: #eaf2f7;
+}
+
+.fair-digest-frame iframe {
+  display: block;
+  width: 100%;
+  height: min(78vh, 760px);
+  min-height: 520px;
+  border: 0;
+  background: #fff;
+}
+
+.fair-digest-report-fair {
+  margin: -8px 0 0;
+  color: #4e6c84;
+  font-size: 13px;
+}
+
+.fair-digest-report-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fair-digest-report-counts > div {
+  display: flex;
+  min-height: 76px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 13px 16px;
+  border: 1px solid #e2eef7;
+  background: #f7fbfe;
+}
+
+.fair-digest-report-counts strong {
+  color: #072b45;
+  font: 500 22px/1.1 var(--catalog-display, Georgia, serif);
+}
+
+.fair-digest-report-counts span {
+  color: #4e6c84;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.fair-digest-feedback {
+  margin: 0;
+  padding: 13px 16px;
+  border: 1px solid #e2eef7;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.fair-digest-feedback--error {
+  border-color: #efb6bf;
+  color: #9c1e32;
+  background: #fff6f7;
+}
+
+.fair-digest-feedback--success {
+  border-color: #b8dfc5;
+  color: #155c30;
+  background: #f2faf4;
+}
+
+@media (max-width: 900px) {
+  .fair-digest-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fair-digest-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fair-digest-action-buttons {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .fair-digest-admin {
+    gap: 16px;
+    padding-top: 0;
+  }
+
+  .fair-digest-heading {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .fair-digest-heading h1 {
+    font-size: 31px;
+  }
+
+  .fair-digest-summary-grid,
+  .fair-digest-report-counts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fair-digest-summary-card {
+    min-height: 118px;
+    padding: 18px;
+  }
+
+  .fair-digest-actions,
+  .fair-digest-preview,
+  .fair-digest-report {
+    padding: 18px 16px;
+  }
+
+  .fair-digest-action-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .fair-digest-button {
+    width: 100%;
+  }
+
+  .fair-digest-preview-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fair-digest-frame iframe {
+    height: 68vh;
+    min-height: 430px;
+  }
+}

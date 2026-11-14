@@ -34,6 +34,7 @@ public sealed class Book : AggregateRoot<Isbn13>
     public int RejectionCount { get; private set; }
 
     public bool IsHiddenFromCatalog { get; private set; }
+    public bool IsFavoriteReference { get; private set; }
     public string? CoverUrl { get; private set; }
     public BookCoverSource? CoverSource { get; private set; }
     public DateTime? CoverCheckedAt { get; private set; }
@@ -75,6 +76,13 @@ public sealed class Book : AggregateRoot<Isbn13>
         return new Book(isbn13, firstSeenAt);
     }
 
+    public static Book CreateFavoriteReference(Isbn13 isbn13, DateTime firstSeenAt)
+    {
+        var book = Create(isbn13, firstSeenAt);
+        book.IsFavoriteReference = true;
+        return book;
+    }
+
     public Book()
     {
     }
@@ -107,13 +115,24 @@ public sealed class Book : AggregateRoot<Isbn13>
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
 
         QuantityAvailable += quantity;
+        IsFavoriteReference = false;
         LastAvailableAt = utcOccurredAt;
         UpdatedAt = utcOccurredAt;
     }
 
     public void RecordAnnouncementEntry(DateTime occurredAt)
     {
-        UpdatedAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+        IsFavoriteReference = false;
+        UpdatedAt = utcOccurredAt;
+    }
+
+    public void RecordFavoriteCountChanged(DateTime changedAt)
+    {
+        var utcChangedAt = DomainTime.RequireUtc(changedAt, nameof(changedAt));
+        UpdatedAt = utcChangedAt > UpdatedAt
+            ? utcChangedAt
+            : UpdatedAt.AddTicks(1);
     }
 
     public bool ComputeWorkKeyIfMissing()

@@ -12,11 +12,17 @@ import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubs
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
+import {CatalogFavoritesPageComponent} from './features/favorites/catalog-favorites-page.component';
 
 const routes: Routes = [
   {path: '', component: CatalogHomePageComponent},
   {path: 'prochaines-dates', component: CatalogHomePageComponent, data: {upcomingOnly: true}},
   {path: 'recherche', component: CatalogSearchPageComponent},
+  {
+    path: 'trouver-mon-prochain-livre',
+    component: CatalogFavoritesPageComponent,
+    title: 'Trouver mon prochain livre | Vole Papillon d’Amour',
+  },
   {path: 'catalogue', component: CatalogSearchPageComponent, data: {browse: true}},
   {path: 'livres-rares', component: CatalogRareBooksPageComponent},
   {path: 'livres-rares/:id', component: CatalogRareBookDetailPageComponent},

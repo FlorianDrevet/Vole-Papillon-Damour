@@ -1,0 +1,95 @@
+<main class="favorites-page">
+  <header class="favorites-hero" data-zone="E2-entete">
+    <span class="favorites-eyebrow">Trouver mon prochain livre</span>
+    <h1>
+      <span class="desktop-title">Dites-nous les livres que vous avez aimés, <em>on cherche à la bourse.</em></span>
+      <span class="mobile-title">Dites-nous ce que vous avez aimé, <em>on cherche à la bourse.</em></span>
+    </h1>
+    <p>Ajoutez vos coups de cœur, même s'ils ne sont jamais passés à la bourse aux livres. Nous vous proposons les livres disponibles qui leur ressemblent, du plus sûr au plus audacieux.</p>
+  </header>
+
+  @if (accountRecoveryNotice(); as merge) {
+    @if (merge.skipped > 0) {
+      <div class="account-recovery-notice account-recovery-notice--limit" data-zone="E4-message-plafond" role="status">
+        <strong>{{ merge.added }} coups de cœur ajoutés à votre compte, {{ merge.skipped }} n'ont pas pu l'être.</strong>
+        <span>Votre compte compte désormais 200 coups de cœur, le maximum. Les plus anciens de ce navigateur n'ont pas été repris.</span>
+      </div>
+    } @else {
+      <div class="account-recovery-notice" data-zone="E4-message-reprise" role="status">
+        <strong>{{ merge.added }} coup{{ merge.added === 1 ? '' : 's' }} de cœur ajouté{{ merge.added === 1 ? '' : 's' }} à votre compte.</strong>
+        <span>Ils sont maintenant synchronisés. Vos suggestions apparaîtront aussi sur l'accueil.</span>
+      </div>
+    }
+  }
+  @if (registrationError(); as message) {
+    <p class="registration-error" role="alert">{{ message }}</p>
+  }
+
+  @if (authReady() && isMember()) {
+    <section class="fair-email-preference" data-zone="E2-preference-email" aria-label="Sélection e-mail avant chaque bourse">
+      <input
+        id="fair-digest-consent"
+        type="checkbox"
+        [checked]="favorites.fairDigestConsent()"
+        (change)="setFairDigestConsent($event)">
+      <div>
+        <label for="fair-digest-consent">Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire</label>
+        <p>Un e-mail trois jours avant l'ouverture, avec les nouveautés qui ressemblent à vos coups de cœur. Désabonnement en un clic.</p>
+      </div>
+    </section>
+  } @else if (authReady() && (favoriteCount() > 0 || !local.available)) {
+    <app-browser-storage-banner
+      [collapsed]="bannerCollapsed()"
+      [available]="local.available"
+      (collapsedChange)="setBannerCollapsed($event)"
+      (createAccountRequested)="openAccountStep()">
+    </app-browser-storage-banner>
+  }
+
+  <div class="favorites-content">
+    <app-favorite-list
+      [class.empty]="favoriteCount() === 0"
+      [entries]="favorites.favorites()"
+      [computingByIsbn]="favorites.computingByIsbn()"
+      [maximum]="isMember() ? 200 : 50"
+      (addRequested)="openAddPanel()"
+      (removeRequested)="remove($event)">
+    </app-favorite-list>
+
+    @if (removedTitle(); as title) {
+      <div class="removal-notice" data-zone="E11-annuler-retrait" role="status" aria-live="polite">
+        <span><em>{{ title }}</em> retiré de vos coups de cœur.</span>
+        <button type="button" (click)="undoRemoval()">Annuler</button>
+      </div>
+    }
+
+    <section class="suggestion-column">
+      @if (suggestionsDisabled()) {
+        <div class="suggestions-disabled" data-zone="E11-suggestions-desactivees">
+          <span>Vous avez désactivé les suggestions personnalisées.</span>
+          <p>Vos coups de cœur restent enregistrés. Réactivez les suggestions pour voir les livres qui leur ressemblent.</p>
+          <a routerLink="/compte" [queryParams]="{tab: 'preferences'}">Réactiver dans Compte et données →</a>
+        </div>
+      } @else if (favoriteCount() > 0 && anyFavoriteComputing() && visibleSuggestions().length === 0) {
+        <div class="computing-status" data-zone="E2-calcul-en-cours" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Suggestions en cours de calcul…</span>
+        </div>
+      } @else if (favoriteCount() > 0) {
+        <app-suggestion-grid
+          [suggestions]="visibleSuggestions()"
+          [minimumHearts]="favorites.currentMinimumHearts()"
+          (minimumHeartsChange)="setMinimumHearts($event)">
+        </app-suggestion-grid>
+      }
+    </section>
+  </div>
+
+  <app-add-favorite-panel [open]="addPanelOpen()" (closed)="closeAddPanel()"></app-add-favorite-panel>
+  <app-account-step-dialog
+    [open]="accountStepOpen()"
+    [entries]="favorites.favorites()"
+    (closed)="closeAccountStep()"
+    (registerRequested)="createAccount($event)">
+  </app-account-step-dialog>
+</main>

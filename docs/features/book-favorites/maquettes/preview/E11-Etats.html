@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E11 · États</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div style="width: 1440px; min-height: 2700px; box-sizing: border-box; padding: 56px 80px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500;">États et cas limites</h1>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 36px;">
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E1 · Accueil sans coup de cœur — RG-144</span>
+      <div data-zone="E11-encart-entree" style="display: flex; gap: 22px; align-items: center; padding: 28px 30px; background: #ffffff; border: 1px solid #d9e9f4; border-top: 3px solid #c8364e;">
+        <svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true" style="flex: none;"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="#fde8ec" stroke="#c8364e" stroke-width="1.4"></path></svg>
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">Trouver un livre qui pourrait vous plaire</span>
+          <span style="font-size: 14px; line-height: 1.5; color: #33536e;">Dites-nous les livres que vous avez aimés, même s'ils ne sont jamais passés à la bourse. Nous cherchons ceux qui leur ressemblent.</span>
+          <div style="display: flex; gap: 18px; align-items: center; margin-top: 8px;">
+            <a href="Main.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px; background: #072b45; color: #ffffff; font-size: 14.5px; font-weight: 600;">Ajouter mes coups de cœur</a>
+            <button data-zone="E11-ne-plus-afficher" type="button" style="min-height: 44px; border: 0; background: transparent; font-size: 13.5px; color: #4e6c84; text-decoration: underline;">Ne plus afficher</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Aucun coup de cœur</span>
+      <div data-zone="E11-e2-vide" style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 30px; background: #ffffff; border: 1px dashed #9dc2da; text-align: center;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 24px;">Quel livre avez-vous adoré&nbsp;?</span>
+        <span style="max-width: 420px; font-size: 14px; line-height: 1.5; color: #33536e;">Ajoutez un premier coup de cœur&nbsp;: un roman, une BD, un essai… Trois coups de cœur donnent déjà de bonnes suggestions.</span>
+        <a href="E3-Desktop.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px; background: #072b45; color: #ffffff; font-size: 15px; font-weight: 600;">Ajouter un coup de cœur</a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Calcul en cours — RG-139</span>
+      <div data-zone="E11-calcul-en-cours" role="status" aria-live="polite" style="display: flex; flex-direction: column; gap: 14px; padding: 24px; background: #ffffff; border: 1px solid #d9e9f4;">
+        <span style="display: inline-flex; align-items: center; gap: 10px; font-size: 14.5px; color: #0c6ea6;"><span style="width: 14px; height: 14px; border-radius: 999px; border: 2px solid #9dc2da; border-top-color: #0c6ea6;"></span>Calcul en cours… Nous cherchons les livres qui ressemblent à <em style="font-family: 'Newsreader', Georgia, serif;">L'Amie prodigieuse</em>.</span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;">
+          <div style="height: 200px; background: #e9f4fb;"></div><div style="height: 200px; background: #e9f4fb;"></div><div style="height: 200px; background: #e9f4fb;"></div>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Aucune suggestion au niveau choisi — RG-138</span>
+      <div data-zone="E11-aucune-suggestion" style="display: flex; flex-direction: column; gap: 12px; padding: 28px; background: #ffffff; border: 1px solid #d9e9f4;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 22px;">Rien à 4 cœurs pour l'instant.</span>
+        <span style="font-size: 14px; line-height: 1.5; color: #33536e;">Aucun livre disponible ne ressemble assez à vos coups de cœur à ce niveau d'exigence. 5 suggestions existent à 2 cœurs et plus.</span>
+        <button type="button" style="align-self: flex-start; min-height: 44px; padding: 0 18px; border: 1px solid #c8364e; border-radius: 999px; background: #ffffff; color: #a3263e; font-size: 14px; font-weight: 600;">Voir les suggestions à 2 cœurs et +</button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Suggestions désactivées — RG-154</span>
+      <div data-zone="E11-suggestions-desactivees" style="display: flex; flex-direction: column; gap: 10px; padding: 28px; background: #ffffff; border: 1px solid #d9e9f4;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 22px;">Vous avez désactivé les suggestions personnalisées.</span>
+        <span style="font-size: 14px; line-height: 1.5; color: #33536e;">Vos coups de cœur restent enregistrés. Réactivez les suggestions pour voir les livres qui leur ressemblent.</span>
+        <a href="E7-Desktop.html" style="font-size: 14.5px; font-weight: 600;">Réactiver dans Compte et données →</a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E3 · Plafond de la liste — RG-131</span>
+      <div data-zone="E11-plafond-liste" role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 20px 22px; background: #fff4e8; border: 1px solid #f6d2ab; color: #6b3305;">
+        <strong style="font-size: 15.5px;">Vous avez atteint 50 coups de cœur.</strong>
+        <span style="font-size: 14px; line-height: 1.5;">Retirez-en un pour en ajouter un autre, ou créez un compte pour aller jusqu'à 200.</span>
+        <a href="E4-Desktop.html" style="font-size: 14px; font-weight: 600;">Créer un compte</a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E3 · Livre introuvable — RG-135</span>
+      <div data-zone="E11-livre-introuvable" role="alert" style="display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; background: #ffffff; border: 1px solid #d9e9f4; border-left: 1px solid #d9e9f4;">
+        <strong style="font-size: 15.5px;">Ajout impossible</strong>
+        <span style="font-size: 14px; line-height: 1.5; color: #33536e;">Nous ne trouvons pas assez d'informations sur ce livre pour vous proposer des suggestions.</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Navigateur sans stockage (navigation privée)</span>
+      <div data-zone="E11-stockage-indisponible" role="status" style="display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; background: #fff4e8; border: 1px solid #f6d2ab; color: #6b3305;">
+        <strong style="font-size: 15.5px;">Ce navigateur ne peut pas garder vos coups de cœur.</strong>
+        <span style="font-size: 14px; line-height: 1.5;">Ils seront perdus en fermant la page. Créez un compte pour les conserver.</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E2 · Retrait avec annulation — RG-134</span>
+      <div data-zone="E11-annuler-retrait" role="status" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; background: #072b45; color: #ffffff;">
+        <span style="font-size: 14.5px;"><em style="font-family: 'Newsreader', Georgia, serif;">Dune</em> retiré de vos coups de cœur.</span>
+        <button type="button" style="min-height: 44px; padding: 0 16px; border: 1px solid #7fd8f5; border-radius: 999px; background: transparent; color: #7fd8f5; font-size: 14px; font-weight: 600;">Annuler</button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">E8 · E-mail sans « Nouveautés pour vous » — RG-151</span>
+      <div data-zone="E11-email-sans-nouveautes" style="display: flex; flex-direction: column; gap: 10px; padding: 22px; background: #e6edf2; border: 1px solid #d9e9f4;">
+        <div style="background: #ffffff; border: 1px solid #d9e9f4; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 21px;">3 livres très demandés sont de retour</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #0c6ea6;">De retour à la bourse</span>
+          <div style="height: 50px; border: 1px solid #d9e9f4;"></div><div style="height: 50px; border: 1px solid #d9e9f4;"></div><div style="height: 50px; border: 1px solid #d9e9f4;"></div>
+        </div>
+        <span style="font-size: 13px; line-height: 1.5; color: #33536e;">Envoyé seulement s'il y a au moins 3 livres de retour. Avec moins, aucun e-mail ne part pour ce membre.</span>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

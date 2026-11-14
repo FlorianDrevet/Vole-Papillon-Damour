@@ -9,7 +9,10 @@ using Vole_Papillon_Damour.Domain.ActualityAggregate;
 using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
+using Vole_Papillon_Damour.Domain.FairDigestAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
@@ -93,6 +96,57 @@ public sealed class ProjectDbContextModelTests
             .Should().Equal(nameof(MemberGenreFavorite.UserId), nameof(MemberGenreFavorite.Genre));
         favorites.GetForeignKeys().Should().ContainSingle(foreignKey =>
             foreignKey.PrincipalEntityType.ClrType == typeof(User) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
+    }
+
+    [Fact]
+    public void Model_MapsBookFavoritesAndFairDigestStorage()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var memberFavorites = model.FindEntityType(typeof(MemberFavoriteBook))!;
+        memberFavorites.GetTableName().Should().Be("MemberFavoriteBooks");
+        memberFavorites.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(MemberFavoriteBook.UserId), nameof(MemberFavoriteBook.Isbn13));
+        memberFavorites.FindProperty(nameof(MemberFavoriteBook.Isbn13))!.GetColumnType().Should().Be("char(13)");
+        memberFavorites.GetIndexes().Should().ContainSingle(index =>
+            index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(MemberFavoriteBook.Isbn13) }));
+        memberFavorites.GetForeignKeys().Should().ContainSingle(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(User) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
+
+        var anonymousCounts = model.FindEntityType(typeof(AnonymousFavoriteCount))!;
+        anonymousCounts.GetTableName().Should().Be("AnonymousFavoriteCounts");
+        anonymousCounts.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(AnonymousFavoriteCount.Id));
+
+        var book = model.FindEntityType(typeof(Book))!;
+        book.FindProperty(nameof(Book.IsFavoriteReference))!.IsNullable.Should().BeFalse();
+        book.FindProperty(nameof(Book.IsFavoriteReference))!.GetDefaultValue().Should().Be(false);
+        book.GetIndexes().Should().ContainSingle(index =>
+            index.Properties.Select(property => property.Name).SequenceEqual(new[] { nameof(Book.IsFavoriteReference) }) &&
+            index.GetFilter() == "[IsFavoriteReference] = 1");
+
+        var preferences = model.FindEntityType(typeof(MemberRecommendationPreference))!;
+        preferences.FindProperty(nameof(MemberRecommendationPreference.MinimumHearts))!.IsNullable.Should().BeTrue();
+        preferences.FindProperty(nameof(MemberRecommendationPreference.FairDigestConsentedAt))!.IsNullable.Should().BeTrue();
+
+        var campaigns = model.FindEntityType(typeof(FairDigestCampaign))!;
+        campaigns.GetTableName().Should().Be("FairDigestCampaigns");
+        campaigns.GetIndexes().Should().ContainSingle(index =>
+            index.IsUnique && index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[] { nameof(FairDigestCampaign.AssoEventsId) }));
+
+        var deliveries = model.FindEntityType(typeof(FairDigestDelivery))!;
+        deliveries.GetTableName().Should().Be("FairDigestDeliveries");
+        deliveries.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(FairDigestDelivery.CampaignId), nameof(FairDigestDelivery.UserId));
+        deliveries.GetForeignKeys().Should().Contain(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(User) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
+        deliveries.GetForeignKeys().Should().Contain(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(FairDigestCampaign) &&
             foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
     }
 
@@ -280,6 +334,53 @@ public sealed class ProjectDbContextModelTests
     }
 
     [Fact]
+    public void PersistenceContractAndMigrationsExposeBookFavoriteStorage()
+    {
+        typeof(ProjectDbContext).GetProperty("MemberFavoriteBooks").Should().NotBeNull();
+        typeof(ProjectDbContext).GetProperty("AnonymousFavoriteCounts").Should().NotBeNull();
+        typeof(ProjectDbContext).GetProperty("FairDigestCampaigns").Should().NotBeNull();
+        typeof(ProjectDbContext).GetProperty("FairDigestDeliveries").Should().NotBeNull();
+        typeof(IProjectDbContext).GetProperty("MemberFavoriteBooks").Should().NotBeNull();
+        typeof(IProjectDbContext).GetProperty("AnonymousFavoriteCounts").Should().NotBeNull();
+        typeof(IProjectDbContext).GetProperty("FairDigestCampaigns").Should().NotBeNull();
+        typeof(IProjectDbContext).GetProperty("FairDigestDeliveries").Should().NotBeNull();
+
+        using var context = CreateContext();
+        context.Database.GetMigrations()
+            .Should().Contain(migration => migration.EndsWith("_AddBookFavorites", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void BookFavoritesMigrationAddsOnlyFavoriteStorageAndDoesNotAlterBookColumns()
+    {
+        var migrationBuilder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+        new AddBookFavoritesMigrationProbe().ApplyUp(migrationBuilder);
+
+        migrationBuilder.Operations.Should().NotContain(operation => operation is DropColumnOperation);
+        migrationBuilder.Operations.Should().NotContain(operation => operation is AlterColumnOperation);
+
+        migrationBuilder.Operations.OfType<AddColumnOperation>()
+            .Should().ContainSingle(operation =>
+                operation.Table == "Books" &&
+                operation.Name == "IsFavoriteReference" &&
+                operation.ClrType == typeof(bool) &&
+                !operation.IsNullable &&
+                Equals(operation.DefaultValue, false));
+        migrationBuilder.Operations.OfType<CreateTableOperation>()
+            .Select(operation => operation.Name)
+            .Should().BeEquivalentTo(
+                "AnonymousFavoriteCounts",
+                "FairDigestCampaigns",
+                "FairDigestDeliveries",
+                "MemberFavoriteBooks");
+        migrationBuilder.Operations.OfType<CreateIndexOperation>()
+            .Should().ContainSingle(operation =>
+                operation.Table == "Books" &&
+                operation.Name == "IX_Books_IsFavoriteReference" &&
+                operation.Filter == "[IsFavoriteReference] = 1");
+    }
+
+    [Fact]
     public void ClientGestureMigrationAddsTheIdempotencyColumnAndIndex()
     {
         var migrationBuilder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
@@ -328,6 +429,12 @@ public sealed class ProjectDbContextModelTests
         Vole_Papillon_Damour.Infrastructure.Migrations.OptimizeCatalogSearch
     {
         public void ApplyDown(MigrationBuilder migrationBuilder) => Down(migrationBuilder);
+    }
+
+    private sealed class AddBookFavoritesMigrationProbe :
+        Vole_Papillon_Damour.Infrastructure.Migrations.AddBookFavorites
+    {
+        public void ApplyUp(MigrationBuilder migrationBuilder) => Up(migrationBuilder);
     }
 
     private static ProjectDbContext CreateContext()

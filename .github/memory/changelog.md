@@ -1,9 +1,10 @@
 # Memory Changelog
 
-Entries are grouped by date; this file retains the 60 days through 2026-11-12.
+Entries are grouped by date; this file retains the 60 days through 2026-11-14.
 
 | Date | Change |
 |---|---|
+| 2026-11-14 | Implemented Catalog favorite declarations, heart-rated suggestions, account sync/preferences and FairDigest administration; added the additive `AddBookFavorites` migration, Worker scheduling, Bicep defaults, E10 Scan favorite counts, and privacy documentation. Backend 1,397 tests and Scan 346 pass; Catalog 630/634 with four pre-existing `origin/main` failures. Builds and Bicep compile pass. Local E2/E3 responsive review passed; authenticated/runtime checks are pending because Docker Desktop is unavailable. No deployment, remote migration, real email or production-data change. [PR #392](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/392) is open. See `.github/memory/21-book-favorites.md` and NEXT.md. |
 | 2026-11-11 | Added an explicit Podman launch profile for the Aspire AppHost and documented Windows Podman machine setup; Docker remains the default. Launch-settings JSON validation and AppHost build pass. The official Podman CLI 6.2.0 MSI was SHA-256 verified and installed per-user; `podman info` and Aspire doctor recognize it. WSL reports the new machine running while Podman reports it stopped, and `podman machine start` fails with `machine did not transition into running state`; AppHost dashboard starts but SQL Server, Azurite and Keycloak fail with `vm ... is not running`, so runtime/E2E is still pending. AppHost build reports NU1903 for Aspire.Hosting 13.5.3 (`GHSA-f7vh-h5g3-7jrh`). No production/cloud data was changed. |
 | 2026-11-13 | Removed the Caisse’s wait for bibliographic metadata before showing a locally found book. Read-only App Insights showed browser metadata p95 1.695 s / max 1.861 s over 41 calls, while the API p95 was about 0.31 s. Added separate App Insights timings for local catalog, rare-book lookup, and background metadata/cache, with no ISBN or volunteer/account identifier. Scan suite 338/338, bootstrap 6/6, production build pass (existing initial bundle budget exceeded by 16.86 kB). Graphify updated. No Azure writes or deployment; follow-up events need the Scan rollout. [PR #391](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/391) is open and not merged. See .github/memory/04-frontend.md and NEXT.md. |
 | 2026-11-12 | Added the Caisse in-app updater: it checks an uncached BackOffice manifest, verifies the APK SHA-256, and opens Android `PackageInstaller` for user confirmation. Published the updater-enabled APK as v1.4 / version code 5, retained the existing signing certificate, and moved BackOffice download links to the versioned APK. Android and BackOffice builds pass; emulator landscape review confirms the footer button has room. No deployment or real-device install; the first updater-enabled release still needs one manual installation. See `.github/memory/04-frontend.md`. |
@@ -40,16 +41,3 @@ Entries are grouped by date; this file retains the 60 days through 2026-11-12.
 | 2026-09-17 | Completed the RareBooks feature tranche locally and corrected Scan session start timing; deployment/device checks remained separate. |
 | 2026-09-16 | Added RareBooks persistence/admin roles and Catalog workspace, ACS alert IaC/diagnostics, and Scan alert/session correction UX. See `.github/memory/05-data-and-storage.md` and `.github/memory/11-frontend-design-system.md`. |
 | 2026-09-15 | Improved Catalog administration and Scan synchronization/session UX; observability review covered API, Worker, Catalog SSR, Scan, Website, and BackOffice. |
-| 2026-09-13 | Catalog external-reference search now recognizes already-followed work/edition items and avoids duplicate follow requests. |
-| 2026-09-12 | Added Catalog privacy/volunteer-statistics screens, Scan statistics and persistence handling, ACS delivery diagnostics, and watchlist metadata continuity. |
-| 2026-09-11 | Catalog account/admin and identity restoration were polished; shared accessible loader variants were added across Website, Catalog, and Scan; social imports publish successful actualities immediately. |
-| 2026-09-10 | Added social actuality import through the Worker and clarified Website family-gallery and Catalog header behavior. |
-| 2026-09-09 | Delivered Scanette recovery/diagnostic/storage reprise, Catalog next-date flow, and Website family gallery updates. |
-| 2026-09-08 | Hardened Scan offline/accessibility flows; Catalog Lot 6 improved server-side search/404/SSR contracts; External ID branding was applied. |
-| 2026-09-07 | Added Catalog legal/privacy/analytics and home flows, Scan observability, and External ID signup/branding setup. |
-| 2026-09-06 | Completed Books P2/P3 API and Catalog integration, migrated Catalog to V2 styling, added account/role administration, and deployed the current Books/Scan runtime tranche. |
-| 2026-09-05 | Merged overnight runtime/API and Scan fixes, including nested MSAL route protection and Catalog SSR robots behavior; recorded verified DEV rollout. |
-| 2026-09-04 | Completed Books/Scan runtime and public Catalog rollout, added dead-stock query, and corrected Scan auth/camera and Website event date handling. |
-| 2026-09-03 | Consolidated Books P1-3/4/5 domain, movement, scan, cash, watchlist, and alert paths; moved Scan/BackOffice auth to Entra and added ACS/Event Grid reports. |
-| 2026-09-02 | Established .NET 10/Angular delivery CI, Graphify, API health probes, staged Entra/legacy auth, independent product visibility, and SQL/MAUI platform settings. |
-| 2026-09-01 | Website gained consent-controlled analytics, skeleton states, and supplied association-action photography/copy. |

@@ -6,6 +6,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Observability;
+using Vole_Papillon_Damour.Application.Favorites.Common;
 using Vole_Papillon_Damour.Application.ManualRequests.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
@@ -255,6 +256,7 @@ public sealed class ScanBookCommandHandler(
             }
 
             var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
+            var favoriteCount = await GetFavoriteCountAsync(book, cancellationToken);
             var result = new ScanBookResult(
                 isbn13.Value,
                 decision,
@@ -264,7 +266,8 @@ public sealed class ScanBookCommandHandler(
                 movementType,
                 AlreadyProcessed: false,
                 clockSuspect,
-                HeldForManualRequest: movementType == BookMovementType.ManualRequestHold);
+                HeldForManualRequest: movementType == BookMovementType.ManualRequestHold,
+                favoriteCount);
             activity?.SetTag(BookScanTelemetry.BookIsbnTagName, result.Isbn13);
             activity?.SetStatus(ActivityStatusCode.Ok);
             outcome = BookScanTelemetry.PersistedOutcome;
@@ -308,6 +311,7 @@ public sealed class ScanBookCommandHandler(
                 candidate => candidate.Id == AssociationSettingsEntity.SingletonId,
                 cancellationToken);
         var quantityAnnounced = await GetQuantityAnnouncedAsync(movement.Isbn13, cancellationToken);
+        var favoriteCount = await GetFavoriteCountAsync(book, cancellationToken);
         var decision = CalculateVerdict(
             book,
             quantityAnnounced,
@@ -324,7 +328,17 @@ public sealed class ScanBookCommandHandler(
             movement.Type,
             AlreadyProcessed: true,
             movement.ClockSuspect,
-            HeldForManualRequest: movement.Type == BookMovementType.ManualRequestHold);
+            HeldForManualRequest: movement.Type == BookMovementType.ManualRequestHold,
+            favoriteCount);
+    }
+
+    private async Task<int> GetFavoriteCountAsync(Book book, CancellationToken cancellationToken)
+    {
+        var counts = await FavoriteCountReader.GetCountsAsync(
+            dbContext,
+            [new FavoriteCountSeed(book.Id.Value, book.WorkId)],
+            cancellationToken);
+        return counts.GetValueOrDefault(book.Id.Value);
     }
 
     private async Task<AssociationSettingsEntity> GetOrCreateSettingsAsync(

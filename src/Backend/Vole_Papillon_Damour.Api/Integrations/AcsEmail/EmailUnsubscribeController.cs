@@ -1,7 +1,9 @@
+using ErrorOr;
 using MediatR;
 using Microsoft.Extensions.Options;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Commands.RevokeFairDigestConsent;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.UnsubscribeMemberAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 
@@ -31,28 +33,65 @@ public static class EmailUnsubscribeController
                         CancellationToken cancellationToken) =>
                     {
                         var token = httpContext.Request.Query["token"].ToString();
-                        if (!tokenService.TryValidate(token, out var memberId))
+                        if (!tokenService.TryValidate(token, out var memberId, out var purpose))
                         {
                             return Results.BadRequest();
                         }
 
-                        var result = await mediator.Send(
-                            new UnsubscribeMemberAlertsCommand(memberId),
-                            cancellationToken);
-
-                        return result.IsError
-                            ? result.Errors.First().Result()
-                            : Results.NoContent();
+                        switch (purpose)
+                        {
+                            case UnsubscribePurpose.BookAlerts:
+                                return ToResponse(await mediator.Send(
+                                    new UnsubscribeMemberAlertsCommand(memberId),
+                                    cancellationToken));
+                            case UnsubscribePurpose.FairDigest:
+                                return ToResponse(await mediator.Send(
+                                    new RevokeFairDigestConsentCommand(memberId),
+                                    cancellationToken));
+                            default:
+                                return Results.BadRequest();
+                        }
                     })
                 .WithName("UnsubscribeFromBookAlerts")
                 .AllowAnonymous();
 
             endpoints.MapGet(
                     Route,
-                    (IOptions<UnsubscribeTokenOptions> options) =>
-                        Results.Redirect(options.Value.AccountUrl, permanent: false))
+                    (
+                        string? token,
+                        IUnsubscribeTokenService tokenService,
+                        IOptions<UnsubscribeTokenOptions> options) =>
+                    {
+                        if (tokenService.TryValidate(token ?? string.Empty, out _, out var purpose) &&
+                            purpose == UnsubscribePurpose.FairDigest)
+                        {
+                            return Results.Redirect(BuildFairDigestLandingUrl(options.Value.AccountUrl), permanent: false);
+                        }
+
+                        return Results.Redirect(options.Value.AccountUrl, permanent: false);
+                    })
                 .WithName("UnsubscribeFromBookAlertsLanding")
                 .AllowAnonymous();
         });
+    }
+
+    private static IResult ToResponse<T>(ErrorOr<T> result) => result.IsError
+        ? result.Errors.First().Result()
+        : Results.NoContent();
+
+    private static string BuildFairDigestLandingUrl(string accountUrl)
+    {
+        if (!Uri.TryCreate(accountUrl, UriKind.Absolute, out var accountUri) ||
+            accountUri.Scheme is not ("http" or "https"))
+        {
+            return accountUrl;
+        }
+
+        return new UriBuilder(accountUri)
+        {
+            Path = "/desinscription",
+            Query = "purpose=fairDigest",
+            Fragment = string.Empty
+        }.Uri.AbsoluteUri;
     }
 }

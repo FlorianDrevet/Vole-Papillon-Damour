@@ -31,6 +31,7 @@ public sealed class WorkerTriggerScheduleTests
             "Sweep",
             "IsbndbCatchUp",
             "IsbndbCatchUpManual",
+            "FairDigest",
             "RecommendationsBackfill",
             "ProcessBookRecommendations",
             "ImportSocialActualities"

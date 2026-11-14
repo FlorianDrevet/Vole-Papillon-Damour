@@ -23,6 +23,35 @@ public sealed class BookTests
     }
 
     [Fact]
+    public void CreateFavoriteReference_WithValidIsbn_HasNoStockAndIsMarkedAsReference()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.IsFavoriteReference.Should().BeTrue();
+        book.QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
+    public void RecordAvailableEntry_OnFavoriteReference_MakesItAnOrdinaryBook()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordAvailableEntry(FirstSeenAt.AddMinutes(1));
+
+        book.IsFavoriteReference.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RecordAnnouncementEntry_OnFavoriteReference_MakesItAnOrdinaryBook()
+    {
+        var book = Book.CreateFavoriteReference(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordAnnouncementEntry(FirstSeenAt.AddMinutes(1));
+
+        book.IsFavoriteReference.Should().BeFalse();
+    }
+
+    [Fact]
     public void RedirectTo_WithDifferentCanonicalIsbn_PreservesAbsorbedBook()
     {
         var source = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
@@ -67,6 +96,27 @@ public sealed class BookTests
 
         book.QuantityAvailable.Should().Be(0);
         book.UpdatedAt.Should().Be(occurredAt);
+    }
+
+    [Fact]
+    public void RecordFavoriteCountChanged_UpdatesTheBookDeltaTimestamp()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var changedAt = FirstSeenAt.AddMinutes(2);
+
+        book.RecordFavoriteCountChanged(changedAt);
+
+        book.UpdatedAt.Should().Be(changedAt);
+    }
+
+    [Fact]
+    public void RecordFavoriteCountChanged_AdvancesTimestampWhenClockHasNotMoved()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordFavoriteCountChanged(FirstSeenAt);
+
+        book.UpdatedAt.Should().BeAfter(FirstSeenAt);
     }
 
     [Fact]

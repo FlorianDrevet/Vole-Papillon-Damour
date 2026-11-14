@@ -9,4 +9,5 @@ public sealed record ScanBookResponse(
     string MovementType,
     bool AlreadyProcessed,
     bool ClockSuspect,
-    bool HeldForManualRequest);
+    bool HeldForManualRequest,
+    int FavoriteCount = 0);

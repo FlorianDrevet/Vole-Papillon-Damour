@@ -36,6 +36,7 @@ using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
@@ -817,6 +818,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
+    public DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => Set<AnonymousFavoriteCount>();
     public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
@@ -827,6 +830,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
+    DbSet<MemberFavoriteBook> IProjectDbContext.MemberFavoriteBooks => MemberFavoriteBooks;
+    DbSet<AnonymousFavoriteCount> IProjectDbContext.AnonymousFavoriteCounts => AnonymousFavoriteCounts;
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => Users;
@@ -837,6 +842,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
+        modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());
+        modelBuilder.ApplyConfiguration(new AnonymousFavoriteCountConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();

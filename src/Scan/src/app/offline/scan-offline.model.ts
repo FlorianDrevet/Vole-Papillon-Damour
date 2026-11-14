@@ -88,6 +88,7 @@ export interface ScanCatalogBook {
   qtyAnnounced: number;
   salesCount: number;
   isWanted: boolean;
+  favoriteCount?: number;
   isManuallyRequested?: boolean;
   isRare: boolean;
   updatedAt: string;
@@ -319,6 +320,7 @@ export interface ScanPassageAssociationEntry {
 
 export interface LocalVerdict {
   verdict: LocalBookVerdict;
+  favoriteCount: number;
   totalKnownQuantity: number;
   salesCount: number;
   activeRequesterCount: number;

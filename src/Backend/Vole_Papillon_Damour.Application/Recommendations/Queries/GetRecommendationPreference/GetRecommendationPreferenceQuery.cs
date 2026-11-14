@@ -9,4 +9,7 @@ public sealed record GetRecommendationPreferenceQuery(
     string? FirstName,
     string? LastName) : IRequest<ErrorOr<RecommendationPreferenceResult>>;
 
-public sealed record RecommendationPreferenceResult(bool Enabled);
+public sealed record RecommendationPreferenceResult(
+    bool Enabled,
+    int MinimumHearts = 3,
+    DateTimeOffset? FairDigestConsentedAt = null);

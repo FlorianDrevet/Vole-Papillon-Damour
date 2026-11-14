@@ -18,6 +18,10 @@ public sealed class MemberRecommendationPreferenceConfiguration : IEntityTypeCon
                 userId => userId.Value,
                 value => UserId.Create(value));
         builder.Property(preference => preference.Enabled).IsRequired();
+        builder.Property(preference => preference.MinimumHearts);
+        builder.Property(preference => preference.FairDigestConsentedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
         builder.Property(preference => preference.UpdatedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)

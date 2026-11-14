@@ -651,4 +651,47 @@ describe('CatalogAdminApiService', () => {
     expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
     request.flush(null);
   });
+
+  it('loads fair digest status and the email preview with the administrator token', () => {
+    const status = {
+      enabled: true,
+      nextFairId: 'fair-id',
+      nextFairName: 'Bourse de printemps',
+      nextFairStartsAt: '2027-03-14T09:00:00Z',
+      campaignId: 'campaign-id',
+      plannedAtUtc: '2027-03-11T09:00:00Z',
+      suspended: false,
+      estimatedRecipients: 142,
+      lastReport: null,
+    };
+
+    service.getFairDigestStatus('access-token').subscribe(result => expect(result).toEqual(status));
+    const statusRequest = http.expectOne(`${environment.apiUrl}/books/admin/fair-digest`);
+    expect(statusRequest.request.method).toBe('GET');
+    expect(statusRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
+    statusRequest.flush(status);
+
+    service.getFairDigestPreview('access-token').subscribe(html => expect(html).toContain('<!doctype html>'));
+    const previewRequest = http.expectOne(`${environment.apiUrl}/books/admin/fair-digest/preview`);
+    expect(previewRequest.request.method).toBe('GET');
+    expect(previewRequest.request.responseType).toBe('text');
+    expect(previewRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
+    previewRequest.flush('<!doctype html><html></html>');
+  });
+
+  it('posts the test send and campaign suspension or resumption actions', () => {
+    service.sendFairDigestTest('access-token').subscribe();
+    service.suspendFairDigest('access-token').subscribe();
+    service.resumeFairDigest('access-token').subscribe();
+
+    const testRequest = http.expectOne(`${environment.apiUrl}/books/admin/fair-digest/test`);
+    const suspendRequest = http.expectOne(`${environment.apiUrl}/books/admin/fair-digest/suspend`);
+    const resumeRequest = http.expectOne(`${environment.apiUrl}/books/admin/fair-digest/resume`);
+    for (const request of [testRequest, suspendRequest, resumeRequest]) {
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toBeNull();
+      expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+      request.flush({});
+    }
+  });
 });

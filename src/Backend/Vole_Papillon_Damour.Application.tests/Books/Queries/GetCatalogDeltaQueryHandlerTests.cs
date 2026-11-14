@@ -15,9 +15,15 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
+using Vole_Papillon_Damour.Domain.FairDigestAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -27,6 +33,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
@@ -62,6 +69,74 @@ public sealed class GetCatalogDeltaQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_CountsMembersAndAnonymousFavoritesAcrossEditionsWithSameWorkId()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var scannedEdition = await fixture.AddBookAsync(
+            "9782070363735",
+            GeneratedAt.AddMinutes(-1),
+            workId: "OL123W");
+        var otherEdition = await fixture.AddBookAsync(
+            "9783140464079",
+            GeneratedAt.AddMinutes(-1),
+            workId: "OL123W");
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            scannedEdition.Id.Value);
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000011"),
+            otherEdition.Id.Value);
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            otherEdition.Id.Value);
+        await fixture.AddAnonymousFavoriteCountAsync(otherEdition.Id.Value, count: 1);
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Single(book => book.Isbn13 == scannedEdition.Id.Value)
+            .FavoriteCount.Should().Be(3);
+        result.Value.Books.Single(book => book.Isbn13 == otherEdition.Id.Value)
+            .FavoriteCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_IncrementalDeltaReprojectsBookWhenFavoriteCountChanges()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var scannedEdition = await fixture.AddBookAsync(
+            "9782070363735",
+            GeneratedAt.AddMinutes(-20),
+            workId: "OL123W");
+        var favoriteEdition = await fixture.AddBookAsync(
+            "9783140464079",
+            GeneratedAt.AddMinutes(-20),
+            workId: "OL123W");
+        var initial = await fixture.CreateHandler(GeneratedAt.AddMinutes(-10)).Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+        initial.IsError.Should().BeFalse();
+
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            favoriteEdition.Id.Value);
+        favoriteEdition.RecordFavoriteCountChanged(GeneratedAt.AddMinutes(-5));
+        await fixture.SaveAsync();
+        var incremental = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(initial.Value.NextWatermark),
+            CancellationToken.None);
+
+        incremental.IsError.Should().BeFalse();
+        incremental.Value.Books.Should().HaveCount(2);
+        incremental.Value.Books.Single(resultBook => resultBook.Isbn13 == scannedEdition.Id.Value)
+            .FavoriteCount.Should().Be(1);
+        incremental.Value.Books.Single(resultBook => resultBook.Isbn13 == favoriteEdition.Id.Value)
+            .FavoriteCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Handle_WhenIsbndbRecordExists_ProjectsWorkDetailsAndOtherEditionIsbns()
     {
         await using var fixture = await CatalogDeltaFixture.CreateAsync();
@@ -86,6 +161,10 @@ public sealed class GetCatalogDeltaQueryHandlerTests
             GeneratedAt.AddMinutes(-1),
             otherIsbns: """[{"isbn":"9782070612758","binding":"Paperback"}]"""));
         await fixture.Context.SaveChangesAsync();
+        var linkedFavoriteEdition = await fixture.AddBookAsync("9782070612758", GeneratedAt.AddMinutes(-1));
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000012"),
+            linkedFavoriteEdition.Id.Value);
         await fixture.AddBookAsync("9780306406157", GeneratedAt.AddMinutes(-1));
 
         var result = await fixture.CreateHandler().Handle(
@@ -98,6 +177,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
         projectedBook.Publisher.Should().Be("Gallimard");
         projectedBook.PublicationYear.Should().Be(1862);
         projectedBook.OtherIsbns.Should().Equal("9782070612758");
+        projectedBook.FavoriteCount.Should().Be(1);
         result.Value.Books.Single(item => item.Isbn13 == "9780306406157").OtherIsbns.Should().BeEmpty();
     }
 
@@ -592,6 +672,51 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         await Context.SaveChangesAsync();
     }
 
+    public async Task AddMemberFavoriteAsync(Guid userId, string isbn)
+    {
+        Context.MemberFavoriteBooks.Add(MemberFavoriteBook.Create(
+            UserId.Create(userId),
+            ParseIsbn(isbn),
+            GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1)));
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task AddAnonymousFavoriteCountAsync(string isbn, int count)
+    {
+        var favoriteCount = AnonymousFavoriteCount.Create(
+            ParseIsbn(isbn),
+            GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
+        for (var index = 0; index < count; index++)
+        {
+            favoriteCount.Increment(GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
+        }
+
+        Context.AnonymousFavoriteCounts.Add(favoriteCount);
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task AddBookEntryMovementAsync(
+        string isbn,
+        DateTime occurredAt,
+        BookMovementType type = BookMovementType.DirectEntry)
+    {
+        var parsedIsbn = ParseIsbn(isbn);
+        Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            parsedIsbn,
+            type,
+            quantity: 1,
+            occurredAt,
+            occurredAt,
+            clockSuspect: false,
+            scanSessionId: null,
+            volunteerId: null,
+            assoEventsId: null,
+            note: null,
+            clientGestureId: null));
+        await Context.SaveChangesAsync();
+    }
+
     public async Task<RareBook> AddRareBookAsync(Book book)
     {
         var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
@@ -721,12 +846,22 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
     public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
     public DbSet<ManualBookRequest> ManualBookRequests => Set<ManualBookRequest>();
+    public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
+    public DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => Set<AnonymousFavoriteCount>();
+    public DbSet<BookMovement> BookMovements => Set<BookMovement>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => Set<MemberRecommendationPreference>();
+    public DbSet<FairDigestCampaign> FairDigestCampaigns => Set<FairDigestCampaign>();
+    public DbSet<FairDigestDelivery> FairDigestDeliveries => Set<FairDigestDelivery>();
+    public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
+    public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
+    public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
-    DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
+    DbSet<User> IProjectDbContext.Users => Users;
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
-    DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
+    DbSet<BookMovement> IProjectDbContext.BookMovements => BookMovements;
     DbSet<BookIsbndbRecord> IProjectDbContext.BookIsbndbRecords => BookIsbndbRecords;
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
@@ -736,6 +871,14 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => RareBookTombstones;
     DbSet<ManualRequester> IProjectDbContext.ManualRequesters => ManualRequesters;
     DbSet<ManualBookRequest> IProjectDbContext.ManualBookRequests => ManualBookRequests;
+    DbSet<MemberFavoriteBook> IProjectDbContext.MemberFavoriteBooks => MemberFavoriteBooks;
+    DbSet<AnonymousFavoriteCount> IProjectDbContext.AnonymousFavoriteCounts => AnonymousFavoriteCounts;
+    DbSet<MemberRecommendationPreference> IProjectDbContext.MemberRecommendationPreferences => MemberRecommendationPreferences;
+    DbSet<FairDigestCampaign> IProjectDbContext.FairDigestCampaigns => FairDigestCampaigns;
+    DbSet<FairDigestDelivery> IProjectDbContext.FairDigestDeliveries => FairDigestDeliveries;
+    DbSet<CheckoutPassage> IProjectDbContext.CheckoutPassages => CheckoutPassages;
+    DbSet<CheckoutPassageLine> IProjectDbContext.CheckoutPassageLines => CheckoutPassageLines;
+    DbSet<MemberSelectionItem> IProjectDbContext.MemberSelectionItems => MemberSelectionItems;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -743,6 +886,111 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
         modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());
+        modelBuilder.Entity<MemberFavoriteBook>(builder =>
+        {
+            builder.HasKey(favorite => new { favorite.UserId, favorite.Isbn13 });
+            builder.Property(favorite => favorite.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(favorite => favorite.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+        });
+        modelBuilder.Entity<AnonymousFavoriteCount>(builder =>
+        {
+            builder.Ignore(favorite => favorite.Isbn13);
+            builder.HasKey(favorite => favorite.Id);
+            builder.Property(favorite => favorite.Id)
+                .HasColumnName("Isbn13")
+                .ValueGeneratedNever()
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+        });
+        modelBuilder.Entity<User>(builder =>
+        {
+            builder.HasKey(user => user.Id);
+            builder.Property(user => user.Id)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Ignore(user => user.Password);
+            builder.Ignore(user => user.Salt);
+            builder.Ignore(user => user.Role);
+            builder.Ignore(user => user.Name);
+            builder.Ignore(user => user.CreatedAt);
+            builder.Ignore(user => user.LastSeenAt);
+            builder.Ignore(user => user.AnonymizedAt);
+        });
+        modelBuilder.Entity<MemberRecommendationPreference>(builder =>
+        {
+            builder.HasKey(preference => preference.UserId);
+            builder.Property(preference => preference.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+        });
+        modelBuilder.Entity<FairDigestCampaign>(builder =>
+        {
+            builder.HasKey(campaign => campaign.Id);
+            builder.Ignore(campaign => campaign.CampaignId);
+            builder.Property(campaign => campaign.AssoEventsId)
+                .HasConversion(id => id.Value, value => AssoEventsId.Create(value));
+            builder.Property(campaign => campaign.SuspendedBy)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
+        });
+        modelBuilder.Entity<FairDigestDelivery>(builder =>
+        {
+            builder.HasKey(delivery => new { delivery.CampaignId, delivery.UserId });
+            builder.Property(delivery => delivery.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(delivery => delivery.Status).HasConversion<byte>();
+        });
+        modelBuilder.Entity<CheckoutPassage>(builder =>
+        {
+            builder.HasKey(passage => passage.Id);
+            builder.Property(passage => passage.UserId)
+                .HasConversion(
+                    (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
+                    (Guid? value) => value.HasValue ? UserId.Create(value.Value) : null);
+            builder.Property(passage => passage.Status).HasConversion<byte>();
+            builder.Ignore(passage => passage.AssociatedByVolunteerId);
+            builder.Ignore(passage => passage.DissociatedByUserId);
+        });
+        modelBuilder.Entity<CheckoutPassageLine>(builder =>
+        {
+            builder.HasKey(line => line.Id);
+            builder.Property(line => line.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Ignore(line => line.SaleMovementId);
+            builder.Ignore(line => line.RareBookId);
+            builder.Ignore(line => line.AssoEventsId);
+        });
+        modelBuilder.Entity<MemberSelectionItem>(builder =>
+        {
+            builder.HasKey(item => item.Id);
+            builder.Property(item => item.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(item => item.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Ignore(item => item.RareBookId);
+            builder.Property(item => item.Status).HasConversion<byte>();
+        });
+        modelBuilder.Entity<BookMovement>(builder =>
+        {
+            builder.HasKey(movement => movement.Id);
+            builder.Property(movement => movement.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => BookMovementId.Create(value));
+            builder.Property(movement => movement.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.Property(movement => movement.Type).HasConversion<byte>();
+            builder.Ignore(movement => movement.ScanSessionId);
+            builder.Ignore(movement => movement.VolunteerId);
+            builder.Property(movement => movement.AssoEventsId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Ignore(movement => movement.ReversalOfMovementId);
+        });
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
@@ -827,7 +1075,6 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
         });
 
         modelBuilder.Ignore<Product>();
-        modelBuilder.Ignore<User>();
         modelBuilder.Entity<AssoEvents>(builder =>
         {
             builder.HasKey(assoEvent => assoEvent.Id);
@@ -862,7 +1109,6 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Ignore(assoEvent => assoEvent.BingoNumeros);
         });
         modelBuilder.Ignore<Order>();
-        modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();

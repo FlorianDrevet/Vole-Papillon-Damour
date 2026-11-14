@@ -29,6 +29,7 @@
 | **Amélioration UI import CSV** | PR [#300](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/300) ouverte sur `fix/admin-catalog-csv-import-ux`; aucun import ni déploiement effectué. |
 | **Catalogue admin — pagination et recherche ISBN** | PR [#301](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/301) ouverte sur `fix/catalog-admin-list-lookup`; cinq fiches par page et résultat ISBN désormais visible. Aucun déploiement. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
+| **Coups de cœur et suggestions personnalisées** | T0–T25 terminés; [PR #392](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/392) ouverte vers `main`, non fusionnée. La validation locale est achevée sauf les parcours authentifiés et les captures E5–E10, bloqués par Docker indisponible. Aucun déploiement, migration distante ou e-mail réel. |
 
 ### Latence API et requêtes les plus longues — 2026-10-25
 
@@ -1034,6 +1035,16 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### Coups de cœur et suggestions personnalisées — 2026-11-14
+
+Les tâches T0–T25 sont implémentées sur le worktree `Vole-Papillon-Damour-book-favorites`, branche `feat/book-favorites`. La migration additive `AddBookFavorites` est incluse. `FairDigest:Enabled` reste désactivé par défaut; aucune commande Azure en écriture, migration distante, donnée de production ou envoi réel n’a été utilisé.
+
+Validation locale : backend build réussi et 1 397 tests passés; build Catalog réussi, avec 630/634 tests (les quatre échecs préexistants sur `origin/main` concernent l’échappement du dialogue de demandes manuelles et trois attentes de la carte de compte); build Scan réussi et 346/346 tests passés; `az bicep build` réussi. Les builds Angular signalent les budgets de bundle existants/dépassés et les dépendances CommonJS.
+
+Le Catalog local a été contrôlé à 390 et 1 440 px : état vide E2 et panneau E3 rendus sans débordement horizontal; à 1 440 px, l’accueil affiche l’entrée E1. Le catalogue local indique « Le catalogue est en cours de mise à jour ». Les captures E5–E10, l’aperçu E8/E9 et les parcours authentifiés P1–P4/P6 restent à faire avec Aspire/Keycloak et des données locales. Docker Desktop ne répond pas (`dockerDesktopLinuxEngine` absent); ne pas attribuer de résultat à un parcours runtime. Aucun déploiement n’a été lancé.
+
+Prochaine action : relire et valider la [PR #392](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/392) (ouverte, non fusionnée). Après fusion seulement, relire le `what-if` Infra, appliquer `AddBookFavorites` avec `Books runtime - deploy` (`run_migrations: true`), puis déployer Catalog et Scan. Avant activation publique, revoir l’aperçu sur une vraie bourse, confirmer le texte RGPD et calibrer `SimilarMinScore` sur environ 50 suggestions.
 
 ### Scan caisse — latence d’ajout d’un livre — 2026-11-13
 
@@ -2838,6 +2849,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-14 | Windows — `Vole-Papillon-Damour-book-favorites` | **Coups de cœur et suggestions personnalisées.** T0–T25 implémentés : déclarations anonymes et membres, suggestions pondérées par cœurs, accueil Catalog, préférence d’e-mail, campagne avant bourse pilotée en administration et compteur E10 au Scan. Backend 1 397/1 397, Scan 346/346, build Catalog/Scan/backend et compilation Bicep réussis. Catalog 630/634, les quatre échecs de dialogue de demandes manuelles/carte de compte sont préexistants sur `origin/main`. E2/E3 vérifiés localement à 390 et 1 440 px. Parcours auth P1–P4/P6 et E5–E10 en attente : Docker Desktop indisponible. Aucun envoi réel, déploiement ou changement de données distantes. [PR #392](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/392) ouverte, non fusionnée. |
 | 2026-11-13 | Windows | **Scan — latence de la caisse.** Depuis origin/main (1716dc5a) dans VPD-scan-cash-lookup-latency-20261113, la ligne caisse apparaît dès le résultat local sans attendre les métadonnées; App Insights mesure séparément le catalogue IndexedDB, la fiche rare, l’enrichissement et la mise en cache. Le navigateur mesurait l’endpoint metadata à p95 1,695 s contre ~0,31 s côté API. Scan 338/338, bootstrap 6/6 et build passent; le budget initial reste dépassé de 16,86 kB. Graphify actualisé. La [PR #391](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/391) est ouverte, non fusionnée; aucun déploiement ni changement Azure. Examiner les événements le lendemain de la fusion et du déploiement Scan. |
 | 2026-11-11 | Windows | **Scan — reprise de la caméra caisse.** Depuis `origin/main` (`6723b05d`) dans `VPD-scan-cashier-camera-continuity-20261111`, réacquisition unique après une piste vidéo terminée, pause de lecture conservée pendant le traitement d’un scan, et bouton « Réessayer la caméra » si la réouverture échoue. Suite Scan 336/336, build et bootstrap 6/6 passent; le bundle initial dépasse son budget existant de 13,62 kB. Graphify 19 082 nœuds. La [PR #389](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/389) est ouverte, non fusionnée; aucun déploiement. |
 | 2026-11-11 | Windows | **Scan — en-tête du compte et aperçu caméra.** Depuis `origin/main` (`c493fe2f`) dans `VPD-scan-cashier-camera-followup` (`fix/scan-cashier-camera-header-20261111`), le nom du compte scanné (ou « Anonyme ») apparaît sans préfixe et se tronque proprement; la zone caméra est pleine largeur, un peu plus haute, et ne montre plus la consigne de mise au point par défaut. Tests Scan 318/318, build et bootstrap 6/6 réussis. Graphify a extrait l’AST mais le rapport HTML dépasse la limite de visualisation à 9 402 nœuds. Pas de déploiement de ce suivi. [PR #382](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/382) ouverte, non fusionnée. |

@@ -8,7 +8,13 @@ namespace Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 /// </summary>
 public interface IUnsubscribeTokenService
 {
-    string Create(Guid memberId);
+    string Create(Guid memberId, UnsubscribePurpose purpose = UnsubscribePurpose.BookAlerts);
 
-    bool TryValidate(string token, out Guid memberId);
+    bool TryValidate(string token, out Guid memberId, out UnsubscribePurpose purpose);
+
+    bool TryValidate(string token, out Guid memberId) =>
+        TryValidate(token, out memberId, out _);
+
+    bool TryValidate(string token, UnsubscribePurpose expectedPurpose, out Guid memberId) =>
+        TryValidate(token, out memberId, out var purpose) && purpose == expectedPurpose;
 }

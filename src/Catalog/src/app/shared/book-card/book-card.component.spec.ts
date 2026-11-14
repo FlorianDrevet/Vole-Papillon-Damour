@@ -4,6 +4,7 @@ import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogBook, CatalogNeighborReason} from '../../core/catalog.models';
 import {CatalogCoverDirective} from '../catalog-cover.directive';
+import {HeartsComponent} from '../components/hearts/hearts.component';
 import {BookCardComponent} from './book-card.component';
 
 describe('BookCardComponent', () => {
@@ -11,7 +12,7 @@ describe('BookCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BookCardComponent, CatalogCoverDirective],
+      declarations: [BookCardComponent, CatalogCoverDirective, HeartsComponent],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
     }).compileComponents();
 
@@ -246,6 +247,37 @@ describe('BookCardComponent', () => {
     fixture.componentRef.setInput('reason', null);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.book-card-reason')).toBeNull();
+  });
+
+  it('shows a suggestion score and its seed explanation on the home card', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782070408504',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: null,
+      publicationYear: null,
+      physicalFormat: null,
+      language: null,
+      genre: null,
+      workId: null,
+      coverUrl: null,
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: null,
+      firstSeenAt: '2026-11-14T10:00:00Z',
+      updatedAt: '2026-11-14T10:00:00Z',
+      isRare: false,
+    };
+    fixture.componentInstance.variant = 'home';
+    fixture.componentInstance.hearts = 4;
+    fixture.componentInstance.recommendationText = 'Parce que vous avez aimé Dune';
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.book-card-hearts [aria-label="4 cœurs sur 5"]'))
+      .not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.book-card-recommendation-text')?.textContent)
+      .toContain('Parce que vous avez aimé Dune');
   });
 
   it('uses a high-resolution BnF cover that fills the home cover tile', () => {

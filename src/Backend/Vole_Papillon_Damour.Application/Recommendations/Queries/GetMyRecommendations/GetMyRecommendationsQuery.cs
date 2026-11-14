@@ -10,20 +10,29 @@ public sealed record GetMyRecommendationsQuery(
     string? Email,
     string? FirstName,
     string? LastName,
-    int Limit) : IRequest<ErrorOr<MyRecommendationsResult>>;
+    int Limit,
+    int? MinimumHearts = null,
+    IReadOnlyCollection<string>? CandidateIsbns = null) : IRequest<ErrorOr<MyRecommendationsResult>>;
 
 public sealed record MyRecommendationsResult(
     RecommendationStatus Status,
-    IReadOnlyList<PersonalRecommendation> Items);
+    IReadOnlyList<PersonalRecommendation> Items,
+    int MinimumHearts = 3);
 
 public enum RecommendationStatus
 {
     Enabled,
     Disabled,
-    NoPurchases
+    NoPurchases,
+    NoFavorites
 }
 
 public sealed record PersonalRecommendation(
     PublicCatalogBookResult Book,
     NeighborReason Reason,
-    string SeedTitle);
+    string SeedTitle,
+    int Hearts = 0,
+    int OtherContributorCount = 0)
+{
+    public string ReasonTitle => SeedTitle;
+}

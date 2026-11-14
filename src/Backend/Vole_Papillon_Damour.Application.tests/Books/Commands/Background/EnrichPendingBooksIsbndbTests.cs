@@ -216,6 +216,41 @@ public sealed class EnrichPendingBooksIsbndbTests
             Arg.Any<IsbndbLookup?>());
     }
 
+    [Fact]
+    public async Task Handle_WhenFavoriteBudgetRequiresFallback_SkipsIsbndbAndUsesFallbackResolver()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var isbn = ParseIsbn("9782070409228");
+        await fixture.AddBookAsync(isbn.Value, quantityAvailable: 0);
+        var lookups = Substitute.For<IIsbndbLookupService>();
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(
+                isbn,
+                Arg.Any<CancellationToken>(),
+                false,
+                IsbndbUsage.Favorites,
+                Arg.Is<IsbndbLookup?>(lookup => lookup is IsbndbLookup.QuotaExhausted))
+            .Returns(CreateFallbackMetadata(isbn));
+        resolver.ResolveWorkIdAsync(isbn, Arg.Any<CancellationToken>()).Returns("bnf:work");
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, CreateClock(), null, lookups);
+
+        await handler.Handle(
+            new EnrichPendingBooksCommand(
+                BatchSize: 1,
+                Isbn13s: [isbn],
+                Usage: IsbndbUsage.Favorites,
+                ForceFallback: true),
+            CancellationToken.None);
+
+        await lookups.DidNotReceiveWithAnyArgs().LookupManyAsync(default!, default, default);
+        await resolver.Received(1).ResolveAsync(
+            isbn,
+            Arg.Any<CancellationToken>(),
+            false,
+            IsbndbUsage.Favorites,
+            Arg.Is<IsbndbLookup?>(lookup => lookup is IsbndbLookup.QuotaExhausted));
+    }
+
     private static IIsbndbLookupService CreateLookupService(Isbn13 isbn, IsbndbLookup result)
     {
         var lookups = Substitute.For<IIsbndbLookupService>();

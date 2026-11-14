@@ -1,0 +1,65 @@
+.browser-storage-banner,
+.storage-unavailable {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin: 32px auto 0;
+  padding: 20px 24px;
+  max-width: 1280px;
+  border: 1px solid #f6d2ab;
+  background: #fff4e8;
+  color: #6b3305;
+}
+
+.browser-storage-icon { flex: none; width: 26px; height: 26px; margin-top: 2px; }
+.banner-copy { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; }
+.banner-copy strong { font-size: 1rem; }
+.banner-copy p { margin: 0; font-size: .91rem; line-height: 1.55; }
+.banner-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 20px; margin-top: 10px; }
+.create-account {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #f0801c;
+  color: #fff;
+  font-size: .94rem;
+  font-weight: 600;
+  font-family: var(--catalog-body);
+  cursor: pointer;
+}
+.login-link { color: var(--catalog-blue); font-size: .91rem; font-weight: 500; }
+.collapse-button,
+.collapsed-copy button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: 500 .84rem/1.3 var(--catalog-body);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.collapsed-copy { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 14px; }
+.storage-unavailable { flex-direction: column; gap: 6px; }
+.storage-unavailable a { align-self: flex-start; color: var(--catalog-blue); font-weight: 600; }
+button:focus-visible,
+a:focus-visible { outline: 3px solid var(--catalog-blue); outline-offset: 3px; }
+
+@media (max-width: 700px) {
+  .browser-storage-banner,
+  .storage-unavailable { gap: 12px; margin: 20px 16px 0; padding: 16px; }
+  .browser-storage-icon { width: 22px; height: 22px; }
+  .banner-copy strong { font-size: .9rem; }
+  .banner-copy p { font-size: .82rem; }
+  .create-account { width: 100%; padding: 0 12px; font-size: .82rem; }
+  .banner-actions { align-items: stretch; gap: 8px; }
+  .collapse-button { position: absolute; top: 8px; right: 20px; min-height: 34px; padding: 0 4px; font-size: .75rem; }
+  .browser-storage-banner:not(:has(.collapsed-copy)) .banner-copy { padding-top: 32px; }
+  .collapsed-copy { align-items: flex-start; padding-top: 3px; }
+}

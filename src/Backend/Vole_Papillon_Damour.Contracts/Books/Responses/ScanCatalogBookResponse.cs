@@ -16,4 +16,5 @@ public sealed record ScanCatalogBookResponse(
     string? WorkKey,
     string? Publisher,
     int? PublicationYear,
-    IReadOnlyList<string> OtherIsbns);
+    IReadOnlyList<string> OtherIsbns,
+    int FavoriteCount = 0);

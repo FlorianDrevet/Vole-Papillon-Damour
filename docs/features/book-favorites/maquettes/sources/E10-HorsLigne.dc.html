@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>E10 · Scanette hors ligne — a déjà plu</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }</style>
+</helmet>
+<div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+  <div style="flex: none; display: flex; align-items: center; height: 52px; padding: 0 20px; background: #1497d6; color: #ffffff;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;">Prochaine bourse</span>
+    <span style="margin-left: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase;">14 mars</span>
+  </div>
+  <div data-zone="E10-fraicheur" role="status" style="flex: none; display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 20px; background: #33536e; color: #ffffff;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 4.2-2.6M19 13a10 10 0 0 0-2.4-1.7M12 20h.01"></path></svg>
+    <span style="font-size: 13px;">Hors ligne · données du 14 mars à 8 h 12</span>
+  </div>
+  <div style="flex: none; display: flex; gap: 14px; padding: 26px 22px 28px; background: #18703a;">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px;"><circle cx="12" cy="12" r="8.6"></circle><path d="m8 12.5 2.7 2.7L16.5 9"></path></svg>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 29px; font-weight: 700; line-height: 1.05; text-transform: uppercase; color: #ffffff;">À garder</span>
+      <span style="font-size: 15.5px; color: rgba(255, 255, 255, .92);">Recherché par 1 membre</span>
+    </div>
+  </div>
+  <div style="flex: none; padding: 10px 14px; background: #ffffff;">
+    <div data-zone="E10-bandeau-a-deja-plu" role="status" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 16px; border-radius: 14px; background: #d6304f; color: #ffffff;">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="flex: none;"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" fill="#ffffff"></path></svg>
+      <span style="font-size: 16.5px; font-weight: 700; line-height: 1.25;">Ce livre a déjà plu à <span data-zone="E10-nombre-lecteurs">5 lecteurs</span> de la bourse</span>
+    </div>
+  </div>
+  <div style="flex: none; display: flex; gap: 16px; padding: 18px 22px; background: #ffffff; border-bottom: 1px solid #e2eef7;">
+    <div style="flex: none; width: 68px; height: 98px; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 23px; font-weight: 500;">Dune</span>
+      <span style="font-size: 14px; color: #4e6c84;">Frank Herbert</span>
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: #6d8ba2;">Pocket · 2012</span>
+    </div>
+  </div>
+  <div style="flex: 1 1 auto;"></div>
+  <div style="flex: none; display: flex; gap: 12px; padding: 15px 20px 24px; background: #ffffff; border-top: 1px solid #d9e9f4;">
+    <div style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 60px; border: 1.5px solid #9dc2da; border-radius: 999px;"><span style="font-size: 17px; font-weight: 700; text-transform: uppercase; color: #0c6ea6;">Écarter</span></div>
+    <div style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 60px; border-radius: 999px; background: #072b45;"><span style="font-size: 17px; font-weight: 700; text-transform: uppercase; color: #ffffff;">Garder</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

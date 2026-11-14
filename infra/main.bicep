@@ -334,6 +334,33 @@ param titleGenerationEnabled bool = false
 @description('Whether personalized and similar-book recommendations are enabled')
 param recommendationsEnabled bool = false
 
+@description('Whether pre-fair recommendation emails are enabled')
+param fairDigestEnabled bool = false
+
+@description('Timer schedule for the pre-fair email Function')
+param fairDigestSchedule string = '0 5 * * * *'
+
+@description('Number of days before a book fair to send the recommendation email')
+param fairDigestDaysBefore int = 3
+
+@description('Paris local hour for the pre-fair email')
+param fairDigestSendHourParis int = 10
+
+@description('Maximum number of new-book recommendations in one email')
+param fairDigestNewsMax int = 8
+
+@description('Maximum number of returned books in one email')
+param fairDigestBackMax int = 6
+
+@description('Minimum returned-book count required when no new recommendations are available')
+param fairDigestBackMinCount int = 3
+
+@description('Minimum sales count for considering a sold-out book as highly requested')
+param fairDigestSoldOutMinSales int = 3
+
+@description('Number of top-selling works considered for returned-book recommendations')
+param fairDigestTopSellersCount int = 20
+
 @description('Name of the Azure OpenAI embedding deployment used for recommendations')
 param recommendationsEmbeddingDeploymentName string = 'text-embedding-3-small'
 
@@ -1353,6 +1380,42 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: string(recommendationsEnabled)
       }
       {
+        name: 'FairDigest__Enabled'
+        value: string(fairDigestEnabled)
+      }
+      {
+        name: 'FairDigest__Schedule'
+        value: fairDigestSchedule
+      }
+      {
+        name: 'FairDigest__DaysBefore'
+        value: string(fairDigestDaysBefore)
+      }
+      {
+        name: 'FairDigest__SendHourParis'
+        value: string(fairDigestSendHourParis)
+      }
+      {
+        name: 'FairDigest__NewsMax'
+        value: string(fairDigestNewsMax)
+      }
+      {
+        name: 'FairDigest__BackMax'
+        value: string(fairDigestBackMax)
+      }
+      {
+        name: 'FairDigest__BackMinCount'
+        value: string(fairDigestBackMinCount)
+      }
+      {
+        name: 'FairDigest__SoldOutMinSales'
+        value: string(fairDigestSoldOutMinSales)
+      }
+      {
+        name: 'FairDigest__TopSellersCount'
+        value: string(fairDigestTopSellersCount)
+      }
+      {
         name: 'Isbndb__RequestsPerSecond'
         value: '1'
       }
@@ -1731,6 +1794,42 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'Recommendations__Enabled'
         value: string(recommendationsEnabled)
+      }
+      {
+        name: 'FairDigest__Enabled'
+        value: string(fairDigestEnabled)
+      }
+      {
+        name: 'FairDigest__Schedule'
+        value: fairDigestSchedule
+      }
+      {
+        name: 'FairDigest__DaysBefore'
+        value: string(fairDigestDaysBefore)
+      }
+      {
+        name: 'FairDigest__SendHourParis'
+        value: string(fairDigestSendHourParis)
+      }
+      {
+        name: 'FairDigest__NewsMax'
+        value: string(fairDigestNewsMax)
+      }
+      {
+        name: 'FairDigest__BackMax'
+        value: string(fairDigestBackMax)
+      }
+      {
+        name: 'FairDigest__BackMinCount'
+        value: string(fairDigestBackMinCount)
+      }
+      {
+        name: 'FairDigest__SoldOutMinSales'
+        value: string(fairDigestSoldOutMinSales)
+      }
+      {
+        name: 'FairDigest__TopSellersCount'
+        value: string(fairDigestTopSellersCount)
       }
       {
         name: 'Isbndb__RequestsPerSecond'

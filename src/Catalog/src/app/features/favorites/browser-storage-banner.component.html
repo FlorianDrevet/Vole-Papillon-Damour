@@ -1,0 +1,29 @@
+@if (available) {
+  <section class="browser-storage-banner" data-zone="E2-bandeau-navigateur" role="region" aria-label="Liste enregistrée dans ce navigateur">
+    <svg class="browser-storage-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="4.5" width="18" height="13" rx="2"></rect><path d="M8 20.5h8M12 17.5v3"></path>
+    </svg>
+    @if (collapsed) {
+      <div class="collapsed-copy">
+        <strong>Vos coups de cœur sont enregistrés dans ce navigateur.</strong>
+        <button type="button" (click)="toggle()" aria-expanded="false">Déplier</button>
+      </div>
+    } @else {
+      <div class="banner-copy">
+        <strong>Vos coups de cœur sont enregistrés dans ce navigateur.</strong>
+        <p>Si vous videz son cache ou changez d'appareil, ils seront perdus. Créez un compte pour les garder, les retrouver partout, voir vos suggestions sur l'accueil et recevoir une sélection avant chaque bourse.</p>
+        <div class="banner-actions">
+          <button class="create-account" type="button" (click)="createAccountRequested.emit()">Créer un compte pour garder ma liste</button>
+          <a class="login-link" routerLink="/compte">J'ai déjà un compte</a>
+        </div>
+      </div>
+      <button class="collapse-button" data-zone="E2-replier-bandeau" type="button" (click)="toggle()" aria-expanded="true">Replier</button>
+    }
+  </section>
+} @else {
+  <section class="storage-unavailable" data-zone="E11-stockage-indisponible" role="status">
+    <strong>Ce navigateur ne peut pas enregistrer vos coups de cœur.</strong>
+    <span>Vous pouvez tout de même les ajouter à votre compte pour les retrouver sur vos appareils.</span>
+    <button class="create-account" type="button" (click)="createAccountRequested.emit()">Créer un compte</button>
+  </section>
+}

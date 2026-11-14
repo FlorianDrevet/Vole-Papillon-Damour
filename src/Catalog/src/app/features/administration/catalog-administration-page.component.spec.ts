@@ -56,6 +56,7 @@ import {ManualRequestAddDialogComponent} from './manual-requests/manual-request-
 import {ManualRequestDecisionDialogComponent} from './manual-requests/manual-request-decision-dialog.component';
 import {IsbndbAbsentViewComponent} from './isbndb/isbndb-absent-view.component';
 import {IsbndbStatusCardComponent} from './isbndb/isbndb-status-card.component';
+import {FairDigestAdminComponent} from './fair-digest/fair-digest-admin.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -269,6 +270,8 @@ describe('CatalogAdministrationPageComponent', () => {
       'deleteRareBookPhoto',
       'getNotFoundQueue', 'getClosedNotFoundReports', 'getNotFoundSummary', 'closeNotFound',
       'getManualRequests', 'getManualRequestSummary',
+      'getFairDigestStatus', 'getFairDigestPreview', 'sendFairDigestTest',
+      'suspendFairDigest', 'resumeFairDigest',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -396,6 +399,7 @@ describe('CatalogAdministrationPageComponent', () => {
         CatalogAdministrationPageComponent,
         IsbndbStatusCardComponent,
         IsbndbAbsentViewComponent,
+        FairDigestAdminComponent,
         CatalogCoverDirective,
         AdminRareBooksComponent,
         AdminRareBookFormComponent,
@@ -499,6 +503,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(sidebar.textContent).not.toContain('Statistiques par bourse');
     expect(sidebar.textContent).toContain('Comptes & rôles');
     expect(sidebar.textContent).toContain('Paramètres');
+    expect(sidebar.textContent).toContain('E-mail avant la bourse');
     expect(sidebar.textContent).not.toContain('Membres du site');
     expect(sidebar.textContent).not.toContain('Bénévoles');
     expect(Array.from(sidebar.querySelectorAll<HTMLElement>('.admin-nav-item-label')).map(label => label.textContent?.trim())).toEqual([
@@ -513,9 +518,24 @@ describe('CatalogAdministrationPageComponent', () => {
       'Livres rares',
       'Statistiques',
       'Comptes & rôles',
+      'E-mail avant la bourse',
       'Paramètres',
     ]);
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
+  });
+
+  it('shows the fair digest entry only to administrators', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a[href="/administration/fair-digest"]')?.textContent)
+      .toContain('E-mail avant la bourse');
+
+    auth.isAdministrator.set(false);
+    auth.isRareBookManager.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.navItems.some(item => item.id === 'fair-digest')).toBeFalse();
+    expect(fixture.nativeElement.querySelector('a[href="/administration/fair-digest"]')).toBeNull();
   });
 
   it('nav lists Livres introuvables right after Désengorgement with its badge', async () => {
@@ -668,6 +688,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/rare-books',
       '/administration/statistics',
       '/administration/accounts',
+      '/administration/fair-digest',
       '/administration/settings',
     ]);
   });

@@ -12,7 +12,8 @@ public static class DependencyInjection
 
     public static IServiceCollection AddRateLimiting(
         this IServiceCollection services,
-        int isbndbSearchPermitLimit = 10)
+        int isbndbSearchPermitLimit = 10,
+        int favoriteReferencePermitLimit = 20)
     {
         services.AddRateLimiter(options =>
         {
@@ -71,6 +72,17 @@ public static class DependencyInjection
                         Window = TimeSpan.FromHours(1),
                         SegmentsPerWindow = 6,
                         AutoReplenishment = true,
+                        QueueLimit = 0,
+                    }));
+
+            options.AddPolicy(RateLimitingPolicies.FavoriteReference, httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    ClientPartitionKey(httpContext),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = Math.Max(1, favoriteReferencePermitLimit),
+                        Window = TimeSpan.FromHours(24),
+                        SegmentsPerWindow = 24,
                         QueueLimit = 0,
                     }));
 

@@ -1,12 +1,12 @@
-import {ChangeDetectionStrategy, Component, OnInit, computed, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, Signal, computed, signal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {firstValueFrom} from 'rxjs';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
-import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
-import {CatalogPersonalRecommendation} from '../../../core/catalog.models';
+import {CatalogFavoriteSuggestion} from '../../../core/catalog.models';
+import {CatalogFavoritesService} from '../../../core/favorites/catalog-favorites.service';
+import {LocalFavoritesStore} from '../../../core/favorites/local-favorites.store';
 
-type ForYouState = 'loading' | 'ready' | 'hidden';
+type ForYouState = 'loading' | 'ready' | 'entry' | 'hidden';
 
 @Component({
   selector: 'app-for-you-section',
@@ -16,42 +16,56 @@ type ForYouState = 'loading' | 'ready' | 'hidden';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForYouSectionComponent implements OnInit {
-  readonly state = signal<ForYouState>('hidden');
-  readonly items = signal<CatalogPersonalRecommendation[]>([]);
+  readonly state = signal<ForYouState>('loading');
+  readonly items: Signal<CatalogFavoriteSuggestion[]> = computed(() => {
+    const minimum = this.favorites.currentMinimumHearts();
+    return this.favorites.suggestions()
+      .filter(item => (item.hearts ?? 0) >= minimum)
+      .slice(0, 4);
+  });
   readonly skeletons = [0, 1, 2, 3];
   readonly firstName = computed(() => firstNameFromAccount(this.auth.account()));
 
   constructor(
     private readonly auth: CatalogAuthService,
-    private readonly memberApi: CatalogMemberApiService,
+    readonly favorites: CatalogFavoritesService,
+    private readonly local: LocalFavoritesStore,
   ) {}
 
   ngOnInit(): void {
     void this.loadRecommendations();
   }
 
+  dismissEntry(): void {
+    this.local.setHomeEntryDismissed(true);
+    this.state.set('hidden');
+  }
+
+  recommendationText(item: CatalogFavoriteSuggestion): string {
+    return item.reason === 'NextTome'
+      ? `La suite de ${item.seedTitle}`
+      : `Parce que vous avez aimé ${item.seedTitle}`;
+  }
+
   private async loadRecommendations(): Promise<void> {
     try {
       await this.auth.initialize();
-      if (!this.auth.isAuthenticated()) {
-        return;
+      if (this.auth.isAuthenticated()) {
+        await this.favorites.onSignedIn();
+      } else {
+        await this.favorites.refresh();
       }
 
-      this.state.set('loading');
-      const accessToken = await this.auth.tryGetApiAccessToken();
-      if (!accessToken) {
+      if (this.favorites.suggestionStatus() === 'Disabled') {
         this.state.set('hidden');
         return;
       }
 
-      const response = await firstValueFrom(this.memberApi.getRecommendations(accessToken, 4));
-      if (response.status !== 'Enabled' || response.items.length < 3) {
-        this.state.set('hidden');
-        return;
+      if (this.items().length >= 3) {
+        this.state.set('ready');
+      } else {
+        this.state.set(this.local.homeEntryDismissed() ? 'hidden' : 'entry');
       }
-
-      this.items.set(response.items.slice(0, 4));
-      this.state.set('ready');
     } catch {
       this.state.set('hidden');
     }

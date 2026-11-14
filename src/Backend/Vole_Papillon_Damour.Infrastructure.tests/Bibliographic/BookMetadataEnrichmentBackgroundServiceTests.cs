@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Commands.Background;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
 namespace Vole_Papillon_Damour.Infrastructure.tests.Bibliographic;
@@ -91,6 +92,46 @@ public sealed class BookMetadataEnrichmentBackgroundServiceTests
                 command.Isbn13s != null && command.Isbn13s.Count == 2 &&
                 command.Isbn13s[0] == ParseIsbn("9791036377426") &&
                 command.Isbn13s[1] == ParseIsbn("9783140464079")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task StartAsync_PreservesFavoriteUsageAndFallbackFlagInEnrichmentCommand()
+    {
+        var isbn13 = ParseIsbn("9791036377426");
+        var queue = new BookMetadataEnrichmentQueue();
+        var sender = Substitute.For<ISender>();
+        var processed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        sender.Send(
+                Arg.Any<EnrichPendingBooksCommand>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var command = call.Arg<EnrichPendingBooksCommand>();
+                command.Usage.Should().Be(IsbndbUsage.Favorites);
+                command.ForceFallback.Should().BeTrue();
+                processed.TrySetResult(true);
+                return Task.FromResult(new EnrichPendingBooksResult(1, 0, 0, 0));
+            });
+        using var provider = new ServiceCollection()
+            .AddSingleton<ISender>(sender)
+            .BuildServiceProvider();
+        var service = new BookMetadataEnrichmentBackgroundService(
+            queue,
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<BookMetadataEnrichmentBackgroundService>.Instance);
+        using var stopping = new CancellationTokenSource();
+
+        queue.Enqueue(isbn13, IsbndbUsage.Favorites, forceFallback: true);
+        await service.StartAsync(stopping.Token);
+        await processed.Task.WaitAsync(BackgroundServiceStartTimeout);
+        stopping.Cancel();
+        await service.StopAsync(CancellationToken.None);
+
+        await sender.Received(1).Send(
+            Arg.Is<EnrichPendingBooksCommand>(command =>
+                command.Isbn13s != null && command.Isbn13s.SequenceEqual(new[] { isbn13 }) &&
+                command.Usage == IsbndbUsage.Favorites && command.ForceFallback),
             Arg.Any<CancellationToken>());
     }
 

@@ -143,6 +143,43 @@ describe('CatalogApiService', () => {
     request.flush(response);
   });
 
+  it('declares and withdraws an anonymous favorite without an account token', () => {
+    const isbn13 = '9782070612758';
+    service.declareAnonymousFavorite(isbn13).subscribe(result => {
+      expect(result).toEqual({isbn13, count: 2});
+    });
+    const declaration = http.expectOne(`${environment.apiUrl}/catalog/favorites/declarations`);
+    expect(declaration.request.method).toBe('POST');
+    expect(declaration.request.body).toEqual({isbn13});
+    expect(declaration.request.headers.has('Authorization')).toBeFalse();
+    declaration.flush({isbn13, count: 2});
+
+    service.withdrawAnonymousFavorite(isbn13).subscribe(result => {
+      expect(result).toEqual({isbn13, count: 1});
+    });
+    const withdrawal = http.expectOne(
+      `${environment.apiUrl}/catalog/favorites/declarations/${isbn13}`,
+    );
+    expect(withdrawal.request.method).toBe('DELETE');
+    expect(withdrawal.request.headers.has('Authorization')).toBeFalse();
+    withdrawal.flush({isbn13, count: 1});
+  });
+
+  it('requests suggestions from a typed favorite ISBN list and threshold', () => {
+    service.getFavoriteSuggestions(['9782070612758', '9782070408504'], 3).subscribe(result => {
+      expect(result.minimumHearts).toBe(3);
+      expect(result.items).toEqual([]);
+    });
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/favorites/suggestions`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      isbn13s: ['9782070612758', '9782070408504'],
+      minimumHearts: 3,
+    });
+    request.flush({status: 'Enabled', minimumHearts: 3, items: [], seeds: []});
+  });
+
   it('maps the public upcoming event collection and keeps only book fairs', () => {
     service.getUpcomingFairs().subscribe(result => {
       expect(result).toEqual([{

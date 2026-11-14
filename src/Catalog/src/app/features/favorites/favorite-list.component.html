@@ -1,0 +1,55 @@
+<section class="favorite-section" data-zone="E2-coups-de-coeur" aria-labelledby="favorite-section-title">
+  <header class="favorite-section-heading">
+    <div>
+      <span class="section-eyebrow">À la bourse aux livres</span>
+      <h2 id="favorite-section-title">Mes coups de cœur</h2>
+    </div>
+    <span class="favorite-count" data-zone="E2-compteur">{{ entries.length }} / {{ maximum }}</span>
+  </header>
+
+  <button class="add-favorite" data-zone="E2-bouton-ajouter" type="button" (click)="addRequested.emit()">
+    <span aria-hidden="true">＋</span> Ajouter un coup de cœur
+  </button>
+
+  @if (entries.length === 0) {
+    <div class="favorites-empty" data-zone="E11-e2-vide">
+      <span class="empty-title">Quel livre avez-vous adoré&nbsp;?</span>
+      <span class="empty-copy">Ajoutez un premier coup de cœur&nbsp;: un roman, une BD, un essai… Trois coups de cœur donnent déjà de bonnes suggestions.</span>
+      <button class="empty-add" type="button" (click)="addRequested.emit()">Ajouter un coup de cœur</button>
+    </div>
+  } @else {
+    <ul class="favorite-items">
+      @for (entry of entries; track entry.isbn13) {
+        <li class="favorite-item" [attr.data-isbn]="entry.isbn13">
+          <span class="favorite-cover" aria-hidden="true">
+            @if (entry.coverUrl) { <img [src]="entry.coverUrl" alt="" loading="lazy"> }
+            @else { <span class="cover-placeholder">♥</span> }
+          </span>
+          <span class="favorite-copy">
+            <strong>{{ entry.title }}</strong>
+            <span class="favorite-author">{{ entry.authors || 'Auteur non renseigné' }}</span>
+            @if ((entry.editionCount ?? 1) > 1) {
+              <span class="edition-count">{{ entry.editionCount }} éditions</span>
+            }
+            @if (computingByIsbn[entry.isbn13]) {
+              <span class="computing-note">Suggestions en cours de calcul…</span>
+            } @else if (availabilityLabel(entry); as availability) {
+              <span class="availability-pill" data-zone="E2-pastille-disponibilite">{{ availability }}</span>
+            }
+          </span>
+          <button
+            class="remove-favorite"
+            data-zone="E2-retirer"
+            type="button"
+            [attr.aria-label]="'Retirer ' + entry.title + ' de mes coups de cœur'"
+            aria-pressed="true"
+            (click)="remove(entry)">
+            <svg data-zone="E2-coup-de-coeur" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" /></svg>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="favorite-disclaimer">Un coup de cœur ne réserve rien et ne déclenche pas d'alerte. Pour être prévenu de l'arrivée d'un livre, utilisez la liste de recherche.</p>
+</section>

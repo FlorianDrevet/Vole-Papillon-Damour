@@ -1,0 +1,132 @@
+<section class="fair-digest-admin" aria-labelledby="fair-digest-title" data-zone="E9">
+  <header class="fair-digest-heading">
+    <div>
+      <span class="fair-digest-kicker">Réservé à l’administration</span>
+      <h1 id="fair-digest-title">E-mail avant la bourse.</h1>
+      <p>Vérifiez la prochaine sélection et son aperçu avant l’envoi aux membres consentants.</p>
+    </div>
+    @if (status(); as current) {
+      <span
+        class="fair-digest-status"
+        [class.fair-digest-status--disabled]="!current.enabled || current.suspended"
+        data-zone="E9-interrupteur"
+        role="status">
+        <span aria-hidden="true"></span>
+        {{ statusLabel(current) }}
+      </span>
+    }
+  </header>
+
+  @if (errorMessage(); as message) {
+    <p class="fair-digest-feedback fair-digest-feedback--error" role="alert">{{ message }}</p>
+  }
+  @if (successMessage(); as message) {
+    <p class="fair-digest-feedback fair-digest-feedback--success" role="status">{{ message }}</p>
+  }
+
+  @if (loading() && !status()) {
+    <p class="fair-digest-loading" role="status">Chargement du calendrier et de l’aperçu…</p>
+  } @else if (status(); as current) {
+    @if (!current.enabled) {
+      <p class="fair-digest-disabled-note" role="status">
+        La configuration <code>FairDigest:Enabled</code> est désactivée. Aucun envoi automatique ne partira.
+      </p>
+    }
+
+    <div class="fair-digest-summary-grid">
+      <article class="fair-digest-summary-card" data-zone="E9-prochain-envoi">
+        <span class="fair-digest-card-label">Prochaine bourse</span>
+        <strong>{{ current.nextFairName || 'Aucune bourse prévue' }}</strong>
+        <span class="fair-digest-card-detail">{{ formatFairStart(current.nextFairStartsAt) }}</span>
+      </article>
+
+      <article class="fair-digest-summary-card" data-zone="E9-date-envoi">
+        <span class="fair-digest-card-label">Envoi prévu</span>
+        <strong>{{ formatPlannedAt(current.plannedAtUtc) }}</strong>
+        <span class="fair-digest-card-detail">J-3 · heure de Paris</span>
+      </article>
+
+      <article class="fair-digest-summary-card" data-zone="E9-destinataires">
+        <span class="fair-digest-card-label">Destinataires estimés</span>
+        <strong>{{ current.estimatedRecipients }} membres</strong>
+        <span class="fair-digest-card-detail">Consentement donné et au moins un coup de cœur.</span>
+      </article>
+    </div>
+
+    <section class="fair-digest-actions" aria-label="Actions de l’e-mail">
+      <div>
+        <span class="fair-digest-section-kicker">Avant la bourse</span>
+        <h2>Contrôler puis préparer l’envoi.</h2>
+        <p>Le test est envoyé uniquement à l’adresse de l’administrateur connecté.</p>
+      </div>
+      <div class="fair-digest-action-buttons">
+        <button
+          type="button"
+          class="fair-digest-button fair-digest-button--primary"
+          data-zone="E9-bouton-test"
+          [disabled]="actionPending() !== null"
+          (click)="sendTest()">
+          {{ actionPending() === 'test' ? 'Envoi du test…' : 'M’envoyer un test' }}
+        </button>
+        <button
+          type="button"
+          class="fair-digest-button fair-digest-button--quiet"
+          data-zone="E9-bouton-suspendre"
+          [disabled]="!current.campaignId || actionPending() !== null"
+          (click)="toggleSuspension()">
+          @if (actionPending() === 'suspend' || actionPending() === 'resume') {
+            Mise à jour…
+          } @else {
+            {{ current.suspended ? 'Reprendre l’envoi' : 'Suspendre l’envoi pour cette bourse' }}
+          }
+        </button>
+      </div>
+    </section>
+
+    <section class="fair-digest-preview" aria-labelledby="fair-digest-preview-title">
+      <div class="fair-digest-preview-heading">
+        <div>
+          <span class="fair-digest-section-kicker">E-mail généré</span>
+          <h2 id="fair-digest-preview-title">Aperçu</h2>
+        </div>
+        <span class="fair-digest-preview-safety">Aucun script exécuté dans cet aperçu.</span>
+      </div>
+      @if (previewError(); as message) {
+        <p class="fair-digest-feedback fair-digest-feedback--error" role="status">{{ message }}</p>
+      } @else if (previewHtml(); as html) {
+        <div class="fair-digest-frame" data-zone="E9-apercu">
+          <iframe
+            [srcdoc]="html"
+            sandbox=""
+            referrerpolicy="no-referrer"
+            title="Aperçu de l’e-mail avant la bourse">
+          </iframe>
+        </div>
+      } @else {
+        <p class="fair-digest-preview-empty" role="status">L’aperçu apparaîtra ici lorsqu’il sera disponible.</p>
+      }
+    </section>
+
+    <section class="fair-digest-report" aria-labelledby="fair-digest-report-title" data-zone="E9-compte-rendu">
+      <div class="fair-digest-preview-heading">
+        <div>
+          <span class="fair-digest-section-kicker">Historique</span>
+          <h2 id="fair-digest-report-title">Dernier envoi</h2>
+        </div>
+        @if (current.lastReport; as report) {
+          <span class="fair-digest-report-date">{{ formatCompletedAt(report.completedAtUtc) }}</span>
+        }
+      </div>
+      @if (current.lastReport; as report) {
+        <p class="fair-digest-report-fair">{{ report.fairName }}</p>
+        <div class="fair-digest-report-counts">
+          <div><strong>{{ report.sentCount }}</strong><span>Envoyés</span></div>
+          <div><strong>{{ report.skippedCount }}</strong><span>Non envoyés, rien à proposer</span></div>
+          <div><strong>{{ report.failedCount }}</strong><span>Erreurs</span></div>
+        </div>
+      } @else {
+        <p class="fair-digest-preview-empty">Aucun envoi n’a encore été consigné.</p>
+      }
+    </section>
+  }
+</section>

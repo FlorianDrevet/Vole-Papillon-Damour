@@ -158,11 +158,11 @@ public sealed class EnrichPendingBooksCommandHandler(
             .ToListAsync(cancellationToken);
 
         IReadOnlyDictionary<Isbn13, IsbndbLookup>? isbndbLookups = null;
-        if (isbndbLookupService is not null && candidates.Count > 0)
+        if (!command.ForceFallback && isbndbLookupService is not null && candidates.Count > 0)
         {
             isbndbLookups = await isbndbLookupService.LookupManyAsync(
                 candidates,
-                IsbndbUsage.Scan,
+                command.Usage,
                 cancellationToken);
         }
 
@@ -174,9 +174,11 @@ public sealed class EnrichPendingBooksCommandHandler(
         var bibliographicDetailsUpdatedCount = 0;
         foreach (var isbn13 in candidates)
         {
-            var prefetchedLookup = isbndbLookups is not null && isbndbLookups.TryGetValue(isbn13, out var lookup)
-                ? lookup
-                : null;
+            var prefetchedLookup = command.ForceFallback
+                ? new IsbndbLookup.QuotaExhausted(null)
+                : isbndbLookups is not null && isbndbLookups.TryGetValue(isbn13, out var lookup)
+                    ? lookup
+                    : null;
             BookMetadataResult? metadata;
             try
             {
@@ -184,7 +186,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                     isbn13,
                     cancellationToken,
                     command.RefreshMissingBibliographicDetails,
-                    IsbndbUsage.Scan,
+                    command.Usage,
                     prefetchedLookup);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

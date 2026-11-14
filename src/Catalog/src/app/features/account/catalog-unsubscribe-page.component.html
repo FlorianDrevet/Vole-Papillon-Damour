@@ -5,7 +5,11 @@
     <div class="unsubscribe-card success-card" role="status">
       <p class="eyebrow">Préférences enregistrées</p>
       <h1 id="unsubscribe-title">Vous êtes désabonné.</h1>
-      <p>Vous ne recevrez plus les alertes e-mail de la bourse aux livres. Vos livres suivis restent disponibles dans votre compte et les alertes pourront être réactivées quand vous le souhaitez.</p>
+      @if (isFairDigest()) {
+        <p>Vous ne recevrez plus la sélection avant chaque bourse. Vos préférences de recommandations et vos livres favoris restent inchangés.</p>
+      } @else {
+        <p>Vous ne recevrez plus les alertes e-mail de la bourse aux livres. Vos livres suivis restent disponibles dans votre compte et les alertes pourront être réactivées quand vous le souhaitez.</p>
+      }
       <a class="unsubscribe-button" routerLink="/compte">Retourner à mon compte <span aria-hidden="true">→</span></a>
     </div>
   } @else if (authError() || errorMessage()) {
@@ -19,15 +23,24 @@
     <div class="unsubscribe-card" role="status">
       <p class="eyebrow">Désinscription</p>
       <h1 id="unsubscribe-title">Vérification en cours.</h1>
-      <p>Nous ouvrons votre connexion sécurisée pour désactiver les alertes de votre compte.</p>
+      @if (isFairDigest()) {
+        <p>Nous ouvrons votre connexion sécurisée pour arrêter la sélection envoyée avant chaque bourse.</p>
+      } @else {
+        <p>Nous ouvrons votre connexion sécurisée pour désactiver les alertes de votre compte.</p>
+      }
     </div>
   } @else {
     <div class="unsubscribe-card">
       <p class="eyebrow">Désinscription</p>
-      <h1 id="unsubscribe-title">Ne plus recevoir nos alertes.</h1>
-      <p>Confirmez pour suspendre les e-mails de disponibilité. Vos livres suivis ne seront pas supprimés et le catalogue restera consultable librement.</p>
+      @if (isFairDigest()) {
+        <h1 id="unsubscribe-title">Ne plus recevoir la sélection avant la bourse.</h1>
+        <p>Confirmez pour arrêter ces e-mails. Vos préférences de recommandations et vos livres favoris ne seront pas modifiés.</p>
+      } @else {
+        <h1 id="unsubscribe-title">Ne plus recevoir nos alertes.</h1>
+        <p>Confirmez pour suspendre les e-mails de disponibilité. Vos livres suivis ne seront pas supprimés et le catalogue restera consultable librement.</p>
+      }
       <button type="button" class="unsubscribe-button" [disabled]="pending()" (click)="confirmUnsubscribe()">
-        {{ pending() ? 'Enregistrement…' : 'Confirmer le désabonnement' }}
+        {{ pending() ? 'Enregistrement…' : isFairDigest() ? 'Arrêter la sélection par e-mail' : 'Confirmer le désabonnement' }}
       </button>
     </div>
   }

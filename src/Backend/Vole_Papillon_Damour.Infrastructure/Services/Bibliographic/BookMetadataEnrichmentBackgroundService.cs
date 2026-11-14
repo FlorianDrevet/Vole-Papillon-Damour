@@ -22,11 +22,11 @@ public sealed class BookMetadataEnrichmentBackgroundService(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            IReadOnlyList<Isbn13> isbn13s;
+            IReadOnlyList<BookMetadataEnrichmentRequest> requests;
             try
             {
                 var max = Math.Clamp(isbndbOptions?.Value.BulkSize ?? DefaultBulkSize, 1, DefaultBulkSize);
-                isbn13s = await queue.DequeueBatchAsync(max, stoppingToken);
+                requests = await queue.DequeueBatchAsync(max, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -37,18 +37,27 @@ public sealed class BookMetadataEnrichmentBackgroundService(
             {
                 using var scope = scopeFactory.CreateScope();
                 var sender = scope.ServiceProvider.GetRequiredService<ISender>();
-                var result = await sender.Send(
-                    new EnrichPendingBooksCommand(BatchSize: isbn13s.Count, Isbn13s: isbn13s),
-                    stoppingToken);
+                foreach (var group in requests.GroupBy(request => (request.Usage, request.ForceFallback)))
+                {
+                    var groupRequests = group.ToArray();
+                    var isbns = groupRequests.Select(request => request.Isbn13).ToArray();
+                    var result = await sender.Send(
+                        new EnrichPendingBooksCommand(
+                            BatchSize: isbns.Length,
+                            Isbn13s: isbns,
+                            Usage: group.Key.Usage,
+                            ForceFallback: group.Key.ForceFallback),
+                        stoppingToken);
 
-                logger.LogInformation(
-                    "Immediate book metadata enrichment completed for {IsbnCount} ISBNs. " +
-                    "Processed: {Processed}, Resolved: {Resolved}, NotFound: {NotFound}, Failed: {Failed}",
-                    isbn13s.Count,
-                    result.ProcessedCount,
-                    result.ResolvedCount,
-                    result.NotFoundCount,
-                    result.FailedCount);
+                    logger.LogInformation(
+                        "Immediate book metadata enrichment completed for {IsbnCount} ISBNs. " +
+                        "Processed: {Processed}, Resolved: {Resolved}, NotFound: {NotFound}, Failed: {Failed}",
+                        isbns.Length,
+                        result.ProcessedCount,
+                        result.ResolvedCount,
+                        result.NotFoundCount,
+                        result.FailedCount);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -59,7 +68,7 @@ public sealed class BookMetadataEnrichmentBackgroundService(
                 logger.LogError(
                     exception,
                     "Immediate book metadata enrichment failed for {IsbnCount} ISBNs; the scheduled worker will retry them.",
-                    isbn13s.Count);
+                    requests.Count);
             }
         }
     }

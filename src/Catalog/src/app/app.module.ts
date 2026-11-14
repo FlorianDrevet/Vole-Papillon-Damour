@@ -28,12 +28,12 @@ import {ManualRequestAddDialogComponent} from './features/administration/manual-
 import {ManualRequestDecisionDialogComponent} from './features/administration/manual-requests/manual-request-decision-dialog.component';
 import {IsbndbAbsentViewComponent} from './features/administration/isbndb/isbndb-absent-view.component';
 import {IsbndbStatusCardComponent} from './features/administration/isbndb/isbndb-status-card.component';
+import {FairDigestAdminComponent} from './features/administration/fair-digest/fair-digest-admin.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
 import {AccountCardComponent} from './features/account/card/account-card.component';
 import {AccountPurchasesComponent} from './features/account/purchases/account-purchases.component';
-import {RecommendationsBandComponent} from './features/account/recommendations-band/recommendations-band.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
@@ -44,6 +44,14 @@ import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-fou
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
 import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
+import {AddFavoritePanelComponent} from './features/favorites/add-favorite-panel/add-favorite-panel.component';
+import {CatalogFavoritesPageComponent} from './features/favorites/catalog-favorites-page.component';
+import {AccountStepDialogComponent} from './features/favorites/account-step-dialog/account-step-dialog.component';
+import {FavoriteListComponent} from './features/favorites/favorite-list.component';
+import {SuggestionGridComponent} from './features/favorites/suggestion-grid.component';
+import {BrowserStorageBannerComponent} from './features/favorites/browser-storage-banner.component';
+import {MinimumHeartsControlComponent} from './features/favorites/minimum-hearts-control.component';
+import {HeartsComponent} from './shared/components/hearts/hearts.component';
 import {CatalogCoverDirective} from './shared/catalog-cover.directive';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
@@ -72,13 +80,13 @@ registerLocaleData(localeFr);
     ManualRequestDecisionDialogComponent,
     IsbndbAbsentViewComponent,
     IsbndbStatusCardComponent,
+    FairDigestAdminComponent,
     NotFoundReportCloseDialogComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,
     NotFoundReportDialogComponent,
     AccountCardComponent,
     AccountPurchasesComponent,
-    RecommendationsBandComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,
@@ -89,6 +97,14 @@ registerLocaleData(localeFr);
     CatalogRareBooksPageComponent,
     CatalogRareBookDetailPageComponent,
     CatalogRareBookCardComponent,
+    AddFavoritePanelComponent,
+    CatalogFavoritesPageComponent,
+    AccountStepDialogComponent,
+    FavoriteListComponent,
+    SuggestionGridComponent,
+    BrowserStorageBannerComponent,
+    MinimumHeartsControlComponent,
+    HeartsComponent,
     CatalogCoverDirective,
   ],
   imports: [

@@ -21,6 +21,9 @@ import {
   CatalogAdminIsbndbCompletionResponse,
   CatalogAdminIsbndbRecheckResponse,
   CatalogAdminIsbndbStatus,
+  CatalogAdminFairDigestOperation,
+  CatalogAdminFairDigestStatus,
+  CatalogAdminFairDigestTestResult,
   CatalogAdminBookMetadataQueue,
   CatalogAdminMetadataRetry,
   CatalogAdminCatalogueFilters,
@@ -171,6 +174,44 @@ export class CatalogAdminApiService {
   getIsbndbStatus(accessToken: string): Observable<CatalogAdminIsbndbStatus> {
     return this.http.get<CatalogAdminIsbndbStatus>(
       `${this.apiUrl}/books/admin/isbndb/status`,
+      this.options(accessToken),
+    );
+  }
+
+  getFairDigestStatus(accessToken: string): Observable<CatalogAdminFairDigestStatus> {
+    return this.http.get<CatalogAdminFairDigestStatus>(
+      `${this.apiUrl}/books/admin/fair-digest`,
+      this.options(accessToken),
+    );
+  }
+
+  getFairDigestPreview(accessToken: string): Observable<string> {
+    return this.http.get(
+      `${this.apiUrl}/books/admin/fair-digest/preview`,
+      {...this.options(accessToken), responseType: 'text'},
+    );
+  }
+
+  sendFairDigestTest(accessToken: string): Observable<CatalogAdminFairDigestTestResult> {
+    return this.http.post<CatalogAdminFairDigestTestResult>(
+      `${this.apiUrl}/books/admin/fair-digest/test`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  suspendFairDigest(accessToken: string): Observable<CatalogAdminFairDigestOperation> {
+    return this.http.post<CatalogAdminFairDigestOperation>(
+      `${this.apiUrl}/books/admin/fair-digest/suspend`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  resumeFairDigest(accessToken: string): Observable<CatalogAdminFairDigestOperation> {
+    return this.http.post<CatalogAdminFairDigestOperation>(
+      `${this.apiUrl}/books/admin/fair-digest/resume`,
+      null,
       this.options(accessToken),
     );
   }

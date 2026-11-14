@@ -31,6 +31,12 @@
           {{ reasonLabel() }}
         </span>
       }
+      @if (hearts !== null) {
+        <app-hearts class="book-card-hearts" [attr.data-zone]="heartsZone" [value]="hearts"></app-hearts>
+      }
+      @if (recommendationText) {
+        <span class="book-card-recommendation-text">{{ recommendationText }}</span>
+      }
       <h3>{{ book.title || 'Titre à compléter' }}</h3>
       <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
       <div class="book-card-footer">

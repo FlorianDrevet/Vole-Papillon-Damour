@@ -17,4 +17,6 @@ public sealed class RecommendationOptions
     public int SimilarMinCount { get; set; } = 1;
     public int PersonalMaxCount { get; set; } = 8;
     public int PersonalMinCount { get; set; } = 3;
+    public float[] HeartThresholds { get; set; } = [0.50f, 0.58f, 0.66f, 0.74f, 0.82f];
+    public int DefaultMinimumHearts { get; set; } = 3;
 }

@@ -57,8 +57,19 @@ public sealed class ProcessBookRecommendationsCommandHandler(
                 book.RedirectedToIsbn13,
                 book.IsIsbndbSourced,
                 book.IsAbsentFromIsbndb,
+                book.IsFavoriteReference,
             })
             .ToDictionaryAsync(book => book.Isbn13, cancellationToken);
+        var memberFavoriteIsbns = await dbContext.MemberFavoriteBooks
+            .AsNoTracking()
+            .Where(favorite => bookIds.Contains(favorite.Isbn13))
+            .Select(favorite => favorite.Isbn13.Value)
+            .ToHashSetAsync(cancellationToken);
+        var anonymousFavoriteIsbns = await dbContext.AnonymousFavoriteCounts
+            .AsNoTracking()
+            .Where(favorite => bookIds.Contains(favorite.Id))
+            .Select(favorite => favorite.Id.Value)
+            .ToHashSetAsync(cancellationToken);
 
         var started = new List<(BookRecommendationJob Job, int RequestVersion, bool Retired)>();
         var waitingForMetadata = 0;
@@ -71,8 +82,13 @@ public sealed class ProcessBookRecommendationsCommandHandler(
                 continue;
             }
 
-            if (book.MetadataStatus == BookMetadataStatus.Pending ||
-                (!book.IsIsbndbSourced && !book.IsAbsentFromIsbndb))
+            var hasFavoriteSeed = book.IsFavoriteReference ||
+                                  memberFavoriteIsbns.Contains(isbn13) ||
+                                  anonymousFavoriteIsbns.Contains(isbn13);
+            var waitingOnFallback = !book.IsIsbndbSourced &&
+                                    !book.IsAbsentFromIsbndb &&
+                                    (book.MetadataStatus != BookMetadataStatus.Resolved || !hasFavoriteSeed);
+            if (book.MetadataStatus == BookMetadataStatus.Pending || waitingOnFallback)
             {
                 waitingForMetadata++;
                 continue;

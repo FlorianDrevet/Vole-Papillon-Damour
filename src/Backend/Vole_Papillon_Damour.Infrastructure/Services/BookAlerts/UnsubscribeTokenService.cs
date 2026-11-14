@@ -19,11 +19,21 @@ public sealed class UnsubscribeTokenService(
 {
     private readonly UnsubscribeTokenOptions _options = options.Value;
 
-    public string Create(Guid memberId)
+    public string Create(Guid memberId, UnsubscribePurpose purpose = UnsubscribePurpose.BookAlerts)
     {
+        if (memberId == Guid.Empty)
+        {
+            throw new ArgumentException("A member identifier is required.", nameof(memberId));
+        }
+
+        if (!Enum.IsDefined(purpose))
+        {
+            throw new ArgumentOutOfRangeException(nameof(purpose));
+        }
+
         var expiresAt = dateTimeProvider.UtcNow.AddDays(_options.LifetimeDays);
         var payload = FormattableString.Invariant(
-            $"{memberId:N}:{new DateTimeOffset(expiresAt, TimeSpan.Zero).ToUnixTimeSeconds()}");
+            $"{purpose}:{memberId:N}:{new DateTimeOffset(expiresAt, TimeSpan.Zero).ToUnixTimeSeconds()}");
         var payloadBytes = Encoding.UTF8.GetBytes(payload);
 
         return string.Concat(
@@ -32,9 +42,10 @@ public sealed class UnsubscribeTokenService(
             Base64Url.Encode(Sign(payloadBytes)));
     }
 
-    public bool TryValidate(string token, out Guid memberId)
+    public bool TryValidate(string token, out Guid memberId, out UnsubscribePurpose purpose)
     {
         memberId = Guid.Empty;
+        purpose = UnsubscribePurpose.BookAlerts;
         if (string.IsNullOrWhiteSpace(token))
         {
             return false;
@@ -58,9 +69,23 @@ public sealed class UnsubscribeTokenService(
         }
 
         var parts = Encoding.UTF8.GetString(payloadBytes).Split(':');
-        if (parts.Length != 2 ||
-            !Guid.TryParseExact(parts[0], "N", out var parsedMemberId) ||
-            !long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var expiresAt))
+        var memberPartIndex = parts.Length switch
+        {
+            2 => 0,
+            3 => 1,
+            _ => -1
+        };
+        var parsedPurpose = UnsubscribePurpose.BookAlerts;
+        if (parts.Length == 3 &&
+            (!Enum.TryParse(parts[0], ignoreCase: false, out parsedPurpose) ||
+             !Enum.IsDefined(parsedPurpose)))
+        {
+            return false;
+        }
+
+        if (memberPartIndex < 0 ||
+            !Guid.TryParseExact(parts[memberPartIndex], "N", out var parsedMemberId) ||
+            !long.TryParse(parts[memberPartIndex + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var expiresAt))
         {
             return false;
         }
@@ -73,8 +98,12 @@ public sealed class UnsubscribeTokenService(
         }
 
         memberId = parsedMemberId;
+        purpose = parsedPurpose;
         return true;
     }
+
+    public bool TryValidate(string token, out Guid memberId) =>
+        TryValidate(token, out memberId, out _);
 
     private byte[] Sign(byte[] payloadBytes)
     {

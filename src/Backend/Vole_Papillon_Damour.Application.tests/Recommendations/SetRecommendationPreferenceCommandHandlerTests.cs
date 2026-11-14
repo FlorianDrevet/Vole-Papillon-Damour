@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Commands.RevokeFairDigestConsent;
 using Vole_Papillon_Damour.Application.Recommendations.Commands.SetRecommendationPreference;
 using Vole_Papillon_Damour.Application.Recommendations.Queries.GetRecommendationPreference;
 using Vole_Papillon_Damour.Application.tests.CheckoutPassages;
@@ -22,10 +24,14 @@ public sealed class SetRecommendationPreferenceCommandHandlerTests
         var identity = new MemberIdentityService(fixture.Context, clock);
         var handler = new SetRecommendationPreferenceCommandHandler(fixture.Context, identity, clock);
 
-        var first = await handler.Handle(CommandFor(member, enabled: false), CancellationToken.None);
+        var first = await handler.Handle(
+            CommandFor(member, enabled: false, minimumHearts: 4, fairDigestConsent: true),
+            CancellationToken.None);
         first.IsError.Should().BeFalse();
         var preference = await fixture.Context.MemberRecommendationPreferences.SingleAsync();
         preference.Enabled.Should().BeFalse();
+        preference.MinimumHearts.Should().Be(4);
+        preference.FairDigestConsentedAt.Should().Be(Now);
         preference.UpdatedAt.Should().Be(Now);
 
         clock.UtcNow = Now.AddMinutes(10);
@@ -49,9 +55,12 @@ public sealed class SetRecommendationPreferenceCommandHandlerTests
         var member = await fixture.AddMemberAsync();
         var clock = new MutableClock(Now);
         var identity = new MemberIdentityService(fixture.Context, clock);
+        var settings = Substitute.For<IRecommendationSettings>();
+        settings.DefaultMinimumHearts.Returns(3);
         var queryHandler = new GetRecommendationPreferenceQueryHandler(
             fixture.Context,
-            identity);
+            identity,
+            settings);
         var query = new GetRecommendationPreferenceQuery(
             member.Id.Value.ToString("D"),
             member.Email,
@@ -61,6 +70,8 @@ public sealed class SetRecommendationPreferenceCommandHandlerTests
         var defaultPreference = await queryHandler.Handle(query, CancellationToken.None);
         defaultPreference.IsError.Should().BeFalse();
         defaultPreference.Value.Enabled.Should().BeTrue();
+        defaultPreference.Value.MinimumHearts.Should().Be(3);
+        defaultPreference.Value.FairDigestConsentedAt.Should().BeNull();
 
         await new SetRecommendationPreferenceCommandHandler(fixture.Context, identity, clock)
             .Handle(CommandFor(member, enabled: false), CancellationToken.None);
@@ -68,14 +79,47 @@ public sealed class SetRecommendationPreferenceCommandHandlerTests
         var storedPreference = await queryHandler.Handle(query, CancellationToken.None);
         storedPreference.IsError.Should().BeFalse();
         storedPreference.Value.Enabled.Should().BeFalse();
+        storedPreference.Value.MinimumHearts.Should().Be(3);
+        storedPreference.Value.FairDigestConsentedAt.Should().BeNull();
     }
 
-    private static SetRecommendationPreferenceCommand CommandFor(User member, bool enabled) => new(
+    [Fact]
+    public async Task RevokeFairDigestConsent_OnlyRevokesTheEmailConsentAndIsIdempotent()
+    {
+        await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
+        var member = await fixture.AddMemberAsync();
+        var clock = new MutableClock(Now);
+        var identity = new MemberIdentityService(fixture.Context, clock);
+        await new SetRecommendationPreferenceCommandHandler(fixture.Context, identity, clock)
+            .Handle(CommandFor(member, enabled: false, minimumHearts: 4, fairDigestConsent: true), CancellationToken.None);
+
+        clock.UtcNow = Now.AddMinutes(5);
+        var handler = new RevokeFairDigestConsentCommandHandler(fixture.Context, clock);
+        var command = new RevokeFairDigestConsentCommand(member.Id.Value);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var preference = await fixture.Context.MemberRecommendationPreferences.SingleAsync();
+        preference.Enabled.Should().BeFalse();
+        preference.MinimumHearts.Should().Be(4);
+        preference.FairDigestConsentedAt.Should().BeNull();
+        preference.UpdatedAt.Should().Be(Now.AddMinutes(5));
+
+        (await handler.Handle(command, CancellationToken.None)).IsError.Should().BeFalse();
+    }
+
+    private static SetRecommendationPreferenceCommand CommandFor(
+        User member,
+        bool enabled,
+        int? minimumHearts = null,
+        bool? fairDigestConsent = null) => new(
         member.Id.Value.ToString("D"),
         member.Email,
         member.Name?.FirstName,
         member.Name?.LastName,
-        enabled);
+        enabled,
+        minimumHearts,
+        fairDigestConsent);
 
     private sealed class MutableClock(DateTime utcNow) : IDateTimeProvider
     {

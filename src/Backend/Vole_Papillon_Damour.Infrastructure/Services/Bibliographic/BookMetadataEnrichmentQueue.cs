@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
@@ -14,12 +15,20 @@ public sealed class BookMetadataEnrichmentQueue : IBookMetadataEnrichmentQueue
             SingleWriter = false,
             AllowSynchronousContinuations = false,
         });
-    private readonly ConcurrentDictionary<Isbn13, byte> pending = new();
+    private readonly ConcurrentDictionary<Isbn13, BookMetadataEnrichmentRequest> pending = new();
 
-    public void Enqueue(Isbn13 isbn13)
+    public void Enqueue(Isbn13 isbn13, IsbndbUsage usage = IsbndbUsage.Scan, bool forceFallback = false)
     {
-        if (!pending.TryAdd(isbn13, 0))
+        var request = new BookMetadataEnrichmentRequest(isbn13, usage, forceFallback);
+        if (!pending.TryAdd(isbn13, request))
         {
+            pending.AddOrUpdate(
+                isbn13,
+                request,
+                (_, existing) => new BookMetadataEnrichmentRequest(
+                    isbn13,
+                    usage == IsbndbUsage.Favorites ? usage : existing.Usage,
+                    forceFallback || existing.ForceFallback));
             return;
         }
 
@@ -29,14 +38,15 @@ public sealed class BookMetadataEnrichmentQueue : IBookMetadataEnrichmentQueue
         }
     }
 
-    public async ValueTask<Isbn13> DequeueAsync(CancellationToken cancellationToken)
+    public async ValueTask<BookMetadataEnrichmentRequest> DequeueAsync(CancellationToken cancellationToken)
     {
         var isbn13 = await channel.Reader.ReadAsync(cancellationToken);
-        pending.TryRemove(isbn13, out _);
-        return isbn13;
+        return pending.TryRemove(isbn13, out var request)
+            ? request
+            : new BookMetadataEnrichmentRequest(isbn13, IsbndbUsage.Scan, ForceFallback: false);
     }
 
-    public async ValueTask<IReadOnlyList<Isbn13>> DequeueBatchAsync(
+    public async ValueTask<IReadOnlyList<BookMetadataEnrichmentRequest>> DequeueBatchAsync(
         int max,
         CancellationToken cancellationToken)
     {
@@ -45,11 +55,11 @@ public sealed class BookMetadataEnrichmentQueue : IBookMetadataEnrichmentQueue
             throw new ArgumentOutOfRangeException(nameof(max));
         }
 
-        var batch = new List<Isbn13>(max);
+        var batch = new List<BookMetadataEnrichmentRequest>(max);
         var included = new HashSet<Isbn13>();
         var first = await DequeueAsync(cancellationToken);
         batch.Add(first);
-        included.Add(first);
+        included.Add(first.Isbn13);
         if (max == 1)
         {
             return batch;
@@ -61,9 +71,11 @@ public sealed class BookMetadataEnrichmentQueue : IBookMetadataEnrichmentQueue
         {
             try
             {
-                var next = await channel.Reader.ReadAsync(batchWindow.Token);
-                pending.TryRemove(next, out _);
-                if (included.Add(next))
+                var isbn13 = await channel.Reader.ReadAsync(batchWindow.Token);
+                var next = pending.TryRemove(isbn13, out var request)
+                    ? request
+                    : new BookMetadataEnrichmentRequest(isbn13, IsbndbUsage.Scan, ForceFallback: false);
+                if (included.Add(next.Isbn13))
                 {
                     batch.Add(next);
                 }

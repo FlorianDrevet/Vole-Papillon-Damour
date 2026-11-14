@@ -2,7 +2,8 @@ namespace Vole_Papillon_Damour.Contracts.Recommendations;
 
 public sealed record MyRecommendationsResponse(
     string Status,
-    IReadOnlyList<MyRecommendationResponseItem> Items);
+    IReadOnlyList<MyRecommendationResponseItem> Items,
+    int MinimumHearts = 3);
 
 public sealed record MyRecommendationResponseItem(
     string Isbn13,
@@ -25,4 +26,6 @@ public sealed record MyRecommendationResponseItem(
     string? CoverSource,
     string? RareBookSlug,
     string Reason,
-    string SeedTitle);
+    string SeedTitle,
+    int Hearts = 0,
+    int OtherContributorCount = 0);

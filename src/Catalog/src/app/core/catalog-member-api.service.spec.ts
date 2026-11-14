@@ -4,7 +4,11 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogMemberApiService} from './catalog-member-api.service';
-import {CatalogMemberCard, CatalogRecommendationsResponse} from './catalog.models';
+import {
+  CatalogMemberCard,
+  CatalogMemberFavoritesResponse,
+  CatalogRecommendationsResponse,
+} from './catalog.models';
 
 describe('CatalogMemberApiService', () => {
   let service: CatalogMemberApiService;
@@ -48,16 +52,33 @@ describe('CatalogMemberApiService', () => {
     request.flush(response);
   });
 
+  it('requests member recommendations at the selected heart threshold', () => {
+    service.getRecommendations('member-token', 8, 4).subscribe();
+
+    const request = http.expectOne(
+      request => request.url === `${environment.apiUrl}/catalog/me/recommendations`,
+    );
+    expect(request.request.params.get('limit')).toBe('8');
+    expect(request.request.params.get('minimumHearts')).toBe('4');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({status: 'Enabled', minimumHearts: 4, items: []});
+  });
+
   it('reads personal recommendation preferences with a bearer token', () => {
+    const response = {
+      enabled: true,
+      minimumHearts: 4,
+      fairDigestConsentedAt: '2026-10-01T08:00:00Z',
+    };
     service.getRecommendationPreference('member-token')
-      .subscribe(result => expect(result).toEqual({enabled: true}));
+      .subscribe(result => expect(result).toEqual(response));
 
     const request = http.expectOne(
       `${environment.apiUrl}/catalog/me/recommendations/preference`,
     );
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
-    request.flush({enabled: true});
+    request.flush(response);
   });
 
   it('updates personal recommendation preferences with a bearer token', () => {
@@ -69,6 +90,21 @@ describe('CatalogMemberApiService', () => {
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({enabled: false});
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(null);
+  });
+
+  it('updates recommendation consent while retaining the selected threshold', () => {
+    service.setRecommendationPreference('member-token', true, 4, false).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/catalog/me/recommendations/preference`,
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      enabled: true,
+      minimumHearts: 4,
+      fairDigestConsent: false,
+    });
     request.flush(null);
   });
 
@@ -200,6 +236,51 @@ describe('CatalogMemberApiService', () => {
     expect(request.request.body).toEqual({entries});
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
     request.flush({added: 1, alreadyPresent: 0, rejected: []});
+  });
+
+  it('loads member favorites with a bearer token', () => {
+    const response: CatalogMemberFavoritesResponse = {
+      generatedAt: '2026-11-14T10:00:00Z',
+      total: 0,
+      maximum: 200,
+      works: [],
+    };
+    service.getFavorites('member-token').subscribe(result => expect(result).toEqual(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/favorites`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(response);
+  });
+
+  it('adds and removes a member favorite by ISBN with the same bearer token', () => {
+    const isbn13 = '9782070612758';
+    service.addFavorite('member-token', isbn13).subscribe(result => {
+      expect(result).toEqual({isbn13, alreadyPresent: false, total: 1});
+    });
+    const add = http.expectOne(`${environment.apiUrl}/catalog/me/favorites/${isbn13}`);
+    expect(add.request.method).toBe('PUT');
+    expect(add.request.body).toBeNull();
+    expect(add.request.headers.get('Authorization')).toBe('Bearer member-token');
+    add.flush({isbn13, alreadyPresent: false, total: 1});
+
+    service.removeFavorite('member-token', isbn13).subscribe();
+    const remove = http.expectOne(`${environment.apiUrl}/catalog/me/favorites/${isbn13}`);
+    expect(remove.request.method).toBe('DELETE');
+    expect(remove.request.headers.get('Authorization')).toBe('Bearer member-token');
+    remove.flush(null);
+  });
+
+  it('merges local favorite ISBNs and timestamps with the bearer token', () => {
+    const entries = [{isbn13: '9782070612758', addedAt: '2026-11-14T10:00:00.000Z'}];
+    service.mergeFavorites('member-token', entries).subscribe(result => {
+      expect(result).toEqual({added: 1, skipped: 0, total: 1});
+    });
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/favorites/merge`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({entries});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({added: 1, skipped: 0, total: 1});
   });
 
   it('loads the member card with a bearer token', () => {

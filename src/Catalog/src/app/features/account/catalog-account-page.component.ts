@@ -18,6 +18,7 @@ import {
 } from '../../core/catalog-auth.service';
 import {getCatalogAccountDisplayName} from '../../core/catalog-account-name';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {
   CatalogVolunteerGenreStatistics,
@@ -49,9 +50,11 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly authError: Signal<string | null>;
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly recommendationsEnabled = signal<boolean | null>(null);
+  readonly fairDigestConsentedAt = signal<string | null>(null);
   readonly recommendationPreferenceLoading = signal(false);
   readonly recommendationPreferencePending = signal(false);
   readonly recommendationPreferenceError = signal<string | null>(null);
+  readonly fairDigestPreferenceError = signal<string | null>(null);
   readonly contribution = signal<CatalogVolunteerStatisticsResponse | null>(null);
   readonly contributionLoading = signal(false);
   readonly purchasesVisited = signal(false);
@@ -67,6 +70,27 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlistRecoveryAction = signal<WatchlistRecoveryAction>(null);
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
+  readonly favoriteCount: Signal<number>;
+  readonly minimumHearts: Signal<number>;
+  readonly fairDigestConsentLabel = computed(() => {
+    const consentedAt = this.fairDigestConsentedAt();
+    if (!consentedAt) {
+      return 'Désactivé';
+    }
+
+    const date = new Date(consentedAt);
+    if (Number.isNaN(date.getTime())) {
+      return 'Accepté';
+    }
+
+    const formattedDate = new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+    }).format(date);
+    return `Accepté le ${formattedDate}`;
+  });
   readonly activeTab = signal<CatalogAccountTab>('watchlist');
   readonly loadingSkeletonItems = [0, 1, 2] as const;
   readonly contributionSlots = ['morning', 'afternoon', 'evening'] as const;
@@ -94,11 +118,13 @@ export class CatalogAccountPageComponent implements OnInit {
   });
   readonly selectionIntro = 'Les livres que vous voulez retrouver à la prochaine bourse. Ma sélection ne déclenche aucune alerte et ne réserve rien : un livre peut être vendu avant votre arrivée.';
   private selectionSignInHandled = false;
+  private favoritesSignInHandled = false;
 
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogMemberApiService,
     private readonly selection: CatalogSelectionService,
+    private readonly favorites: CatalogFavoritesService,
     private readonly meta: Meta,
     private readonly route: ActivatedRoute,
   ) {
@@ -110,6 +136,8 @@ export class CatalogAccountPageComponent implements OnInit {
     this.isVolunteer = this.auth.isVolunteer;
     this.authError = this.auth.error;
     this.accountLabel = computed(() => getCatalogAccountDisplayName(this.account()));
+    this.favoriteCount = computed(() => this.favorites.favorites().length);
+    this.minimumHearts = this.favorites.currentMinimumHearts;
   }
 
   ngOnInit(): void {
@@ -134,6 +162,14 @@ export class CatalogAccountPageComponent implements OnInit {
           this.selectionError.set('Ma sélection n’a pas pu être synchronisée. Votre sélection sur cet appareil est conservée.');
         } finally {
           this.selectionLoading.set(false);
+        }
+      }
+      if (!this.favoritesSignInHandled) {
+        try {
+          await this.favorites.onSignedIn();
+          this.favoritesSignInHandled = true;
+        } catch {
+          // The favorites service keeps the local list and exposes its sync error.
         }
       }
       await this.loadWatchlist();
@@ -349,6 +385,7 @@ export class CatalogAccountPageComponent implements OnInit {
       const token = await this.auth.getApiAccessToken();
       const preference = await firstValueFrom(this.api.getRecommendationPreference(token));
       this.recommendationsEnabled.set(preference.enabled);
+      this.fairDigestConsentedAt.set(preference.fairDigestConsentedAt ?? null);
     } catch {
       this.recommendationPreferenceError.set(
         'Vos préférences de suggestions n’ont pas pu être chargées. Réessayez.',
@@ -380,6 +417,46 @@ export class CatalogAccountPageComponent implements OnInit {
       );
     } finally {
       this.recommendationPreferencePending.set(false);
+    }
+  }
+
+  async setFairDigestConsentEnabled(enabled: boolean): Promise<void> {
+    const isConsented = this.fairDigestConsentedAt() !== null;
+    if (
+      !this.auth.isAuthenticated()
+      || this.recommendationPreferencePending()
+      || isConsented === enabled
+    ) {
+      return;
+    }
+
+    this.recommendationPreferencePending.set(true);
+    this.fairDigestPreferenceError.set(null);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      await firstValueFrom(this.api.setRecommendationPreference(
+        token,
+        this.recommendationsEnabled() ?? true,
+        undefined,
+        enabled,
+      ));
+      this.fairDigestConsentedAt.set(enabled ? new Date().toISOString() : null);
+    } catch {
+      this.fairDigestPreferenceError.set(
+        'Votre choix pour l’e-mail avant chaque bourse n’a pas pu être mis à jour. Réessayez.',
+      );
+    } finally {
+      this.recommendationPreferencePending.set(false);
+    }
+  }
+
+  async setMinimumHearts(value: number): Promise<void> {
+    try {
+      await this.favorites.setMinimumHearts(value);
+    } catch {
+      this.recommendationPreferenceError.set(
+        'L’exigence des suggestions n’a pas pu être mise à jour. Réessayez.',
+      );
     }
   }
 

@@ -33,13 +33,17 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         var visibleBooks = await dbContext.Books
                 .AsNoTracking()
                 .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null)
-                .Select(book => new { Isbn13 = book.Id, book.Summary })
+                .Select(book => new { Isbn13 = book.Id, book.Summary, book.IsFavoriteReference })
                 .ToListAsync(cancellationToken);
         var summariesByIsbn = visibleBooks.ToDictionary(
             book => book.Isbn13.Value,
             book => book.Summary,
             StringComparer.Ordinal);
         var visibleIsbns = summariesByIsbn.Keys.ToHashSet(StringComparer.Ordinal);
+        var candidateEligible = visibleBooks
+            .Where(book => !book.IsFavoriteReference)
+            .Select(book => book.Isbn13.Value)
+            .ToHashSet(StringComparer.Ordinal);
 
         var profiles = await dbContext.BookSimilarityProfiles
             .Where(profile => profile.NoticeFound)
@@ -139,7 +143,11 @@ public sealed class RecomputeBookNeighborsCommandHandler(
         if (requestedIsbns is null)
         {
             neighborsByIsbn = new Dictionary<string, IReadOnlyList<NeighborCandidate>>(
-                NeighborComputer.Compute(features, vectorsForBooks, settings.NeighborsPerBook),
+                NeighborComputer.Compute(
+                    features,
+                    vectorsForBooks,
+                    settings.NeighborsPerBook,
+                    candidateEligible),
                 StringComparer.Ordinal);
         }
         else
@@ -172,7 +180,8 @@ public sealed class RecomputeBookNeighborsCommandHandler(
                     vectorsForBooks,
                     changedTargets,
                     currentNeighbors,
-                    settings.NeighborsPerBook),
+                    settings.NeighborsPerBook,
+                    candidateEligible),
                 StringComparer.Ordinal);
         }
 

@@ -223,12 +223,12 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
   rights: {
     title: 'Vos données et le RGPD.',
     eyebrow: 'Exercer vos droits',
-    intro: 'Vous pouvez demander à consulter, corriger, exporter ou supprimer les données liées à votre compte Catalogue, notamment Ma sélection, Ma carte et Mes achats. Cette page vous indique quoi demander et comment le faire.',
+    intro: 'Vous pouvez demander à consulter, corriger, exporter ou supprimer les données liées à votre compte Catalogue, notamment Ma sélection, vos coups de cœur, votre préférence d’e-mail avant la bourse, Ma carte et Mes achats. Cette page vous indique quoi demander et comment le faire.',
     sections: [
       {
         title: 'Responsable du traitement',
         paragraphs: [
-          `Pour le compte, les livres suivis, Ma sélection, la Carte de compte, Mes achats et les alertes du catalogue ${CATALOG_URL}, le responsable du traitement est l’association ${ASSOCIATION_NAME}, ${POSTAL_ADDRESS}. Le point de contact pour toute demande est ${CONTACT_EMAIL}.`,
+          `Pour le compte, les livres suivis, Ma sélection, les coups de cœur, l’e-mail avant la bourse, la Carte de compte, Mes achats et les alertes du catalogue ${CATALOG_URL}, le responsable du traitement est l’association ${ASSOCIATION_NAME}, ${POSTAL_ADDRESS}. Le point de contact pour toute demande est ${CONTACT_EMAIL}.`,
           'Cette page complète la politique de confidentialité et la politique de cookies. Elle ne concerne que les données liées au Catalogue ; les éventuels services tiers ouverts depuis un lien restent soumis à leurs propres informations.',
         ],
       },
@@ -236,7 +236,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         title: 'Quelles données sont liées à mon compte ?',
         paragraphs: [
           'La création du compte utilise votre adresse e-mail, votre prénom et votre nom lorsqu’ils sont renseignés, pour fournir votre espace personnel et vos alertes. Microsoft Entra External ID conserve l’identité nécessaire à la connexion ; le catalogue et son API ne conservent pas votre mot de passe.',
-          'Lorsque vous utilisez les fonctions du catalogue, nous pouvons associer à votre compte un identifiant technique, des dates de création et de dernière activité, les éditions ou œuvres suivies, votre préférence d’alerte, l’historique des alertes et les informations techniques de remise d’un e-mail. La consultation publique reste possible sans compte.',
+          'Lorsque vous utilisez les fonctions du catalogue, nous pouvons associer à votre compte un identifiant technique, des dates de création et de dernière activité, les éditions ou œuvres suivies, vos coups de cœur, vos préférences de suggestions et d’e-mail avant la bourse, l’historique des alertes et les informations techniques de remise d’un e-mail. La consultation publique reste possible sans compte.',
         ],
         bullets: [
           'Aucune adresse postale, aucun téléphone et aucune date de naissance ne sont nécessaires pour ce compte.',
@@ -248,13 +248,21 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         paragraphs: [
           'Ma sélection conserve les éditions ou fiches rares choisies, leur état personnel et leurs dates. La Carte de compte utilise un QR code et un code de secours. Lorsqu’elle est présentée avant la validation d’une vente, Mes achats peut contenir la date, la bourse, les titres, les éditions et les quantités du passage associé.',
           'Cette association est facultative : la Vente anonyme reste toujours possible, et une vente anonyme ne peut pas être retrouvée automatiquement. Les bénévoles ne peuvent pas rechercher l’historique d’un membre ; la caisse ne leur montre que son prénom. Mes achats n’affiche aucun prix ni montant.',
-          'Les suggestions personnalisées utilisent uniquement les achats que vous avez associés à votre compte et votre préférence pour vous proposer des livres proches. La base juridique de ce traitement est l’intérêt légitime de l’association ; vous pouvez désactiver ce traitement à tout moment depuis les préférences de votre compte. Aucune donnée de votre compte ni aucun achat n’est transmis au fournisseur du service d’IA : seul le texte bibliographique des livres du catalogue est utilisé pour calculer leurs ressemblances.',
+        ],
+      },
+      {
+        title: 'Coups de cœur et e-mail avant la bourse',
+        paragraphs: [
+          'Les coups de cœur enregistrés dans votre compte sont des données personnelles. Ils sont supprimés avec le compte et inclus dans l’export de vos données. Vous gardez la maîtrise de cette liste depuis la page « Trouver mon prochain livre ».',
+          'Les coups de cœur anonymes restent dans votre navigateur. Pour calculer un compteur agrégé par ISBN, le serveur reçoit uniquement les ISBN, sans identifiant. La scanette affiche ce compteur agrégé, jamais l’identité d’un membre.',
+          'Nous vous proposons des livres de la bourse qui ressemblent à vos coups de cœur. Le calcul se fait sur nos serveurs, à partir des notices des livres ; aucune donnée personnelle n’est envoyée à un service extérieur. Seul le texte bibliographique public est transmis au fournisseur du moteur de similarité. Vous pouvez vous opposer aux suggestions personnalisées en désactivant cette préférence dans « Compte et données ».',
+          'L’e-mail avant la bourse repose sur votre consentement explicite. La case est décochée par défaut et le consentement est enregistré avec sa date. Si une sélection peut être proposée, l’e-mail est envoyé aux membres qui ont consenti et ont au moins un coup de cœur. Vous pouvez retirer votre consentement en un clic depuis l’e-mail ou « Compte et données » ; aucun nouvel e-mail avant la bourse ne part après ce retrait.',
         ],
       },
       {
         title: 'Demander une copie de mes données',
         paragraphs: [
-          `Écrivez à ${CONTACT_EMAIL} ou utilisez le bouton ci-dessus. Indiquez « Je demande l’accès à mes données au titre de l’article 15 du RGPD », l’adresse e-mail utilisée pour le compte et, si vous le souhaitez, le périmètre demandé : compte, livres suivis, Ma sélection, Carte de compte, Mes achats, alertes ou données techniques.`,
+          `Écrivez à ${CONTACT_EMAIL} ou utilisez le bouton ci-dessus. Indiquez « Je demande l’accès à mes données au titre de l’article 15 du RGPD », l’adresse e-mail utilisée pour le compte et, si vous le souhaitez, le périmètre demandé : compte, livres suivis, Ma sélection, coups de cœur, préférences, Carte de compte, Mes achats, alertes ou données techniques.`,
           'La réponse est fournie dans un format électronique courant et par un moyen approprié à la confidentialité des informations. Ne joignez pas de pièce d’identité ou de document sensible dans le premier e-mail. Si un doute raisonnable sur votre identité subsiste, l’association peut demander une vérification proportionnée et vous indiquer un canal sécurisé.',
         ],
       },
@@ -269,14 +277,14 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
           'Limitation : demander que les données soient conservées mais que leur utilisation soit temporairement restreinte.',
           'Opposition : vous opposer à un traitement fondé sur l’intérêt légitime, pour des raisons tenant à votre situation.',
           'Portabilité : recevoir les données que vous avez fournies, dans les cas prévus par le RGPD, dans un format structuré et lisible par machine.',
-          'Retrait du consentement : modifier à tout moment vos choix de mesure d’audience ou de carte interactive avec « Gérer les cookies ».',
+          'Retrait du consentement : vous désabonner de l’e-mail avant la bourse en un clic depuis l’e-mail ou « Compte et données » ; modifier vos choix de mesure d’audience ou de carte interactive avec « Gérer les cookies ».',
         ],
       },
       {
         title: 'Supprimer mon compte',
         paragraphs: [
-          'Depuis « Mon compte », la demande supprime le profil local, les livres suivis, Ma sélection, la Carte de compte et l’historique des alertes associés. Elle demande également la suppression de votre identité de connexion Microsoft Entra External ID ; la finalisation peut se poursuivre en arrière-plan si un traitement différé est nécessaire.',
-          'Ma sélection est supprimée et le QR code comme le code de secours sont révoqués par la suppression de la carte. Le lien personnel avec le passage est anonymisé ; les lignes bibliographiques et les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable. Les données de membre supprimées ne doivent pas rester dans une file d’envoi d’alerte.',
+          'Depuis « Mon compte », la demande supprime le profil local, les livres suivis, Ma sélection, les coups de cœur et préférences, la Carte de compte et l’historique des alertes associés. Elle demande également la suppression de votre identité de connexion Microsoft Entra External ID ; la finalisation peut se poursuivre en arrière-plan si un traitement différé est nécessaire.',
+          'Ma sélection et les coups de cœur sont supprimés, le consentement à l’e-mail avant la bourse est retiré, et le QR code comme le code de secours sont révoqués par la suppression de la carte. Le lien personnel avec le passage est anonymisé ; les lignes bibliographiques et les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable. Les données de membre supprimées ne doivent pas rester dans une file d’envoi d’alerte.',
         ],
         links: [
           {label: 'Ouvrir « Mon compte »', href: '/compte'},
