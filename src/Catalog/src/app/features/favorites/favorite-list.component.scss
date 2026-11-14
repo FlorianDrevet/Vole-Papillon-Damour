@@ -23,8 +23,8 @@ h2 { margin: 7px 0 0; color: var(--catalog-ink); font: 500 1.9rem/1.05 var(--cat
 .remove-favorite svg { width: 20px; height: 20px; fill: var(--catalog-heart); }
 .favorite-disclaimer { margin: 0; color: var(--catalog-ink-soft); font-size: .76rem; line-height: 1.5; }
 .favorites-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 700px; margin-inline: auto; padding: 40px 24px; border: 1px dashed var(--catalog-blue-soft); background: #fff; text-align: center; }
-.empty-title { color: var(--catalog-ink); font: 500 1.5rem/1.2 var(--catalog-display); }
-.empty-copy { width: 100%; max-width: 420px; color: var(--catalog-ink-soft); font-size: .88rem; line-height: 1.5; }
+.empty-title { margin: 0; color: var(--catalog-ink); font: 500 1.5rem/1.2 var(--catalog-display); }
+.empty-copy { width: 100%; max-width: 420px; margin: 0; color: var(--catalog-ink-soft); font-size: .88rem; line-height: 1.5; }
 button:focus-visible { outline: 3px solid var(--catalog-cyan); outline-offset: 3px; }
 
 @media (max-width: 700px) {

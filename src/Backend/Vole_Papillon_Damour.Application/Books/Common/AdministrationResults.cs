@@ -317,4 +317,5 @@ public sealed record BookReferenceSearchItem(
     string? Publisher,
     int? PublicationYear,
     Uri? CoverUrl,
-    string Source);
+    string Source,
+    string? Language = null);

@@ -72,7 +72,8 @@ public static class BibliographicReferenceController
                                     item.Publisher,
                                     item.PublicationYear,
                                     item.CoverUrl,
-                                    item.Source)).ToArray(),
+                                    item.Source,
+                                    item.Language)).ToArray(),
                                 references.Page,
                                 references.PageSize)),
                             error => error.Result());

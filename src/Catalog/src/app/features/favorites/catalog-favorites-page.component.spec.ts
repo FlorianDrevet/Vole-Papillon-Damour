@@ -122,29 +122,25 @@ describe('CatalogFavoritesPageComponent', () => {
     expect(auth.registerFromFavorites).toHaveBeenCalledOnceWith('/trouver-mon-prochain-livre', false);
   });
 
-  it('shows the fair email preference to a member instead of the browser-storage banner', () => {
+  it('keeps the fair email preference in the member profile instead of the favorites page', () => {
     auth.isAuthenticated.set(true);
     favorites.mode.set('remote');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-zone="E2-preference-email"]'))
-      .not.toBeNull();
+      .toBeNull();
     expect(fixture.nativeElement.querySelector('[data-zone="E2-bandeau-navigateur"]'))
       .toBeNull();
     expect(fixture.nativeElement.textContent)
-      .toContain('Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire');
+      .not.toContain('Recevoir avant chaque bourse une sélection de livres qui pourraient me plaire');
   });
 
-  it('saves a member email preference change', async () => {
+  it('does not render an email consent control on the favorites page', () => {
     auth.isAuthenticated.set(true);
     favorites.mode.set('remote');
     fixture.detectChanges();
 
-    const checkbox = fixture.nativeElement.querySelector('#fair-digest-consent') as HTMLInputElement;
-    checkbox.click();
-    await fixture.whenStable();
-
-    expect(favorites.setFairDigestConsent).toHaveBeenCalledOnceWith(true);
+    expect(fixture.nativeElement.querySelector('#fair-digest-consent')).toBeNull();
   });
 
   it('announces when browser storage cannot keep favorites', async () => {
@@ -215,11 +211,17 @@ describe('CatalogFavoritesPageComponent', () => {
   it('renders the E11 empty state when there are no favorites', () => {
     expect(fixture.nativeElement.querySelector('[data-zone="E11-e2-vide"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Quel livre avez-vous adoré');
+    expect(fixture.nativeElement.querySelector('.favorite-section-heading')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E2-compteur"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.add-favorite')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.favorite-disclaimer')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.empty-add').length).toBe(1);
   });
 
-  it('uses the mobile headline copy from the E2 mobile mockup', () => {
-    expect(fixture.nativeElement.querySelector('.mobile-title')?.textContent)
-      .toContain('Dites-nous ce que vous avez aimé');
+  it('uses the approved next-reading headline copy', () => {
+    const heading = fixture.nativeElement.querySelector('.favorites-hero h1')?.textContent;
+    expect(heading?.replace(/\s+/g, ' ').trim())
+      .toBe('Dites-nous les livres que vous avez aimés, et on trouve votre prochaine lecture.');
   });
 
   it('announces recommendation work for a favorite that is still computing', () => {

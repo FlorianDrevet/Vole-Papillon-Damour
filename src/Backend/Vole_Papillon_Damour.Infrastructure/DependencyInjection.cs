@@ -157,6 +157,13 @@ public static class DependencyInjection
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
         services.AddOptions<RecommendationOptions>()
             .Bind(builderConfiguration.GetSection(RecommendationOptions.SectionName))
+            .PostConfigure(options =>
+            {
+                if (options.HeartThresholds is not { Length: > 0 })
+                {
+                    options.HeartThresholds = RecommendationOptions.DefaultHeartThresholds;
+                }
+            })
             .Validate(options =>
                     options.HeartThresholds is { Length: 5 } thresholds &&
                     thresholds.All(value => float.IsFinite(value) && value is > 0 and <= 1) &&

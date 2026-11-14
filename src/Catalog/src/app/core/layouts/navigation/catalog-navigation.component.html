@@ -48,13 +48,10 @@
             <a
               [routerLink]="item.url"
               (click)="closeMenus()"
-              [attr.data-zone]="item.icon === 'heart' ? 'E2-lien-menu' : null"
+              [attr.data-zone]="item.url === '/trouver-mon-prochain-livre' ? 'E2-lien-menu' : null"
               [attr.aria-current]="isActive(item) ? 'page' : null"
               class="nav-link"
               [class.active]="isActive(item)">
-              @if (item.icon === 'heart') {
-                <svg class="nav-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" /></svg>
-              }
               {{ item.label }}
             </a>
           }
@@ -157,11 +154,8 @@
       <nav aria-label="Navigation mobile">
         @for (item of navItems(); track item.url; let i = $index) {
           <div class="mobile-nav-item">
-            <a [routerLink]="item.url" (click)="closeMobileMenu()" [class.active]="isActive(item)" [attr.aria-current]="isActive(item) ? 'page' : null" [attr.data-zone]="item.icon === 'heart' ? 'E2-lien-menu' : null">
+            <a [routerLink]="item.url" (click)="closeMobileMenu()" [class.active]="isActive(item)" [attr.aria-current]="isActive(item) ? 'page' : null" [attr.data-zone]="item.url === '/trouver-mon-prochain-livre' ? 'E2-lien-menu' : null">
               <span class="mobile-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
-              @if (item.icon === 'heart') {
-                <svg class="nav-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" /></svg>
-              }
               <span>{{ item.label }}</span>
             </a>
           </div>

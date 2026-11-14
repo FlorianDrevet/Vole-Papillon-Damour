@@ -1,23 +1,27 @@
-<section class="favorite-section" data-zone="E2-coups-de-coeur" aria-labelledby="favorite-section-title">
-  <header class="favorite-section-heading">
-    <div>
-      <span class="section-eyebrow">À la bourse aux livres</span>
-      <h2 id="favorite-section-title">Mes coups de cœur</h2>
-    </div>
-    <span class="favorite-count" data-zone="E2-compteur">{{ entries.length }} / {{ maximum }}</span>
-  </header>
-
-  <button class="add-favorite" data-zone="E2-bouton-ajouter" type="button" (click)="addRequested.emit()">
-    <span aria-hidden="true">＋</span> Ajouter un coup de cœur
-  </button>
-
+<section
+  class="favorite-section"
+  [class.empty]="entries.length === 0"
+  data-zone="E2-coups-de-coeur"
+  [attr.aria-labelledby]="entries.length === 0 ? 'favorites-empty-title' : 'favorite-section-title'">
   @if (entries.length === 0) {
     <div class="favorites-empty" data-zone="E11-e2-vide">
-      <span class="empty-title">Quel livre avez-vous adoré&nbsp;?</span>
-      <span class="empty-copy">Ajoutez un premier coup de cœur&nbsp;: un roman, une BD, un essai… Trois coups de cœur donnent déjà de bonnes suggestions.</span>
+      <h2 id="favorites-empty-title" class="empty-title">Quel livre avez-vous adoré&nbsp;?</h2>
+      <p class="empty-copy">Ajoutez un premier coup de cœur&nbsp;: un roman, une BD, un essai… Trois coups de cœur donnent déjà de bonnes suggestions.</p>
       <button class="empty-add" type="button" (click)="addRequested.emit()">Ajouter un coup de cœur</button>
     </div>
   } @else {
+    <header class="favorite-section-heading">
+      <div>
+        <span class="section-eyebrow">À la bourse aux livres</span>
+        <h2 id="favorite-section-title">Mes coups de cœur</h2>
+      </div>
+      <span class="favorite-count" data-zone="E2-compteur">{{ entries.length }} / {{ maximum }}</span>
+    </header>
+
+    <button class="add-favorite" data-zone="E2-bouton-ajouter" type="button" (click)="addRequested.emit()">
+      <span aria-hidden="true">＋</span> Ajouter un coup de cœur
+    </button>
+
     <ul class="favorite-items">
       @for (entry of entries; track entry.isbn13) {
         <li class="favorite-item" [attr.data-isbn]="entry.isbn13">
@@ -49,7 +53,6 @@
         </li>
       }
     </ul>
+    <p class="favorite-disclaimer">Un coup de cœur ne réserve rien et ne déclenche pas d'alerte. Pour être prévenu de l'arrivée d'un livre, utilisez la liste de recherche.</p>
   }
-
-  <p class="favorite-disclaimer">Un coup de cœur ne réserve rien et ne déclenche pas d'alerte. Pour être prévenu de l'arrivée d'un livre, utilisez la liste de recherche.</p>
 </section>

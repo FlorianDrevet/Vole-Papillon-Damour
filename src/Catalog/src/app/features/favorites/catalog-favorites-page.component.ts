@@ -45,11 +45,6 @@ export class CatalogFavoritesPageComponent implements OnInit {
     await this.favorites.setMinimumHearts(value);
   }
 
-  async setFairDigestConsent(event: Event): Promise<void> {
-    const checkbox = event.target as HTMLInputElement;
-    await this.favorites.setFairDigestConsent(checkbox.checked);
-  }
-
   setBannerCollapsed(value: boolean): void {
     this.bannerCollapsed.set(value);
     this.local.setBannerCollapsed(value);

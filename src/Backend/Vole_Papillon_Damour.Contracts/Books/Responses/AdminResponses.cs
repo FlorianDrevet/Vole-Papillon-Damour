@@ -331,7 +331,8 @@ public sealed record BookReferenceSearchItemResponse(
     string? Publisher,
     int? PublicationYear,
     Uri? CoverUrl,
-    string Source);
+    string Source,
+    string? Language = null);
 
 public sealed record BookReferenceSearchResponse(
     DateTimeOffset GeneratedAt,

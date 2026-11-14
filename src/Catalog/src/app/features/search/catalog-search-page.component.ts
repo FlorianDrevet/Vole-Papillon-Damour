@@ -461,6 +461,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       publicationYear: book.publicationYear,
       coverUrl: book.coverUrl,
       source: 'catalog',
+      language: book.language,
     };
   }
 
@@ -830,6 +831,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         publicationYear: item.publicationYear,
         coverUrl: item.coverUrl,
         source: 'ISBNdb',
+        language: 'fra',
       }];
     });
   }
