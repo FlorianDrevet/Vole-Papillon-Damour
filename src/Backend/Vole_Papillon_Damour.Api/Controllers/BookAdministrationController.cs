@@ -17,6 +17,13 @@ using Vole_Papillon_Damour.Application.Books.Commands.UploadBookCover;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Books.Queries.GetAssociationSettings;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Models;
+using Vole_Papillon_Damour.Application.FairDigest.Commands.ResumeFairDigest;
+using Vole_Papillon_Damour.Application.FairDigest.Commands.SendFairDigestTest;
+using Vole_Papillon_Damour.Application.FairDigest.Commands.SuspendFairDigest;
+using Vole_Papillon_Damour.Application.FairDigest.Queries.GetFairDigestStatus;
+using Vole_Papillon_Damour.Application.FairDigest.Queries.PreviewFairDigest;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -29,10 +36,132 @@ namespace Vole_Papillon_Damour.Api.Controllers;
 
 public static class BookAdministrationController
 {
+    private const string FairDigestPreviewUnsubscribeToken = "preview-token";
+
     public static IApplicationBuilder UseBookAdministrationController(this IApplicationBuilder builder)
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapGet(
+                    "/books/admin/fair-digest",
+                    async (IMediator mediator, CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(new GetFairDigestStatusQuery(), cancellationToken);
+                        return result.Match(
+                            status => Results.Ok(status),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminFairDigestStatus")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/fair-digest/preview",
+                    async (
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        [FromServices] IFairDigestEmailRenderer renderer,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new PreviewFairDigestQuery(administratorId),
+                            cancellationToken);
+                        if (result.IsError)
+                        {
+                            return result.Errors.First().Result();
+                        }
+
+                        var email = principal.FindFirst("email")?.Value
+                            ?? principal.FindFirst("preferred_username")?.Value
+                            ?? "preview@example.invalid";
+                        var firstName = principal.FindFirst("given_name")?.Value
+                            ?? principal.FindFirst(ClaimTypes.GivenName)?.Value;
+                        var message = new FairDigestEmailMessage(
+                            result.Value.CampaignId,
+                            administratorId,
+                            email,
+                            firstName,
+                            result.Value.Fair,
+                            result.Value.Content);
+                        // Preview HTML must show the unsubscribe link without minting a live token.
+                        var content = renderer.Render(message, FairDigestPreviewUnsubscribeToken);
+                        return Results.Content(content.Html, "text/html; charset=utf-8");
+                    })
+                .WithName("GetAdminFairDigestPreview")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/fair-digest/test",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SendFairDigestTestCommand(administratorId),
+                            cancellationToken);
+                        return result.Match(
+                            sent => Results.Ok(sent),
+                            error => error.Result());
+                    })
+                .WithName("SendAdminFairDigestTest")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/fair-digest/suspend",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SuspendFairDigestCommand(administratorId),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(operation),
+                            error => error.Result());
+                    })
+                .WithName("SuspendAdminFairDigest")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/fair-digest/resume",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new ResumeFairDigestCommand(administratorId),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(operation),
+                            error => error.Result());
+                    })
+                .WithName("ResumeAdminFairDigest")
+                .RequireAuthorization("Administration");
+
             endpoints.MapGet(
                     "/books/admin/overview",
                     async (
