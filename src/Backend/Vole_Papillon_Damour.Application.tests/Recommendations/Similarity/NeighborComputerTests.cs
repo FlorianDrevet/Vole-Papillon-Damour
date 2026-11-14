@@ -76,6 +76,26 @@ public sealed class NeighborComputerTests
     }
 
     [Fact]
+    public void Compute_FavoriteReferenceKeepsItsNeighborsButIsNotACandidateForOtherBooks()
+    {
+        var features = new[]
+        {
+            SimilarityFeatureBuilder.Build(Edition("9782070408504", "Reference favorite", surnames: ["A"])),
+            SimilarityFeatureBuilder.Build(Edition("9782070363735", "Livre normal un", surnames: ["B"])),
+            SimilarityFeatureBuilder.Build(Edition("9782253006329", "Livre normal deux", surnames: ["C"])),
+        };
+        var vectors = new[] { Vector(1, 0), Vector(0.9f, 0.1f), Vector(0.8f, 0.2f) };
+        var candidateEligible = new HashSet<string>(["9782070363735", "9782253006329"], StringComparer.Ordinal);
+
+        var result = NeighborComputer.Compute(features, vectors, 30, candidateEligible);
+
+        result["9782070408504"].Should().NotBeEmpty();
+        result.Values.SelectMany(neighbors => neighbors)
+            .Should()
+            .NotContain(neighbor => neighbor.NeighborIsbn13 == "9782070408504");
+    }
+
+    [Fact]
     public void Reason_SameAuthorWhenNoSeries()
     {
         var q = SimilarityFeatureBuilder.Build(Edition("9782070360024", "L'étranger", surnames: ["Camus"]));

@@ -119,6 +119,43 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task PublicCatalog_HidesFavoriteReferenceFromExhaustedSearchAndBookPage()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre du catalogue", "Auteur", quantityAvailable: 1);
+        Isbn13.TryCreate("9782070363735", out var favoriteIsbn).Should().BeTrue();
+        var favoriteReference = Book.CreateFavoriteReference(favoriteIsbn, Now.AddMinutes(-10));
+        favoriteReference.ApplyManualMetadata(
+            new BookMetadataPatch(
+                "Livre demandé",
+                "Auteur",
+                null,
+                null,
+                null,
+                "fr",
+                null,
+                null,
+                [BookMetadataField.Title, BookMetadataField.Authors, BookMetadataField.Language]),
+            Now.AddMinutes(-5));
+        fixture.Context.Books.Add(favoriteReference);
+        await fixture.SaveAsync();
+
+        var search = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+        var bookPage = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery(favoriteIsbn.Value),
+            CancellationToken.None);
+
+        search.IsError.Should().BeFalse();
+        search.Value.Books.Select(book => book.Isbn13).Should().Equal("9782070408504");
+        bookPage.IsError.Should().BeTrue();
+        bookPage.FirstError.Code.Should().Be("Book.NotFound");
+    }
+
+    [Fact]
     public async Task PublicCatalogQueries_HideBooksFromInProgressScanSessionsUntilTheyAreCompleted()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();

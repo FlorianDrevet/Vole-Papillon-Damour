@@ -10,6 +10,7 @@ public static class PublicCatalogBookVisibility
 {
     public static readonly Expression<Func<Book, bool>> Predicate = book =>
         !book.IsHiddenFromCatalog &&
+        !book.IsFavoriteReference &&
         book.RedirectedToIsbn13 == null &&
         (book.MetadataStatus == BookMetadataStatus.Resolved ||
          book.MetadataStatus == BookMetadataStatus.Manual) &&
@@ -19,6 +20,7 @@ public static class PublicCatalogBookVisibility
     public static bool IsVisible(Book book)
     {
         return !book.IsHiddenFromCatalog &&
+               !book.IsFavoriteReference &&
                book.RedirectedToIsbn13 is null &&
                book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual &&
                !string.IsNullOrWhiteSpace(book.Title);
