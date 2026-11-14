@@ -1,4 +1,5 @@
 using Vole_Papillon_Damour.Application.Common;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.FairDigest.Common;
@@ -9,7 +10,29 @@ public sealed record FairDigestEvent(
     DateTimeOffset DateStart,
     DateTimeOffset? DateEnd,
     bool IsCancelled,
-    string Name = "Bourse aux livres");
+    string Name = "Bourse aux livres",
+    string? Address = null)
+{
+    public static string? FormatAddress(Adresse? address)
+    {
+        if (address is null)
+        {
+            return null;
+        }
+
+        var street = string.Join(" ", new[]
+        {
+            address.RoadNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            address.Road
+        }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        var city = string.Join(" ", new[]
+        {
+            address.CityCode.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            address.City
+        }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        return string.Join(", ", new[] { street, city }.Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+}
 
 public sealed record FairDigestScheduleResult(
     FairDigestEvent? NextFair,

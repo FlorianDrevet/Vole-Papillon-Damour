@@ -143,17 +143,34 @@ export class CatalogMemberApiService {
     );
   }
 
-  getRecommendationPreference(accessToken: string): Observable<{enabled: boolean}> {
-    return this.http.get<{enabled: boolean}>(
+  getRecommendationPreference(accessToken: string): Observable<{
+    enabled: boolean;
+    minimumHearts?: number;
+    fairDigestConsentedAt?: string | null;
+  }> {
+    return this.http.get<{
+      enabled: boolean;
+      minimumHearts?: number;
+      fairDigestConsentedAt?: string | null;
+    }>(
       `${this.apiUrl}/catalog/me/recommendations/preference`,
       {headers: this.authorizationHeaders(accessToken)},
     );
   }
 
-  setRecommendationPreference(accessToken: string, enabled: boolean): Observable<void> {
+  setRecommendationPreference(
+    accessToken: string,
+    enabled: boolean,
+    minimumHearts?: number,
+    fairDigestConsent?: boolean,
+  ): Observable<void> {
     return this.http.put<void>(
       `${this.apiUrl}/catalog/me/recommendations/preference`,
-      {enabled},
+      {
+        enabled,
+        ...(minimumHearts === undefined ? {} : {minimumHearts}),
+        ...(fairDigestConsent === undefined ? {} : {fairDigestConsent}),
+      },
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

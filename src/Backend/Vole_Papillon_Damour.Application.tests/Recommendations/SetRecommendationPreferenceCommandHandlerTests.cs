@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.Recommendations.Commands.RevokeFairDigestConsent;
 using Vole_Papillon_Damour.Application.Recommendations.Commands.SetRecommendationPreference;
 using Vole_Papillon_Damour.Application.Recommendations.Queries.GetRecommendationPreference;
 using Vole_Papillon_Damour.Application.tests.CheckoutPassages;
@@ -80,6 +81,31 @@ public sealed class SetRecommendationPreferenceCommandHandlerTests
         storedPreference.Value.Enabled.Should().BeFalse();
         storedPreference.Value.MinimumHearts.Should().Be(3);
         storedPreference.Value.FairDigestConsentedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RevokeFairDigestConsent_OnlyRevokesTheEmailConsentAndIsIdempotent()
+    {
+        await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
+        var member = await fixture.AddMemberAsync();
+        var clock = new MutableClock(Now);
+        var identity = new MemberIdentityService(fixture.Context, clock);
+        await new SetRecommendationPreferenceCommandHandler(fixture.Context, identity, clock)
+            .Handle(CommandFor(member, enabled: false, minimumHearts: 4, fairDigestConsent: true), CancellationToken.None);
+
+        clock.UtcNow = Now.AddMinutes(5);
+        var handler = new RevokeFairDigestConsentCommandHandler(fixture.Context, clock);
+        var command = new RevokeFairDigestConsentCommand(member.Id.Value);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var preference = await fixture.Context.MemberRecommendationPreferences.SingleAsync();
+        preference.Enabled.Should().BeFalse();
+        preference.MinimumHearts.Should().Be(4);
+        preference.FairDigestConsentedAt.Should().BeNull();
+        preference.UpdatedAt.Should().Be(Now.AddMinutes(5));
+
+        (await handler.Handle(command, CancellationToken.None)).IsError.Should().BeFalse();
     }
 
     private static SetRecommendationPreferenceCommand CommandFor(

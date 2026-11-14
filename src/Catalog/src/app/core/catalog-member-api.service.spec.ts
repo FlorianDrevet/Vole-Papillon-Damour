@@ -49,15 +49,20 @@ describe('CatalogMemberApiService', () => {
   });
 
   it('reads personal recommendation preferences with a bearer token', () => {
+    const response = {
+      enabled: true,
+      minimumHearts: 4,
+      fairDigestConsentedAt: '2026-10-01T08:00:00Z',
+    };
     service.getRecommendationPreference('member-token')
-      .subscribe(result => expect(result).toEqual({enabled: true}));
+      .subscribe(result => expect(result).toEqual(response));
 
     const request = http.expectOne(
       `${environment.apiUrl}/catalog/me/recommendations/preference`,
     );
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
-    request.flush({enabled: true});
+    request.flush(response);
   });
 
   it('updates personal recommendation preferences with a bearer token', () => {
@@ -69,6 +74,21 @@ describe('CatalogMemberApiService', () => {
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({enabled: false});
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(null);
+  });
+
+  it('updates recommendation consent while retaining the selected threshold', () => {
+    service.setRecommendationPreference('member-token', true, 4, false).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/catalog/me/recommendations/preference`,
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      enabled: true,
+      minimumHearts: 4,
+      fairDigestConsent: false,
+    });
     request.flush(null);
   });
 

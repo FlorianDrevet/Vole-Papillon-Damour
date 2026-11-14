@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -65,6 +67,35 @@ public sealed class UnsubscribeTokenServiceTests
         service.TryValidate("not+base64url.$$$", out _).Should().BeFalse();
     }
 
+    [Fact]
+    public void TryValidate_RejectsTokensUsedForTheWrongUnsubscribePurpose()
+    {
+        var service = CreateService();
+        var memberId = Guid.Parse("2a8def6a-4378-41b1-9166-c12b1c42c5a6");
+        var alertsToken = service.Create(memberId, UnsubscribePurpose.BookAlerts);
+        var digestToken = service.Create(memberId, UnsubscribePurpose.FairDigest);
+
+        service.TryValidate(alertsToken, UnsubscribePurpose.BookAlerts, out var validatedAlerts).Should().BeTrue();
+        validatedAlerts.Should().Be(memberId);
+        service.TryValidate(digestToken, UnsubscribePurpose.FairDigest, out var validatedDigest).Should().BeTrue();
+        validatedDigest.Should().Be(memberId);
+        service.TryValidate(digestToken, UnsubscribePurpose.BookAlerts, out _).Should().BeFalse();
+        service.TryValidate(alertsToken, UnsubscribePurpose.FairDigest, out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryValidate_TreatsALegacyTokenWithoutPurposeAsBookAlerts()
+    {
+        var memberId = Guid.Parse("2a8def6a-4378-41b1-9166-c12b1c42c5a6");
+        var legacyToken = CreateLegacyToken(memberId, SigningKey, Now.AddDays(30));
+        var service = CreateService();
+
+        service.TryValidate(legacyToken, out var validatedId, out var purpose).Should().BeTrue();
+
+        validatedId.Should().Be(memberId);
+        purpose.Should().Be(UnsubscribePurpose.BookAlerts);
+    }
+
     private static IUnsubscribeTokenService CreateService(
         string signingKey = SigningKey,
         int lifetimeDays = 180,
@@ -79,6 +110,20 @@ public sealed class UnsubscribeTokenServiceTests
             }),
             new FixedDateTimeProvider(now ?? Now));
     }
+
+    private static string CreateLegacyToken(Guid memberId, string signingKey, DateTime expiresAt)
+    {
+        var payload = Encoding.UTF8.GetBytes(FormattableString.Invariant(
+            $"{memberId:N}:{new DateTimeOffset(expiresAt, TimeSpan.Zero).ToUnixTimeSeconds()}"));
+        var key = Convert.FromBase64String(signingKey);
+        var signature = HMACSHA256.HashData(key, payload);
+        return $"{Encode(payload)}.{Encode(signature)}";
+    }
+
+    private static string Encode(byte[] value) => Convert.ToBase64String(value)
+        .TrimEnd('=')
+        .Replace('+', '-')
+        .Replace('/', '_');
 
     private sealed class FixedDateTimeProvider(DateTime utcNow) : IDateTimeProvider
     {

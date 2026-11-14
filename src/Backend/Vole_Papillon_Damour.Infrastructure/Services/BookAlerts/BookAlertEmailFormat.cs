@@ -17,6 +17,12 @@ public static class BookAlertEmailFormat
         return ToParis(instant).ToString("dddd d MMMM yyyy", French);
     }
 
+    /// <summary>« samedi 14 mars ».</summary>
+    public static string ShortDate(DateTimeOffset instant)
+    {
+        return ToParis(instant).ToString("dddd d MMMM", French);
+    }
+
     /// <summary>« 9 h 00 – 17 h 00 », « À partir de 9 h 00 », « Jusqu'à 17 h 00 » ou null.</summary>
     public static string? Hours(DateTimeOffset? doorsOpenAt, DateTimeOffset? doorsCloseAt)
     {
@@ -32,11 +38,17 @@ public static class BookAlertEmailFormat
     /// <summary>« Folio · 1999 · Poche », éléments connus seulement, ou null.</summary>
     public static string? Edition(BookAlertOutboxItem item)
     {
+        ArgumentNullException.ThrowIfNull(item);
+        return Edition(item.Publisher, item.PublicationYear, item.PhysicalFormat);
+    }
+
+    public static string? Edition(string? publisher, int? publicationYear, string? physicalFormat)
+    {
         var parts = new[]
             {
-                item.Publisher?.Trim(),
-                item.PublicationYear?.ToString(CultureInfo.InvariantCulture),
-                item.PhysicalFormat?.Trim()
+                publisher?.Trim(),
+                publicationYear?.ToString(CultureInfo.InvariantCulture),
+                physicalFormat?.Trim()
             }
             .Where(part => !string.IsNullOrWhiteSpace(part))
             .ToArray();
@@ -50,13 +62,21 @@ public static class BookAlertEmailFormat
 
     public static string Title(BookAlertOutboxItem item)
     {
-        return string.IsNullOrWhiteSpace(item.Title) ? "Titre non renseigné" : item.Title.Trim();
+        ArgumentNullException.ThrowIfNull(item);
+        return Title(item.Title);
     }
+
+    public static string Title(string? title) =>
+        string.IsNullOrWhiteSpace(title) ? "Titre non renseigné" : title.Trim();
 
     public static string? Authors(BookAlertOutboxItem item)
     {
-        return string.IsNullOrWhiteSpace(item.Authors) ? null : item.Authors.Trim();
+        ArgumentNullException.ThrowIfNull(item);
+        return Authors(item.Authors);
     }
+
+    public static string? Authors(string? authors) =>
+        string.IsNullOrWhiteSpace(authors) ? null : authors.Trim();
 
     /// <summary>RG-94, sans le gras : « Ce livre n'est pas mis de côté. Premier arrivé, premier servi. »</summary>
     public static string NoReservation(int bookCount)

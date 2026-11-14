@@ -33,6 +33,7 @@ using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 using Vole_Papillon_Damour.Infrastructure.Services.Isbndb;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
+using Vole_Papillon_Damour.Infrastructure.Services.FairDigest;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Infrastructure.Services.Ai;
@@ -107,6 +108,8 @@ public static class DependencyInjection
             services.AddSingleton<IMemberCardTokenService, MemberCardTokenService>();
         }
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
+        services.AddSingleton<IFairDigestEmailRenderer, FairDigestEmailRenderer>();
+        services.AddSingleton<IFairDigestEmailSender, FairDigestEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<EntraGraphUserDirectory>();
         services.AddScoped<IEntraUserDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());

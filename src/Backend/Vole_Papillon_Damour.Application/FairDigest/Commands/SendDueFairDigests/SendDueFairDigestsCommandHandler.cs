@@ -212,7 +212,8 @@ public sealed class SendDueFairDigestsCommandHandler(
                 previous.DateStart,
                 previous.DateEnd,
                 previous.IsCancelled,
-                previous.Name);
+                previous.Name,
+                FairDigestEvent.FormatAddress(previous.Adresse));
         DateTimeOffset? previousEnd = previousFair is null
             ? null
             : FairDigestSchedule.EndOfFairDay(previousFair.DateEnd ?? previousFair.DateStart);
@@ -224,7 +225,8 @@ public sealed class SendDueFairDigestsCommandHandler(
                 target.DateStart,
                 target.DateEnd,
                 target.IsCancelled,
-                target.Name),
+                target.Name,
+                FairDigestEvent.FormatAddress(target.Adresse)),
             previousFair,
             new DateTimeOffset(campaign.PlannedAtUtc, TimeSpan.Zero),
             previousEnd);

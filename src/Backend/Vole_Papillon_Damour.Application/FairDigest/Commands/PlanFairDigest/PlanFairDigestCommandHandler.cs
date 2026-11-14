@@ -45,7 +45,8 @@ public sealed class PlanFairDigestCommandHandler(
                 assoEvent.DateStart,
                 assoEvent.DateEnd,
                 assoEvent.IsCancelled,
-                assoEvent.Name)),
+                assoEvent.Name,
+                FairDigestEvent.FormatAddress(assoEvent.Adresse))),
             new DateTimeOffset(nowUtc, TimeSpan.Zero),
             options.Value.DaysBefore,
             options.Value.SendHourParis);

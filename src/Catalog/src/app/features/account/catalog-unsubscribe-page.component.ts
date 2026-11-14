@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, OnInit, Signal, signal} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
+import {ActivatedRoute} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAuthService} from '../../core/catalog-auth.service';
@@ -20,11 +21,13 @@ export class CatalogUnsubscribePageComponent implements OnInit {
   readonly pending = signal(false);
   readonly completed = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly isFairDigest = signal(false);
 
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogMemberApiService,
     private readonly meta: Meta,
+    private readonly route: ActivatedRoute,
   ) {
     this.initialized = this.auth.initialized;
     this.isAuthenticated = this.auth.isAuthenticated;
@@ -33,6 +36,7 @@ export class CatalogUnsubscribePageComponent implements OnInit {
 
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
+    this.isFairDigest.set(this.route.snapshot.queryParamMap.get('purpose') === 'fairDigest');
     void this.initialize();
   }
 
@@ -40,7 +44,9 @@ export class CatalogUnsubscribePageComponent implements OnInit {
     await this.auth.initialize();
     if (!this.auth.isAuthenticated()) {
       try {
-        await this.auth.login('/desinscription');
+        await this.auth.login(this.isFairDigest()
+          ? '/desinscription?purpose=fairDigest'
+          : '/desinscription');
       } catch {
         this.errorMessage.set('La connexion n’a pas pu être démarrée. Ouvrez votre compte pour vous désabonner.');
       }
@@ -56,7 +62,17 @@ export class CatalogUnsubscribePageComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const token = await this.auth.getApiAccessToken();
-      await firstValueFrom(this.api.setAlertStatus(token, false));
+      if (this.isFairDigest()) {
+        const preference = await firstValueFrom(this.api.getRecommendationPreference(token));
+        await firstValueFrom(this.api.setRecommendationPreference(
+          token,
+          preference.enabled,
+          preference.minimumHearts,
+          false,
+        ));
+      } else {
+        await firstValueFrom(this.api.setAlertStatus(token, false));
+      }
       this.completed.set(true);
     } catch (error: unknown) {
       this.errorMessage.set(error instanceof HttpErrorResponse && error.status === 401
