@@ -156,6 +156,7 @@ public static class DependencyInjection
         services.Configure<TitleGenerationOptions>(
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
         services.AddOptions<RecommendationOptions>()
+            .Configure(options => options.HeartThresholds = [])
             .Bind(builderConfiguration.GetSection(RecommendationOptions.SectionName))
             .PostConfigure(options =>
             {

@@ -146,14 +146,13 @@ public sealed class SearchIsbndbEditionsQueryHandlerTests
         var first = handler.Handle(new SearchIsbndbEditionsQuery("dune"), firstCancellation.Token);
         var factoryToken = await factoryStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
         var second = handler.Handle(new SearchIsbndbEditionsQuery("dune"), CancellationToken.None);
-        await Task.Delay(25);
         firstCancellation.Cancel();
-        await Task.Delay(25);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await first.WaitAsync(TimeSpan.FromSeconds(2)));
 
         factoryToken.IsCancellationRequested.Should().BeFalse();
         finishSearch.SetResult(new IsbndbSearch([Notice("9782070363735", "Dune")], 1));
         await second;
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await first);
         await client.Received(1).SearchAsync(Arg.Any<string>(), IsbndbUsage.PublicSearch, Arg.Any<CancellationToken>());
     }
 
