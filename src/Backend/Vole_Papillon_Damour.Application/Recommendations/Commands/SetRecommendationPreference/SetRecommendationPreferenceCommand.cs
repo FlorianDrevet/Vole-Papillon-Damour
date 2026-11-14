@@ -8,4 +8,6 @@ public sealed record SetRecommendationPreferenceCommand(
     string? Email,
     string? FirstName,
     string? LastName,
-    bool Enabled) : IRequest<ErrorOr<Success>>;
+    bool Enabled,
+    int? MinimumHearts = null,
+    bool? FairDigestConsent = null) : IRequest<ErrorOr<Success>>;

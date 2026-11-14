@@ -48,7 +48,9 @@ public sealed class MyRecommendationsEndpointsTests
                 DateTimeOffset.Parse("2026-09-02T00:00:00Z"),
                 false),
             NeighborReason.NextTome,
-            "Fondation");
+            "Fondation",
+            Hearts: 5,
+            OtherContributorCount: 1);
         mediator.Send(Arg.Any<GetMyRecommendationsQuery>(), Arg.Any<CancellationToken>())
             .Returns(ErrorOrFactory.From(new MyRecommendationsResult(RecommendationStatus.Enabled, [item])));
         await using var application = CreateApplication(mediator);
@@ -66,6 +68,9 @@ public sealed class MyRecommendationsEndpointsTests
         recommendation.GetProperty("isbn13").GetString().Should().Be(Isbn13);
         recommendation.GetProperty("reason").GetString().Should().Be("NextTome");
         recommendation.GetProperty("seedTitle").GetString().Should().Be("Fondation");
+        recommendation.GetProperty("hearts").GetInt32().Should().Be(5);
+        recommendation.GetProperty("otherContributorCount").GetInt32().Should().Be(1);
+        document.RootElement.GetProperty("minimumHearts").GetInt32().Should().Be(3);
         recommendation.TryGetProperty("book", out _).Should().BeFalse();
     }
 
@@ -127,6 +132,10 @@ public sealed class MyRecommendationsEndpointsTests
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddSingleton(mediator);
+        var settings = Substitute.For<Vole_Papillon_Damour.Application.Common.Interfaces.Services.IRecommendationSettings>();
+        settings.Enabled.Returns(true);
+        settings.DefaultMinimumHearts.Returns(3);
+        builder.Services.AddSingleton(settings);
         var application = builder.Build();
         application.UseRouting();
         application.UseMemberAccountController();

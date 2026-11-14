@@ -3,6 +3,12 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Favorites.Commands.AddMyFavorite;
+using Vole_Papillon_Damour.Application.Favorites.Commands.MergeMyFavorites;
+using Vole_Papillon_Damour.Application.Favorites.Commands.RemoveMyFavorite;
+using Vole_Papillon_Damour.Application.Favorites.Common;
+using Vole_Papillon_Damour.Application.Favorites.Queries.GetMyFavorites;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
@@ -23,6 +29,7 @@ using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Contracts.Purchases;
 using Vole_Papillon_Damour.Contracts.Recommendations;
 using Vole_Papillon_Damour.Contracts.MemberGenres;
+using Vole_Papillon_Damour.Contracts.Favorites;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -209,9 +216,167 @@ public static class MemberAccountController
                 .RequireAuthorization();
 
             endpoints.MapGet(
+                    "/catalog/me/favorites",
+                    async (
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyFavoritesQuery(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
+                            cancellationToken);
+                        return result.Match(
+                            favorites => Results.Ok(ToResponse(favorites)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyBookFavorites")
+                .RequireAuthorization();
+
+            endpoints.MapPut(
+                    "/catalog/me/favorites/{isbn13}",
+                    async (
+                        string isbn13,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        var result = await mediator.Send(
+                            new AddMyFavoriteCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                isbn13),
+                            cancellationToken);
+                        return result.Match(
+                            favorite => Results.Ok(new FavoriteAddedResponse(
+                                favorite.Isbn13.Value,
+                                favorite.AlreadyPresent,
+                                favorite.Total)),
+                            error => error.Result());
+                    })
+                .WithName("AddMyBookFavorite")
+                .RequireAuthorization();
+
+            endpoints.MapDelete(
+                    "/catalog/me/favorites/{isbn13}",
+                    async (
+                        string isbn13,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        var result = await mediator.Send(
+                            new RemoveMyFavoriteCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                isbn13),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("RemoveMyBookFavorite")
+                .RequireAuthorization();
+
+            endpoints.MapPost(
+                    "/catalog/me/favorites/merge",
+                    async (
+                        MergeFavoritesRequest request,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        if (request.Entries is null || request.Entries.Any(entry => entry is null))
+                        {
+                            return Results.BadRequest();
+                        }
+
+                        var result = await mediator.Send(
+                            new MergeMyFavoritesCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                request.Entries
+                                    .Select(entry => new MergeMyFavoritesEntry(
+                                        entry.Isbn13,
+                                        entry.AddedAt.ToUniversalTime()))
+                                    .ToArray()),
+                            cancellationToken);
+                        return result.Match(
+                            merged => Results.Ok(new MergeFavoritesResponse(
+                                merged.Added,
+                                merged.Skipped,
+                                merged.Total)),
+                            error => error.Result());
+                    })
+                .WithName("MergeMyBookFavorites")
+                .RequireAuthorization();
+
+            endpoints.MapGet(
                     "/catalog/me/recommendations",
                     async (
                         int? limit,
+                        int? minimumHearts,
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
@@ -229,12 +394,14 @@ public static class MemberAccountController
                                 identity.Email,
                                 identity.FirstName,
                                 identity.LastName,
-                                limit ?? 4),
+                                limit ?? 4,
+                                minimumHearts),
                             cancellationToken);
                         return result.Match(
                             recommendations => Results.Ok(new MyRecommendationsResponse(
                                 recommendations.Status.ToString(),
-                                recommendations.Items.Select(ToResponse).ToArray())),
+                                recommendations.Items.Select(ToResponse).ToArray(),
+                                recommendations.MinimumHearts)),
                             error => error.Result());
                     })
                 .WithName("GetMyRecommendations")
@@ -336,12 +503,18 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
                         if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
+                        }
+
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
                         }
 
                         var result = await mediator.Send(
@@ -352,7 +525,10 @@ public static class MemberAccountController
                                 identity.LastName),
                             cancellationToken);
                         return result.Match(
-                            preference => Results.Ok(new { enabled = preference.Enabled }),
+                            preference => Results.Ok(new RecommendationPreferenceResponse(
+                                preference.Enabled,
+                                preference.MinimumHearts,
+                                preference.FairDigestConsentedAt)),
                             error => error.Result());
                     })
                 .WithName("GetMyRecommendationPreference")
@@ -365,6 +541,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -373,13 +550,20 @@ public static class MemberAccountController
                             return Results.Unauthorized();
                         }
 
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
                         var result = await mediator.Send(
                             new SetRecommendationPreferenceCommand(
                                 identity.ExternalId.ToString("D"),
                                 identity.Email,
                                 identity.FirstName,
                                 identity.LastName,
-                                request.Enabled),
+                                request.Enabled,
+                                request.MinimumHearts,
+                                request.FairDigestConsent),
                             cancellationToken);
                         return result.Match(
                             _ => Results.NoContent(),
@@ -566,8 +750,34 @@ public static class MemberAccountController
             book.CoverSource,
             book.RareBookSlug,
             recommendation.Reason.ToString(),
-            recommendation.SeedTitle);
+            recommendation.SeedTitle,
+            recommendation.Hearts,
+            recommendation.OtherContributorCount);
     }
+
+    private static MyFavoritesResponse ToResponse(MyFavoritesResult favorites) =>
+        new(
+            favorites.GeneratedAt,
+            favorites.Total,
+            favorites.Maximum,
+            favorites.Works.Select(work => new MyFavoriteWorkResponse(
+                work.WorkKey,
+                work.WorkId,
+                work.Title,
+                work.Authors,
+                work.AddedAt,
+                work.EditionCount,
+                work.IsComputingSuggestions,
+                work.Editions.Select(edition => new MyFavoriteEditionResponse(
+                    edition.Isbn13,
+                    edition.Title,
+                    edition.Authors,
+                    edition.CoverUrl,
+                    edition.AddedAt,
+                    edition.QuantityAvailable,
+                    edition.QuantityAnnounced,
+                    edition.FavoriteCount,
+                    edition.RecommendationStatus)).ToArray())).ToArray());
 
     private static MyPurchasesResponse ToResponse(MyPurchasesPage page) =>
         new(

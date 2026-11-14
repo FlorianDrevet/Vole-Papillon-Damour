@@ -43,12 +43,26 @@ public sealed class SetRecommendationPreferenceCommandHandler(
             .SingleOrDefaultAsync(candidate => candidate.UserId == member.Id, cancellationToken);
         if (preference is null)
         {
-            dbContext.MemberRecommendationPreferences.Add(
-                MemberRecommendationPreference.Create(member.Id, command.Enabled, nowUtc));
+            preference = MemberRecommendationPreference.Create(member.Id, command.Enabled, nowUtc);
+            dbContext.MemberRecommendationPreferences.Add(preference);
         }
         else
         {
             preference.Set(command.Enabled, nowUtc);
+        }
+
+        if (command.MinimumHearts.HasValue)
+        {
+            preference.SetMinimumHearts(command.MinimumHearts, nowUtc);
+        }
+
+        if (command.FairDigestConsent is true)
+        {
+            preference.GrantFairDigestConsent(nowUtc);
+        }
+        else if (command.FairDigestConsent is false)
+        {
+            preference.RevokeFairDigestConsent(nowUtc);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

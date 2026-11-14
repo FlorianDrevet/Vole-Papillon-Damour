@@ -2,13 +2,15 @@ using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 
 namespace Vole_Papillon_Damour.Application.Recommendations.Queries.GetRecommendationPreference;
 
 public sealed class GetRecommendationPreferenceQueryHandler(
     IProjectDbContext dbContext,
-    MemberIdentityService memberIdentityService)
+    MemberIdentityService memberIdentityService,
+    IRecommendationSettings settings)
     : IRequestHandler<GetRecommendationPreferenceQuery, ErrorOr<RecommendationPreferenceResult>>
 {
     public async Task<ErrorOr<RecommendationPreferenceResult>> Handle(
@@ -32,6 +34,16 @@ public sealed class GetRecommendationPreferenceQueryHandler(
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.UserId == member.Id, cancellationToken);
 
-        return new RecommendationPreferenceResult(preference?.Enabled ?? true);
+        var minimumHearts = preference?.MinimumHearts ??
+                            (settings.DefaultMinimumHearts is >= 1 and <= 4
+                                ? settings.DefaultMinimumHearts
+                                : 3);
+        DateTimeOffset? consentedAt = preference?.FairDigestConsentedAt is { } consent
+            ? new DateTimeOffset(consent, TimeSpan.Zero)
+            : null;
+        return new RecommendationPreferenceResult(
+            preference?.Enabled ?? true,
+            minimumHearts,
+            consentedAt);
     }
 }

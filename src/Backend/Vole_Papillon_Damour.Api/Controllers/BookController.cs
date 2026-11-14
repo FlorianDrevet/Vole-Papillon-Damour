@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Favorites.Commands.DeclareAnonymousFavorite;
+using Vole_Papillon_Damour.Application.Favorites.Commands.WithdrawAnonymousFavorite;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.VoidSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
@@ -23,6 +26,8 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
 using Vole_Papillon_Damour.Application.Recommendations.Queries.GetSimilarBooks;
+using Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendations;
+using Vole_Papillon_Damour.Application.Recommendations.Queries.GetSuggestionsForFavorites;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
@@ -34,6 +39,7 @@ using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Contracts.ManualRequests;
 using Vole_Papillon_Damour.Contracts.Recommendations;
+using Vole_Papillon_Damour.Contracts.Favorites;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
@@ -51,6 +57,94 @@ public static class BookController
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapPost(
+                    "/catalog/favorites/declarations",
+                    async (
+                        FavoriteRequest request,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        var result = await mediator.Send(
+                            new DeclareAnonymousFavoriteCommand(request.Isbn13),
+                            cancellationToken);
+                        return result.Match(
+                            favorite => Results.Ok(new AnonymousFavoriteResponse(
+                                favorite.Isbn13,
+                                favorite.Count)),
+                            error => error.Result());
+                    })
+                .WithName("DeclareAnonymousBookFavorite")
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.FavoriteReference);
+
+            endpoints.MapDelete(
+                    "/catalog/favorites/declarations/{isbn13}",
+                    async (
+                        string isbn13,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        IRecommendationSettings recommendationSettings,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!recommendationSettings.Enabled)
+                        {
+                            return Results.NotFound();
+                        }
+
+                        var result = await mediator.Send(
+                            new WithdrawAnonymousFavoriteCommand(isbn13),
+                            cancellationToken);
+                        return result.Match(
+                            favorite => Results.Ok(new AnonymousFavoriteResponse(
+                                favorite.Isbn13,
+                                favorite.Count)),
+                            error => error.Result());
+                    })
+                .WithName("WithdrawAnonymousBookFavorite")
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
+
+            endpoints.MapPost(
+                    "/catalog/favorites/suggestions",
+                    async (
+                        FavoriteSuggestionsRequest request,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (request.Isbn13s is null || request.Isbn13s.Count > 50)
+                        {
+                            return Results.BadRequest(new { error = "At most 50 favorite ISBNs are allowed." });
+                        }
+
+                        var result = await mediator.Send(
+                            new GetSuggestionsForFavoritesQuery(request.Isbn13s, request.MinimumHearts),
+                            cancellationToken);
+                        return result.Match(
+                            suggestions => Results.Ok(new FavoriteSuggestionsResponse(
+                                suggestions.Status.ToString(),
+                                suggestions.MinimumHearts,
+                                suggestions.Items.Select(ToFavoriteSuggestionResponse).ToArray(),
+                                suggestions.Seeds.Select(seed => new FavoriteSuggestionSeedResponse(
+                                    seed.Isbn13,
+                                    seed.Status,
+                                    seed.Stage)).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("GetAnonymousFavoriteSuggestions")
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
+
             endpoints.MapGet(
                     "/catalog/search",
                     async (
@@ -1026,6 +1120,36 @@ public static class BookController
             book.CoverSource,
             book.RareBookSlug,
             result.Reason.ToString());
+    }
+
+    private static MyRecommendationResponseItem ToFavoriteSuggestionResponse(
+        PersonalRecommendation recommendation)
+    {
+        var book = recommendation.Book;
+        return new MyRecommendationResponseItem(
+            book.Isbn13,
+            book.Title,
+            book.Authors,
+            book.Publisher,
+            book.PublicationYear,
+            book.PhysicalFormat,
+            book.Language,
+            book.Genre,
+            book.WorkId,
+            book.CoverUrl,
+            book.QuantityAvailable,
+            book.QuantityAnnounced,
+            book.NextFairAt,
+            book.LastAvailableAt,
+            book.FirstSeenAt,
+            book.UpdatedAt,
+            book.IsRare,
+            book.CoverSource,
+            book.RareBookSlug,
+            recommendation.Reason.ToString(),
+            recommendation.SeedTitle,
+            recommendation.Hearts,
+            recommendation.OtherContributorCount);
     }
 
     private static PublicRareBookResponse ToResponse(PublicRareBookResult result)
