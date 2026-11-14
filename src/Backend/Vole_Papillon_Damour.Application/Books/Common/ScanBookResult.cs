@@ -13,4 +13,5 @@ public sealed record ScanBookResult(
     BookMovementType MovementType,
     bool AlreadyProcessed,
     bool ClockSuspect,
-    bool HeldForManualRequest);
+    bool HeldForManualRequest,
+    int FavoriteCount = 0);

@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Persistence;
+using Vole_Papillon_Damour.Application.Favorites.Common;
 using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -58,6 +59,12 @@ public sealed class GetCatalogDeltaQueryHandler(
             since,
             generatedAt,
             cancellationToken);
+        var favoriteCounts = await FavoriteCountReader.GetCountsAsync(
+            dbContext,
+            selectedBooks.Books
+                .Select(book => new FavoriteCountSeed(book.Isbn13.Value, book.WorkId))
+                .ToArray(),
+            cancellationToken);
         var wantedTargets = await GetWantedTargetsAsync(cancellationToken);
         var manualTargets = await GetManualTargetsAsync(cancellationToken);
         var announcedQuantities = await dbContext.BookAnnouncements
@@ -97,7 +104,8 @@ public sealed class GetCatalogDeltaQueryHandler(
                 book.WorkKey,
                 book.Publisher,
                 book.PublicationYear,
-                ParseOtherIsbns(book.OtherIsbns)))
+                ParseOtherIsbns(book.OtherIsbns),
+                favoriteCounts.GetValueOrDefault(book.Isbn13.Value)))
             .ToArray();
 
         var rareBookSelection = await GetRareBooksToProjectAsync(
@@ -235,6 +243,23 @@ public sealed class GetCatalogDeltaQueryHandler(
             return new CatalogBookSelection(
                 changedBooks.Where(book => !book.IsHiddenFromCatalog).ToArray(),
                 rowVersion);
+        }
+
+        var changedWorkIds = changedBooks
+            .Where(book => !string.IsNullOrWhiteSpace(book.WorkId))
+            .Select(book => book.WorkId!)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (changedWorkIds.Length > 0)
+        {
+            var relatedEditionRows = await SelectRows(catalog.Where(book =>
+                    book.WorkId != null && changedWorkIds.Contains(book.WorkId)))
+                .ToListAsync(cancellationToken);
+            changedBooks = changedBooks
+                .Concat(relatedEditionRows)
+                .GroupBy(book => book.Isbn13.Value, StringComparer.Ordinal)
+                .Select(group => group.First())
+                .ToList();
         }
 
         var recentWatchlistItems = await dbContext.WatchlistItems

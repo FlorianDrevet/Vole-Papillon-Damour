@@ -221,7 +221,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -256,7 +256,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -295,7 +295,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -331,7 +331,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -503,7 +503,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -541,7 +541,7 @@ public static class MemberAccountController
                         ClaimsPrincipal principal,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";

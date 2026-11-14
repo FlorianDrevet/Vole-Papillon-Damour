@@ -44,6 +44,15 @@ public class EndpointAuthorizationTests
         // faute de savoir ce qui en dépend encore (application de caisse, amorçage
         // du premier compte) ; à trancher avec le reste de la migration vers Entra.
         ["/auth/register"] = "création de compte héritée, à trancher",
+
+        // Déclarations anonymes : seul l'ISBN est conservé, sans identifiant visiteur
+        // (`RG-156`) ; la création est limitée par la politique FavoriteReference.
+        ["/catalog/favorites/declarations"] = "déclaration anonyme limitée, sans identifiant",
+        ["/catalog/favorites/declarations/{isbn13}"] = "retrait anonyme limité, sans identifiant",
+
+        // La requête ne contient qu'une liste bornée d'ISBN et ne crée aucune donnée
+        // de session (`RG-139`, `RG-156`).
+        ["/catalog/favorites/suggestions"] = "suggestions anonymes à partir d'ISBN seulement",
     };
 
     [Fact]

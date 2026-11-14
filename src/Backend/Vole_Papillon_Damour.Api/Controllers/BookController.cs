@@ -63,7 +63,7 @@ public static class BookController
                         FavoriteRequest request,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -91,7 +91,7 @@ public static class BookController
                         string isbn13,
                         HttpContext httpContext,
                         IMediator mediator,
-                        IRecommendationSettings recommendationSettings,
+                        [FromServices] IRecommendationSettings recommendationSettings,
                         CancellationToken cancellationToken) =>
                     {
                         httpContext.Response.Headers.CacheControl = "no-store";
@@ -796,7 +796,8 @@ public static class BookController
                     book.WorkKey,
                     book.Publisher,
                     book.PublicationYear,
-                    book.OtherIsbns))
+                    book.OtherIsbns,
+                    book.FavoriteCount))
                 .ToArray(),
             result.RareBooks
                 .Select(book => new ScanCatalogRareBookResponse(
@@ -956,7 +957,8 @@ public static class BookController
             result.MovementType.ToString(),
             result.AlreadyProcessed,
             result.ClockSuspect,
-            result.HeldForManualRequest);
+            result.HeldForManualRequest,
+            result.FavoriteCount);
     }
 
     private static ScanBookRemovalResponse ToResponse(ScanBookRemovalResult result)
