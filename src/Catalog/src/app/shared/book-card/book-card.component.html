@@ -32,7 +32,7 @@
         </span>
       }
       @if (hearts !== null) {
-        <app-hearts class="book-card-hearts" [value]="hearts"></app-hearts>
+        <app-hearts class="book-card-hearts" [attr.data-zone]="heartsZone" [value]="hearts"></app-hearts>
       }
       @if (recommendationText) {
         <span class="book-card-recommendation-text">{{ recommendationText }}</span>

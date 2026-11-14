@@ -2,197 +2,178 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {signal, WritableSignal} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
-import {Subject, of, throwError} from 'rxjs';
 import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
-import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
-import {
-  CatalogPersonalRecommendation,
-  CatalogRecommendationsResponse,
-} from '../../../core/catalog.models';
+import {CatalogFavoriteSuggestion} from '../../../core/catalog.models';
+import {CatalogFavoritesService} from '../../../core/favorites/catalog-favorites.service';
+import {LocalFavoriteEntry, LocalFavoritesStore} from '../../../core/favorites/local-favorites.store';
 import {BookCardComponent} from '../../../shared/book-card/book-card.component';
+import {HeartsComponent} from '../../../shared/components/hearts/hearts.component';
 import {ForYouSectionComponent} from './for-you-section.component';
 
 describe('ForYouSectionComponent', () => {
   let fixture: ComponentFixture<ForYouSectionComponent>;
   let auth: jasmine.SpyObj<CatalogAuthService>;
-  let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
+  let favoriteSuggestions: WritableSignal<CatalogFavoriteSuggestion[]>;
+  let favoriteEntries: WritableSignal<LocalFavoriteEntry[]>;
+  let suggestionStatus: WritableSignal<string>;
+  let minimumHearts: WritableSignal<number>;
+  let favorites: CatalogFavoritesService;
+  let localStore: jasmine.SpyObj<LocalFavoritesStore>;
   let accountState: WritableSignal<AccountInfo | null>;
   let authenticated: WritableSignal<boolean>;
+  let homeEntryDismissed: boolean;
 
   beforeEach(async () => {
+    homeEntryDismissed = false;
     accountState = signal<AccountInfo | null>(null);
     authenticated = signal(false);
     auth = {
       account: accountState,
       isAuthenticated: authenticated,
-      initialize: jasmine.createSpy('initialize'),
-      tryGetApiAccessToken: jasmine.createSpy('tryGetApiAccessToken'),
+      initialize: jasmine.createSpy('initialize').and.resolveTo(),
     } as unknown as jasmine.SpyObj<CatalogAuthService>;
-    auth.initialize.and.resolveTo();
-    auth.tryGetApiAccessToken.and.resolveTo('member-token');
 
-    memberApi = jasmine.createSpyObj<CatalogMemberApiService>(
-      'CatalogMemberApiService',
-      ['getRecommendations'],
+    favoriteSuggestions = signal<CatalogFavoriteSuggestion[]>([]);
+    favoriteEntries = signal<LocalFavoriteEntry[]>([]);
+    suggestionStatus = signal('NoFavorites');
+    minimumHearts = signal(3);
+    favorites = {
+      suggestions: favoriteSuggestions.asReadonly(),
+      favorites: favoriteEntries.asReadonly(),
+      suggestionStatus: suggestionStatus.asReadonly(),
+      currentMinimumHearts: minimumHearts.asReadonly(),
+      refresh: jasmine.createSpy('refresh').and.resolveTo(),
+      onSignedIn: jasmine.createSpy('onSignedIn').and.resolveTo(),
+    } as unknown as CatalogFavoritesService;
+
+    localStore = jasmine.createSpyObj<LocalFavoritesStore>(
+      'LocalFavoritesStore',
+      ['homeEntryDismissed', 'setHomeEntryDismissed'],
     );
-    memberApi.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
+    localStore.homeEntryDismissed.and.callFake(() => homeEntryDismissed);
+    localStore.setHomeEntryDismissed.and.callFake(value => {
+      homeEntryDismissed = value;
+    });
 
     await TestBed.configureTestingModule({
-      declarations: [ForYouSectionComponent, BookCardComponent],
+      declarations: [ForYouSectionComponent, BookCardComponent, HeartsComponent],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
-        {provide: CatalogMemberApiService, useValue: memberApi},
+        {provide: CatalogFavoritesService, useValue: favorites},
+        {provide: LocalFavoritesStore, useValue: localStore},
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ForYouSectionComponent);
+    fixture = createFixture();
   });
 
-  it('does not request or render personal recommendations for a visitor', async () => {
-    fixture.detectChanges();
-    await waitForRecommendations();
-    fixture.detectChanges();
-
-    expect(auth.tryGetApiAccessToken).not.toHaveBeenCalled();
-    expect(memberApi.getRecommendations).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-section"]')).toBeNull();
-  });
-
-  it('shows four enabled recommendations and greets the member by first name', async () => {
+  it('shows the entry for a member with purchases but no favorites', async () => {
     signIn();
-    memberApi.getRecommendations.and.returnValue(of({
-      status: 'Enabled',
-      items: recommendations(),
-    }));
-
     fixture.detectChanges();
-    await waitForRecommendations();
+    await waitForLoad();
     fixture.detectChanges();
 
     expect(auth.initialize).toHaveBeenCalled();
-    expect(auth.isAuthenticated()).toBeTrue();
-    expect(auth.tryGetApiAccessToken).toHaveBeenCalled();
-    expect(memberApi.getRecommendations).toHaveBeenCalled();
-    const section = fixture.nativeElement.querySelector('[data-zone="R4-section"]') as HTMLElement;
+    expect(favorites.onSignedIn).toHaveBeenCalledOnceWith();
+    expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E1-section-pour-vous"]')).toBeNull();
+  });
+
+  it('shows at least three favorite suggestions with hearts and their reason', async () => {
+    signIn();
+    favoriteEntries.set(localFavorites());
+    favoriteSuggestions.set(suggestions());
+    suggestionStatus.set('Enabled');
+    fixture.detectChanges();
+    await waitForLoad();
+    fixture.detectChanges();
+
+    const section = fixture.nativeElement.querySelector('[data-zone="E1-section-pour-vous"]') as HTMLElement;
     expect(section).not.toBeNull();
     expect(section.querySelector('.for-you-eyebrow')?.textContent.trim()).toBe('Pour vous, Camille');
-    expect(section.querySelector('h2')?.textContent.trim()).toBe("D'après vos derniers achats.");
-    expect(section.querySelectorAll('[data-zone="R4-carte"]')).toHaveSize(4);
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
+    expect(section.querySelector('h2')?.textContent.trim()).toBe("D'après vos coups de cœur.");
+    expect(section.querySelectorAll('[data-zone="E1-carte"]')).toHaveSize(4);
+    expect(section.querySelector('[aria-label="5 cœurs sur 5"]')).not.toBeNull();
+    expect(section.querySelector('[data-zone="E1-raison"]')?.textContent.trim())
+      .toBe("La suite de Les hommes qui n'aimaient pas les femmes");
   });
 
-  it('explains a following volume and a recommendation based on an earlier purchase', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(of({
-      status: 'Enabled',
-      items: recommendations(),
-    }));
-
+  it('uses a horizontal 156px card track on mobile and links to all suggestions', async () => {
+    favoriteEntries.set(localFavorites());
+    favoriteSuggestions.set(suggestions());
+    suggestionStatus.set('Enabled');
     fixture.detectChanges();
-    await waitForRecommendations();
+    await waitForLoad();
     fixture.detectChanges();
 
-    const element = fixture.nativeElement as HTMLElement;
-    const reasons = Array.from(
-      element.querySelectorAll<HTMLElement>('[data-zone="R4-raison"]'),
-    ).map(reason => reason.textContent?.trim() ?? '');
-    expect(reasons[0]).toBe("La suite de Les hommes qui n'aimaient pas les femmes");
-    expect(reasons[1]).toBe('Parce que vous avez aimé Dune');
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-raison"] em')?.textContent)
-      .toBe("Les hommes qui n'aimaient pas les femmes");
+    const track = fixture.nativeElement.querySelector('[data-zone="E1-defilement"]') as HTMLElement;
+    expect(track).not.toBeNull();
+    expect(track.classList).toContain('for-you-list');
+    expect(fixture.nativeElement.querySelector('[data-zone="E1-lien-toutes"]')?.getAttribute('href'))
+      .toBe('/trouver-mon-prochain-livre');
+    expect(favorites.refresh).toHaveBeenCalledOnceWith();
   });
 
-  it('hides recommendations when the member has disabled them', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(of({status: 'Disabled', items: recommendations()}));
+  it('shows the entry when fewer than three suggestions meet the selected threshold', async () => {
+    favoriteEntries.set(localFavorites());
+    favoriteSuggestions.set(suggestions().map((suggestion, index) => ({
+      ...suggestion,
+      hearts: index < 2 ? 2 : 3,
+    })));
+    minimumHearts.set(4);
+    suggestionStatus.set('Enabled');
 
     fixture.detectChanges();
-    await waitForRecommendations();
+    await waitForLoad();
     fixture.detectChanges();
 
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-section"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E1-section-pour-vous"]')).toBeNull();
   });
 
-  it('hides recommendations when there are no associated purchases', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
-
+  it('persists the choice to hide the entry across component instances', async () => {
     fixture.detectChanges();
-    await waitForRecommendations();
+    await waitForLoad();
     fixture.detectChanges();
 
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-section"]')).toBeNull();
+    const hideButton = fixture.nativeElement.querySelector('[data-zone="E11-ne-plus-afficher"]') as HTMLButtonElement;
+    expect(hideButton).not.toBeNull();
+    hideButton.click();
+    fixture.detectChanges();
+    expect(localStore.setHomeEntryDismissed).toHaveBeenCalledOnceWith(true);
+    expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).toBeNull();
+
+    fixture.destroy();
+    fixture = createFixture();
+    fixture.detectChanges();
+    await waitForLoad();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).toBeNull();
   });
 
-  it('requires at least three recommendations before showing the section', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(of({
-      status: 'Enabled',
-      items: recommendations().slice(0, 2),
-    }));
-
+  it('does not render the row or entry when suggestions are disabled', async () => {
+    favoriteEntries.set(localFavorites());
+    favoriteSuggestions.set(suggestions());
+    suggestionStatus.set('Disabled');
     fixture.detectChanges();
-    await waitForRecommendations();
+    await waitForLoad();
     fixture.detectChanges();
 
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-section"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E1-section-pour-vous"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).toBeNull();
   });
 
-  it('keeps the loading skeleton visible while recommendations are pending', async () => {
-    signIn();
-    const response = new Subject<CatalogRecommendationsResponse>();
-    memberApi.getRecommendations.and.returnValue(response);
-
-    fixture.detectChanges();
-    await waitForRecommendations();
-    fixture.detectChanges();
-
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
-    const loading = fixture.nativeElement.querySelector('[data-zone="R8-chargement"]') as HTMLElement;
-    expect(loading).not.toBeNull();
-    expect(loading.getAttribute('aria-busy')).toBe('true');
-    response.next({status: 'NoPurchases', items: []});
-    response.complete();
-  });
-
-  it('hides the section when recommendation loading fails', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(throwError(() => new Error('offline')));
-
-    fixture.detectChanges();
-    await waitForRecommendations();
-    fixture.detectChanges();
-
-    expect(memberApi.getRecommendations).toHaveBeenCalledOnceWith('member-token', 4);
-    expect(fixture.nativeElement.querySelector('[data-zone="R4-section"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
-  });
-
-  it('links to the account preferences tab', async () => {
-    signIn();
-    memberApi.getRecommendations.and.returnValue(of({
-      status: 'Enabled',
-      items: recommendations(),
-    }));
-
-    fixture.detectChanges();
-    await waitForRecommendations();
-    fixture.detectChanges();
-
-    const link = fixture.nativeElement.querySelector('[data-zone="R4-pourquoi"]') as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/compte?tab=preferences');
-  });
-
-  async function waitForRecommendations(): Promise<void> {
+  async function waitForLoad(): Promise<void> {
     await fixture.whenStable();
     await new Promise<void>(resolve => setTimeout(resolve, 0));
     await fixture.whenStable();
+  }
+
+  function createFixture(): ComponentFixture<ForYouSectionComponent> {
+    return TestBed.createComponent(ForYouSectionComponent);
   }
 
   function signIn(): void {
@@ -209,20 +190,31 @@ describe('ForYouSectionComponent', () => {
   }
 });
 
-function recommendations(): CatalogPersonalRecommendation[] {
+function localFavorites(): LocalFavoriteEntry[] {
+  return ['9782070612758', '9782266000001', '9782266000002'].map((isbn13, index) => ({
+    isbn13,
+    title: `Coup de cœur ${index + 1}`,
+    authors: 'Autrice',
+    coverUrl: null,
+    addedAt: `2026-11-0${index + 1}T10:00:00Z`,
+  }));
+}
+
+function suggestions(): CatalogFavoriteSuggestion[] {
   return [
-    recommendation('9782070612758', 'NextTome', "Les hommes qui n'aimaient pas les femmes"),
-    recommendation('9782266000001', 'Theme', 'Dune'),
-    recommendation('9782266000002', 'SameAuthor', 'Bel-Ami'),
-    recommendation('9782266000003', 'SameSeries', 'Les Trois Mousquetaires'),
+    suggestion('9782070612758', 'NextTome', "Les hommes qui n'aimaient pas les femmes", 5),
+    suggestion('9782266000001', 'Theme', 'Dune', 4),
+    suggestion('9782266000002', 'SameAuthor', 'Bel-Ami', 3),
+    suggestion('9782266000003', 'SameSeries', 'Les Trois Mousquetaires', 4),
   ];
 }
 
-function recommendation(
+function suggestion(
   isbn13: string,
-  reason: CatalogPersonalRecommendation['reason'],
+  reason: CatalogFavoriteSuggestion['reason'],
   seedTitle: string,
-): CatalogPersonalRecommendation {
+  hearts: number,
+): CatalogFavoriteSuggestion {
   return {
     isbn13,
     title: `Livre ${isbn13.slice(-1)}`,
@@ -243,5 +235,6 @@ function recommendation(
     isRare: false,
     reason,
     seedTitle,
+    hearts,
   };
 }
