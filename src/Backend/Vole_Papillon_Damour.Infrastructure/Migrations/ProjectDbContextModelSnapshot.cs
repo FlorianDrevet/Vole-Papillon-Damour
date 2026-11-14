@@ -458,9 +458,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
 
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("FirstSeenAt", "Title"), new[] { "QuantityAvailable", "MetadataStatus", "IsFavoriteReference" });
+
                     b.HasIndex("IsIsbndbSourced", "IsAbsentFromIsbndb")
                         .HasDatabaseName("IX_Books_IsbndbSourceFlags")
                         .HasFilter("[IsIsbndbSourced] = 0");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("IsIsbndbSourced", "IsAbsentFromIsbndb"), new[] { "IsbndbCompletedAt" });
 
                     b.HasIndex("MetadataStatus", "BibliographicDetailsRefreshedAt")
                         .HasDatabaseName("IX_Books_MetadataStatus_BibliographicDetailsRefreshedAt");
@@ -474,6 +478,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsDescending(true, false)
                         .HasDatabaseName("IX_Books_PublicCatalog_UpdatedAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("UpdatedAt", "Title"), new[] { "QuantityAvailable", "MetadataStatus", "IsFavoriteReference" });
 
                     b.ToTable("Books", null, t =>
                         {
@@ -736,6 +742,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasFilter("[ReversalOfMovementId] IS NOT NULL");
 
                     b.HasIndex("ScanSessionId");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("ScanSessionId"), new[] { "Isbn13" });
 
                     b.HasIndex("VolunteerId");
 

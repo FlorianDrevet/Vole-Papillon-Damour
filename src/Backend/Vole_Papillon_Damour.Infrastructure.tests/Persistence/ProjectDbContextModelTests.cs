@@ -72,6 +72,51 @@ public sealed class ProjectDbContextModelTests
     }
 
     [Fact]
+    public void Model_CoversPublicCatalogAndScanSessionIndexesWithIncludedColumns()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var books = model.FindEntityType(typeof(Book))!;
+        var expectedPublicCatalogIncludes = new[]
+        {
+            nameof(Book.QuantityAvailable),
+            nameof(Book.MetadataStatus),
+            nameof(Book.IsFavoriteReference)
+        };
+
+        foreach (var indexName in new[]
+                 {
+                     "IX_Books_PublicCatalog_FirstSeenAt",
+                     "IX_Books_PublicCatalog_UpdatedAt"
+                 })
+        {
+            books.GetIndexes()
+                .Single(index => index.GetDatabaseName() == indexName)
+                .GetIncludeProperties()
+                .Should()
+                .BeEquivalentTo(expectedPublicCatalogIncludes);
+        }
+
+        var isbndbSourceFlags = books.GetIndexes()
+            .Single(index => index.GetDatabaseName() == "IX_Books_IsbndbSourceFlags");
+        isbndbSourceFlags.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(Book.IsIsbndbSourced), nameof(Book.IsAbsentFromIsbndb));
+        isbndbSourceFlags.GetFilter().Should().Be("[IsIsbndbSourced] = 0");
+        isbndbSourceFlags.GetIncludeProperties()
+            .Should()
+            .Equal(nameof(Book.IsbndbCompletedAt));
+
+        var scanSessionIndex = model.FindEntityType(typeof(BookMovement))!.GetIndexes()
+            .Single(index => index.GetDatabaseName() == "IX_BookMovements_ScanSessionId");
+        scanSessionIndex.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(BookMovement.ScanSessionId));
+        scanSessionIndex.GetIncludeProperties()
+            .Should()
+            .Equal(nameof(BookMovement.Isbn13));
+    }
+
+    [Fact]
     public void Model_MapsMultipleBookGenresAndMemberGenreFavorites()
     {
         using var context = CreateContext();

@@ -132,6 +132,7 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.HasIndex(book => book.WorkKey)
             .HasDatabaseName("IX_Books_WorkKey");
         builder.HasIndex(book => new { book.IsIsbndbSourced, book.IsAbsentFromIsbndb })
+            .IncludeProperties(book => book.IsbndbCompletedAt)
             .HasFilter("[IsIsbndbSourced] = 0")
             .HasDatabaseName("IX_Books_IsbndbSourceFlags");
         builder.HasIndex(book => new { book.MetadataStatus, book.LastAttemptAt });
@@ -153,10 +154,22 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         const string publicCatalogFilter = "[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL";
         builder.HasIndex(book => new { book.FirstSeenAt, book.Title })
             .IsDescending(true, false)
+            .IncludeProperties(book => new
+            {
+                book.QuantityAvailable,
+                book.MetadataStatus,
+                book.IsFavoriteReference
+            })
             .HasFilter(publicCatalogFilter)
             .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt");
         builder.HasIndex(book => new { book.UpdatedAt, book.Title })
             .IsDescending(true, false)
+            .IncludeProperties(book => new
+            {
+                book.QuantityAvailable,
+                book.MetadataStatus,
+                book.IsFavoriteReference
+            })
             .HasFilter(publicCatalogFilter)
             .HasDatabaseName("IX_Books_PublicCatalog_UpdatedAt");
         builder.HasIndex(book => book.Genre)
