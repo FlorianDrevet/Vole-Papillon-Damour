@@ -11,6 +11,7 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {CatalogRareBook, CatalogSelectionResponse, CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
 import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selection/catalog-selection.service';
 import {AccountSelectionComponent} from './selection/account-selection.component';
@@ -41,6 +42,7 @@ describe('CatalogAccountPageComponent', () => {
   };
   let api: jasmine.SpyObj<CatalogMemberApiService>;
   let selection: jasmine.SpyObj<CatalogSelectionService>;
+  let favorites: jasmine.SpyObj<CatalogFavoritesService>;
 
   const account = (name: string): AccountInfo => ({
     homeAccountId: 'home-account-id',
@@ -212,6 +214,10 @@ describe('CatalogAccountPageComponent', () => {
     selection.refresh.and.callFake(async () => snapshot());
     selection.confirmMerge.and.resolveTo({added: 0, alreadyPresent: 0, rejected: []});
     selection.remove.and.resolveTo();
+    favorites = jasmine.createSpyObj<CatalogFavoritesService>(
+      'CatalogFavoritesService', ['onSignedIn'],
+    );
+    favorites.onSignedIn.and.resolveTo();
 
     await TestBed.configureTestingModule({
       declarations: [
@@ -228,6 +234,7 @@ describe('CatalogAccountPageComponent', () => {
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: api},
         {provide: CatalogSelectionService, useValue: selection},
+        {provide: CatalogFavoritesService, useValue: favorites},
       ],
     }).compileComponents();
 
@@ -289,6 +296,14 @@ describe('CatalogAccountPageComponent', () => {
     const firstTab = fixture.nativeElement.querySelector('[role="tab"]') as HTMLButtonElement;
     expect(firstTab.id).toBe('account-watchlist-tab');
     expect(firstTab.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('merges local favorites after a member signs in', async () => {
+    auth.isAuthenticated.set(true);
+
+    await fixture.componentInstance.initialize();
+
+    expect(favorites.onSignedIn).toHaveBeenCalledTimes(1);
   });
 
   it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {

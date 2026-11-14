@@ -18,6 +18,7 @@ import {
 } from '../../core/catalog-auth.service';
 import {getCatalogAccountDisplayName} from '../../core/catalog-account-name';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogFavoritesService} from '../../core/favorites/catalog-favorites.service';
 import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {
   CatalogVolunteerGenreStatistics,
@@ -94,11 +95,13 @@ export class CatalogAccountPageComponent implements OnInit {
   });
   readonly selectionIntro = 'Les livres que vous voulez retrouver à la prochaine bourse. Ma sélection ne déclenche aucune alerte et ne réserve rien : un livre peut être vendu avant votre arrivée.';
   private selectionSignInHandled = false;
+  private favoritesSignInHandled = false;
 
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogMemberApiService,
     private readonly selection: CatalogSelectionService,
+    private readonly favorites: CatalogFavoritesService,
     private readonly meta: Meta,
     private readonly route: ActivatedRoute,
   ) {
@@ -134,6 +137,14 @@ export class CatalogAccountPageComponent implements OnInit {
           this.selectionError.set('Ma sélection n’a pas pu être synchronisée. Votre sélection sur cet appareil est conservée.');
         } finally {
           this.selectionLoading.set(false);
+        }
+      }
+      if (!this.favoritesSignInHandled) {
+        try {
+          await this.favorites.onSignedIn();
+          this.favoritesSignInHandled = true;
+        } catch {
+          // The favorites service keeps the local list and exposes its sync error.
         }
       }
       await this.loadWatchlist();

@@ -4,7 +4,9 @@ import {Observable, map} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {
+  CatalogAnonymousFavoriteResponse,
   CatalogBook,
+  CatalogFavoriteSuggestionsResponse,
   CatalogIsbndbEditionSearchResponse,
   CatalogPublicEventResponse,
   CatalogReferenceSearchResponse,
@@ -23,6 +25,29 @@ export class CatalogApiService {
   private readonly apiUrl = environment.apiUrl.replace(/\/$/, '');
 
   constructor(private readonly http: HttpClient) {}
+
+  declareAnonymousFavorite(isbn13: string): Observable<CatalogAnonymousFavoriteResponse> {
+    return this.http.post<CatalogAnonymousFavoriteResponse>(
+      `${this.apiUrl}/catalog/favorites/declarations`,
+      {isbn13},
+    );
+  }
+
+  withdrawAnonymousFavorite(isbn13: string): Observable<CatalogAnonymousFavoriteResponse> {
+    return this.http.delete<CatalogAnonymousFavoriteResponse>(
+      `${this.apiUrl}/catalog/favorites/declarations/${encodeURIComponent(isbn13)}`,
+    );
+  }
+
+  getFavoriteSuggestions(
+    isbn13s: readonly string[],
+    minimumHearts: number,
+  ): Observable<CatalogFavoriteSuggestionsResponse> {
+    return this.http.post<CatalogFavoriteSuggestionsResponse>(
+      `${this.apiUrl}/catalog/favorites/suggestions`,
+      {isbn13s, minimumHearts},
+    );
+  }
 
   search(params: CatalogSearchParams = {}): Observable<CatalogSearchResponse> {
     let httpParams = new HttpParams();

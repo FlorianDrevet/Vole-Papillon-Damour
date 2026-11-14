@@ -43,17 +43,87 @@ export const neighborReasonLabels: Record<CatalogNeighborReason, string> = {
   Theme: 'Proche par le thème',
 };
 
-export type CatalogRecommendationStatus = 'Enabled' | 'Disabled' | 'NoPurchases';
+export type CatalogRecommendationStatus = 'Enabled' | 'Disabled' | 'NoPurchases' | 'NoFavorites';
 
 export interface CatalogPersonalRecommendation extends CatalogBook {
   reason: CatalogNeighborReason;
   seedTitle: string;
+  hearts?: number;
+  otherContributorCount?: number;
 }
 
 export interface CatalogRecommendationsResponse {
   status: CatalogRecommendationStatus;
   items: CatalogPersonalRecommendation[];
+  minimumHearts?: number;
 }
+
+export interface CatalogMemberFavoritesResponse {
+  generatedAt: string;
+  total: number;
+  maximum: number;
+  works: CatalogFavoriteWork[];
+}
+
+export interface CatalogFavoriteWork {
+  workKey: string;
+  workId: string | null;
+  title: string;
+  authors: string | null;
+  addedAt: string;
+  editionCount: number;
+  isComputingSuggestions: boolean;
+  editions: CatalogFavoriteEdition[];
+}
+
+export interface CatalogFavoriteEdition {
+  isbn13: string;
+  title: string;
+  authors: string | null;
+  coverUrl: string | null;
+  addedAt: string;
+  quantityAvailable: number;
+  quantityAnnounced: number;
+  favoriteCount: number;
+  recommendationStatus: string;
+}
+
+export interface CatalogFavoriteAddedResponse {
+  isbn13: string;
+  alreadyPresent: boolean;
+  total: number;
+}
+
+export interface CatalogFavoriteMergeEntry {
+  isbn13: string;
+  addedAt: string;
+}
+
+export interface CatalogFavoriteMergeResult {
+  added: number;
+  skipped: number;
+  total: number;
+}
+
+export interface CatalogAnonymousFavoriteResponse {
+  isbn13: string;
+  count: number;
+}
+
+export interface CatalogFavoriteSuggestionSeed {
+  isbn13: string;
+  status: string;
+  stage: string;
+}
+
+export interface CatalogFavoriteSuggestionsResponse {
+  status: string;
+  minimumHearts: number;
+  items: CatalogFavoriteSuggestion[];
+  seeds: CatalogFavoriteSuggestionSeed[];
+}
+
+export type CatalogFavoriteSuggestion = CatalogPersonalRecommendation;
 
 export interface CatalogSearchResponse {
   generatedAt: string;
