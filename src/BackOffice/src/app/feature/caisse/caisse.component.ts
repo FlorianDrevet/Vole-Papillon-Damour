@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 
 import {ProductSectionEnum} from "../../shared/enums/productSection.enum";
@@ -11,6 +11,7 @@ import {
 @Component({
     selector: 'app-caisse',
     templateUrl: './caisse.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CaisseComponent {

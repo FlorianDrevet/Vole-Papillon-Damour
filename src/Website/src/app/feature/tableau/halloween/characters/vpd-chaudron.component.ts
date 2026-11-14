@@ -1,9 +1,10 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
   selector: 'vpd-chaudron',
   standalone: true,
   templateUrl: './vpd-chaudron.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './vpd-chaudron.component.scss',
 })
 export class VpdChaudronComponent {

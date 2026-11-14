@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
 import {
@@ -23,6 +23,7 @@ type NotFoundKindFilter = 'all' | CatalogNotFoundTargetKind;
   selector: 'app-not-found-reports-view',
   standalone: false,
   templateUrl: './not-found-reports-view.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./not-found-reports-view.component.scss'],
 })
 export class NotFoundReportsViewComponent implements OnChanges {

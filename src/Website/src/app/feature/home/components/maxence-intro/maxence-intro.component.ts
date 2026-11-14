@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import {RotationEnum} from "../../../../shared/enums/rotation.enum";
 import {ImageOrientationEnum} from "../../../../shared/enums/imageOrientation.enum";
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
@@ -7,6 +7,7 @@ import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum
     selector: 'app-maxence-intro',
     templateUrl: './maxence-intro.component.html',
     styleUrl: './maxence-intro.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class MaxenceIntroComponent {

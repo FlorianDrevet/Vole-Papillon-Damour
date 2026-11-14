@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
 import {ScanScreen} from './scanner/scanner.component';
@@ -6,6 +6,7 @@ import {ScanScreen} from './scanner/scanner.component';
 @Component({
   selector: 'app-scan-page',
   template: '<app-scanner [routeScreen]="routeScreen"></app-scanner>',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanPageComponent {

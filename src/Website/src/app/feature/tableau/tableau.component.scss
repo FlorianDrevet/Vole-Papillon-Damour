@@ -1,48 +1,102 @@
 // E4 : sorti = case claire, dernier = orange, voisin = case cerclée (mêmes repères que la projection).
 .k {
-  @apply font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-mist lg:text-[11px];
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9dc2da;
 }
 
 .card {
-  @apply flex flex-col gap-2.5 rounded-[14px] border border-[#1b3c57] bg-[#071b2b] p-4 lg:p-[18px];
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  border: 1px solid #1b3c57;
+  border-radius: 14px;
+  background: #071b2b;
+  padding: 1rem;
 }
 
 .card-bingo {
-  @apply border-orange-2;
+  border-color: #f9a93c;
 }
 
 .k-accent {
-  @apply text-orange-2;
+  color: #f9a93c;
 }
 
 .chip {
-  @apply inline-flex h-[30px] items-center rounded-full bg-[#123552] px-3 text-[13px] font-bold lg:h-8 lg:px-3.5 lg:text-sm;
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  border-radius: 9999px;
+  background: #123552;
+  padding-inline: 0.75rem;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .chip-accent {
-  @apply bg-orange-2 text-ink;
+  background: #f9a93c;
+  color: #041d30;
 }
 
 .chip-strong {
-  @apply bg-white text-ink;
+  background: #fff;
+  color: #041d30;
 }
 
 .prev {
-  @apply flex h-12 flex-1 items-center justify-center rounded-lg bg-white text-2xl font-extrabold tabular-nums text-ink lg:h-14 lg:text-[28px];
+  display: flex;
+  height: 3rem;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #041d30;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .cell {
-  @apply flex h-8 items-center justify-center rounded-[5px] bg-[#0b2438] text-sm font-bold tabular-nums text-[#6d8ba2] lg:h-[84px] lg:rounded-lg lg:text-4xl lg:font-extrabold;
+  display: flex;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: #0b2438;
+  color: #6d8ba2;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .cell-on {
-  @apply bg-white font-extrabold text-ink;
+  background: #fff;
+  color: #041d30;
+  font-weight: 800;
 }
 
 .cell-last {
-  @apply bg-orange font-black text-ink;
+  background: #f0801c;
+  color: #041d30;
+  font-weight: 900;
 }
 
 .cell-nb {
-  @apply bg-[#0b2438] text-white shadow-[inset_0_0_0_2px_#ffffff] lg:shadow-[inset_0_0_0_4px_#ffffff];
+  background: #0b2438;
+  color: #fff;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+@media (min-width: 1024px) {
+  .k { font-size: 11px; }
+  .card { padding: 18px; }
+  .chip { height: 2rem; padding-inline: 0.875rem; font-size: 0.875rem; }
+  .prev { height: 3.5rem; font-size: 28px; }
+  .cell { height: 84px; border-radius: 0.5rem; font-size: 2.25rem; font-weight: 800; }
+  .cell-nb { box-shadow: inset 0 0 0 4px #fff; }
 }

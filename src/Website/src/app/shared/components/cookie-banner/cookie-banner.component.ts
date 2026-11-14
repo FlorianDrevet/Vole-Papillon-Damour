@@ -1,10 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { CookieConsentService, CookiePreferences } from '../../services/cookie-consent.service';
 
 @Component({
   selector: 'app-cookie-banner',
   templateUrl: './cookie-banner.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class CookieBannerComponent {

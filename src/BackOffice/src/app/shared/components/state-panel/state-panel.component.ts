@@ -1,4 +1,4 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, ChangeDetectionStrategy} from '@angular/core';
 
 import {IconName} from '../icon/icon.component';
 
@@ -14,6 +14,7 @@ export type StatePanelTone = 'neutral' | 'danger';
 @Component({
   selector: 'app-state-panel',
   templateUrl: './state-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class StatePanelComponent {

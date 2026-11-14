@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Filet dégradé de marque + label en petites capitales, précédant un titre de
@@ -9,6 +9,7 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-section-eyebrow',
   templateUrl: './section-eyebrow.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class SectionEyebrowComponent {

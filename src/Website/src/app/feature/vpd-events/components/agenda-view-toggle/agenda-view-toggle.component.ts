@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from '@angular/core';
 
 export type AgendaView = 'calendar' | 'list';
 
@@ -8,6 +8,7 @@ export type AgendaView = 'calendar' | 'list';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './agenda-view-toggle.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './agenda-view-toggle.component.scss',
 })
 export class AgendaViewToggleComponent {

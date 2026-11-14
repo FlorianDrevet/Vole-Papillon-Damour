@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
@@ -8,6 +8,7 @@ import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
     host: {class: 'block w-full min-w-0'},
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EventDetailComponent implements OnInit {

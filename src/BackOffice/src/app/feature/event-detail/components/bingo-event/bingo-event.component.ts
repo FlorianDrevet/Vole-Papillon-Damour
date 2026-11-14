@@ -1,4 +1,4 @@
-import {Component, inject, model} from '@angular/core';
+import {Component, inject, model, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {MatDialog} from "@angular/material/dialog";
 import {
@@ -10,6 +10,7 @@ import {CreationUpdatePartieComponent} from "./components/dialogs/creation-parti
     selector: 'app-bingo-event',
     templateUrl: './bingo-event.component.html',
     host: {class: 'block w-full min-w-0'},
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BingoEventComponent {

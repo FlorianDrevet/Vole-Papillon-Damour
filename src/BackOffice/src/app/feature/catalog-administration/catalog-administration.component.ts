@@ -1,4 +1,4 @@
-import {Component, OnInit, inject, signal} from '@angular/core';
+import {Component, OnInit, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, Validators} from '@angular/forms';
 import {
   getTemporaryPasswordIssue,
@@ -33,6 +33,7 @@ type AdminTab = 'overview' | 'books' | 'recommendations' | 'fairs' | 'sessions' 
   selector: 'app-catalog-administration',
   templateUrl: './catalog-administration.component.html',
   styleUrls: ['./catalog-administration.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class CatalogAdministrationComponent implements OnInit {

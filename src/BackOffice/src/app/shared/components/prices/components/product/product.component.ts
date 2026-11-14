@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProductModel } from '../../../../models/product.model';
@@ -13,6 +13,7 @@ import { ProductFacadeService } from '../../../../facades/product.facade.service
 @Component({
   selector: 'app-product',
   templateUrl: './product.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ProductComponent {

@@ -33,7 +33,7 @@
         @for (event of upcomingEvents(); track event.id; let i = $index; let first = $first) {
           <a
             [routerLink]="['/evenement', event.id]"
-            class="home-event-card flex animate-vpd-float flex-col gap-2.5 rounded px-6 py-6 hover:[animation-play-state:paused]"
+            class="home-event-card flex animate-vpd-float flex-col gap-2.5 rounded-sm px-6 py-6 hover:[animation-play-state:paused]"
             [class.home-event-card--first]="first"
             [class.home-event-card--halloween]="identity(event) === 'halloween'"
             [class.home-event-card--books]="identity(event) === 'books'"
@@ -77,7 +77,7 @@
         }
       </div>
     } @else {
-      <app-photo-placeholder label="Aucun évènement à venir pour le moment" class="relative block h-40 rounded"></app-photo-placeholder>
+      <app-photo-placeholder label="Aucun évènement à venir pour le moment" class="relative block h-40 rounded-sm"></app-photo-placeholder>
     }
   </div>
 </section>

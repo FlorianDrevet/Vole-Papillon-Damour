@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {
   VpdEventModel,
@@ -22,6 +22,7 @@ import {ImageUtils} from "../../../../../../../shared/utils/image.utils";
     selector: 'app-creation-update-line-partie',
     templateUrl: './creation-update-lot.component.html',
     styleUrl: './creation-update-lot.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreationUpdateLotComponent {

@@ -8,7 +8,7 @@
       @if (connection() === 'not-found') {
         <a routerLink="/evenement" class="text-sm font-semibold text-cyan no-underline hover:text-white">← Évènements</a>
       } @else {
-        <a [routerLink]="['/evenement', live.eventAsso()?.id]" class="min-w-0 truncate text-sm font-semibold text-cyan no-underline hover:text-white lg:text-[15px]">← {{ view().eventName || 'Grand loto' }}</a>
+        <a [routerLink]="['/evenement', $safeNavigationMigration(live.eventAsso()?.id)]" class="min-w-0 truncate text-sm font-semibold text-cyan no-underline hover:text-white lg:text-[15px]">← {{ view().eventName || 'Grand loto' }}</a>
         <span role="status" class="inline-flex h-[30px] shrink-0 items-center gap-[7px] rounded-full border border-[#1b3c57] bg-[#0b2438] px-3 font-mono text-[10px] font-semibold uppercase tracking-[.14em]" [class]="connection() === 'live' ? 'text-orange-2' : 'text-mist-2'">
           @switch (connection()) {
             @case ('live') {

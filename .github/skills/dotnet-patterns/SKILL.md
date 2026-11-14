@@ -42,3 +42,4 @@ Charger ce skill pour toute tache `.NET` dans ce depot.
 
 - `dotnet build` sur la solution ou le projet touche
 - `dotnet test` sur le projet de tests touche quand il existe
+- Pour les changements non triviaux de logique métier backend ou Worker avec tests existants, completer la validation par une mutation Stryker.NET ciblée, selon `.github/skills/cqrs-feature/SKILL.md`.

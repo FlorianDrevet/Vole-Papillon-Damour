@@ -1,4 +1,4 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, input, ChangeDetectionStrategy} from '@angular/core';
 
 export type LoadingPlaceholderVariant = 'cards' | 'rows' | 'tiles';
 
@@ -14,6 +14,7 @@ export type LoadingPlaceholderVariant = 'cards' | 'rows' | 'tiles';
 @Component({
   selector: 'app-loading-placeholder',
   templateUrl: './loading-placeholder.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class LoadingPlaceholderComponent {

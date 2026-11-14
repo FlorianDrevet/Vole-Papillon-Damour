@@ -1,4 +1,4 @@
-import { Component, ElementRef, Injector, afterNextRender, inject, output } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, inject, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { HistoryReaderService } from '../../history-reader.service';
 
@@ -14,6 +14,7 @@ import { HistoryReaderService } from '../../history-reader.service';
   selector: 'app-time-line',
   templateUrl: './time-line.component.html',
   styleUrl: './time-line.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class TimeLineComponent {

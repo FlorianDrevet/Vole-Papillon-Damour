@@ -1,4 +1,4 @@
-import {Component, computed, inject, OnInit, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
 import {groupBy} from 'lodash';
 
@@ -33,6 +33,7 @@ const MONTH_NUMBERS: Record<string, number> = {
 @Component({
     selector: 'app-actualities',
     templateUrl: './actualities.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ActualitiesComponent implements OnInit {

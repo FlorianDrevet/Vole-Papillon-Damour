@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * En-tête de page de liste (Actualités, Évènements) : chapeau + titre serif +
@@ -10,6 +10,7 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-page-header',
   templateUrl: './page-header.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PageHeaderComponent {

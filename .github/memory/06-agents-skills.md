@@ -36,6 +36,11 @@
 - Frontend: `angular-patterns`, `ui-ux-front-saas`
 - Operations: `book-data-reset` for explicitly requested SQL books-data resets that preserve events and news; `vpd-prod-backup` for explicit local backups of the user's production Azure SQL and Blob data
 
+## Mutation Review
+
+- `src/Backend/.config/dotnet-tools.json` pins `dotnet-stryker` 5.1.0. For nontrivial tested Domain/Application/Worker logic, agents run targeted Stryker.NET with `-m` file filters after green tests; the solution uses xUnit v2/VSTest, so keep Stryker's default runner. Review `Survived` and `NoCoverage` mutants and justify equivalents; do not use mutation score as a target or mutate DI/EF wiring/migrations.
+- `vibe-coding-refractaire` treats missing targeted mutation evidence as a review gap for behavior-changing backend/Worker logic, while retaining explicit boundary tests for FluentValidation rules.
+
 ## Skills Not Generated
 
 - `python-patterns` is not part of the active project stack.

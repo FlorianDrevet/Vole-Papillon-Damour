@@ -2,7 +2,7 @@ import {registerLocaleData} from '@angular/common';
 import {provideHttpClient, withFetch, withInterceptors} from '@angular/common/http';
 import {LOCALE_ID, NgModule, provideZonelessChangeDetection} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {BrowserModule, provideClientHydration, withEventReplay} from '@angular/platform-browser';
+import {BrowserModule, provideClientHydration, withEventReplay, withNoIncrementalHydration} from '@angular/platform-browser';
 
 import localeFr from '@angular/common/locales/fr';
 
@@ -117,7 +117,7 @@ registerLocaleData(localeFr);
     {provide: LOCALE_ID, useValue: 'fr-FR'},
     provideHttpClient(withFetch(), withInterceptors([catalogAuthInterceptor])),
     provideZonelessChangeDetection(),
-    provideClientHydration(withEventReplay()),
+    provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
   ],
   bootstrap: [AppComponent],
 })

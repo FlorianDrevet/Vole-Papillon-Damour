@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 import { PHOTO_ALBUM_CATEGORIES, PHOTO_ALBUMS, PHOTO_ALBUMS_ROUTE } from './photo-album-catalog';
 
@@ -15,6 +15,7 @@ type VideoAsset = Readonly<{
 @Component({
     selector: 'app-pictures',
     templateUrl: './pictures.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class PicturesComponent {

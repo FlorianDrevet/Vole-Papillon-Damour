@@ -1,10 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { SITE_NAV_ITEMS, getActiveNavUrl, getBreadcrumb, SiteNavItem } from './nav-items';
 
 @Component({
   selector: 'app-navigation',
   templateUrl: './navigation.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class NavigationComponent implements OnInit {

@@ -1,10 +1,11 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 export type FantomeMood = 'flotte' | 'coucou' | 'lanterne' | 'course';
 
 @Component({
   selector: 'vpd-fantome',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './vpd-fantome.component.html',
 })
 export class VpdFantomeComponent {

@@ -1,4 +1,4 @@
-import {Component, Signal} from '@angular/core';
+import {Component, Signal, ChangeDetectionStrategy} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 
 import {ScanAuthService} from './auth/scan-auth.service';
@@ -7,6 +7,7 @@ import {ScanAuthService} from './auth/scan-auth.service';
   selector: 'app-scan-shell',
   templateUrl: './scan-shell.component.html',
   styleUrl: './scan-shell.component.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanShellComponent {

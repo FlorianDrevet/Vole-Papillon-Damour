@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../../../shared/enums/vpdEvent.enum";
 import {AxiosService} from "../../../../shared/services/axios.service";
@@ -14,6 +14,7 @@ const UPCOMING_EVENTS_COUNT = 3;
     selector: 'app-vpd-events-section',
     templateUrl: './vpd-event-sections.html',
     styleUrl: './vpd-event-sections.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class VpdEventSections implements OnInit {

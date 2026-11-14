@@ -1,5 +1,5 @@
 import {CommonModule, DOCUMENT, isPlatformBrowser} from '@angular/common';
-import {Component, effect, inject, Input, OnChanges, OnDestroy, PLATFORM_ID, signal, SimpleChanges} from '@angular/core';
+import {Component, effect, inject, Input, OnChanges, OnDestroy, PLATFORM_ID, signal, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {countdownLabel} from '../../../../shared/events/countdown';
 import {eventIdentity, EventIdentity} from '../../../../shared/events/event-identity';
@@ -18,6 +18,7 @@ import {TodayBannerHalloweenMotionService} from '../../../../core/layouts/today-
   standalone: true,
   imports: [CommonModule, RouterLink, VpdBouleBingoComponent, VpdCitrouilleComponent, VpdFantomeComponent, VpdPapillonComponent],
   templateUrl: './featured-event.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './featured-event.component.scss',
 })
 export class FeaturedEventComponent implements OnChanges, OnDestroy {

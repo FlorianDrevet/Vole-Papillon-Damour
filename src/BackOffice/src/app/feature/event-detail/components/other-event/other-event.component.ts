@@ -1,10 +1,11 @@
-import {Component, input} from '@angular/core';
+import {Component, input, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
 
 @Component({
     selector: 'app-other-event',
     templateUrl: './other-event.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OtherEventComponent {

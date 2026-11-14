@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, EventEmitter, Input, Output, signal} from '@angular/core';
+import {Component, EventEmitter, Input, Output, signal, ChangeDetectionStrategy} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -15,6 +15,7 @@ import {
   selector: 'app-manual-request-add-dialog',
   standalone: false,
   templateUrl: './manual-request-add-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./manual-request-add-dialog.component.scss'],
 })
 export class ManualRequestAddDialogComponent {

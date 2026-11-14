@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges, ViewChild, inject, signal} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges, ViewChild, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -17,6 +17,7 @@ const NEW_REQUESTER_KEY = 'nouveau';
   selector: 'app-manual-requester-detail',
   standalone: false,
   templateUrl: './manual-requester-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./manual-requester-detail.component.scss'],
 })
 export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit {

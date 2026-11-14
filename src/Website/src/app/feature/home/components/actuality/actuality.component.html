@@ -12,7 +12,7 @@
     <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
       @for (actuality of actualities().slice(0, 3); track actuality.id) {
         <a [routerLink]="['/actualite', actuality.id]" class="flex flex-col gap-3.5">
-          <img [src]="actuality.urlPrincipalImage" [alt]="actuality.title" class="h-48 w-full rounded object-cover">
+          <img [src]="actuality.urlPrincipalImage" [alt]="actuality.title" class="h-48 w-full rounded-sm object-cover">
           <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ actuality.date | date:'d MMM yyyy' }}</span>
           <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ actuality.title }}</h3>
           <p class="text-sm leading-relaxed text-slate-2">{{ actuality.article.slice(0, 130) }}{{ actuality.article.length > 130 ? '…' : '' }}</p>
@@ -20,6 +20,6 @@
       }
     </div>
   } @else {
-    <app-photo-placeholder label="Les dernières actualités arrivent bientôt" class="h-40 rounded"></app-photo-placeholder>
+    <app-photo-placeholder label="Les dernières actualités arrivent bientôt" class="h-40 rounded-sm"></app-photo-placeholder>
   }
 </section>

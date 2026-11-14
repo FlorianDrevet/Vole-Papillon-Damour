@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {ErrorsEnum} from "../../../enums/errors.enum";
 import {FileUploadInterface} from "../../../interfaces/fileUpload.interface";
@@ -14,6 +14,7 @@ import {fromApiUtcDate, fromApiUtcWallClock, MyDate} from "../../../extensions/M
     selector: 'app-create-update-event-dialog',
     templateUrl: './create-update-event-dialog.component.html',
     styleUrl: './create-update-event-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CreateUpdateEventDialogComponent implements OnInit {

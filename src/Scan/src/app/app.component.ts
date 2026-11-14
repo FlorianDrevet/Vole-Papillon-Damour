@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {isScanDiagnosticRequested} from './offline/scan-diagnostic-export';
 
 @Component({
@@ -8,6 +8,7 @@ import {isScanDiagnosticRequested} from './offline/scan-diagnostic-export';
     <app-scan-diagnostic *ngIf="diagnosticRequested; else routedSurface"></app-scan-diagnostic>
     <ng-template #routedSurface><router-outlet></router-outlet></ng-template>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class AppComponent {

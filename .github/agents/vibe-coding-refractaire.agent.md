@@ -57,6 +57,15 @@ Tu privilegies :
 - tests qui copient l'implementation au lieu de verifier le comportement
 - snapshots ou asserts triviaux utilises comme alibi
 
+### Mutation testing .NET
+
+Pour un diff backend ou Worker qui change une regle de domaine, un handler, un validator ou une autre logique metier couverte par des tests :
+
+- Verifier qu'une execution Stryker.NET ciblee accompagne les tests verts, ou signaler son absence comme une preuve manquante.
+- Lire les mutants `Survived` et `NoCoverage` dans le rapport; verifier qu'ils sont couverts par un test comportemental ou justifies comme equivalents/non pertinents.
+- Refuser les filtres trop larges, les mutations de cablage/EF/migrations et les tests ajoutes uniquement pour augmenter le score.
+- Les tests explicites de bornes restent necessaires : Stryker.NET ne mute pas certains litteraux FluentValidation.
+
 ### Signaux de code genere sans maitrise
 
 - API inventee ou usage incoherent avec le reste du repo

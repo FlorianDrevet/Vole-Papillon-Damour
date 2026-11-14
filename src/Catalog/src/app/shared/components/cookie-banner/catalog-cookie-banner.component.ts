@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {Component, signal, ChangeDetectionStrategy} from '@angular/core';
 
 import {CookieConsentService} from '../../services/cookie-consent.service';
 
@@ -6,6 +6,7 @@ import {CookieConsentService} from '../../services/cookie-consent.service';
   selector: '[app-catalog-cookie-banner]',
   standalone: false,
   templateUrl: './catalog-cookie-banner.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./catalog-cookie-banner.component.scss'],
 })
 export class CatalogCookieBannerComponent {

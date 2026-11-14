@@ -1,9 +1,10 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { ActualityModel } from '../../models/actuality.model';
 
 @Component({
   selector: 'app-actuality-card',
   templateUrl: './actuality-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ActualityCardComponent {

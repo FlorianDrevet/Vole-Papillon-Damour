@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProductFacadeService } from '../../facades/product.facade.service';
@@ -15,6 +15,7 @@ import { ConfirmationDialogComponent } from '../dialogs/confirmation-dialog/conf
 @Component({
   selector: 'app-prices',
   templateUrl: './prices.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class PricesComponent implements OnInit {

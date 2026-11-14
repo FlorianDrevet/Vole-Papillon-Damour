@@ -1,5 +1,5 @@
 import {isPlatformBrowser} from '@angular/common';
-import {Component, computed, effect, inject, OnDestroy, OnInit, PendingTasks, PLATFORM_ID, signal} from '@angular/core';
+import {Component, computed, effect, inject, OnDestroy, OnInit, PendingTasks, PLATFORM_ID, signal, ChangeDetectionStrategy} from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute} from "@angular/router";
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
@@ -17,6 +17,7 @@ import {TodayBannerHalloweenMotionService} from '../../core/layouts/today-banner
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
     styleUrl: './event-detail.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class EventDetailComponent implements OnInit, OnDestroy {

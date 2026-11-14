@@ -115,6 +115,13 @@ Centraliser les chaines constantes (codes d'erreur, noms de claims, policies, cl
 - Migrations avec des noms significatifs.
 - Convertisseurs de valeur pour les Value Objects.
 
+## 8. Mutation testing
+
+- Pour une nouvelle feature ou une modification non triviale de logique metier dans `Domain`, `Application` ou `Worker`, suivre la verification Stryker.NET ciblee de `.github/skills/cqrs-feature/SKILL.md` apres les tests verts.
+- Stryker est epingle par le manifeste local sous `src/Backend/.config/dotnet-tools.json`; lancer `dotnet tool restore` depuis `src/Backend`.
+- Ne pas lancer la mutation sur toute la solution sans filtres, ni sur du cablage, des migrations ou du code genere.
+- Traiter les mutants `Survived` et `NoCoverage` avec des tests comportementaux ou une justification explicite; le score seul ne mesure pas la qualite.
+
 ---
 
 ## Sortie attendue

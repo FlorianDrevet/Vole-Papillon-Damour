@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component} from '@angular/core';
+import {Component, ChangeDetectionStrategy} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterTestingModule} from '@angular/router/testing';
 
@@ -8,6 +8,7 @@ import {AppComponent} from './app.component';
 @Component({
   selector: 'app-scan-shell',
   template: '<div class="shell-stub"></div>',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 class ShellStubComponent {}
@@ -15,6 +16,7 @@ class ShellStubComponent {}
 @Component({
   selector: 'app-scan-diagnostic',
   template: '<div class="diagnostic-stub"></div>',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 class DiagnosticStubComponent {}

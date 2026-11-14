@@ -1,5 +1,5 @@
 import {isPlatformBrowser} from '@angular/common';
-import {Component, DestroyRef, effect, EventEmitter, inject, Input, OnChanges, Output, PLATFORM_ID, SimpleChanges, signal} from '@angular/core';
+import {Component, DestroyRef, effect, EventEmitter, inject, Input, OnChanges, Output, PLATFORM_ID, SimpleChanges, signal, ChangeDetectionStrategy} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {HalloweenPreferences} from '../../../shared/components/mascots/halloween-preferences';
 import {VpdChauveSourisComponent} from '../../../shared/components/mascots/vpd-chauve-souris.component';
@@ -13,6 +13,7 @@ import {TodayBannerHalloweenMotionService} from './today-banner-halloween-motion
   selector: 'app-today-banner-halloween',
   standalone: true,
   imports: [RouterLink, VpdChauveSourisComponent, VpdCitrouilleComponent, VpdFantomeComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './today-banner-halloween.component.html',
 })
 export class TodayBannerHalloweenComponent implements OnChanges {

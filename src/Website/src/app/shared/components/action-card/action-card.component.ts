@@ -1,4 +1,4 @@
-import { Component, HostBinding, computed, input } from '@angular/core';
+import { Component, HostBinding, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Carte de la mosaïque "nos actions" (bento grid 12 colonnes).
@@ -8,6 +8,7 @@ import { Component, HostBinding, computed, input } from '@angular/core';
 @Component({
   selector: 'app-action-card',
   templateUrl: './action-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ActionCardComponent {

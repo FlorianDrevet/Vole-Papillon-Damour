@@ -1,4 +1,4 @@
-import {Component, computed, inject, input, output, signal} from '@angular/core';
+import {Component, computed, inject, input, output, signal, ChangeDetectionStrategy} from '@angular/core';
 import {
   VpdEventModel,
   VpdEventPartieLineModel,
@@ -21,6 +21,7 @@ import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
     selector: 'app-lot-card',
     templateUrl: './lot-card.component.html',
     host: {class: 'block w-full min-w-0'},
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LotCardComponent {

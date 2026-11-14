@@ -204,7 +204,7 @@
                     <strong class="stat-value">{{ formatNumber(current.currentPeriod.soldQuantity) }}</strong>
                     <span class="stat-label">Livres vendus</span>
                     <span class="stat-sub">Toutes bourses confondues</span>
-                    <span class="stat-foot">Recette de la dernière bourse : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
+                    <span class="stat-foot">Recette de la dernière bourse : {{ $safeNavigationMigration(current.lastFair?.revenue) === null || $safeNavigationMigration(current.lastFair?.revenue) === undefined ? '—' : formatMoney($safeNavigationMigration(current.lastFair?.revenue)) }}</span>
                   </article>
                   <article class="stat-card stat-card-dark" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.deadStockCount) }}</strong>

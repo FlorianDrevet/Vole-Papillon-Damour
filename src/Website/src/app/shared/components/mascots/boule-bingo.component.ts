@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 export type BouleBingoColor = 'bleu' | 'orange' | 'cyan';
 export type BouleBingoMood = 'saute' | 'pose';
@@ -6,6 +6,7 @@ export type BouleBingoMood = 'saute' | 'pose';
 @Component({
   selector: 'vpd-boule-bingo',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './boule-bingo.component.html',
 })
 export class VpdBouleBingoComponent {

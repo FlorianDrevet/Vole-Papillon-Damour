@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, inject} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, inject, ChangeDetectionStrategy} from '@angular/core';
 import {
   CatalogNotFoundCloseAction,
   CatalogNotFoundCloseRequest,
@@ -16,6 +16,7 @@ export interface NotFoundCloseConfirmation {
   selector: 'app-not-found-report-close-dialog',
   standalone: false,
   templateUrl: './not-found-report-close-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./not-found-report-close-dialog.component.scss'],
 })
 export class NotFoundReportCloseDialogComponent implements AfterViewInit {

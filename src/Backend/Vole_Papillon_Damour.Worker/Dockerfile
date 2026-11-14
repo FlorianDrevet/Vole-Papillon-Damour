@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated10.0 AS 
 WORKDIR /home/site/wwwroot
 EXPOSE 80
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 

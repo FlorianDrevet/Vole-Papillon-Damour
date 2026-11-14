@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
@@ -6,6 +6,7 @@ import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 @Component({
     selector: 'app-vpd-all-events',
     templateUrl: './vpd-all-events.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class VpdAllEventsComponent implements OnInit{

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -306,6 +306,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
 @Component({
   selector: 'app-legal-page',
   templateUrl: './legal-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './legal-page.component.scss'
 })
 export class LegalPageComponent {

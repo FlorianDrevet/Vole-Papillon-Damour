@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Adresses permanentes de l'association, affichées dans l'agenda public pour garder
@@ -7,6 +7,7 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-event-locations',
   templateUrl: './event-locations.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class EventLocationsComponent {}

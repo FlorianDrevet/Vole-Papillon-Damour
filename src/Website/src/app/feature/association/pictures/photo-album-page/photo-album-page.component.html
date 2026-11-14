@@ -5,7 +5,7 @@
         <a
           data-back-to-albums
           [routerLink]="albumsRoute"
-          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan/30">
+          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-cyan/30">
           <span aria-hidden="true">←</span> Retour aux albums
         </a>
         <div class="flex max-w-[70ch] flex-col gap-3">
@@ -28,7 +28,7 @@
 
         <div class="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
           @for (photo of selectedAlbum.photos; track photo; let index = $index) {
-            <figure data-photo-card class="mb-4 break-inside-avoid overflow-hidden rounded-sm border border-line-2 bg-white shadow-sm">
+            <figure data-photo-card class="mb-4 break-inside-avoid overflow-hidden rounded-xs border border-line-2 bg-white shadow-xs">
               <img
                 [src]="photo"
                 [alt]="selectedAlbum.title + ', photo ' + (index + 1)"
@@ -41,7 +41,7 @@
 
         <a
           [routerLink]="albumsRoute"
-          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue transition hover:text-ink-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue transition hover:text-ink-2 focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-blue-2/30">
           <span aria-hidden="true">←</span> Retour à la liste des albums
         </a>
       </div>
@@ -55,7 +55,7 @@
     <a
       data-back-to-albums
       [routerLink]="albumsRoute"
-      class="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-white transition hover:bg-blue focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+      class="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-white transition hover:bg-blue focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-blue-2/30">
       Retour à la liste des albums <span aria-hidden="true">→</span>
     </a>
   </div>

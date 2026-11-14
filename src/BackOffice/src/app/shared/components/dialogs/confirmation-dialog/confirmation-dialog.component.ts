@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {ActualityFacadeService} from "../../../facades/actuality.facade.service";
 import {ConfirmDeletionInterface} from "../../../interfaces/confirmDeletion.interface";
@@ -7,6 +7,7 @@ import {MatSnackBar} from "@angular/material/snack-bar";
 @Component({
     selector: 'app-confirmation-dialog',
     templateUrl: './confirmation-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class ConfirmationDialogComponent {

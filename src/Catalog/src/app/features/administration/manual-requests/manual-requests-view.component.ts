@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, signal} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, signal, ChangeDetectionStrategy} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -18,6 +18,7 @@ type ManualRequestsAdminTab = CatalogManualRequestTab | 'requesters';
   selector: 'app-manual-requests-view',
   standalone: false,
   templateUrl: './manual-requests-view.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./manual-requests-view.component.scss'],
 })
 export class ManualRequestsViewComponent implements OnChanges, OnDestroy {

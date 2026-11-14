@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, ChangeDetectionStrategy} from '@angular/core';
 
 import {
   createScanDiagnosticExport,
@@ -12,6 +12,7 @@ import {ScanCatalogBook} from './scan-offline.model';
   selector: 'app-scan-diagnostic',
   templateUrl: './scan-diagnostic.component.html',
   styleUrls: ['./scan-diagnostic.component.scss'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
 export class ScanDiagnosticComponent implements OnInit {

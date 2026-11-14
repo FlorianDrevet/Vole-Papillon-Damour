@@ -1,4 +1,4 @@
-import {AfterViewChecked, Component, effect, ElementRef, inject, Input, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild} from '@angular/core';
+import {AfterViewChecked, Component, effect, ElementRef, inject, Input, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import {RouterLink} from '@angular/router';
 import {LotoCell, LotoEventSnapshot, LotoTableauView} from '@vpd/ui';
@@ -102,6 +102,7 @@ function createEndCandies(): EndCandy[] {
   templateUrl: './tableau-halloween.component.html',
   styleUrl: './tableau-halloween.component.scss',
   imports: [RouterLink, VpdCitrouilleComponent, VpdChauveSourisComponent, VpdFantomeComponent, VpdChaudronComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [HalloweenFx],
 })
 export class TableauHalloweenComponent implements OnChanges, AfterViewChecked {
