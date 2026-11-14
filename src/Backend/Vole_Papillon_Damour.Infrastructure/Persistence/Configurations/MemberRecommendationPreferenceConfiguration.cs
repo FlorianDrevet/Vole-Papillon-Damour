@@ -19,6 +19,7 @@ public sealed class MemberRecommendationPreferenceConfiguration : IEntityTypeCon
                 value => UserId.Create(value));
         builder.Property(preference => preference.Enabled).IsRequired();
         builder.Property(preference => preference.MinimumHearts);
+        builder.Property(preference => preference.FairDigestEnabled);
         builder.Property(preference => preference.FairDigestConsentedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);

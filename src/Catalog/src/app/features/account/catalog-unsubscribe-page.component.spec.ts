@@ -41,7 +41,7 @@ describe('CatalogUnsubscribePageComponent', () => {
       ['setAlertStatus', 'getRecommendationPreference', 'setRecommendationPreference'],
     );
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
-    api.getRecommendationPreference.and.returnValue(of({enabled: true, minimumHearts: 4}));
+    api.getRecommendationPreference.and.returnValue(of({enabled: true, minimumHearts: 4, fairDigestEnabled: true}));
     api.setRecommendationPreference.and.returnValue(of(void 0));
     query.purpose = null;
 

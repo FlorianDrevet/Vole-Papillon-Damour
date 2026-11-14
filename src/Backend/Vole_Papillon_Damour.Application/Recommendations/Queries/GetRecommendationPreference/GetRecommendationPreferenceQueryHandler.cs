@@ -44,6 +44,7 @@ public sealed class GetRecommendationPreferenceQueryHandler(
         return new RecommendationPreferenceResult(
             preference?.Enabled ?? true,
             minimumHearts,
-            consentedAt);
+            consentedAt,
+            preference?.FairDigestEnabled ?? true);
     }
 }

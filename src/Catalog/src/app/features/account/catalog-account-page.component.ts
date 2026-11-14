@@ -50,6 +50,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly authError: Signal<string | null>;
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly recommendationsEnabled = signal<boolean | null>(null);
+  readonly fairDigestEnabled = signal<boolean | null>(null);
   readonly fairDigestConsentedAt = signal<string | null>(null);
   readonly recommendationPreferenceLoading = signal(false);
   readonly recommendationPreferencePending = signal(false);
@@ -71,11 +72,14 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
   readonly favoriteCount: Signal<number>;
-  readonly minimumHearts: Signal<number>;
   readonly fairDigestConsentLabel = computed(() => {
+    const enabled = this.fairDigestEnabled();
     const consentedAt = this.fairDigestConsentedAt();
-    if (!consentedAt) {
+    if (enabled !== true) {
       return 'Désactivé';
+    }
+    if (!consentedAt) {
+      return 'Activé par défaut';
     }
 
     const date = new Date(consentedAt);
@@ -137,7 +141,6 @@ export class CatalogAccountPageComponent implements OnInit {
     this.authError = this.auth.error;
     this.accountLabel = computed(() => getCatalogAccountDisplayName(this.account()));
     this.favoriteCount = computed(() => this.favorites.favorites().length);
-    this.minimumHearts = this.favorites.currentMinimumHearts;
   }
 
   ngOnInit(): void {
@@ -385,6 +388,7 @@ export class CatalogAccountPageComponent implements OnInit {
       const token = await this.auth.getApiAccessToken();
       const preference = await firstValueFrom(this.api.getRecommendationPreference(token));
       this.recommendationsEnabled.set(preference.enabled);
+      this.fairDigestEnabled.set(preference.fairDigestEnabled ?? true);
       this.fairDigestConsentedAt.set(preference.fairDigestConsentedAt ?? null);
     } catch {
       this.recommendationPreferenceError.set(
@@ -421,11 +425,12 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   async setFairDigestConsentEnabled(enabled: boolean): Promise<void> {
-    const isConsented = this.fairDigestConsentedAt() !== null;
+    const isEnabled = this.fairDigestEnabled();
     if (
       !this.auth.isAuthenticated()
       || this.recommendationPreferencePending()
-      || isConsented === enabled
+      || isEnabled === null
+      || isEnabled === enabled
     ) {
       return;
     }
@@ -440,6 +445,7 @@ export class CatalogAccountPageComponent implements OnInit {
         undefined,
         enabled,
       ));
+      this.fairDigestEnabled.set(enabled);
       this.fairDigestConsentedAt.set(enabled ? new Date().toISOString() : null);
     } catch {
       this.fairDigestPreferenceError.set(
@@ -447,16 +453,6 @@ export class CatalogAccountPageComponent implements OnInit {
       );
     } finally {
       this.recommendationPreferencePending.set(false);
-    }
-  }
-
-  async setMinimumHearts(value: number): Promise<void> {
-    try {
-      await this.favorites.setMinimumHearts(value);
-    } catch {
-      this.recommendationPreferenceError.set(
-        'L’exigence des suggestions n’a pas pu être mise à jour. Réessayez.',
-      );
     }
   }
 

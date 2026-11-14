@@ -192,11 +192,13 @@ export class CatalogMemberApiService {
     enabled: boolean;
     minimumHearts?: number;
     fairDigestConsentedAt?: string | null;
+    fairDigestEnabled: boolean;
   }> {
     return this.http.get<{
       enabled: boolean;
       minimumHearts?: number;
       fairDigestConsentedAt?: string | null;
+      fairDigestEnabled: boolean;
     }>(
       `${this.apiUrl}/catalog/me/recommendations/preference`,
       {headers: this.authorizationHeaders(accessToken)},

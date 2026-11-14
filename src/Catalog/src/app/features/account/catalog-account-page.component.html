@@ -604,8 +604,8 @@
                 <h3 id="fair-digest-settings-title">E-mail avant chaque bourse</h3>
                 <p>
                   Trois jours avant l'ouverture d'une bourse, recevez les nouveautés arrivées depuis la bourse
-                  précédente qui ressemblent à vos coups de cœur, et les livres très demandés de retour. Un e-mail
-                  par bourse au plus.
+                  précédente qui ressemblent à vos coups de cœur (3 cœurs ou plus), et les livres très demandés de
+                  retour. Un e-mail par bourse au plus.
                 </p>
                 <p class="fair-digest-consent-status" data-zone="E7-date-consentement">
                   {{ fairDigestConsentLabel() }}
@@ -621,21 +621,12 @@
                 role="switch"
                 class="favorite-preference-switch"
                 data-zone="E7-interrupteur-email"
-                [attr.aria-checked]="fairDigestConsentedAt() !== null"
+                [attr.aria-checked]="fairDigestEnabled()"
                 aria-labelledby="fair-digest-settings-title"
                 [disabled]="recommendationPreferencePending()"
-                (click)="setFairDigestConsentEnabled(fairDigestConsentedAt() === null)">
+                (click)="setFairDigestConsentEnabled(!fairDigestEnabled())">
                 <span aria-hidden="true"></span>
               </button>
-            </section>
-
-            <section class="favorite-preference-threshold" data-zone="E7-exigence" aria-labelledby="favorite-threshold-title">
-              <h3 id="favorite-threshold-title">Exigence des suggestions</h3>
-              <p>Le nombre minimum de cœurs pour qu'un livre vous soit proposé, sur le site et dans l'e-mail.</p>
-              <app-minimum-hearts-control
-                [minimum]="minimumHearts()"
-                (minimumChange)="setMinimumHearts($event)">
-              </app-minimum-hearts-control>
             </section>
           </section>
         } @else if (recommendationPreferenceError()) {

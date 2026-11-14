@@ -69,6 +69,7 @@ describe('CatalogMemberApiService', () => {
       enabled: true,
       minimumHearts: 4,
       fairDigestConsentedAt: '2026-10-01T08:00:00Z',
+      fairDigestEnabled: true,
     };
     service.getRecommendationPreference('member-token')
       .subscribe(result => expect(result).toEqual(response));

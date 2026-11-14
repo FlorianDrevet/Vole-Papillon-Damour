@@ -18,7 +18,7 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1710,6 +1710,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.Property<DateTime?>("FairDigestConsentedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool?>("FairDigestEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("MinimumHearts")
                         .HasColumnType("int");

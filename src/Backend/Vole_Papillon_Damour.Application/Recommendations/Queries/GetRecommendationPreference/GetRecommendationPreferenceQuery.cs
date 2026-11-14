@@ -12,4 +12,5 @@ public sealed record GetRecommendationPreferenceQuery(
 public sealed record RecommendationPreferenceResult(
     bool Enabled,
     int MinimumHearts = 3,
-    DateTimeOffset? FairDigestConsentedAt = null);
+    DateTimeOffset? FairDigestConsentedAt = null,
+    bool FairDigestEnabled = true);

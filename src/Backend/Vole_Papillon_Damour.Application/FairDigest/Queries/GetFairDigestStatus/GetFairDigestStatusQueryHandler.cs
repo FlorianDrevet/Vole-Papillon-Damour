@@ -63,8 +63,8 @@ public sealed class GetFairDigestStatusQueryHandler(
             .AsNoTracking()
             .CountAsync(user =>
                 user.Email != null &&
-                dbContext.MemberRecommendationPreferences.Any(preference =>
-                    preference.UserId == user.Id && preference.FairDigestConsentedAt != null) &&
+                !dbContext.MemberRecommendationPreferences.Any(preference =>
+                    preference.UserId == user.Id && preference.FairDigestEnabled == false) &&
                 dbContext.MemberFavoriteBooks.Any(favorite => favorite.UserId == user.Id) &&
                 !dbContext.Watchlists.Any(watchlist =>
                     watchlist.Id == user.Id && watchlist.AlertStatus != WatchlistAlertStatus.Active),
