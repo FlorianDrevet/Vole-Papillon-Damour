@@ -29,6 +29,9 @@ export class PricesComponent implements OnInit {
   allProducts = signal<ProductModel[]>([]);
   isLoading = signal(true);
   hasFailed = signal(false);
+  isSavingOrder = signal(false);
+
+  isBookSection = computed(() => this.section() === ProductSectionEnum.Book);
 
   filteredProducts = computed(() => {
     return this.allProducts()
@@ -39,6 +42,10 @@ export class PricesComponent implements OnInit {
           : true,
       )
       .sort((a, b) => {
+        if (this.isBookSection()) {
+          return a.index - b.index || a.name.localeCompare(b.name);
+        }
+
         if (a.available === b.available) {
           return a.name.localeCompare(b.name);
         }
@@ -121,5 +128,51 @@ export class PricesComponent implements OnInit {
           });
       }
     });
+  }
+
+  async onBookProductOrderChanged(productIds: string[]): Promise<void> {
+    if (!this.isBookSection() || this.isSavingOrder()) {
+      return;
+    }
+
+    const bookProducts = this.allProducts().filter(
+      (product) => product.productSection === ProductSectionEnum.Book,
+    );
+    const bookIds = new Set(bookProducts.map((product) => product.id));
+    if (
+      productIds.length !== bookProducts.length ||
+      new Set(productIds).size !== bookProducts.length ||
+      productIds.some((id) => !bookIds.has(id))
+    ) {
+      return;
+    }
+
+    const previousProducts = this.allProducts();
+    const indexById = new Map(productIds.map((id, index) => [id, index + 1]));
+    this.allProducts.set(
+      previousProducts.map((product) => {
+        const index = indexById.get(product.id);
+        return index === undefined ? product : {...product, index};
+      }),
+    );
+    this.isSavingOrder.set(true);
+
+    try {
+      await this.productFacade.reorderBookProducts$(productIds);
+      this._snackBar.open('Ordre des prix enregistré', 'Fermer', {
+        duration: 2000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+      });
+    } catch {
+      this.allProducts.set(previousProducts);
+      this._snackBar.open("Impossible d'enregistrer l'ordre des prix", 'Fermer', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+      });
+    } finally {
+      this.isSavingOrder.set(false);
+    }
   }
 }

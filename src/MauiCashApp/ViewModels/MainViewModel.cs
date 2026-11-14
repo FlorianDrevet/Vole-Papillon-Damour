@@ -151,6 +151,13 @@ public partial class MainViewModel : ObservableObject
             .Where(p => p.ProductSection == section.ToString())
             .Where(p => foodSection is null || p.ProductCategory == foodSection.ToString());
 
+        if (section == ProductSection.Book)
+        {
+            filtered = filtered
+                .OrderBy(product => product.Index)
+                .ThenBy(product => product.Name, StringComparer.OrdinalIgnoreCase);
+        }
+
         foreach (var p in filtered)
             FilteredProducts.Add(p);
 

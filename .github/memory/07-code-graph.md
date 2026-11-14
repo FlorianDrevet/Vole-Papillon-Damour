@@ -5,6 +5,7 @@
 - `codeGraphEngine`: `graphify`, used for repository architecture and corpus-level orientation.
 - Generated local artifacts: `graphify-out/graph.json`, `graphify-out/GRAPH_REPORT.md`, optional `graphify-out/wiki/index.md`; `.graphifyignore` controls ingestion. These may be absent in a clean worktree and are ignored by Git.
 - Snapshot on 2026-10-31: 1,913 files, 9,398 nodes, 20,521 edges, 832 detected communities. Extraction was 59% explicit and 41% inferred; inferred edges are hypotheses. Token cost was zero.
+- Snapshot refreshed on 2026-11-11 from this clean worktree: 2,220 code files, 19,074 nodes, 56,906 edges, and 642 communities. Graphify extraction and clustering completed without an LLM; its HTML output uses the aggregated community view for this large graph.
 - The graph extractor refreshes successfully, but its HTML visualization exceeds the renderer's size limit at this corpus size. Use the text report and graph query/path tools instead of treating missing HTML as an extraction failure.
 
 ## Usage rules

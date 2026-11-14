@@ -60,109 +60,135 @@ public sealed class RegisterSaleCommandHandler(
             return Errors.Book.InvalidSaleTimestamp();
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-        var existingMovement = await dbContext.BookMovements
-            .SingleOrDefaultAsync(
-                movement => movement.ClientGestureId == command.ClientGestureId,
-                cancellationToken);
-
-        if (existingMovement is not null)
+        try
         {
-            if (existingMovement.Type != BookMovementType.Sale)
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            var existingMovement = await dbContext.BookMovements
+                .SingleOrDefaultAsync(
+                    movement => movement.ClientGestureId == command.ClientGestureId,
+                    cancellationToken);
+
+            if (existingMovement is not null)
+            {
+                if (existingMovement.Type != BookMovementType.Sale)
+                {
+                    return Errors.Book.ClientGestureAlreadyUsed(command.ClientGestureId);
+                }
+
+                var existingResult = await BuildExistingResultAsync(existingMovement, cancellationToken);
+                if (existingResult.IsError)
+                {
+                    return existingResult.Errors;
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                return existingResult.Value;
+            }
+
+            var book = await dbContext.Books
+                .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+
+            if (book?.RedirectedToIsbn13 is { } canonicalIsbn13)
+            {
+                isbn13 = canonicalIsbn13;
+                book = await dbContext.Books
+                    .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+
+                if (book is null)
+                {
+                    return Errors.Book.RedirectTargetNotFound(isbn13.Value);
+                }
+            }
+
+            if (book is null)
+            {
+                book = Book.Create(isbn13, receivedAt);
+                dbContext.Books.Add(book);
+            }
+
+            var (occurredAt, clockSuspect) = NormalizeClientTimestamp(command.OccurredAt, receivedAt);
+            // Only a non-cancelled book fair can own a sale: filtering in SQL keeps the
+            // cashier hot path from loading every event with its bingo parties.
+            var fairs = await dbContext.AssoEvents
+                .AsNoTracking()
+                .WhereActiveBookFair()
+                .ToListAsync(cancellationToken);
+            var fairMatch = BookFairResolver.Resolve(fairs, occurredAt);
+            var hadUnreleasedAnnouncement = await dbContext.BookAnnouncements
+                .AnyAsync(
+                    announcement =>
+                        announcement.Isbn13 == isbn13 &&
+                        announcement.Status == BookAnnouncementStatus.Announced,
+                    cancellationToken);
+            var hadNoAvailableStock = book.QuantityAvailable < command.Quantity;
+
+            book.RecordSale(occurredAt, command.Quantity);
+
+            var movement = BookMovement.Create(
+                BookMovementId.CreateUnique(),
+                isbn13,
+                BookMovementType.Sale,
+                -command.Quantity,
+                occurredAt,
+                receivedAt,
+                clockSuspect,
+                scanSessionId: null,
+                command.VolunteerId,
+                fairMatch.AssoEventsId,
+                fairMatch.Note,
+                command.ClientGestureId,
+                checkoutPassageId: checkoutPassageId);
+            dbContext.BookMovements.Add(movement);
+            if (checkoutPassageId is { } linkedPassageId)
+            {
+                await checkoutPassageRecorder.RecordOrdinarySaleAsync(
+                    linkedPassageId, movement, book, command.Isbn, cancellationToken);
+            }
+
+            await notFoundReportLapser.LapseIfUnavailableAsync(isbn13, receivedAt, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            var isRare = await IsRareBookAsync(isbn13, cancellationToken);
+
+            return new RegisterSaleResult(
+                isbn13.Value,
+                movement.Id,
+                command.Quantity,
+                book.QuantityAvailable,
+                book.SalesCount,
+                fairMatch.AssoEventsId,
+                fairMatch.Status,
+                hadNoAvailableStock,
+                hadUnreleasedAnnouncement,
+                isRare,
+                clockSuspect,
+                AlreadyProcessed: false);
+        }
+        catch (DbUpdateException)
+        {
+            // Two cashier tabs can both pass the initial idempotency lookup. The
+            // unique client-gesture index makes one write win; treat the loser as
+            // a retry when the winning movement is now visible.
+            dbContext.ChangeTracker.Clear();
+            var winningMovement = await dbContext.BookMovements
+                .SingleOrDefaultAsync(
+                    movement => movement.ClientGestureId == command.ClientGestureId,
+                    cancellationToken);
+            if (winningMovement is null)
+            {
+                throw;
+            }
+
+            if (winningMovement.Type != BookMovementType.Sale)
             {
                 return Errors.Book.ClientGestureAlreadyUsed(command.ClientGestureId);
             }
 
-            var existingResult = await BuildExistingResultAsync(existingMovement, cancellationToken);
-            if (existingResult.IsError)
-            {
-                return existingResult.Errors;
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-            return existingResult.Value;
+            var existingResult = await BuildExistingResultAsync(winningMovement, cancellationToken);
+            return existingResult.IsError ? existingResult.Errors : existingResult.Value;
         }
-
-        var book = await dbContext.Books
-            .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
-
-        if (book?.RedirectedToIsbn13 is { } canonicalIsbn13)
-        {
-            isbn13 = canonicalIsbn13;
-            book = await dbContext.Books
-                .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
-
-            if (book is null)
-            {
-                return Errors.Book.RedirectTargetNotFound(isbn13.Value);
-            }
-        }
-
-        if (book is null)
-        {
-            book = Book.Create(isbn13, receivedAt);
-            dbContext.Books.Add(book);
-        }
-
-        var (occurredAt, clockSuspect) = NormalizeClientTimestamp(command.OccurredAt, receivedAt);
-        // Only a non-cancelled book fair can own a sale: filtering in SQL keeps the
-        // cashier hot path from loading every event with its bingo parties.
-        var fairs = await dbContext.AssoEvents
-            .AsNoTracking()
-            .WhereActiveBookFair()
-            .ToListAsync(cancellationToken);
-        var fairMatch = BookFairResolver.Resolve(fairs, occurredAt);
-        var hadUnreleasedAnnouncement = await dbContext.BookAnnouncements
-            .AnyAsync(
-                announcement =>
-                    announcement.Isbn13 == isbn13 &&
-                    announcement.Status == BookAnnouncementStatus.Announced,
-                cancellationToken);
-        var hadNoAvailableStock = book.QuantityAvailable < command.Quantity;
-
-        book.RecordSale(occurredAt, command.Quantity);
-
-        var movement = BookMovement.Create(
-            BookMovementId.CreateUnique(),
-            isbn13,
-            BookMovementType.Sale,
-            -command.Quantity,
-            occurredAt,
-            receivedAt,
-            clockSuspect,
-            scanSessionId: null,
-            command.VolunteerId,
-            fairMatch.AssoEventsId,
-            fairMatch.Note,
-            command.ClientGestureId,
-            checkoutPassageId: checkoutPassageId);
-        dbContext.BookMovements.Add(movement);
-        if (checkoutPassageId is { } linkedPassageId)
-        {
-            await checkoutPassageRecorder.RecordOrdinarySaleAsync(
-                linkedPassageId, movement, book, command.Isbn, cancellationToken);
-        }
-
-        await notFoundReportLapser.LapseIfUnavailableAsync(isbn13, receivedAt, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        var isRare = await IsRareBookAsync(isbn13, cancellationToken);
-
-        return new RegisterSaleResult(
-            isbn13.Value,
-            movement.Id,
-            command.Quantity,
-            book.QuantityAvailable,
-            book.SalesCount,
-            fairMatch.AssoEventsId,
-            fairMatch.Status,
-            hadNoAvailableStock,
-            hadUnreleasedAnnouncement,
-            isRare,
-            clockSuspect,
-            AlreadyProcessed: false);
     }
 
     private async Task<ErrorOr<RegisterSaleResult>> BuildExistingResultAsync(

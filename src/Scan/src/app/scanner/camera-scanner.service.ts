@@ -13,7 +13,11 @@ export type CameraScannerReaderFactory = (
 ) => CameraScannerReader;
 
 export interface CameraScannerEngine {
-  start(container: HTMLElement, onDetected: (rawValue: string) => void): Promise<void>;
+  start(
+    container: HTMLElement,
+    onDetected: (rawValue: string) => void,
+    onCameraError?: (error: unknown) => void,
+  ): Promise<void>;
   resume(): void;
   refocus(): Promise<boolean>;
   stop(): Promise<void>;
@@ -171,15 +175,36 @@ function* createPhotoDecodeCanvases(image: HTMLImageElement): Generator<HTMLCanv
 export class ZxingCameraScannerEngine implements CameraScannerEngine {
   private controls: CameraScannerControls | null = null;
   private video: HTMLVideoElement | null = null;
+  private cameraTrack: MediaStreamTrack | null = null;
+  private trackEndedListener: EventListener | null = null;
+  private container: HTMLElement | null = null;
+  private onDetected: ((rawValue: string) => void) | null = null;
+  private onCameraError: ((error: unknown) => void) | null = null;
+  private startToken = 0;
   private active = false;
+  private recovering = false;
 
   constructor(private readonly readerFactory: CameraScannerReaderFactory) {}
 
   async start(
     container: HTMLElement,
     onDetected: (rawValue: string) => void,
+    onCameraError: (error: unknown) => void = () => undefined,
   ): Promise<void> {
     await this.stop();
+    const startToken = ++this.startToken;
+    this.container = container;
+    this.onDetected = onDetected;
+    this.onCameraError = onCameraError;
+    this.active = true;
+    await this.openCamera(startToken);
+  }
+
+  private async openCamera(startToken: number): Promise<void> {
+    const container = this.container;
+    if (!container || startToken !== this.startToken) {
+      return;
+    }
 
     const reader = this.readerFactory(createDecoderHints());
     const video = document.createElement('video');
@@ -189,16 +214,14 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
     video.playsInline = true;
     video.setAttribute('aria-hidden', 'true');
     container.replaceChildren(video);
-
     this.video = video;
-    this.active = true;
 
     try {
       const controls = await reader.decodeFromConstraints(
         {video: CAMERA_CONSTRAINTS},
         video,
         (result, _error) => {
-          if (!this.active || !result) {
+          if (startToken !== this.startToken || !this.active || !result) {
             return;
           }
 
@@ -208,19 +231,110 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
           }
 
           this.active = false;
-          onDetected(rawValue);
+          this.onDetected?.(rawValue);
         },
       );
 
+      if (startToken !== this.startToken || this.video !== video) {
+        controls.stop();
+        return;
+      }
+
       this.controls = controls;
+      this.listenForTrackEnd(video, startToken);
     } catch (error: unknown) {
-      await this.stop();
+      if (startToken !== this.startToken) {
+        return;
+      }
+
+      this.releaseCamera();
       throw error;
     }
   }
 
+  private listenForTrackEnd(video: HTMLVideoElement, startToken: number): void {
+    const track = (video.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+    if (!track) {
+      return;
+    }
+
+    const onTrackEnded: EventListener = () => {
+      void this.recoverAfterTrackEnd(video, track, startToken);
+    };
+    this.cameraTrack = track;
+    this.trackEndedListener = onTrackEnded;
+    track.addEventListener('ended', onTrackEnded, {once: true});
+
+    if (track.readyState === 'ended') {
+      if (this.recovering) {
+        this.failCameraRecovery(new Error('La caméra s’est interrompue après sa reconnexion.'));
+      } else {
+        onTrackEnded(new Event('ended'));
+      }
+    }
+  }
+
+  private failCameraRecovery(error: unknown): void {
+    this.active = false;
+    this.releaseCamera();
+    this.onCameraError?.(error);
+  }
+
+  private async recoverAfterTrackEnd(
+    video: HTMLVideoElement,
+    track: MediaStreamTrack,
+    startToken: number,
+  ): Promise<void> {
+    if (
+      startToken !== this.startToken ||
+      this.video !== video ||
+      this.cameraTrack !== track ||
+      this.recovering
+    ) {
+      return;
+    }
+
+    this.recovering = true;
+    const recoveryToken = ++this.startToken;
+    this.releaseCamera();
+
+    try {
+      await this.openCamera(recoveryToken);
+    } catch (error: unknown) {
+      if (recoveryToken !== this.startToken) {
+        return;
+      }
+
+      this.failCameraRecovery(error);
+    } finally {
+      if (recoveryToken === this.startToken) {
+        this.recovering = false;
+      }
+    }
+  }
+
+  private releaseCamera(): void {
+    if (this.cameraTrack && this.trackEndedListener) {
+      this.cameraTrack.removeEventListener('ended', this.trackEndedListener);
+    }
+    this.cameraTrack = null;
+    this.trackEndedListener = null;
+
+    const controls = this.controls;
+    this.controls = null;
+    controls?.stop();
+
+    const video = this.video;
+    this.video = null;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+      video.remove();
+    }
+  }
+
   resume(): void {
-    if (this.controls && this.video) {
+    if (this.container && (this.controls && this.video || this.recovering)) {
       this.active = true;
     }
   }
@@ -268,19 +382,13 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
   }
 
   async stop(): Promise<void> {
+    this.startToken += 1;
     this.active = false;
-
-    const controls = this.controls;
-    this.controls = null;
-    controls?.stop();
-
-    const video = this.video;
-    this.video = null;
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-      video.remove();
-    }
+    this.recovering = false;
+    this.container = null;
+    this.onDetected = null;
+    this.onCameraError = null;
+    this.releaseCamera();
   }
 
   async scanFile(imageFile: File): Promise<string> {
@@ -325,6 +433,7 @@ export class CameraScannerService {
   async start(
     container: HTMLElement,
     onDetected: (rawValue: string) => void,
+    onCameraError: (error: Error) => void = () => undefined,
   ): Promise<CameraScannerHandle> {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('La caméra nécessite une page HTTPS et un navigateur autorisant son accès.');
@@ -359,6 +468,17 @@ export class CameraScannerService {
       engine.resume();
     };
 
+    const reportCameraError = (error: unknown): void => {
+      if (!active || stopPromise) {
+        return;
+      }
+
+      active = false;
+      acceptingDetections = false;
+      onCameraError(this.toCameraError(error));
+      void stop();
+    };
+
     const refocus = async (): Promise<boolean> => {
       if (!active || stopPromise) {
         return false;
@@ -380,7 +500,7 @@ export class CameraScannerService {
 
         acceptingDetections = false;
         onDetected(rawValue);
-      });
+      }, reportCameraError);
     } catch (error: unknown) {
       await stop();
       throw this.toCameraError(error);

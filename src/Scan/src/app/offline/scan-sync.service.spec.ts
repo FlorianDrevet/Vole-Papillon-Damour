@@ -34,6 +34,7 @@ describe('ScanSyncService', () => {
       'openSession',
       'scanBook',
       'registerSale',
+      'voidSale',
       'associatePassage',
       'markRareBookSold',
       'restoreRareBookAvailability',
@@ -43,6 +44,7 @@ describe('ScanSyncService', () => {
     api.openSession.and.returnValue(of(createSessionResponse()));
     api.scanBook.and.returnValue(of(createScanResponse()));
     api.registerSale.and.returnValue(of(createSaleResponse()));
+    api.voidSale.and.returnValue(of(createSaleVoidResponse()));
     api.associatePassage.and.returnValue(of({
       checkoutPassageId: 'passage-1',
       status: 'Associated',
@@ -149,7 +151,9 @@ describe('ScanSyncService', () => {
     expect(api.scanBook.calls.argsFor(1)[1].kept).toBeFalse();
     expect(result.sent).toBe(2);
     expect(result.remaining).toBe(0);
-    expect(await store.listOutboxEntries()).toEqual([]);
+    const syncedGestures = await store.listOutboxEntries();
+    expect(syncedGestures.length).toBe(2);
+    expect(syncedGestures.every(entry => entry.status === 'Synced')).toBeTrue();
   });
 
   it('keeps local session counters when automatic synchronization clears sent gestures', async () => {
@@ -221,7 +225,7 @@ describe('ScanSyncService', () => {
       jasmine.objectContaining({clientGestureId: scan.entry.clientGestureId}),
     );
     expect((await workflow.getSession())?.remoteSessionId).toBe('server-session');
-    expect(await store.listOutboxEntries()).toEqual([]);
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Synced');
   });
 
   it('does not silently move gestures when the local session belongs to another account', async () => {
@@ -264,9 +268,32 @@ describe('ScanSyncService', () => {
     }));
     expect(result.sent).toBe(1);
     expect(result.remaining).toBe(0);
-    expect(await store.listSaleOutboxEntries()).toEqual([]);
+    const syncedSales = await store.listSaleOutboxEntries();
+    expect(syncedSales.length).toBe(1);
+    expect(syncedSales[0].status).toBe('Synced');
     expect((await store.getCatalogBook('9782070363735'))?.qtyAvailable).toBe(0);
     expect((await store.getCatalogBook('9782070363735'))?.salesCount).toBe(1);
+  });
+
+  it('sends queued cash sales before waiting for the catalog refresh', async () => {
+    const requests: string[] = [];
+    api.getCatalogDelta.and.callFake(() => {
+      requests.push('catalog');
+      return of(createDelta());
+    });
+    api.registerSale.and.callFake(() => {
+      requests.push('sale');
+      return of(createSaleResponse());
+    });
+    await store.putCatalogBooks([createBook('9782070363735')]);
+    await workflow.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+
+    await service.syncAll();
+
+    expect(requests.indexOf('sale')).toBeLessThan(requests.indexOf('catalog'));
   });
 
   it('keeps a cash sale durable after a network failure', async () => {
@@ -284,6 +311,57 @@ describe('ScanSyncService', () => {
     expect(result.remaining).toBe(1);
     expect(durableSale.attemptCount).toBe(1);
     expect(durableSale.lastError).toBe('network down');
+  });
+
+  it('voids a cash sale when cancellation races with its in-flight request', async () => {
+    await store.putCatalogBooks([createBook('9782070363735')]);
+    const [entry] = await workflow.recordCashSales(
+      ['9782070363735'],
+      new Date(),
+    );
+    const response$ = new Subject<ScanSaleResponse>();
+    api.registerSale.and.returnValue(response$.asObservable());
+
+    const flushing = service.flushOutbox();
+    while (api.registerSale.calls.count() === 0) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    const cancelled = await workflow.cancelSaleOutboxEntries([entry.clientGestureId]);
+    response$.next(createSaleResponse());
+    response$.complete();
+    await flushing;
+
+    expect(cancelled.correctionQueuedCount).toBe(1);
+    expect(api.voidSale).toHaveBeenCalledOnceWith(
+      'movement-1',
+      jasmine.objectContaining({clientGestureId: jasmine.any(String)}),
+    );
+    expect(await store.getSaleOutboxEntry(entry.clientGestureId)).toBeNull();
+    expect((await store.getCatalogBook(entry.isbn13))?.qtyAvailable).toBe(1);
+    expect((await store.getCatalogBook(entry.isbn13))?.salesCount).toBe(0);
+  });
+
+  it('voids a synchronized cash sale when the cashier cancels it during the correction window', async () => {
+    await store.putCatalogBooks([createBook('9782070363735')]);
+    const [entry] = await workflow.recordCashSales(['9782070363735'], new Date());
+    await service.flushOutbox();
+
+    expect((await store.getSaleOutboxEntry(entry.clientGestureId))?.status).toBe('Synced');
+    const cancelled = await workflow.cancelSaleOutboxEntries([entry.clientGestureId]);
+
+    expect(cancelled.correctionQueuedCount).toBe(1);
+    const queuedCorrection = await store.getSaleOutboxEntry(entry.clientGestureId);
+    expect(queuedCorrection?.status).toBe('VoidPending');
+
+    await service.flushOutbox();
+
+    expect(api.voidSale).toHaveBeenCalledOnceWith(
+      'movement-1',
+      jasmine.objectContaining({clientGestureId: queuedCorrection?.voidClientGestureId}),
+    );
+    expect(await store.getSaleOutboxEntry(entry.clientGestureId)).toBeNull();
+    expect((await store.getCatalogBook(entry.isbn13))?.qtyAvailable).toBe(1);
+    expect((await store.getCatalogBook(entry.isbn13))?.salesCount).toBe(0);
   });
 
   it('sends rare cash sales through the rare endpoint without ordinary sale fields', async () => {
@@ -411,7 +489,7 @@ describe('ScanSyncService', () => {
     expect(result.remaining).toBe(1);
     expect(durableEntry?.attemptCount).toBe(1);
     expect(durableEntry?.lastError).toBe('network down');
-    expect(await store.getOutboxEntry(laterScan.entry.clientGestureId)).toBeNull();
+    expect((await store.getOutboxEntry(laterScan.entry.clientGestureId))?.status).toBe('Synced');
   });
 
   it('backs off a transient failure before retrying the same gesture', async () => {
@@ -439,7 +517,7 @@ describe('ScanSyncService', () => {
       await service.flushOutbox();
 
       expect(api.scanBook).toHaveBeenCalledTimes(2);
-      expect(await store.getOutboxEntry(scan.entry.clientGestureId)).toBeNull();
+      expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Synced');
     } finally {
       jasmine.clock().uninstall();
     }
@@ -628,7 +706,7 @@ describe('ScanSyncService', () => {
 
     await service.flushOutbox();
 
-    expect(await store.listSaleOutboxEntries()).toEqual([]);
+    expect((await store.listSaleOutboxEntries())[0].status).toBe('Synced');
     expect((await store.listPassageAssociations())[0].attemptCount).toBe(1);
   });
 
@@ -856,6 +934,20 @@ describe('ScanSyncService', () => {
       hadNoAvailableStock: false,
       hadUnreleasedAnnouncement: false,
       isRare: false,
+      clockSuspect: false,
+      alreadyProcessed: false,
+    };
+  }
+
+  function createSaleVoidResponse() {
+    return {
+      isbn13: '9782070363735',
+      originalSaleMovementId: 'movement-1',
+      reversalMovementId: 'reversal-1',
+      quantity: 1,
+      qtyAvailable: 1,
+      salesCount: 0,
+      assoEventsId: null,
       clockSuspect: false,
       alreadyProcessed: false,
     };

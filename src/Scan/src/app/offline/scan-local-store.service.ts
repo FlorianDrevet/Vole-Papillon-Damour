@@ -14,6 +14,9 @@ import {
   ScanRareBookPhotoQueueEntry,
   ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
+  ScanSaleCancellationSummary,
+  ScanSaleResponse,
+  ScanSaleVoidResponse,
   ScanSetAsideReason,
   ScanSessionCloseRequest,
   ScanSessionCounts,
@@ -31,6 +34,9 @@ import {
   LegacyScanOutboxEntry,
 } from './scan-local-store-migration';
 import {ScanTelemetryService} from './scan-telemetry.service';
+import {createScanClientId} from './scan-client-id';
+
+const SALE_SEND_LEASE_MS = 45_000;
 
 @Injectable({providedIn: 'root'})
 export class ScanLocalStoreService {
@@ -983,7 +989,10 @@ export class ScanLocalStoreService {
       this.listPassageAssociations(),
     ]);
     return entries.filter(isBlockingScanEntry).length +
-      sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
+      sales.filter(entry => {
+        const status = entry.status ?? 'Pending';
+        return status !== 'Quarantined' && status !== 'Synced';
+      }).length +
       rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
       passageAssociations.filter(entry => entry.status === 'Pending').length;
   }
@@ -1392,6 +1401,7 @@ export class ScanLocalStoreService {
 
     const updated: ScanSaleOutboxEntry = {
       ...entry,
+      status: entry.status === 'Sending' && errorMessage ? 'Pending' : entry.status,
       attemptCount: entry.attemptCount + 1,
       lastAttemptAt: attemptedAt,
       lastError: errorMessage,
@@ -1399,6 +1409,247 @@ export class ScanLocalStoreService {
     };
     await this.putSaleOutboxEntry(updated);
     return updated;
+  }
+
+  async beginSaleTransmission(
+    clientGestureId: string,
+    startedAt: string,
+  ): Promise<boolean> {
+    let shouldSend = false;
+    await this.runTransaction([scanStoreNames.sales], 'readwrite', stores => {
+      const request = stores[scanStoreNames.sales].get(clientGestureId);
+      request.onsuccess = () => {
+        const entry = request.result as ScanSaleOutboxEntry | undefined;
+        if (!entry) {
+          return;
+        }
+
+        const status = entry.status ?? 'Pending';
+        if (status === 'Pending') {
+          stores[scanStoreNames.sales].put({
+            ...entry,
+            status: 'Sending',
+            lastAttemptAt: startedAt,
+            lastError: null,
+            lastFailureKind: null,
+          });
+          shouldSend = true;
+        } else if (status === 'Cancelled') {
+          shouldSend = true;
+        } else if (status === 'Sending') {
+          const lastStartedAt = Date.parse(entry.lastAttemptAt ?? '');
+          const currentTime = Date.parse(startedAt);
+          if (!Number.isFinite(lastStartedAt) || currentTime - lastStartedAt >= SALE_SEND_LEASE_MS) {
+            stores[scanStoreNames.sales].put({...entry, lastAttemptAt: startedAt});
+            shouldSend = true;
+          }
+        }
+      };
+    });
+
+    return shouldSend;
+  }
+
+  async completeSaleTransmission(
+    clientGestureId: string,
+    response: ScanSaleResponse,
+    completedAt: string,
+  ): Promise<'synced' | 'cancelled' | 'missing'> {
+    let outcome: 'synced' | 'cancelled' | 'missing' = 'missing';
+    await this.runTransaction([scanStoreNames.sales, scanStoreNames.catalog], 'readwrite', stores => {
+      const request = stores[scanStoreNames.sales].get(clientGestureId);
+      request.onsuccess = () => {
+        const entry = request.result as ScanSaleOutboxEntry | undefined;
+        if (!entry) {
+          return;
+        }
+
+        const wasCancelled = entry.status === 'Cancelled' || entry.status === 'VoidPending';
+        stores[scanStoreNames.sales].put({
+          ...entry,
+          status: wasCancelled ? 'VoidPending' : 'Synced',
+          saleMovementId: response.saleMovementId,
+          lastAttemptAt: completedAt,
+          lastError: null,
+          lastFailureKind: null,
+        });
+        outcome = wasCancelled ? 'cancelled' : 'synced';
+
+        if (!wasCancelled) {
+          const salesRequest = stores[scanStoreNames.sales].getAll();
+          salesRequest.onsuccess = () => {
+            const relatedSales = (salesRequest.result as ScanSaleOutboxEntry[])
+              .filter(sale => sale.isbn13 === response.isbn13);
+            const projection = projectSaleCounters(
+              response.qtyAvailable,
+              response.salesCount,
+              relatedSales,
+            );
+            const bookRequest = stores[scanStoreNames.catalog].get(response.isbn13);
+            bookRequest.onsuccess = () => {
+              const book = bookRequest.result as ScanCatalogBook | undefined;
+              if (!book) {
+                return;
+              }
+
+              stores[scanStoreNames.catalog].put({
+                ...book,
+                ...projection,
+                updatedAt: completedAt,
+              });
+            };
+          };
+        }
+      };
+    });
+
+    return outcome;
+  }
+
+  async completeSaleCorrection(
+    clientGestureId: string,
+    response: ScanSaleVoidResponse,
+    completedAt: string,
+  ): Promise<boolean> {
+    let completed = false;
+    await this.runTransaction([scanStoreNames.sales, scanStoreNames.catalog], 'readwrite', stores => {
+      const request = stores[scanStoreNames.sales].get(clientGestureId);
+      request.onsuccess = () => {
+        const entry = request.result as ScanSaleOutboxEntry | undefined;
+        if (!entry) {
+          return;
+        }
+
+        stores[scanStoreNames.sales].delete(clientGestureId);
+        const salesRequest = stores[scanStoreNames.sales].getAll();
+        salesRequest.onsuccess = () => {
+          const relatedSales = (salesRequest.result as ScanSaleOutboxEntry[])
+            .filter(sale => sale.isbn13 === response.isbn13);
+          const projection = projectSaleCounters(
+            response.qtyAvailable,
+            response.salesCount,
+            relatedSales,
+          );
+          const bookRequest = stores[scanStoreNames.catalog].get(response.isbn13);
+          bookRequest.onsuccess = () => {
+            const book = bookRequest.result as ScanCatalogBook | undefined;
+            if (book) {
+              stores[scanStoreNames.catalog].put({
+                ...book,
+                ...projection,
+                updatedAt: completedAt,
+              });
+            }
+            completed = true;
+          };
+        };
+      };
+    });
+
+    return completed;
+  }
+
+  async ensureSaleVoidClientGestureId(clientGestureId: string): Promise<string | null> {
+    let correctionGestureId: string | null = null;
+    await this.runTransaction([scanStoreNames.sales], 'readwrite', stores => {
+      const request = stores[scanStoreNames.sales].get(clientGestureId);
+      request.onsuccess = () => {
+        const entry = request.result as ScanSaleOutboxEntry | undefined;
+        if (!entry) {
+          return;
+        }
+
+        correctionGestureId = entry.voidClientGestureId ?? createScanClientId();
+        if (!entry.voidClientGestureId) {
+          stores[scanStoreNames.sales].put({
+            ...entry,
+            voidClientGestureId: correctionGestureId,
+          });
+        }
+      };
+    });
+
+    return correctionGestureId;
+  }
+
+  async cancelSaleOutboxEntries(
+    clientGestureIds: readonly string[],
+  ): Promise<ScanSaleCancellationSummary> {
+    const requestedIds = new Set(clientGestureIds);
+    let localCancelledCount = 0;
+    let correctionQueuedCount = 0;
+    await this.runTransaction(
+      [scanStoreNames.sales, scanStoreNames.catalog],
+      'readwrite',
+      stores => {
+        const request = stores[scanStoreNames.sales].getAll();
+        request.onsuccess = () => {
+          const entries = (request.result as ScanSaleOutboxEntry[])
+            .filter(entry => requestedIds.has(entry.clientGestureId));
+          const toRestore: ScanSaleOutboxEntry[] = [];
+
+          for (const entry of entries) {
+            const status = entry.status ?? 'Pending';
+            if (status === 'Pending') {
+              stores[scanStoreNames.sales].delete(entry.clientGestureId);
+              localCancelledCount += 1;
+              toRestore.push(entry);
+            } else if (status === 'Sending') {
+              stores[scanStoreNames.sales].put({
+                ...entry,
+                status: 'Cancelled',
+                voidClientGestureId: entry.voidClientGestureId ?? createScanClientId(),
+                lastError: null,
+                lastFailureKind: null,
+              });
+              correctionQueuedCount += 1;
+              toRestore.push(entry);
+            } else if (status === 'Synced') {
+              stores[scanStoreNames.sales].put({
+                ...entry,
+                status: entry.saleMovementId ? 'VoidPending' : 'Cancelled',
+                voidClientGestureId: entry.voidClientGestureId ?? createScanClientId(),
+                lastError: null,
+                lastFailureKind: null,
+              });
+              correctionQueuedCount += 1;
+              toRestore.push(entry);
+            }
+          }
+
+          const entriesByIsbn = new Map<string, ScanSaleOutboxEntry[]>();
+          for (const entry of toRestore) {
+            const group = entriesByIsbn.get(entry.isbn13) ?? [];
+            group.push(entry);
+            entriesByIsbn.set(entry.isbn13, group);
+          }
+
+          for (const [isbn13, cancelledEntries] of entriesByIsbn) {
+            const bookRequest = stores[scanStoreNames.catalog].get(isbn13);
+            bookRequest.onsuccess = () => {
+              const book = bookRequest.result as ScanCatalogBook | undefined;
+              if (!book) {
+                return;
+              }
+
+              const cancelledQuantity = cancelledEntries.reduce(
+                (sum, entry) => sum + entry.quantity,
+                0,
+              );
+
+              stores[scanStoreNames.catalog].put({
+                ...book,
+                qtyAvailable: Math.max(0, book.qtyAvailable + cancelledQuantity),
+                salesCount: Math.max(0, book.salesCount - cancelledQuantity),
+                updatedAt: new Date().toISOString(),
+              });
+            };
+          }
+        };
+      },
+    );
+
+    return {localCancelledCount, correctionQueuedCount};
   }
 
   async quarantineSaleOutboxEntry(
@@ -1903,6 +2154,24 @@ function normalizeSession(record: RawScanSessionRecord): ScanSessionSnapshot {
     ...(record.counts ? {counts: normalizeSessionCounts(record.counts)} : {}),
     closeRequested: record.closeRequested ?? false,
     closeReason: record.closeReason ?? null,
+  };
+}
+
+function projectSaleCounters(
+  qtyAvailable: number,
+  salesCount: number,
+  sales: readonly ScanSaleOutboxEntry[],
+): Pick<ScanCatalogBook, 'qtyAvailable' | 'salesCount'> {
+  const pendingQuantity = sales
+    .filter(sale => ['Pending', 'Sending'].includes(sale.status ?? 'Pending'))
+    .reduce((total, sale) => total + sale.quantity, 0);
+  const voidPendingQuantity = sales
+    .filter(sale => sale.status === 'Cancelled' || sale.status === 'VoidPending')
+    .reduce((total, sale) => total + sale.quantity, 0);
+
+  return {
+    qtyAvailable: Math.max(0, qtyAvailable - pendingQuantity + voidPendingQuantity),
+    salesCount: Math.max(0, salesCount + pendingQuantity - voidPendingQuantity),
   };
 }
 

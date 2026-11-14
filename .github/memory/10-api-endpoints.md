@@ -13,6 +13,7 @@
 - Admin event writes include `POST/PUT /asso-events`, party/line/lot operations, draw/undo, `win-partie`, and `bingo-win`. Check each registration's policy; `DELETE /asso-events/{id}` is a known authorization asymmetry to recheck.
 - Live board: `GET /asso-events/{id}/tableau/sse` streams full snapshots with `LiveRevision` as SSE ID, 3-second retry hint, and 15-second idle pings. It subscribes before its initial DB read; a missing event is 404. Mutations publish after save; revision conflicts map to 409; `LiveTableauSyncService` propagates changes across API replicas.
 - `GET /product` is the full cashier/admin projection; Website prices use public `GET /product/public`, filtered by availability and `VisibleOnWebsite`. Product writes are admin routes; `DELETE /product/{id}` is another known authorization asymmetry. Orders use `POST/GET /orders` and are admin-protected.
+- `PUT /product/books/order` is admin-protected and saves the full ordered list of book product IDs into the existing `Product.Index` field; the API rejects incomplete or duplicate orderings.
 
 ## Public catalogue and bibliographic reads
 
@@ -25,7 +26,7 @@
 
 - Member routes under `/catalog/me/*` derive identity from token claims, never a client-supplied member ID. They include selection, watchlist, alert preference, member card, purchase passage/history, and not-found reports. Legacy `PATCH /catalog/me/selection/{id}` returns 410; report creation accepts only an optional comment, no shelf location.
 - External bibliographic reference search is anonymous at `GET /catalog/reference/search`; edition-only and work-scope follow requests are typed and authenticated.
-- Scan uses `GET /scan/catalog/delta`, session open/scan/close routes, `POST /scan/sessions/{id}/scans/{gestureId}/remove`, `POST /scan/sales`, `GET /scan/manual-requests/candidate`, and `GET /scan/me/statistics`. The removal route requires `Tri`, scopes the gesture to the volunteer's session, and appends ledger correction history without deleting the book fiche. Client gesture/session IDs make replay idempotent.
+- Scan uses `GET /scan/catalog/delta`, session open/scan/close routes, `POST /scan/sessions/{id}/scans/{gestureId}/remove`, `POST /scan/sales`, `POST /scan/sales/{saleMovementId}/void`, `GET /scan/manual-requests/candidate`, and `GET /scan/me/statistics`. Scan removal requires `Tri`; ordinary sale creation and voiding require `Caisse`. Both correction routes append ledger movements and use client gesture IDs for idempotent replay.
 - `GET /scan/me/statistics` derives the volunteer from `oid`; durations, reader links, and revenue-share values are estimates and must be presented as such.
 
 ## Books and account administration

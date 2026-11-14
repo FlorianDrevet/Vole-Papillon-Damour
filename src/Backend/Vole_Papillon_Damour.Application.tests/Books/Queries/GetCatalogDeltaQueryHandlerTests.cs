@@ -425,6 +425,33 @@ public sealed class GetCatalogDeltaQueryHandlerTests
         result.Value.NextFair.CloseAt.Should().Be(new DateTimeOffset(2026, 9, 14, 18, 0, 0, TimeSpan.Zero));
     }
 
+    [Fact]
+    public async Task Handle_SelectsOnlyOneUpcomingBookFairInTheDatabase()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        fixture.AddFair(
+            "Bourse passée",
+            new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 8, 1, 18, 0, 0, TimeSpan.Zero));
+        fixture.AddFair(
+            "Bourse suivante",
+            new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 9, 14, 18, 0, 0, TimeSpan.Zero));
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.NextFair!.Name.Should().Be("Bourse suivante");
+        fixture.ExecutedCommands
+            .Where(command =>
+                command.Contains("Executing DbCommand", StringComparison.Ordinal)
+                && command.Contains("\"AssoEvents\"", StringComparison.Ordinal))
+            .Should().ContainSingle(command => command.Contains("LIMIT 1", StringComparison.Ordinal));
+    }
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -436,14 +463,21 @@ public sealed class GetCatalogDeltaQueryHandlerTests
 internal sealed class CatalogDeltaFixture : IAsyncDisposable
 {
     private readonly SqliteConnection connection;
+    private readonly List<string> executedCommands;
 
-    private CatalogDeltaFixture(SqliteConnection connection, CatalogDeltaTestDbContext context)
+    private CatalogDeltaFixture(
+        SqliteConnection connection,
+        CatalogDeltaTestDbContext context,
+        List<string> executedCommands)
     {
         this.connection = connection;
         Context = context;
+        this.executedCommands = executedCommands;
     }
 
     public CatalogDeltaTestDbContext Context { get; }
+
+    public IReadOnlyList<string> ExecutedCommands => executedCommands;
 
     public static async Task<CatalogDeltaFixture> CreateAsync()
     {
@@ -452,12 +486,15 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         connection.CreateCollation(
             "Latin1_General_100_CI_AI",
             (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
+        var executedCommands = new List<string>();
         var options = new DbContextOptionsBuilder<CatalogDeltaTestDbContext>()
             .UseSqlite(connection)
+            .LogTo(executedCommands.Add)
             .Options;
         var context = new CatalogDeltaTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
-        return new CatalogDeltaFixture(connection, context);
+        executedCommands.Clear();
+        return new CatalogDeltaFixture(connection, context, executedCommands);
     }
 
     public async Task<Book> AddBookAsync(string isbn, DateTime updatedAt, string? workId = null)
@@ -801,6 +838,14 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(
                     type => (int)type.Value,
                     value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Property(assoEvent => assoEvent.DateStart)
+                .HasConversion(new ValueConverter<DateTimeOffset, long>(
+                    value => value.UtcDateTime.Ticks,
+                    value => new DateTimeOffset(value, TimeSpan.Zero)));
+            builder.Property(assoEvent => assoEvent.DateEnd)
+                .HasConversion(new ValueConverter<DateTimeOffset?, long?>(
+                    value => value.HasValue ? value.Value.UtcDateTime.Ticks : null,
+                    value => value.HasValue ? new DateTimeOffset(value.Value, TimeSpan.Zero) : null));
             builder.Property(assoEvent => assoEvent.LiveTheme)
                 .HasConversion(
                     theme => (int)theme.Value,

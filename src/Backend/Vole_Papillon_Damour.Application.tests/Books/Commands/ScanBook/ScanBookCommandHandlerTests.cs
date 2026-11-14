@@ -776,8 +776,9 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 {
     public int SaveChangesCallCount { get; private set; }
     public HashSet<int> ThrowDbUpdateConcurrencyOnSaveCalls { get; } = [];
+    public bool ThrowDbUpdateExceptionAfterCommitOnNextSave { get; set; }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         SaveChangesCallCount++;
         if (ThrowDbUpdateConcurrencyOnSaveCalls.Contains(SaveChangesCallCount))
@@ -785,7 +786,15 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             throw new DbUpdateConcurrencyException("simulated concurrent update");
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        var saved = await base.SaveChangesAsync(cancellationToken);
+        if (ThrowDbUpdateExceptionAfterCommitOnNextSave)
+        {
+            ThrowDbUpdateExceptionAfterCommitOnNextSave = false;
+            await Database.CommitTransactionAsync(cancellationToken);
+            throw new DbUpdateException("simulated competing idempotent sale");
+        }
+
+        return saved;
     }
 
     public DbSet<Book> Books => Set<Book>();

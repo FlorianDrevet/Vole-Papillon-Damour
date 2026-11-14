@@ -85,6 +85,21 @@ describe('ScanApiService', () => {
     request.flush({});
   });
 
+  it('sends an ordinary sale correction to the dedicated endpoint', () => {
+    const correction = {
+      occurredAt: '2026-09-03T08:00:10.000Z',
+      clientGestureId: 'void-1',
+    };
+    service.voidSale('sale-movement-1', correction).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/scan/sales/sale-movement-1/void`,
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(correction);
+    request.flush({});
+  });
+
   it('associates a checkout passage from the member credential', () => {
     const association = {
       credential: 'VPDC1.AAAA.BBBB',
@@ -180,6 +195,22 @@ describe('ScanApiService', () => {
     );
     expect(request.request.method).toBe('GET');
     request.flush(createDelta());
+  });
+
+  it('times out when the scan catalog never responds', () => {
+    jasmine.clock().install();
+    try {
+      let receivedError: unknown;
+      service.getCatalogDelta(null).subscribe({error: error => receivedError = error});
+
+      const request = http.expectOne(`${environment.apiUrl}/scan/catalog/delta`);
+      jasmine.clock().tick(45_000);
+
+      expect(receivedError).toEqual(jasmine.any(TimeoutError));
+      expect(request.cancelled).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('retrieves the matching manual requester contact for a scanned ISBN', () => {

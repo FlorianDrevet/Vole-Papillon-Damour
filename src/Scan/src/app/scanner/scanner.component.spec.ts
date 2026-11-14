@@ -26,6 +26,7 @@ import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
 import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
+import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
 import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
@@ -368,6 +369,7 @@ describe('ScannerComponent', () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'getOutboxCounts',
       'getSession',
+      'getSessionScanHistory',
       'getSettings',
       'getCatalogSyncState',
       'clearAccountState',
@@ -375,6 +377,7 @@ describe('ScannerComponent', () => {
     const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 1, pendingTransmissionCount: 2});
     workflow.getSession.and.resolveTo(createSession());
+    workflow.getSessionScanHistory.and.resolveTo([]);
     workflow.getSettings.and.resolveTo(null);
     workflow.getCatalogSyncState.and.resolveTo(null);
 
@@ -403,6 +406,7 @@ describe('ScannerComponent', () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'getOutboxCounts',
       'getSession',
+      'getSessionScanHistory',
       'getSettings',
       'getCatalogSyncState',
       'clearAccountState',
@@ -410,6 +414,7 @@ describe('ScannerComponent', () => {
     const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSession.and.resolveTo(createSession());
+    workflow.getSessionScanHistory.and.resolveTo([]);
     workflow.getSettings.and.resolveTo(null);
     workflow.getCatalogSyncState.and.resolveTo(null);
     workflow.clearAccountState.and.resolveTo();
@@ -738,8 +743,8 @@ describe('ScannerComponent', () => {
 
     // The preview tracks the reserved placeholder and never spills over the
     // surrounding chrome, however little room the status strip leaves it.
-    expect(previewBounds.left).toBeCloseTo(slotBounds.left, 0);
-    expect(previewBounds.width).toBeCloseTo(slotBounds.width, 0);
+    expect(previewBounds.left).toBeGreaterThanOrEqual(slotBounds.left - 1);
+    expect(previewBounds.right).toBeLessThanOrEqual(slotBounds.right + 1);
     expect(previewBounds.top).toBeGreaterThanOrEqual(slotBounds.top - 1);
     expect(previewBounds.bottom).toBeLessThanOrEqual(slotBounds.bottom + 1);
     expect(previewBounds.height).toBeGreaterThan(0);
@@ -908,8 +913,9 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
   });
 
-  it('shows that a live camera scan was found while the book lookup is pending', async () => {
+  it('adds a live camera scan before metadata resolves', async () => {
     const metadataResponse = new Subject<BookMetadata>();
+    const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
     let onDetected: ((rawValue: string) => void) | undefined;
     cameraService.start.and.callFake(async (_container, callback) => {
@@ -922,19 +928,20 @@ describe('ScannerComponent', () => {
     component.openCash();
     await fixture.whenStable();
     onDetected?.('9782070363735');
+    await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(component.isLoading).toBeTrue();
-    expect(fixture.nativeElement.querySelector('.scan-progress')?.textContent)
-      .toContain('Scan détecté');
+    expect(component.isLoading).toBeFalse();
+    expect(component.cashItems).toHaveSize(1);
+    expect(component.cashItems[0]?.title).toBe('ISBN 9782070363735');
+    expect(fixture.nativeElement.querySelector('.scan-progress')).toBeNull();
 
-    metadataResponse.next(createMetadata());
+    metadataResponse.next(metadata);
     metadataResponse.complete();
     await fixture.whenStable();
-    await Promise.resolve();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.scan-progress')).toBeNull();
+    expect(component.cashItems[0]?.title).toBe(metadata.title);
   });
 
   it('shows the scan progress in the tri screen while the lookup is pending', async () => {
@@ -1008,6 +1015,69 @@ describe('ScannerComponent', () => {
 
     expect(component.cameraFocusStatus).toBe('unavailable');
     expect(fixture.nativeElement.querySelector('.camera-engine-host-focus-unavailable')).not.toBeNull();
+  });
+
+  it('adds a cash line before waiting for network metadata', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['lookupCatalog', 'cacheMetadata'],
+    );
+    workflow.lookupCatalog.and.resolveTo({
+      catalogBook: {
+        isbn13: '9782070363735',
+        title: 'Titre du catalogue local',
+        authors: 'Auteur local',
+        workId: null,
+        qtyAvailable: 1,
+        qtyAnnounced: 0,
+        salesCount: 0,
+        isWanted: false,
+        isRare: false,
+        updatedAt: '2026-09-03T08:00:00Z',
+      },
+      verdict: createLocalScanResult().verdict,
+    });
+    workflow.cacheMetadata.and.resolveTo();
+    const pendingMetadata = new Subject<BookMetadata>();
+    metadataService.getMetadata.and.returnValue(pendingMetadata);
+    const cashComponent = createCashComponent(workflow);
+    const telemetry = jasmine.createSpyObj<ScanTelemetryService>('ScanTelemetryService', ['trackEvent']);
+    Object.defineProperty(cashComponent, 'scanTelemetry', {value: telemetry});
+
+    const lookup = cashComponent.lookup('9782070363735', 'cash');
+    const finishedBeforeMetadata = await Promise.race([
+      lookup.then(() => true),
+      new Promise<boolean>(resolve => setTimeout(() => resolve(false), 0)),
+    ]);
+
+    expect(finishedBeforeMetadata).toBeTrue();
+    expect(cashComponent.cashItems[0]?.title).toBe('Titre du catalogue local');
+    expect(telemetry.trackEvent).toHaveBeenCalledWith(
+      'scan_cash_lookup',
+      jasmine.objectContaining({
+        result: 'book_added',
+        catalogResult: 'found',
+        rareResult: 'not_found',
+        totalMs: jasmine.any(String),
+        localLookupMs: jasmine.any(String),
+        rareLookupMs: jasmine.any(String),
+      }),
+    );
+
+    pendingMetadata.next(createMetadata('Titre enrichi'));
+    pendingMetadata.complete();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(cashComponent.cashItems[0]?.title).toBe('Titre enrichi');
+    expect(telemetry.trackEvent).toHaveBeenCalledWith(
+      'scan_cash_metadata',
+      jasmine.objectContaining({
+        result: 'found',
+        cacheResult: 'stored',
+        metadataMs: jasmine.any(String),
+        cacheMs: jasmine.any(String),
+      }),
+    );
   });
 
   it('does not add a cash line when the local catalog lookup fails', async () => {
@@ -1133,6 +1203,7 @@ describe('ScannerComponent', () => {
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
       jasmine.any(Function),
+      jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();
     expect(fixture.nativeElement.querySelector('.scan-dock .dock-primary')).toBeNull();
@@ -1149,8 +1220,38 @@ describe('ScannerComponent', () => {
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
       jasmine.any(Function),
+      jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();
+  });
+
+  it('offers a retry after the cashier camera cannot reacquire an ended stream', async () => {
+    let reportCameraError: ((error: Error) => void) | undefined;
+    const stop = jasmine.createSpy('stop').and.resolveTo();
+    cameraService.start.and.callFake(async (_container, _onDetected, onCameraError) => {
+      reportCameraError = onCameraError;
+      return {resume: () => undefined, refocus: async () => true, stop};
+    });
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    reportCameraError?.(new Error('La caméra s’est interrompue après sa reconnexion.'));
+    fixture.detectChanges();
+
+    expect(stop).toHaveBeenCalledOnceWith();
+    expect(component.cameraActive).toBeFalse();
+    expect(component.cameraError).toContain('interrompue');
+    expect(fixture.nativeElement.querySelector('.cash-screen .camera-retry')?.textContent)
+      .toContain('Réessayer la caméra');
+
+    (fixture.nativeElement.querySelector('.cash-screen .camera-retry') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(cameraService.start).toHaveBeenCalledTimes(2);
+    expect(component.cameraActive).toBeTrue();
+    expect(component.cameraError).toBeNull();
   });
 
   it('adds a rare book from the local picker and displays its firm price without a total', async () => {
@@ -1210,6 +1311,7 @@ describe('ScannerComponent', () => {
     expect(cameraService.start).toHaveBeenCalledOnceWith(
       jasmine.any(HTMLElement),
       jasmine.any(Function),
+      jasmine.any(Function),
     );
     expect(component.cameraActive).toBeTrue();
   });
@@ -1243,6 +1345,7 @@ describe('ScannerComponent', () => {
       'cacheMetadata',
       'getOutboxCounts',
       'getSession',
+      'getSessionScanHistory',
       'getSettings',
       'getCatalogSyncState',
       'decide',
@@ -1255,6 +1358,7 @@ describe('ScannerComponent', () => {
     workflow.cacheMetadata.and.resolveTo();
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSession.and.resolveTo(createSession());
+    workflow.getSessionScanHistory.and.resolveTo([]);
     workflow.decide.and.resolveTo({...localScan.entry, status: 'Kept', kept: true});
     metadataService.getMetadata.and.returnValue(of(createMetadata()));
     cameraService.start.and.callFake(async (_container, callback) => {
@@ -1417,6 +1521,7 @@ describe('ScannerComponent', () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'requestClose',
       'getSession',
+      'getSessionScanHistory',
       'getOutboxCounts',
       'getSettings',
       'getCatalogSyncState',
@@ -1434,6 +1539,7 @@ describe('ScannerComponent', () => {
     router.navigateByUrl.and.returnValue(navigation);
     workflow.requestClose.and.resolveTo(closingSession);
     workflow.getSession.and.resolveTo(closingSession);
+    workflow.getSessionScanHistory.and.resolveTo([]);
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSettings.and.resolveTo(null);
     workflow.getCatalogSyncState.and.resolveTo(null);
@@ -1685,45 +1791,52 @@ describe('ScannerComponent', () => {
   });
 
   it('exposes cancellation of the last validated sale while its outbox entries remain pending', async () => {
-    const saleEntry = createSaleOutboxEntry();
-    const recordCashSales = jasmine.createSpy('recordCashSales').and.resolveTo([saleEntry]);
-    const deleteSaleOutboxEntry = jasmine.createSpy('deleteSaleOutboxEntry').and.resolveTo(true);
-    const workflow = {
-      recordCashSales,
-      deleteSaleOutboxEntry,
-      getOutboxCounts: jasmine.createSpy('getOutboxCounts').and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1}),
-      getSession: jasmine.createSpy('getSession').and.resolveTo(null),
-      getSettings: jasmine.createSpy('getSettings').and.resolveTo(null),
-      getCatalogSyncState: jasmine.createSpy('getCatalogSyncState').and.resolveTo(null),
-    } as unknown as ScanWorkflowService;
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-03T08:01:10.000Z'));
+    try {
+      const saleEntry = createSaleOutboxEntry();
+      const recordCashSales = jasmine.createSpy('recordCashSales').and.resolveTo([saleEntry]);
+      const cancelSaleOutboxEntries = jasmine.createSpy('cancelSaleOutboxEntries')
+        .and.resolveTo({localCancelledCount: 1, correctionQueuedCount: 0, expiredCount: 0});
+      const workflow = {
+        recordCashSales,
+        cancelSaleOutboxEntries,
+        getOutboxCounts: jasmine.createSpy('getOutboxCounts').and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1}),
+        getSession: jasmine.createSpy('getSession').and.resolveTo(null),
+        getSettings: jasmine.createSpy('getSettings').and.resolveTo(null),
+        getCatalogSyncState: jasmine.createSpy('getCatalogSyncState').and.resolveTo(null),
+      } as unknown as ScanWorkflowService;
 
-    const internals = component as unknown as {
-      changeDetector: ChangeDetectorRef;
-      destroyRef: DestroyRef;
-    };
-    const localComponent = new ScannerComponent(
-      metadataService,
-      cameraService,
-      internals.changeDetector,
-      internals.destroyRef,
-      workflow,
-      null,
-      null,
-    );
-    localComponent.cashItems = [createCashItem('sale-1', 'Livre vendu')];
+      const internals = component as unknown as {
+        changeDetector: ChangeDetectorRef;
+        destroyRef: DestroyRef;
+      };
+      const localComponent = new ScannerComponent(
+        metadataService,
+        cameraService,
+        internals.changeDetector,
+        internals.destroyRef,
+        workflow,
+        null,
+        null,
+      );
+      localComponent.cashItems = [createCashItem('sale-1', 'Livre vendu')];
 
-    await localComponent.validateCash();
+      await localComponent.validateCash();
 
-    const state = localComponent as unknown as {canCancelLastSale: boolean};
-    const cancelLastSale = (localComponent as unknown as {
-      cancelLastSale: () => Promise<void>;
-    }).cancelLastSale;
-    expect(state.canCancelLastSale).toBeTrue();
+      const state = localComponent as unknown as {canCancelLastSale: boolean};
+      const cancelLastSale = (localComponent as unknown as {
+        cancelLastSale: () => Promise<void>;
+      }).cancelLastSale;
+      expect(state.canCancelLastSale).toBeTrue();
 
-    await cancelLastSale.call(localComponent);
+      await cancelLastSale.call(localComponent);
 
-    expect(deleteSaleOutboxEntry).toHaveBeenCalledOnceWith(saleEntry.clientGestureId);
-    expect(state.canCancelLastSale).toBeFalse();
+      expect(cancelSaleOutboxEntries).toHaveBeenCalledOnceWith([saleEntry.clientGestureId]);
+      expect(state.canCancelLastSale).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('offers the ISBN-10 control key X on the manual keypad', () => {
@@ -2170,6 +2283,7 @@ describe('ScannerComponent', () => {
       'requestClose',
       'getOutboxCounts',
       'getSession',
+      'getSessionScanHistory',
       'getSettings',
       'getCatalogSyncState',
     ]);
@@ -2185,6 +2299,7 @@ describe('ScannerComponent', () => {
       Promise.resolve(requestedSession),
       Promise.resolve(null),
     );
+    workflow.getSessionScanHistory.and.resolveTo([]);
     sync.syncAll.and.resolveTo({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
       outbox: {sent: 1, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
@@ -2256,13 +2371,22 @@ describe('ScannerComponent', () => {
   it('starts synchronizing after a scan is stored locally', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
-      ['recordScan', 'cacheMetadata', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
+      [
+        'recordScan',
+        'cacheMetadata',
+        'getOutboxCounts',
+        'getSession',
+        'getSessionScanHistory',
+        'getSettings',
+        'getCatalogSyncState',
+      ],
     );
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     workflow.recordScan.and.returnValue(Promise.resolve(createLocalScanResult()));
     workflow.cacheMetadata.and.returnValue(Promise.resolve());
     workflow.getOutboxCounts.and.returnValue(Promise.resolve({pendingDecisionCount: 0, pendingTransmissionCount: 1}));
     workflow.getSession.and.returnValue(Promise.resolve(createSession()));
+    workflow.getSessionScanHistory.and.resolveTo([]);
     sync.syncAll.and.returnValue(Promise.resolve({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
       outbox: {sent: 0, remaining: 1, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},

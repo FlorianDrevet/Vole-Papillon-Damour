@@ -17,10 +17,21 @@
     description="Les produits ajoutés ici alimentent l'application de caisse utilisée le jour de l'évènement.">
   </app-state-panel>
 } @else {
+  @if (isBookSection()) {
+    <p class="mb-4 rounded-sm border border-line bg-paper-2 px-4 py-3 text-sm text-ink-2">
+      Réglez l'ordre des prix avec les flèches. L'application Android affichera les livres dans le même ordre.
+      @if (isSavingOrder()) {
+        <span class="ml-2 font-medium" role="status">Enregistrement…</span>
+      }
+    </p>
+  }
   <vpd-product-list
     [products]="filteredProducts()"
-    [editable]="true"
+    [editable]="!isSavingOrder()"
     [showPromotions]="false"
+    [reorderable]="isBookSection()"
+    [reorderDisabled]="isSavingOrder()"
     (productEditRequested)="onEditRequested($event)"
-    (productDeleteRequested)="onDeleteRequested($event)"></vpd-product-list>
+    (productDeleteRequested)="onDeleteRequested($event)"
+    (productOrderChangeRequested)="onBookProductOrderChanged($event)"></vpd-product-list>
 }
