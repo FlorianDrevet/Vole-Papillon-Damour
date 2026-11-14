@@ -22,6 +22,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Isbndb;
+using Vole_Papillon_Damour.Application.Favorites;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
@@ -114,6 +115,17 @@ public static class DependencyInjection
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
         services.Configure<IsbndbOptions>(
             builderConfiguration.GetSection(IsbndbOptions.SectionName));
+        services.AddOptions<FavoritesOptions>()
+            .Bind(builderConfiguration.GetSection(FavoritesOptions.SectionName))
+            .Validate(options => options.AccountMax is > 0 and <= 200,
+                "Favorites:AccountMax must be between 1 and 200.")
+            .Validate(options => options.LocalMax is > 0 and <= 50,
+                "Favorites:LocalMax must be between 1 and 50.")
+            .Validate(options => options.ReferencesPerVisitorPerDay > 0,
+                "Favorites:ReferencesPerVisitorPerDay must be positive.")
+            .Validate(options => options.ReferenceDailyIsbndbCredits >= 0,
+                "Favorites:ReferenceDailyIsbndbCredits cannot be negative.")
+            .ValidateOnStart();
         services.Configure<SocialImportOptions>(
             builderConfiguration.GetSection(SocialImportOptions.SectionName));
         services.Configure<InstagramOptions>(

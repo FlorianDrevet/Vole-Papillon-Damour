@@ -95,7 +95,9 @@ builder.Services
         runMigrations: DatabaseMigrationPolicy.ShouldRunOnStartup(
             builder.Environment.EnvironmentName))
     .AddBookMetadataEnrichmentProcessing()
-    .AddRateLimiting(builder.Configuration.GetValue<int?>("Isbndb:PublicSearchPerVisitorPerHour") ?? 10);
+    .AddRateLimiting(
+        builder.Configuration.GetValue<int?>("Isbndb:PublicSearchPerVisitorPerHour") ?? 10,
+        builder.Configuration.GetValue<int?>("Favorites:ReferencesPerVisitorPerDay") ?? 20);
 
 builder.Services.Configure<IsbndbPublicSearchOptions>(
     builder.Configuration.GetSection("Isbndb"));

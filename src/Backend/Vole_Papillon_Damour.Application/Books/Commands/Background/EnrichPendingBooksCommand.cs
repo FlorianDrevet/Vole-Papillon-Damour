@@ -1,6 +1,7 @@
 using MediatR;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 
@@ -11,5 +12,7 @@ public sealed record EnrichPendingBooksCommand(
     bool IncludeMissingGenres = false,
     bool RefreshAllGenres = false,
     bool RefreshMissingBibliographicDetails = false,
-    DateTime? FullCatalogRefreshStartedAt = null)
+    DateTime? FullCatalogRefreshStartedAt = null,
+    IsbndbUsage Usage = IsbndbUsage.Scan,
+    bool ForceFallback = false)
     : IRequest<EnrichPendingBooksResult>;

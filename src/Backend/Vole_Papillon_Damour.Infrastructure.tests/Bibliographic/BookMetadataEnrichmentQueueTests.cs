@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
 namespace Vole_Papillon_Damour.Infrastructure.tests.Bibliographic;
@@ -18,7 +19,7 @@ public sealed class BookMetadataEnrichmentQueueTests
 
         var dequeued = await queue.DequeueAsync(CancellationToken.None);
 
-        dequeued.Should().Be(isbn13);
+        dequeued.Isbn13.Should().Be(isbn13);
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         Func<Task> dequeue = () => queue.DequeueAsync(cancelled.Token).AsTask();
@@ -39,7 +40,22 @@ public sealed class BookMetadataEnrichmentQueueTests
 
         var batch = await queue.DequeueBatchAsync(2, CancellationToken.None);
 
-        batch.Should().Equal(first, second);
+        batch.Select(request => request.Isbn13).Should().Equal(first, second);
+    }
+
+    [Fact]
+    public async Task Enqueue_FavoriteRequestUpgradesPendingUsageAndFallbackChoice()
+    {
+        var queue = new BookMetadataEnrichmentQueue();
+        var isbn = ParseIsbn("9791036377426");
+        queue.Enqueue(isbn);
+        queue.Enqueue(isbn, IsbndbUsage.Favorites, forceFallback: true);
+
+        var request = await queue.DequeueAsync(CancellationToken.None);
+
+        request.Isbn13.Should().Be(isbn);
+        request.Usage.Should().Be(IsbndbUsage.Favorites);
+        request.ForceFallback.Should().BeTrue();
     }
 
     private static Isbn13 ParseIsbn(string value)

@@ -5,5 +5,6 @@ public enum IsbndbUsage : byte
     Scan,
     CatchUp,
     PublicSearch,
-    Administration
+    Administration,
+    Favorites
 }
