@@ -24,6 +24,19 @@
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19160",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20058"
       }
+    },
+    "podman": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "https://localhost:17040;http://localhost:15212",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "ASPIRE_CONTAINER_RUNTIME": "podman",
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21127",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22010"
+      }
     }
   }
 }
