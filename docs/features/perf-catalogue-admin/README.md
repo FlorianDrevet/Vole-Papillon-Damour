@@ -6,7 +6,7 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-perf-catalogue-admin`
 - Branche : `fix/perf-catalogue-admin`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/KiRVcyebJkrcLo75HZMXVb
 
 ## Statut
 

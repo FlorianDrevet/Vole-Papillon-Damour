@@ -152,8 +152,10 @@ L'échec d'un bloc n'empêche pas l'affichage des autres. Un bouton d'action n'e
 désactivé que pendant sa propre action, pas pendant le chargement d'un autre bloc.
 
 ### `RG-162` — Les pastilles arrivent ensemble et vite
-Les nombres de la navigation (Catalogue, ISBN en cours, Hors ISBNdb, Livres rares) sont
-obtenus en une seule demande, qui répond en moins d'une seconde. Leur valeur peut avoir
+Les nombres de la navigation (Sessions de scan en cours, Livres introuvables, Demandes
+manuelles, Catalogue, ISBN en cours d'analyse, Livres hors ISBNdb, Livres rares) sont
+obtenus en une seule demande, qui répond en moins d'une seconde. Les obtenir ne charge
+aucune des listes correspondantes. Leur valeur peut avoir
 jusqu'à une minute de retard. Elle est mise à jour juste après une action de
 l'administrateur qui la modifie (correction de notice, ajout, retrait, publication).
 Pendant le chargement, chaque pastille montre un emplacement neutre, jamais « 0 ».
@@ -205,7 +207,7 @@ comme la production (16 500 fiches visibles, 28 genres, Roman environ 23 %).
   (`RG-159`, `RG-160`).
 - **CA-04** — Le tableau de bord montre sa structure en moins de 300 ms après la connexion,
   et tous ses blocs sont remplis en moins de 2 s (`RG-161`).
-- **CA-05** — Les quatre pastilles apparaissent en moins de 1 s, via une seule demande
+- **CA-05** — Les sept pastilles apparaissent en moins de 1 s, via une seule demande
   (`RG-162`).
 - **CA-06** — Le bloc « Titres jamais vendus » affiche l'heure de son calcul, à moins de
   15 min de l'heure courante (`RG-163`).
