@@ -126,6 +126,19 @@ describe('ScanSyncService', () => {
     expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Kept');
   });
 
+  it('preserves a cached favorite count when the server projection updates a scanned book', async () => {
+    await store.putCatalogBooks([{...createBook('9782070363735'), favoriteCount: 3}]);
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+
+    await service.flushOutbox();
+
+    expect((await store.getCatalogBook('9782070363735'))?.favoriteCount).toBe(3);
+  });
+
   it('opens the remote session and sends decided gestures in order', async () => {
     const first = await workflow.recordScan(
       '9782070363735',

@@ -27,9 +27,14 @@ export class ScanVerdictService {
     const quantityAnnounced = book?.qtyAnnounced ?? 0;
     const salesCount = book?.salesCount ?? 0;
     const activeRequesterCount = book?.isWanted ? 1 : 0;
-    const otherEditions = book
-      ? this.siblings(book, catalog).filter(edition => edition.quantity > 0)
-      : [];
+    const siblings = book ? this.siblings(book, catalog) : [];
+    const otherEditions = siblings.filter(edition => edition.quantity > 0);
+    const strongSiblingIsbns = new Set(
+      siblings.filter(edition => edition.strong).map(edition => edition.isbn13),
+    );
+    const favoriteCount = (book?.favoriteCount ?? 0) + catalog.reduce((total, candidate) =>
+      total + (strongSiblingIsbns.has(candidate.isbn13) ? candidate.favoriteCount ?? 0 : 0),
+    0);
     const totalKnownQuantity = quantityAvailable + quantityAnnounced + otherEditions
       .filter(edition => edition.strong)
       .reduce((total, edition) => total + edition.quantity, 0);
@@ -48,6 +53,7 @@ export class ScanVerdictService {
 
     return {
       verdict,
+      favoriteCount,
       totalKnownQuantity,
       salesCount,
       activeRequesterCount,

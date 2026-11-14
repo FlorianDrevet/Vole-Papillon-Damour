@@ -877,6 +877,7 @@ export class ScanSyncService {
         pendingRemovalMode === 'NextFair' && !response.heldForManualRequest ? 1 : 0)),
       salesCount: response.salesCount ?? current?.salesCount ?? 0,
       isWanted: current?.isWanted ?? false,
+      favoriteCount: current?.favoriteCount ?? 0,
       isManuallyRequested: current?.isManuallyRequested ?? false,
       isRare: current?.isRare ?? isRare,
       updatedAt: new Date().toISOString(),

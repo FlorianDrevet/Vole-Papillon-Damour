@@ -18,6 +18,7 @@
   --scan-verdict-hold: #0d5c63;
   --scan-verdict-hold-soft: #e3f1f2;
   --scan-verdict-additional: #a84d00;
+  --scan-favorite: #d6304f;
 }
 
 * {
@@ -1186,6 +1187,36 @@ input:focus-visible {
   background: #17435e;
 }
 
+.favorite-banner-wrap {
+  flex: none;
+  padding: 10px 14px;
+  background: #fff;
+}
+
+.favorite-banner {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--scan-favorite);
+  color: #fff;
+}
+
+.favorite-banner svg {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  fill: currentColor;
+}
+
+.favorite-banner > span {
+  font-size: 16.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .verdict-icon {
   width: 27px;
   height: 27px;
@@ -1503,6 +1534,10 @@ input:focus-visible {
 
 .book-facts .fact-highlight {
   color: var(--scan-green);
+}
+
+.book-facts .favorite-count {
+  color: #b02a45;
 }
 
 .result-note,

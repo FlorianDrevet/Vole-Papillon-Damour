@@ -679,6 +679,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.localScan?.verdict ?? this.consultationResult?.verdict ?? null;
   }
 
+  get activeFavoriteCount(): number {
+    return this.activeVerdict?.favoriteCount ?? 0;
+  }
+
   get isImmediateRepeatScan(): boolean {
     return this.localScan?.isImmediateRepeat === true;
   }

@@ -496,6 +496,82 @@ describe('ScannerComponent', () => {
     expect(workflow.cacheMetadata).toHaveBeenCalled();
   });
 
+  it('shows a plural favorite banner under the tri verdict without changing the verdict', () => {
+    const result = createLocalScanResult();
+    result.verdict.verdict = 'TooMany';
+    result.verdict.favoriteCount = 3;
+    const bannerFixture = TestBed.createComponent(ScannerComponent);
+    const bannerComponent = bannerFixture.componentInstance;
+    bannerComponent.screen = 'tri';
+    bannerComponent.localScan = result;
+    bannerFixture.detectChanges();
+
+    const banner = bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]') as HTMLElement | null;
+    expect(banner?.getAttribute('role')).toBe('status');
+    expect(banner?.textContent).toContain('3 lecteurs');
+    expect(banner?.textContent).toContain('de la bourse');
+    expect(bannerFixture.nativeElement.querySelector('#verdict-title')?.textContent).toContain('Inutile d’en garder');
+    bannerFixture.destroy();
+  });
+
+  it('uses singular wording for one favorite in consultation', () => {
+    const result = createLocalScanResult();
+    result.verdict.favoriteCount = 1;
+    const bannerFixture = TestBed.createComponent(ScannerComponent);
+    const bannerComponent = bannerFixture.componentInstance;
+    bannerComponent.screen = 'consultation';
+    bannerComponent.consultationResult = {verdict: result.verdict, catalogBook: null};
+    bannerFixture.detectChanges();
+
+    const banner = bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]') as HTMLElement | null;
+    expect(banner?.textContent).toContain('un lecteur');
+    expect(banner?.textContent).toContain('de la bourse');
+    bannerFixture.destroy();
+  });
+
+  it('does not show the favorite banner when the book has no favorites', () => {
+    const result = createLocalScanResult();
+    const bannerFixture = TestBed.createComponent(ScannerComponent);
+    const bannerComponent = bannerFixture.componentInstance;
+    bannerComponent.screen = 'tri';
+    bannerComponent.localScan = result;
+    bannerFixture.detectChanges();
+
+    expect(bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]')).toBeNull();
+    bannerFixture.destroy();
+  });
+
+  it('does not show the favorite banner in cash mode', () => {
+    const result = createLocalScanResult();
+    result.verdict.favoriteCount = 3;
+    const bannerFixture = TestBed.createComponent(ScannerComponent);
+    const bannerComponent = bannerFixture.componentInstance;
+    bannerComponent.screen = 'cash';
+    bannerComponent.localScan = result;
+    bannerFixture.detectChanges();
+
+    expect(bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]')).toBeNull();
+    bannerFixture.destroy();
+  });
+
+  it('keeps offline freshness above the favorite banner', () => {
+    const result = createLocalScanResult();
+    result.verdict.favoriteCount = 5;
+    const bannerFixture = TestBed.createComponent(ScannerComponent);
+    const bannerComponent = bannerFixture.componentInstance;
+    bannerComponent.screen = 'tri';
+    bannerComponent.isOnline = false;
+    bannerComponent.localScan = result;
+    bannerFixture.detectChanges();
+
+    const freshness = bannerFixture.nativeElement.querySelector('.verdict-freshness') as HTMLElement | null;
+    const banner = bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]') as HTMLElement | null;
+    expect(freshness).not.toBeNull();
+    expect(banner).not.toBeNull();
+    expect(Boolean(freshness!.compareDocumentPosition(banner!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTrue();
+    bannerFixture.destroy();
+  });
+
   it('shows an error-toned manual-entry notice when no online bibliographic record exists', async () => {
     const localScan = createLocalScanResult();
     const workflow = createLocalScanWorkflow(localScan);
@@ -2708,6 +2784,7 @@ describe('ScannerComponent', () => {
       },
       verdict: {
         verdict: 'FirstCopy',
+        favoriteCount: 0,
         totalKnownQuantity: 0,
         salesCount: 0,
         activeRequesterCount: 0,

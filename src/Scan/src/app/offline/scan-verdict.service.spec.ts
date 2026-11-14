@@ -128,6 +128,43 @@ describe('ScanVerdictService', () => {
     })]);
   });
 
+  it('adds favorite counts from the scanned edition and reliably linked editions without changing the verdict', () => {
+    const scannedBook = {
+      ...createBook(),
+      favoriteCount: 2,
+      qtyAvailable: 5,
+      workId: 'openlibrary-work-1',
+    };
+    const strongSibling = {
+      ...createBook(),
+      isbn13: '9782070612758',
+      favoriteCount: 4,
+      qtyAvailable: 0,
+      workId: 'openlibrary-work-1',
+    };
+    const weakSibling = {
+      ...createBook(),
+      isbn13: '9782070409228',
+      favoriteCount: 9,
+      workKey: 'MISERABLES|HUGO',
+    };
+
+    const result = calculateWithCatalog(
+      scannedBook,
+      [scannedBook, strongSibling, weakSibling],
+      createSettings(5, 10),
+    );
+
+    expect(result.favoriteCount).toBe(6);
+    expect(result.verdict).toBe('TooMany');
+  });
+
+  it('defaults favorite counts missing from legacy cached books to zero', () => {
+    const result = service.calculate(createBook(), createSettings(5, 10));
+
+    expect(result.favoriteCount).toBe(0);
+  });
+
   it('uses an ISBN listed by the sibling as a strong link even without a work ID', () => {
     const scannedBook = createBook();
     const sibling = {
@@ -181,6 +218,7 @@ describe('ScanVerdictService', () => {
       catalog: readonly unknown[],
     ) => {
       verdict: string;
+      favoriteCount: number;
       totalKnownQuantity: number;
       otherEditions?: Array<{
         isbn13: string;

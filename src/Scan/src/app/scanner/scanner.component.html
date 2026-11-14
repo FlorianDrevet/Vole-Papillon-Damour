@@ -292,8 +292,17 @@
                     <p>{{ verdictSummary }}</p>
                   </div>
                 </div>
-                <p *ngIf="!isOnline" class="verdict-freshness">{{ offlineFreshnessLabel }}</p>
+                <p *ngIf="!isOnline" class="verdict-freshness" data-zone="E10-fraicheur">{{ offlineFreshnessLabel }}</p>
               </article>
+
+              <div *ngIf="activeFavoriteCount > 0" class="favorite-banner-wrap">
+                <div class="favorite-banner" data-zone="E10-bandeau-a-deja-plu" role="status">
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z"></path>
+                  </svg>
+                  <span>Ce livre a déjà plu à <span data-zone="E10-nombre-lecteurs">{{ activeFavoriteCount === 1 ? 'un lecteur' : activeFavoriteCount + ' lecteurs' }}</span> de la bourse</span>
+                </div>
+              </div>
 
               <p *ngIf="activeVerdictKey === 'ManualRequest' && activeVerdict?.isRare" class="manual-request-rare-note">
                 Fiche livre rare liée
@@ -393,6 +402,7 @@
                 <div><span>Annoncés</span><strong>{{ announcedQuantity }}</strong></div>
                 <div><span>Déjà vendus</span><strong>{{ salesQuantity }}</strong></div>
                 <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
+                <div data-zone="E10-ligne-coups-de-coeur"><span>Coups de cœur</span><strong class="favorite-count">{{ activeFavoriteCount }}</strong></div>
               </div>
             </section>
           </ng-template>
@@ -899,11 +909,20 @@
               <p class="book-isbn">ISBN {{ activeIsbn }}</p>
             </div>
           </article>
+          <div *ngIf="activeFavoriteCount > 0" class="favorite-banner-wrap">
+            <div class="favorite-banner" data-zone="E10-bandeau-a-deja-plu" role="status">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z"></path>
+              </svg>
+              <span>Ce livre a déjà plu à <span data-zone="E10-nombre-lecteurs">{{ activeFavoriteCount === 1 ? 'un lecteur' : activeFavoriteCount + ' lecteurs' }}</span> de la bourse</span>
+            </div>
+          </div>
           <div class="book-facts consultation-facts">
             <div><span>Disponibles</span><strong>{{ availableQuantity }}</strong></div>
             <div><span>Annoncés</span><strong>{{ announcedQuantity }}</strong></div>
             <div><span>Déjà vendus</span><strong>{{ salesQuantity }}</strong></div>
             <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
+            <div data-zone="E10-ligne-coups-de-coeur"><span>Coups de cœur</span><strong class="favorite-count">{{ activeFavoriteCount }}</strong></div>
           </div>
           <div class="consultation-notice">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
