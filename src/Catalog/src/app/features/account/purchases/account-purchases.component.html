@@ -1,11 +1,4 @@
 <section class="account-purchases" aria-label="Mes achats associés à ce compte">
-  <div class="purchases-favorite-intro" data-zone="E6-explication">
-    <p>
-      Vous avez aimé un de ces livres&nbsp;? Dites-le d'un clic&nbsp;: il rejoint vos coups de cœur et sert à vous proposer des livres qui lui ressemblent.
-      <a routerLink="/trouver-mon-prochain-livre">Voir mes suggestions</a>
-    </p>
-  </div>
-
   @if (favoriteError()) {
     <p class="purchases-favorite-error" role="alert">{{ favoriteError() }}</p>
   }
@@ -14,6 +7,13 @@
     <p class="purchases-state" role="status">Chargement de Mes achats…</p>
   } @else if (purchases(); as history) {
     @if (history.passages.length > 0) {
+      <div class="purchases-favorite-intro" data-zone="E6-explication">
+        <p>
+          Vous avez aimé un de ces livres&nbsp;? Dites-le d'un clic&nbsp;: il rejoint vos coups de cœur et sert à vous proposer des livres qui lui ressemblent.
+          <a routerLink="/trouver-mon-prochain-livre">Voir mes suggestions</a>
+        </p>
+      </div>
+
       <div class="purchase-passages">
         @for (passage of history.passages; track passage.id) {
           <article class="purchase-passage" [attr.data-passage-id]="passage.id">
@@ -97,6 +97,25 @@
           {{ loadingMore() ? 'Chargement…' : 'Afficher des achats plus anciens' }}
         </button>
       }
+      <aside class="purchases-notice">
+        Seuls les passages associés à ce compte sont visibles ici. Les ventes anonymes ne peuvent pas être retrouvées automatiquement.
+      </aside>
+    } @else {
+      <article class="purchases-empty" aria-labelledby="purchases-empty-title" data-zone="E6-achat-vide">
+        <span class="purchases-empty-symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" />
+            <path d="M7 9h10M7 13h4m5.5 1.5h.01" />
+          </svg>
+        </span>
+        <div class="purchases-empty-copy">
+          <h2 id="purchases-empty-title">Aucun achat associé pour l’instant</h2>
+          <p>
+            Lors de votre prochain passage à la bourse aux livres, présentez votre carte de compte au bénévole avant la validation du passage.
+            Vos achats seront alors associés à votre compte et apparaîtront ici.
+          </p>
+        </div>
+      </article>
     }
   } @else if (errorMessage()) {
     <div class="purchases-state purchases-error" role="alert">
@@ -108,8 +127,4 @@
   @if (errorMessage() && purchases()) {
     <p class="purchases-inline-error" role="alert">{{ errorMessage() }}</p>
   }
-
-  <aside class="purchases-notice">
-    Seuls les passages associés à ce compte sont visibles ici. Les ventes anonymes ne peuvent pas être retrouvées automatiquement.
-  </aside>
 </section>

@@ -180,20 +180,17 @@ describe('AccountPurchasesComponent', () => {
     expect(page.nativeElement.textContent).not.toContain('€');
   });
 
-  it('explains favorites instead of showing the old recommendation band', async () => {
+  it('shows the account-card instructions instead of notices when there are no purchases', async () => {
     auth.isAuthenticated.set(true);
     api.getPurchases.and.returnValue(of(response([])));
     const page = render();
     await settle(page);
 
-    expect(page.nativeElement.querySelector('.recommendations-band')).toBeNull();
-    expect(page.nativeElement.textContent).toContain('Vous avez aimé un de ces livres');
-    expect(page.nativeElement.textContent).toContain("Dites-le d'un clic");
-    expect(page.nativeElement.querySelector('[data-zone="E6-explication"] a')?.getAttribute('href'))
-      .toBe('/trouver-mon-prochain-livre');
-    expect(page.nativeElement.querySelector('.purchases-empty')).toBeNull();
-    expect(page.nativeElement.textContent).not.toContain("Aucun achat n'est encore associé à ce compte.");
-    expect(page.nativeElement.textContent).toContain('Seuls les passages associés à ce compte sont visibles ici.');
+    expect(page.nativeElement.querySelector('.purchases-empty')).not.toBeNull();
+    expect(page.nativeElement.textContent).toContain('Aucun achat associé pour l’instant');
+    expect(page.nativeElement.textContent).toContain('présentez votre carte de compte au bénévole');
+    expect(page.nativeElement.querySelector('.purchases-favorite-intro')).toBeNull();
+    expect(page.nativeElement.querySelector('.purchases-notice')).toBeNull();
   });
 
   it('adds a purchase to favorites with the “J’ai aimé” action', async () => {
