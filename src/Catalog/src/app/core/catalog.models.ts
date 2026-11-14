@@ -814,6 +814,37 @@ export interface CatalogAdminIsbndbStatus {
   unmatchedSubjects: Array<{subject: string; count: number}>;
 }
 
+export interface CatalogAdminFairDigestReport {
+  fairName: string;
+  completedAtUtc: string;
+  sentCount: number;
+  skippedCount: number;
+  failedCount: number;
+}
+
+export interface CatalogAdminFairDigestStatus {
+  enabled: boolean;
+  nextFairId: string | null;
+  nextFairName: string | null;
+  nextFairStartsAt: string | null;
+  campaignId: string | null;
+  plannedAtUtc: string | null;
+  suspended: boolean;
+  estimatedRecipients: number;
+  lastReport: CatalogAdminFairDigestReport | null;
+}
+
+export interface CatalogAdminFairDigestOperation {
+  campaignId: string;
+  changed: boolean;
+  suspendedAtUtc: string | null;
+}
+
+export interface CatalogAdminFairDigestTestResult {
+  email: string;
+  isExample: boolean;
+}
+
 export interface CatalogAdminIsbndbAbsentBook {
   isbn13: string;
   title: string | null;

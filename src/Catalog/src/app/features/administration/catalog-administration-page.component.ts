@@ -152,6 +152,7 @@ type CatalogAdminNavIcon =
   | 'rare-books'
   | 'statistics'
   | 'accounts'
+  | 'mail'
   | 'settings';
 
 type CatalogAdminNavigationBadgeSection = 'catalogue' | 'isbn-queue' | 'isbndb-absent' | 'rare-books';
@@ -195,6 +196,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
     label: "Réservé à l'administration",
     items: [
       {id: 'accounts', label: 'Comptes & rôles', icon: 'accounts'},
+      {id: 'fair-digest', label: 'E-mail avant la bourse', icon: 'mail'},
       {id: 'settings', label: 'Paramètres', icon: 'settings'},
     ],
   },
@@ -649,6 +651,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         break;
       case 'settings':
         await this.loadSettings();
+        break;
+      case 'fair-digest':
         break;
     }
   }

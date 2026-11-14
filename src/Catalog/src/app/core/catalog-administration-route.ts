@@ -12,6 +12,7 @@ export const CATALOG_ADMIN_SECTIONS = [
   'alerts',
   'members',
   'accounts',
+  'fair-digest',
   'settings',
 ] as const;
 

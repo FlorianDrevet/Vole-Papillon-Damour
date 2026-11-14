@@ -33,4 +33,9 @@ describe('catalog administration routes', () => {
     expect(isCatalogAdminSection('isbndb-absent')).toBeTrue();
     expect(catalogAdminSectionPath('isbndb-absent')).toBe('/administration/isbndb-absent');
   });
+
+  it('recognizes the fair digest workspace as an administration section', () => {
+    expect(isCatalogAdminSection('fair-digest')).toBeTrue();
+    expect(catalogAdminSectionPath('fair-digest')).toBe('/administration/fair-digest');
+  });
 });

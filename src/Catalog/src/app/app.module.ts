@@ -28,6 +28,7 @@ import {ManualRequestAddDialogComponent} from './features/administration/manual-
 import {ManualRequestDecisionDialogComponent} from './features/administration/manual-requests/manual-request-decision-dialog.component';
 import {IsbndbAbsentViewComponent} from './features/administration/isbndb/isbndb-absent-view.component';
 import {IsbndbStatusCardComponent} from './features/administration/isbndb/isbndb-status-card.component';
+import {FairDigestAdminComponent} from './features/administration/fair-digest/fair-digest-admin.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
@@ -79,6 +80,7 @@ registerLocaleData(localeFr);
     ManualRequestDecisionDialogComponent,
     IsbndbAbsentViewComponent,
     IsbndbStatusCardComponent,
+    FairDigestAdminComponent,
     NotFoundReportCloseDialogComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,
