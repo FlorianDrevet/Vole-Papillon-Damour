@@ -8,6 +8,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
@@ -96,6 +98,108 @@ public sealed class PublicCatalogQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Genres.Should().Equal("Roman", "Jeunesse", "Théâtre");
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenGenreIsSelected_UsesCanonicalGenreAsSqlLiteral()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Roman un", "Auteur", genre: "Roman");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, "Roman", PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var pageCommand = sql.Commands.Single(command => command.Contains(" LIMIT ", StringComparison.Ordinal));
+        pageCommand.Should().Contain("'Roman'").And.NotContain("@genre");
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenGenreHasNoFacet_ReturnsAnEmptyPageWithoutQueryingThePage()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Roman un", "Auteur", genre: "Roman");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, "Inconnu", PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().BeEmpty();
+        result.Value.TotalCount.Should().Be(0);
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("FROM \"Books\"", StringComparison.Ordinal) &&
+            command.Contains(" LIMIT ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenGenresAreLoadedTwice_ReusesCachedFacetsWithoutChangingTheirValues()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Roman un", "Auteur", genre: "Roman");
+        fixture.AddBook("9782070363735", "Jeunesse un", "Auteur", genre: "Jeunesse");
+        await fixture.SaveAsync();
+        var handler = fixture.CreateSearchHandler();
+        var query = new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+            RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+            IncludeExhausted: true);
+
+        sql.Clear();
+        var first = await handler.Handle(query, CancellationToken.None);
+        var firstFacetQueries = sql.Commands.Count(command =>
+            command.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase));
+        sql.Clear();
+        var second = await handler.Handle(query, CancellationToken.None);
+
+        first.IsError.Should().BeFalse();
+        second.IsError.Should().BeFalse();
+        second.Value.Genres.Should().Equal(first.Value.Genres);
+        second.Value.GenreFacets.Should().Equal(first.Value.GenreFacets);
+        firstFacetQueries.Should().Be(1);
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenGenreDiffersByCaseOrAccent_UsesTheMatchingFacet()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook(
+            "9782070408504",
+            "Roman un",
+            "Auteur",
+            genre: "Roman",
+            genres: ["Roman", "Théâtre"]);
+        await fixture.SaveAsync();
+        var handler = fixture.CreateSearchHandler();
+
+        var lowerCase = await handler.Handle(
+            new SearchCatalogQuery(null, "roman", PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+        var withoutAccent = await handler.Handle(
+            new SearchCatalogQuery(null, "theatre", PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        lowerCase.IsError.Should().BeFalse();
+        lowerCase.Value.Books.Select(book => book.Isbn13).Should().Equal("9782070408504");
+        withoutAccent.IsError.Should().BeFalse();
+        withoutAccent.Value.Books.Select(book => book.Isbn13).Should().Equal("9782070408504");
     }
 
     [Fact]
@@ -981,12 +1085,19 @@ public sealed class PublicCatalogQueryHandlerTests
 internal sealed class PublicCatalogFixture : IAsyncDisposable
 {
     private readonly SqliteConnection connection;
+    private readonly ServiceProvider serviceProvider;
+    private readonly HybridCache cache;
     private readonly DateTime now = PublicCatalogQueryHandlerTests.Now;
 
-    private PublicCatalogFixture(SqliteConnection connection, PublicCatalogTestDbContext context)
+    private PublicCatalogFixture(
+        SqliteConnection connection,
+        PublicCatalogTestDbContext context,
+        ServiceProvider serviceProvider)
     {
         this.connection = connection;
         Context = context;
+        this.serviceProvider = serviceProvider;
+        cache = serviceProvider.GetRequiredService<HybridCache>();
     }
 
     public PublicCatalogTestDbContext Context { get; }
@@ -1008,7 +1119,10 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
         var options = optionsBuilder.Options;
         var context = new PublicCatalogTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
-        return new PublicCatalogFixture(connection, context);
+        var services = new ServiceCollection().AddLogging();
+        services.AddHybridCache();
+        var serviceProvider = services.BuildServiceProvider();
+        return new PublicCatalogFixture(connection, context, serviceProvider);
     }
 
     private static bool SqliteLike(string? pattern, string? value)
@@ -1212,7 +1326,7 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(now);
-        return new SearchCatalogQueryHandler(Context, clock);
+        return new SearchCatalogQueryHandler(Context, clock, cache);
     }
 
     public GetPublicBookQueryHandler CreatePublicBookHandler()
@@ -1247,6 +1361,7 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
     {
         await Context.DisposeAsync();
         await connection.DisposeAsync();
+        await serviceProvider.DisposeAsync();
     }
 }
 
