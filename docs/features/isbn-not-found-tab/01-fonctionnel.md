@@ -137,9 +137,9 @@ soit le filtre choisi dans la page.
 - **RG-04** — **Livres hors ISBNdb** (E5) ne liste que les livres absents d'ISBNdb **qui ont
   une fiche exploitable** (au moins un titre, venant d'une source de secours ou d'une saisie
   manuelle). Les ISBN sans titre en sont exclus.
-- **RG-05** — Un livre « non trouvé » qui est complété (à la main ou par import) quitte E2. Il
-  est alors absent d'ISBNdb avec une fiche manuelle : il entre dans E5 comme tout autre livre
-  absent d'ISBNdb à compléter.
+- **RG-05** — Un livre « non trouvé » qui est complété quitte E2 et entre dans « Livres hors
+  ISBNdb » (E5) : **à la main**, comme tout autre livre absent d'ISBNdb « à compléter » ;
+  **par import CSV**, directement dans l'état « complété » (RG-20).
 - **RG-06** — Les compteurs de l'application qui annoncent « livres hors ISBNdb à compléter »
   (carte d'état ISBNdb, tableau de bord) comptent selon la même définition que E5 (RG-04),
   pour que les chiffres concordent.
@@ -211,7 +211,12 @@ soit le filtre choisi dans la page.
   « livre déjà doté d'une notice ».
 - **RG-20** — Une fiche enregistrée par import est traitée comme une **fiche saisie à la main** :
   elle sort de E2, n'est plus remplacée par une recherche automatique, et apparaît avec
-  la source « manuelle ».
+  la source « manuelle ». Elle est en plus **marquée « complétée » d'office** dans E5 (onglet
+  *Complétées*), au nom de l'administrateur qui a confirmé l'import, puisque le fichier est
+  censé contenir toutes les informations. Exception : si la ligne n'a pas d'**auteur**, la
+  fiche est enregistrée mais reste « à compléter » dans E5, comme pour une saisie manuelle
+  (un livre sans titre ni auteur ne peut pas être marqué complété). Le résumé d'import (E3)
+  indique combien de fiches sont ainsi restées « à compléter ».
 - **RG-21** — Si l'état d'un livre change entre l'aperçu et la confirmation (par ex. complété
   entre-temps), la ligne est rejetée au moment de l'enregistrement, avec le motif correspondant ;
   les autres lignes ne sont pas affectées.
@@ -231,6 +236,8 @@ soit le filtre choisi dans la page.
 - Accessibilité : boutons d'export/import, zone de dépôt et messages de résultat utilisables au
   clavier et annoncés aux lecteurs d'écran, comme le reste de l'administration.
 - Un livre dont la fiche a déjà été corrigée à la main ne doit jamais être écrasé par un import.
+- Pour être marquée « complétée » (RG-20), une fiche doit être absente d'ISBNdb : le plan devra
+  vérifier que tout livre « non trouvé » l'est bien et, sinon, l'enregistrer comme tel à l'import.
 
 ## 9. Critères d'acceptation
 
@@ -249,7 +256,8 @@ soit le filtre choisi dans la page.
    accents.
 8. Un fichier de 10 lignes complétées dont 2 invalides (un ISBN inconnu, une année « abc »)
    affiche un aperçu « 8 prêtes, 2 rejetées » avec numéro de ligne et motif ; après
-   confirmation, 8 livres quittent E2 et leur fiche contient toutes les valeurs saisies.
+   confirmation, 8 livres quittent E2, leur fiche contient toutes les valeurs saisies et ils
+   apparaissent dans « Livres hors ISBNdb » > Complétées (ceux sans auteur dans À compléter).
 9. Un ISBN de livre qui a déjà une notice, présent dans le fichier, est rejeté ; sa fiche
    n'est pas modifiée.
 10. Redéposer le même fichier ne modifie rien et ne crée pas de doublon.
@@ -259,17 +267,17 @@ soit le filtre choisi dans la page.
 
 Chaque question a une réponse par défaut, appliquée sauf avis contraire.
 
+*Arbitrées par l'utilisateur le 2026-11-15 : question 2 → les livres importés par CSV sont marqués « complétés » d'office ; les autres défauts sont validés.*
+
 1. **« Livres hors ISBNdb … que ceux qui ont eu une correspondance »** : j'interprète que E5
    garde les livres absents d'ISBNdb qui ont une fiche venant d'une **autre source**
    (BnF, Open Library, Google Books) ou d'une saisie, et exclut ceux **sans aucun titre**
    (qui vont dans E2). *Défaut : oui.*
-2. **Livres complétés par import** : après import, ils deviennent des « livres hors ISBNdb à
-   compléter » (RG-05). Faut-il au contraire les marquer d'office « complétés » dans E5, puisque
-   l'agent a renseigné toutes les infos ? *Défaut : non, ils restent à valider dans E5.*
+2. **Livres complétés par import** : **tranché** — marqués « complétés » d'office (RG-20).
 3. **Pastille de la nouvelle rubrique** (RG-12) : non demandée explicitement, ajoutée pour
    cohérence. *Défaut : oui.*
-4. **Colonnes obligatoires** : seul le **titre** est obligatoire (RG-17). Faut-il aussi
-   exiger l'auteur ? *Défaut : non.*
+4. **Colonnes obligatoires** : seul le **titre** est obligatoire (RG-17). L'auteur n'est pas
+   exigé, mais sans auteur la fiche n'est pas marquée « complétée » (RG-20).
 5. **Limites du fichier** (RG-22) : *défaut : 5 000 lignes, 2 Mo.*
 6. **Texte d'aide « Format du fichier »** : une description des colonnes à copier-coller dans
    la consigne donnée à l'agent. *Défaut : inclus dans E2.*
