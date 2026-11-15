@@ -116,7 +116,11 @@ public sealed class PublicCatalogQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        var pageCommand = sql.Commands.Single(command => command.Contains(" LIMIT ", StringComparison.Ordinal));
+        result.Value.Genres.Should().Contain("Roman");
+        result.Value.Books.Select(book => book.Isbn13).Should().Equal("9782070408504");
+        var pageCommand = sql.Commands.Single(command =>
+            command.Contains("ORDER BY", StringComparison.Ordinal) &&
+            command.Contains("'Roman'", StringComparison.Ordinal));
         pageCommand.Should().Contain("'Roman'").And.NotContain("@genre");
     }
 
@@ -621,6 +625,89 @@ public sealed class PublicCatalogQueryHandlerTests
             .Should()
             .OnlyContain(command => command.Contains("\"Id\"", StringComparison.Ordinal) &&
                 command.Contains("WHERE", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenPagingByKeys_PreservesOrderAvailabilityCountsAndPageState()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Alpha", "Auteur", quantityAvailable: 1);
+        fixture.AddBook("9782070363735", "Alpha suite", "Auteur", quantityAvailable: 1);
+        var announcedBook = fixture.AddBook("9782070612758", "The Alpha", "Auteur");
+        fixture.AddBook("9782253006329", "Beta", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse de printemps",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(announcedBook, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+
+        var scenarios = new[]
+        {
+            (PublicCatalogSortOrder.RecentlyAdded, (string?)null, PublicCatalogAvailabilityFilter.All, true,
+                new[] { "9782070408504", "9782070363735", "9782253006329", "9782070612758" }),
+            (PublicCatalogSortOrder.Relevance, (string?)null, PublicCatalogAvailabilityFilter.All, true,
+                new[] { "9782070408504", "9782070363735", "9782253006329", "9782070612758" }),
+            (PublicCatalogSortOrder.Relevance, "Alpha", PublicCatalogAvailabilityFilter.All, true,
+                new[] { "9782070408504", "9782070363735", "9782070612758" }),
+            (PublicCatalogSortOrder.RecentlyAdded, (string?)null, PublicCatalogAvailabilityFilter.AvailableNow, false,
+                new[] { "9782070408504", "9782070363735" }),
+            (PublicCatalogSortOrder.Relevance, (string?)null, PublicCatalogAvailabilityFilter.AvailableNow, false,
+                new[] { "9782070408504", "9782070363735" }),
+            (PublicCatalogSortOrder.Relevance, "Alpha", PublicCatalogAvailabilityFilter.AvailableNow, false,
+                new[] { "9782070408504", "9782070363735" }),
+            (PublicCatalogSortOrder.RecentlyAdded, (string?)null, PublicCatalogAvailabilityFilter.NextBookFair, false,
+                new[] { "9782070612758" }),
+            (PublicCatalogSortOrder.Relevance, (string?)null, PublicCatalogAvailabilityFilter.NextBookFair, false,
+                new[] { "9782070612758" }),
+            (PublicCatalogSortOrder.Relevance, "Alpha", PublicCatalogAvailabilityFilter.NextBookFair, false,
+                new[] { "9782070612758" })
+        };
+
+        foreach (var (sort, search, availability, includeExhausted, expectedIsbns) in scenarios)
+        {
+            var firstPage = await fixture.CreateSearchHandler().Handle(
+                new SearchCatalogQuery(search, null, availability,
+                    RareOnly: false, sort, Page: 1, PageSize: 2,
+                    IncludeExhausted: includeExhausted, IncludeTotalCount: true),
+                CancellationToken.None);
+            var secondPage = await fixture.CreateSearchHandler().Handle(
+                new SearchCatalogQuery(search, null, availability,
+                    RareOnly: false, sort, Page: 2, PageSize: 2,
+                    IncludeExhausted: includeExhausted, IncludeTotalCount: true),
+                CancellationToken.None);
+
+            firstPage.IsError.Should().BeFalse();
+            firstPage.Value.Books.Select(book => book.Isbn13).Should().Equal(expectedIsbns.Take(2));
+            firstPage.Value.HasMore.Should().Be(expectedIsbns.Length > 2);
+            firstPage.Value.TotalCount.Should().Be(expectedIsbns.Length);
+            secondPage.IsError.Should().BeFalse();
+            secondPage.Value.Books.Select(book => book.Isbn13).Should().Equal(expectedIsbns.Skip(2));
+            secondPage.Value.HasMore.Should().BeFalse();
+            secondPage.Value.TotalCount.Should().Be(expectedIsbns.Length);
+        }
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenPagingByKeys_DoesNotSelectHeavyBookColumns()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Alpha", "Auteur", quantityAvailable: 1);
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("RawPayload", StringComparison.Ordinal) ||
+            command.Contains("Summary", StringComparison.Ordinal) ||
+            command.Contains("ManuallyEditedFields", StringComparison.Ordinal));
     }
 
     [Fact]

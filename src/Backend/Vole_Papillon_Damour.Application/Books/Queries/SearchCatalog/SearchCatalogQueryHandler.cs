@@ -164,18 +164,52 @@ public sealed class SearchCatalogQueryHandler(
 
         var orderedBooksQuery = OrderBooks(filteredBooksQuery, query.Sort, normalizedSearch);
         var pageOffset = checked((query.Page - 1) * query.PageSize);
-        var pageBooksWithLookahead = await orderedBooksQuery
-            .Include(book => book.Genres)
+        var pageIsbnsWithLookahead = await orderedBooksQuery
+            .Select(book => book.Id)
             .Skip(pageOffset)
             .Take(query.PageSize + 1)
             .ToListAsync(cancellationToken);
-        var hasMore = pageBooksWithLookahead.Count > query.PageSize;
+        var hasMore = pageIsbnsWithLookahead.Count > query.PageSize;
         if (hasMore)
         {
-            pageBooksWithLookahead.RemoveAt(pageBooksWithLookahead.Count - 1);
+            pageIsbnsWithLookahead.RemoveAt(pageIsbnsWithLookahead.Count - 1);
         }
 
-        var pageBooks = pageBooksWithLookahead;
+        var pageIsbns = pageIsbnsWithLookahead.ToArray();
+        var projectedPageBooks = pageIsbns.Length == 0
+            ? []
+            : await dbContext.Books
+                .AsNoTracking()
+                .Where(book => pageIsbns.Contains(book.Id))
+                .Select(book => new PublicCatalogBookProjection(
+                    book.Id.Value,
+                    book.Title,
+                    book.Authors,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.PhysicalFormat,
+                    book.Language,
+                    book.Genre,
+                    book.WorkId,
+                    book.CoverUrl,
+                    book.QuantityAvailable,
+                    book.LastAvailableAt,
+                    book.FirstSeenAt,
+                    book.UpdatedAt,
+                    book.MetadataStatus,
+                    book.IsHiddenFromCatalog,
+                    book.IsFavoriteReference,
+                    book.RedirectedToIsbn13 != null,
+                    book.CoverSource,
+                    book.Genres.Select(genre => genre.Name).ToArray()))
+                .ToListAsync(cancellationToken);
+        var projectedBooksByIsbn = projectedPageBooks.ToDictionary(
+            book => book.Isbn13,
+            StringComparer.Ordinal);
+        var pageBooks = pageIsbns
+            .Select(isbn => projectedBooksByIsbn[isbn.Value])
+            .ToArray();
+
         int? totalCount;
         if (query.IncludeTotalCount)
         {
@@ -183,12 +217,11 @@ public sealed class SearchCatalogQueryHandler(
         }
         else
         {
-            totalCount = !hasMore && (pageBooks.Count > 0 || query.Page == 1)
-                ? checked(pageOffset + pageBooks.Count)
+            totalCount = !hasMore && (pageBooks.Length > 0 || query.Page == 1)
+                ? checked(pageOffset + pageBooks.Length)
                 : null;
         }
 
-        var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
         var publishedAvailableRareIsbns = pageIsbns.Length == 0
             ? []
             : (await dbContext.RareBooks

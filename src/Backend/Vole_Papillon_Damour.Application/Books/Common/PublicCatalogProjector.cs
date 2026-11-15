@@ -15,6 +15,21 @@ public static class PublicCatalogProjector
         IReadOnlySet<string> publishedAvailableRareIsbns,
         DateTime nowUtc)
     {
+        return Project(
+            books.Select(PublicCatalogBookProjection.FromBook),
+            announcements,
+            fairs,
+            publishedAvailableRareIsbns,
+            nowUtc);
+    }
+
+    public static IReadOnlyList<PublicCatalogBookResult> Project(
+        IEnumerable<PublicCatalogBookProjection> books,
+        IEnumerable<BookAnnouncement> announcements,
+        IEnumerable<AssoEvents> fairs,
+        IReadOnlySet<string> publishedAvailableRareIsbns,
+        DateTime nowUtc)
+    {
         var fairsById = fairs
             .Where(assoEvent =>
                 !assoEvent.IsCancelled &&
@@ -41,9 +56,9 @@ public static class PublicCatalogProjector
             .Where(PublicCatalogBookVisibility.IsVisible)
             .Select(book =>
             {
-                availabilityByIsbn.TryGetValue(book.Id.Value, out var availability);
+                availabilityByIsbn.TryGetValue(book.Isbn13, out var availability);
                 return new PublicCatalogBookResult(
-                    book.Id.Value,
+                    book.Isbn13,
                     book.Title,
                     book.Authors,
                     book.Publisher,
@@ -59,10 +74,10 @@ public static class PublicCatalogProjector
                     ToOffset(book.LastAvailableAt),
                     new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero),
-                    publishedAvailableRareIsbns.Contains(book.Id.Value),
+                    publishedAvailableRareIsbns.Contains(book.Isbn13),
                     book.CoverSource?.ToString(),
                     Genres: book.Genres.Count > 0
-                        ? book.Genres.Select(genre => genre.Name).ToArray()
+                        ? book.Genres
                         : string.IsNullOrWhiteSpace(book.Genre) ? [] : [book.Genre]);
             })
             .ToArray();

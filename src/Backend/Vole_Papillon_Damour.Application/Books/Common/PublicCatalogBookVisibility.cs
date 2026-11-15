@@ -27,6 +27,15 @@ public static class PublicCatalogBookVisibility
                !string.IsNullOrWhiteSpace(book.Title);
     }
 
+    public static bool IsVisible(PublicCatalogBookProjection book)
+    {
+        return !book.IsHiddenFromCatalog &&
+               !book.IsFavoriteReference &&
+               !book.HasRedirect &&
+               book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual &&
+               !string.IsNullOrWhiteSpace(book.Title);
+    }
+
     public static async Task<Isbn13[]> GetInProgressScanIsbnsAsync(
         IProjectDbContext dbContext,
         CancellationToken cancellationToken)
