@@ -63,6 +63,8 @@
                 <span class="admin-nav-item-label">{{ item.label }}</span>
                 @if (navBadge(item.id); as badge) {
                   <span class="admin-nav-badge" [class.admin-nav-badge-not-found]="item.id === 'not-found'" [class.admin-nav-badge-manual-requests]="item.id === 'manual-requests'">{{ badge }}</span>
+                } @else if (navigationCountsBlock.status() === 'loading') {
+                  <span class="admin-nav-badge admin-badge-skeleton" data-testid="admin-nav-badge-skeleton" aria-hidden="true"></span>
                 }
               </a>
             }
@@ -172,6 +174,15 @@
           </div>
         }
 
+          @if (overviewBlock.status() === 'loading' || isbndbStatusBlock.status() === 'loading'
+            || sessionsBlock.status() === 'loading' || navigationCountsBlock.status() === 'loading'
+            || (activeSection() === 'statistics' && ((statisticsTab() === 'fairs' && (fairsBlock.status() === 'loading' || fairStatsBlock.status() === 'loading'))
+              || (statisticsTab() === 'evolution' && fairsEvolutionBlock.status() === 'loading')
+              || (statisticsTab() === 'books' && catalogueFlowStatsBlock.status() === 'loading')
+              || (statisticsTab() === 'volunteers' && volunteerStatisticsBlock.status() === 'loading')))) {
+            <span class="admin-visually-hidden" data-testid="admin-loading-announcement" role="status" aria-live="polite">Chargement des indicateurs…</span>
+          }
+
           @switch (activeSection()) {
           @case ('overview') {
             <section class="admin-view" aria-labelledby="admin-title">
@@ -184,9 +195,27 @@
                 <span class="inline-flex min-h-9 items-center rounded-full border border-line px-[15px] text-[12.5px] text-slate-2" data-testid="dashboard-period-scope">Tout l’historique</span>
               </div>
 
-              @if (loading() && !overview()) {
-                <p class="admin-status" role="status">Chargement des indicateurs…</p>
-              } @else if (overview(); as current) {
+              @if (overviewBlock.status() === 'loading' && !overview()) {
+                <div class="stat-grid" aria-hidden="true">
+                  <article class="stat-card admin-skeleton-card" data-testid="overview-skeleton-card" aria-hidden="true"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></span></article>
+                  <article class="stat-card admin-skeleton-card" data-testid="overview-skeleton-card" aria-hidden="true"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></span></article>
+                  <article class="stat-card admin-skeleton-card" data-testid="overview-skeleton-card" aria-hidden="true"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></span></article>
+                  <article class="stat-card stat-card-dark admin-skeleton-card" data-testid="overview-skeleton-card" aria-hidden="true"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></span></article>
+                </div>
+              }
+              @if (overviewBlock.error() && !overview()) {
+                <div class="stat-grid" data-testid="overview-error-state">
+                  <article class="stat-card admin-block-error-card" data-testid="overview-block-error" role="alert">
+                    <span class="stat-label">Livres triés</span>
+                    <span class="admin-block-error-message">{{ overviewBlock.error() }}</span>
+                    <button class="button button-outline" type="button" (click)="retryOverview()">Réessayer</button>
+                  </article>
+                </div>
+              } @else if (overviewBlock.error()) {
+                <div class="admin-block-error" data-testid="overview-block-error" role="alert"><span>{{ overviewBlock.error() }}</span><button type="button" (click)="retryOverview()">Réessayer</button></div>
+              }
+              @if (overview(); as current) {
+                @if (overviewBlock.refreshing()) { <span class="admin-refreshing" role="status">Actualisation…</span> }
                 <div class="stat-grid">
                   <article class="stat-card" data-testid="admin-stat-card">
                     <strong class="stat-value">{{ formatNumber(current.stock.availableQuantity + current.stock.announcedQuantity) }}</strong>
@@ -218,8 +247,17 @@
                     }
                   </article>
                 </div>
+              }
 
-                <app-isbndb-status-card [status]="isbndbStatus()"></app-isbndb-status-card>
+                @if (isbndbStatusBlock.status() === 'loading' && !isbndbStatus()) {
+                  <section class="isbndb-status-skeleton admin-skeleton" data-testid="isbndb-status-skeleton" aria-hidden="true"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-panel"></span></section>
+                } @else {
+                  <app-isbndb-status-card
+                    [status]="isbndbStatus()"
+                    [error]="isbndbStatusBlock.error()"
+                    [refreshing]="isbndbStatusBlock.refreshing()"
+                    (retry)="retryIsbndbStatus()"></app-isbndb-status-card>
+                }
 
                 @if (navigationBadgeCounts(); as navigationCounts) {
                   @if (navigationCounts.notFoundOpenTargets || navigationCounts.manualRequestsFound) {
@@ -257,7 +295,14 @@
                 </div>
                 <p class="section-intro">Tant que le compte à rebours n’est pas arrivé à son terme, une session peut encore être corrigée sans envoyer de mauvaise alerte aux membres.</p>
                 <div class="pending-alert-list">
-                  @for (session of pendingAlertSessions(); track session.id) {
+                  @if (sessionsBlock.status() === 'loading' && !sessionsPage()) {
+                    @for (row of [1, 2, 3]; track row) { <div class="pending-alert-row admin-skeleton-alert-row" data-testid="overview-alerts-skeleton" aria-hidden="true"><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-action"></span></div> }
+                  } @else if (sessionsBlock.error() && !sessionsPage()) {
+                    <div class="admin-block-error" data-testid="overview-alerts-error" role="alert"><span>{{ sessionsBlock.error() }}</span><button type="button" (click)="retryOverviewSessions()">Réessayer</button></div>
+                  } @else {
+                    @if (sessionsBlock.error()) { <div class="admin-block-error" role="alert"><span>{{ sessionsBlock.error() }}</span><button type="button" (click)="retryOverviewSessions()">Réessayer</button></div> }
+                    @if (sessionsBlock.refreshing()) { <span class="admin-refreshing" role="status">Actualisation…</span> }
+                    @for (session of pendingAlertSessions(); track session.id) {
                     <article class="pending-alert-row">
                       <div class="pending-alert-main">
                         <strong>{{ session.volunteerName || 'Bénévole non renseigné' }}</strong>
@@ -267,17 +312,15 @@
                       <div class="pending-alert-countdown"><strong>{{ formatCountdown(session.nextAlertDueAt) }}</strong><span>{{ formatNumber(session.pendingAlertCount) }} e-mails</span></div>
                       <button class="button button-outline" type="button" (click)="openSession(session.id)">Corriger</button>
                     </article>
-                  } @empty {
-                    <div class="empty-inline">Aucune session dans la fenêtre de rattrapage.</div>
+                    } @empty {
+                      <div class="empty-inline">Aucune session dans la fenêtre de rattrapage.</div>
+                    }
                   }
                 </div>
                 <div class="info-strip">
                   <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>
                   <p>Ces chiffres servent à piloter le système, jamais à comparer les bénévoles entre eux. Les écarts sont des signaux de processus à corriger.</p>
                 </div>
-              } @else {
-                <p class="admin-status">Les indicateurs ne sont pas encore disponibles.</p>
-              }
             </section>
           }
 
@@ -296,8 +339,10 @@
                 <button class="period-chip" [class.active]="sessionPreset === 'alerts'" [attr.aria-pressed]="sessionPreset === 'alerts'" type="button" (click)="setSessionPreset('alerts')">Alertes envoyées ({{ alertSessionCount() }})</button>
               </div>
               @if (sessionsPage(); as page) {
+                @if (sessionsBlock.error()) { <div class="admin-block-error" data-testid="sessions-list-error" role="alert"><span>{{ sessionsBlock.error() }}</span><button type="button" (click)="retrySessions()">Réessayer</button></div> }
+                @if (sessionsBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                 <div class="list-meta"><span>{{ formatNumber(visibleSessions().length) }} session{{ visibleSessions().length > 1 ? 's' : '' }}</span><button class="text-link" type="button" (click)="loadSessions()">Actualiser</button></div>
-                <div class="session-list">
+                <div class="session-list" [class.admin-list-refreshing]="sessionsBlock.refreshing()" [attr.aria-busy]="sessionsBlock.refreshing() ? 'true' : null">
                   @for (session of visibleSessions(); track session.id) {
                     <article class="session-card" [class.session-correctable]="sessionNeedsCorrection(session)">
                       <div class="session-card-main">
@@ -313,8 +358,11 @@
                   }
                 </div>
                 <div class="pagination"><button type="button" [disabled]="sessionPage <= 1" (click)="goToSessionsPage(sessionPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToSessionsPage(sessionPage + 1)">→</button></div>
-              } @else if (loading()) {
-                <p class="admin-status" role="status">Chargement des sessions…</p>
+              } @else if (sessionsBlock.status() === 'loading') {
+                <div class="session-list" data-testid="session-list-skeleton" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <article class="session-card admin-skeleton-session-card"><div class="admin-skeleton admin-skeleton-label"></div><div class="admin-skeleton admin-skeleton-line"></div><div class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></div></article> }</div>
+                <p class="admin-visually-hidden" role="status">Chargement des sessions…</p>
+              } @else if (sessionsBlock.error()) {
+                <div class="admin-block-error" data-testid="sessions-list-error" role="alert"><span>{{ sessionsBlock.error() }}</span><button type="button" (click)="retrySessions()">Réessayer</button></div>
               }
               <div class="info-strip">
                 <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>
@@ -335,13 +383,16 @@
                 <label><span>Disponibles depuis plus de</span><span class="field-with-suffix"><input type="number" name="minAgeMonths" [(ngModel)]="minAgeMonths" min="1" max="120000" step="1" required><em>mois</em></span></label>
                 <label><span>En plus de</span><span class="field-with-suffix"><input type="number" name="minQuantity" [(ngModel)]="minQuantity" min="0" step="1" required><em>exemplaires</em></span></label>
                 <label class="checkbox-label"><input type="checkbox" checked disabled><span>Jamais vendus</span></label>
-                <button class="button button-primary" type="submit" [disabled]="loading() || filtersForm.invalid"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Exporter la liste de retrait</button>
+                <button class="button button-primary" type="submit" [disabled]="filtersForm.invalid"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Exporter la liste de retrait</button>
               </form>
-              @if (loading() && !deadStockBooks().length) {
-                <p class="admin-status" role="status">Recherche des titres à retirer…</p>
+              @if (deadStockBlock.status() === 'loading' && !deadStockBlock.data()) {
+                <div class="dead-stock-list dead-stock-list-skeleton" data-testid="dead-stock-list-skeleton" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <article class="dead-stock-row admin-skeleton-dead-stock-row"><span class="admin-skeleton admin-skeleton-panel"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-action"></span></article> }</div>
+                <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
               } @else {
+                @if (deadStockBlock.error()) { <div class="admin-block-error" role="alert"><span>{{ deadStockBlock.error() }}</span><button type="button" (click)="retryDeadStock()">Réessayer</button></div> }
+                @if (deadStockBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                 <div class="section-heading"><div><h2>{{ formatNumber(deadStockBooks().length) }} titres candidats au retrait</h2><p>{{ formatNumber(deadStockBooks().reduce((total, book) => total + book.quantityAvailable, 0)) }} exemplaires · triés par quantité décroissante</p></div><button class="text-link" type="button" (click)="exportCsv()">Télécharger le CSV</button></div>
-                <div class="dead-stock-list" data-testid="dead-stock-list">
+                <div class="dead-stock-list" data-testid="dead-stock-list" [class.admin-list-refreshing]="deadStockBlock.refreshing()">
                   @for (book of deadStockBooks(); track book.isbn13) {
                     <article class="dead-stock-row">
                       <div class="dead-stock-book"><span class="book-cover-placeholder" aria-hidden="true"></span><div><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span></div></div>
@@ -425,7 +476,7 @@
                             <label class="metadata-summary-field"><span>Résumé</span><textarea name="metaSummary" rows="5" [(ngModel)]="metadataForm.summary" [placeholder]="metadataPlaceholder(book, metadataForm.summary)"></textarea></label>
                             <label><span>Identifiant de l’œuvre</span><input name="metaWorkId" [(ngModel)]="metadataForm.workId" placeholder="Facultatif"></label>
                             <label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label>
-                            <button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button>
+                            <button class="button button-primary detail-form-action" type="submit" [disabled]="isActionPending('metadata') || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button>
                           </form>
                         </div>
                         <section class="isbndb-subjects" aria-labelledby="isbndb-subjects-title">
@@ -440,7 +491,7 @@
                               type="file"
                               accept="image/jpeg,image/png,image/webp"
                               aria-label="Choisir une couverture pour ce livre"
-                              [disabled]="loading() || !!book.redirectedToIsbn13"
+                              [disabled]="isActionPending('book-cover-upload') || !!book.redirectedToIsbn13"
                               (change)="selectBookCover($event, book)">
                           </label>
                         </p>
@@ -448,13 +499,13 @@
                         @if (hasPendingBookCover(book)) {
                           <p class="detail-help">{{ pendingBookCover()?.file?.name }}</p>
                           <div>
-                            <button class="button button-primary" type="button" [disabled]="loading()" (click)="uploadBookCover(book)">Envoyer l’image</button>
-                            <button class="text-link" type="button" [disabled]="loading()" (click)="clearPendingBookCover(book)">Annuler</button>
+                            <button class="button button-primary" type="button" [disabled]="isActionPending('book-cover-upload')" (click)="uploadBookCover(book)">Envoyer l’image</button>
+                            <button class="text-link" type="button" [disabled]="isActionPending('book-cover-upload')" (click)="clearPendingBookCover(book)">Annuler</button>
                           </div>
                         }
                         <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Un champ enregistré ici devient une correction manuelle et n'est plus écrasé.</p></div>
                       </section>
-                      <section class="detail-section"><div class="section-heading"><h2>Quantités</h2><span class="mono-note">stock déclaré</span></div><div class="quantity-editor"><label><span>Disponible</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Annoncé</span><input type="number" name="quantityAnnounced" [value]="book.quantityAnnounced" readonly></label><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="correctBookQuantity(book)">Enregistrer la correction</button></div><p class="detail-help">Toute modification produit un mouvement CORRECTION dans le ledger. Une note obligatoire explique le geste.</p><input class="wide-input" name="quantityNote" [(ngModel)]="quantityNote" placeholder="Note obligatoire pour la correction"></section>
+                      <section class="detail-section"><div class="section-heading"><h2>Quantités</h2><span class="mono-note">stock déclaré</span></div><div class="quantity-editor"><label><span>Disponible</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Annoncé</span><input type="number" name="quantityAnnounced" [value]="book.quantityAnnounced" readonly></label><button class="button button-primary" type="button" [disabled]="isActionPending('quantity') || !!book.redirectedToIsbn13" (click)="correctBookQuantity(book)">Enregistrer la correction</button></div><p class="detail-help">Toute modification produit un mouvement CORRECTION dans le ledger. Une note obligatoire explique le geste.</p><input class="wide-input" name="quantityNote" [(ngModel)]="quantityNote" placeholder="Note obligatoire pour la correction"></section>
                       <section class="detail-section"><div class="section-heading"><h2>Historique des mouvements</h2><span class="mono-note">{{ formatNumber(book.movements.length) }} mouvements</span></div><div class="movement-list">@for (movement of book.movements; track movement.id) {<div class="movement-row"><span>{{ formatDate(movement.occurredAt) }}</span><span class="movement-type" [class]="movementClass(movement.type)">{{ movementLabel(movement.type) }}</span><strong [class.movement-negative]="movement.quantity < 0">{{ movementQuantity(movement.quantity) }}</strong><span>{{ movement.note || movement.volunteerId || 'Système' }}</span>@if (isNotFoundMovement(movement)) {<span class="not-found-movement-tag">suite à signalement</span>}</div>} @empty {<div class="empty-inline">Aucun mouvement enregistré.</div>}</div></section>
                       <details class="secondary-detail"><summary>Annonces et corrections avancées</summary><div class="announcement-editor">@for (announcement of book.announcements; track announcement.id) {<div class="announcement-row"><span>{{ announcement.fairId || 'Sans bourse' }}</span><input type="number" [name]="'announcement-' + announcement.id" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"><span>{{ statusLabel(announcement.status) }}</span><button class="text-link" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></div>} @empty {<p>Aucune annonce.</p>}<input class="wide-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></details>
                     </div>
@@ -470,19 +521,19 @@
                           </div>
                         </section>
                       }
-                      <section class="side-card"><span class="section-kicker">Gestion du livre</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir le livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publié' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer un livre rare</strong><small>Reprendre les données du livre</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification du statut livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>Le livre reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
+                      <section class="side-card"><span class="section-kicker">Gestion du livre</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir le livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publié' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer un livre rare</strong><small>Reprendre les données du livre</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification du statut livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>Le livre reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" [disabled]="isActionPending('visibility')" (change)="toggleVisibility(book)"></label></section>
                       <section class="side-card isbndb-provenance-card" data-testid="isbndb-provenance-card"><span class="section-kicker">Provenance des données</span><dl><div><dt>ISBNdb</dt><dd>{{ isbndbLookupLabel(book) }}</dd></div><div><dt>Source de secours</dt><dd>{{ provenanceSourceLabel(book.fallbackSource) }}</dd></div><div><dt>Dernière vérification</dt><dd>{{ book.isbndbCheckedAt ? formatDate(book.isbndbCheckedAt, true) : '—' }}</dd></div></dl>
                         @if (book.isAbsentFromIsbndb) {
-                          <button class="button button-outline isbndb-completion-action" data-testid="isbndb-completion-toggle" type="button" [disabled]="loading() || (!book.isbndbCompletedAt && (!metadataForm.title.trim() || !metadataForm.authors.trim()))" (click)="setIsbndbCompletion(book, !book.isbndbCompletedAt)">{{ book.isbndbCompletedAt ? 'Rouvrir' : 'Marquer comme complétée' }}</button>
+                          <button class="button button-outline isbndb-completion-action" data-testid="isbndb-completion-toggle" type="button" [disabled]="isActionPending('isbndb-completion') || (!book.isbndbCompletedAt && (!metadataForm.title.trim() || !metadataForm.authors.trim()))" (click)="setIsbndbCompletion(book, !book.isbndbCompletedAt)">{{ book.isbndbCompletedAt ? 'Rouvrir' : 'Marquer comme complétée' }}</button>
                           <small>Retire le livre de « À compléter » et recalcule ses recommandations. Titre et auteur obligatoires.</small>
                         }
                         @if (!book.isIsbndbSourced) {
-                          <button class="button button-outline isbndb-recheck-action" data-testid="isbndb-recheck" type="button" [disabled]="loading() || !canRecheckIsbndbBook(book)" (click)="recheckIsbndbBook(book)">Revérifier dans ISBNdb</button>
+                          <button class="button button-outline isbndb-recheck-action" data-testid="isbndb-recheck" type="button" [disabled]="isActionPending('isbndb-recheck') || !canRecheckIsbndbBook(book)" (click)="recheckIsbndbBook(book)">Revérifier dans ISBNdb</button>
                           @if (isIsbndbQuotaExhausted()) {<small>Quota épuisé jusqu'à {{ isbndbExhaustedUntil() }}</small>} @else if (book.isbndbCompletedAt) {<small>Rouvrez ce livre avant de le revérifier.</small>} @else {<small>Gratuit si le livre reste inconnu · 1 crédit s'il est trouvé.</small>}
                         }
                       </section>
-                      <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec un autre livre</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger vers le livre canonique</button><button class="danger-link" data-testid="permanently-delete-book" type="button" [disabled]="loading() || !canPermanentlyDeleteBook(book)" (click)="permanentlyDeleteBook(book)">Supprimer définitivement ce livre</button><small>Efface le livre, son stock et ses suivis. Indisponible après une vente, une annonce, un scan ou une fusion.</small></section>
-                      <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
+                      <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec un autre livre</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="isActionPending('merge')" (click)="mergeBook(book)">Rediriger vers le livre canonique</button><button class="danger-link" data-testid="permanently-delete-book" type="button" [disabled]="isActionPending('permanent-delete-book') || !canPermanentlyDeleteBook(book)" (click)="permanentlyDeleteBook(book)">Supprimer définitivement ce livre</button><small>Efface le livre, son stock et ses suivis. Indisponible après une vente, une annonce, un scan ou une fusion.</small></section>
+                      <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="isActionPending('withdraw') || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
                     </aside>
                   </div>
                 </div>
@@ -496,22 +547,31 @@
                 <section class="catalogue-books-zone" aria-labelledby="catalogue-books-title">
                 <div class="section-heading section-heading-with-kicker catalogue-heading">
                   <div><span class="section-kicker">Le fonds de livres</span><h2 id="catalogue-books-title">Livres disponibles</h2><p>{{ catalogueBooksPage()?.totalCount ?? 0 }} titres avec au moins un exemplaire disponible</p></div>
-                  <button class="text-link catalogue-refresh-button" data-testid="catalogue-refresh" type="button" [disabled]="loading()" [attr.aria-busy]="catalogueLoading() ? 'true' : null" [attr.aria-label]="catalogueLoading() ? 'Actualisation du catalogue en cours' : 'Actualiser le catalogue'" (click)="loadCatalogue()">@if (catalogueLoading()) {<vpd-loader data-testid="catalogue-refresh-loader" variant="ring" size="small" label="Actualisation du catalogue"></vpd-loader>} @else {Actualiser}</button>
+                  <button class="text-link catalogue-refresh-button" data-testid="catalogue-refresh" type="button" [attr.aria-busy]="catalogueLoading() ? 'true' : null" [attr.aria-label]="catalogueLoading() ? 'Actualisation du catalogue en cours' : 'Actualiser le catalogue'" (click)="loadCatalogue()">@if (catalogueLoading()) {<vpd-loader data-testid="catalogue-refresh-loader" variant="ring" size="small" label="Actualisation du catalogue"></vpd-loader>} @else {Actualiser}</button>
                 </div>
-                <form class="catalogue-search-toolbar" (ngSubmit)="submitCatalogueSearch()" novalidate><label class="search-field"><span>Rechercher un livre</span><input name="catalogueSearch" data-testid="catalogue-search" [(ngModel)]="catalogueSearch" (input)="scheduleCatalogueSearch($event)" placeholder="ISBN, titre ou auteur…"></label><button class="button button-outline" type="submit" [disabled]="loading()">Rechercher</button></form>
+                <form class="catalogue-search-toolbar" (ngSubmit)="submitCatalogueSearch()" novalidate><label class="search-field"><span>Rechercher un livre</span><input name="catalogueSearch" data-testid="catalogue-search" [(ngModel)]="catalogueSearch" (input)="scheduleCatalogueSearch($event)" placeholder="ISBN, titre ou auteur…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
                 @if (catalogueBooksPage(); as page) {
-                  <div class="catalogue-book-list" data-testid="catalogue-book-list">
+                  @if (catalogueBlock.error()) { <div class="admin-block-error" data-testid="catalogue-list-error" role="alert"><span>{{ catalogueBlock.error() }}</span><button data-testid="catalogue-list-retry" type="button" (click)="retryCatalogueList()">Réessayer</button></div> }
+                  @if (catalogueBlock.refreshing()) { <p class="admin-refreshing catalogue-load-status" data-testid="catalogue-load-status" role="status">{{ catalogueLoadMessage() }}</p> }
+                  <div class="catalogue-book-list" data-testid="catalogue-book-list" [class.catalogue-book-list-refreshing]="catalogueBlock.refreshing()" [attr.aria-busy]="catalogueLoading() ? 'true' : null">
                     @for (book of page.books; track book.isbn13) {
                       <article class="catalogue-book-row" [class.catalogue-book-hidden]="book.isHidden" [class.catalogue-book-redirected]="!!book.redirectedToIsbn13">
                         @if (book.coverUrl) {<img class="catalogue-book-cover" [src]="book.coverUrl" alt="">} @else {<span class="catalogue-book-cover book-cover-placeholder" aria-hidden="true"></span>}
                         <div class="catalogue-book-identity"><span class="isbn-label">{{ book.isbn13 }}</span><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span><div class="catalogue-book-tags"><span>{{ book.metadataStatus }}</span>@if (book.isRare) {<span>Rare</span>}@if (book.isHidden) {<span>Masqué</span>}@if (book.redirectedToIsbn13) {<span>Redirigée vers {{ book.redirectedToIsbn13 }}</span>}</div></div>
-                        <div class="catalogue-book-stock"><span>Exemplaires</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong></div>
-                        <div class="catalogue-book-actions"><div class="catalogue-stepper" aria-label="Modifier les exemplaires disponibles"><button class="catalogue-stepper-button catalogue-stepper-decrease" type="button" [disabled]="loading() || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="catalogue-stepper-button catalogue-stepper-increase" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'increase')">+</button></div><button class="button button-outline catalogue-book-detail" type="button" (click)="openBook(book.isbn13)">Détails</button></div>
+                        <div class="catalogue-book-stock"><span>Disponible</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong><small>{{ formatNumber(book.quantityAnnounced) }} annoncé{{ book.quantityAnnounced > 1 ? 's' : '' }}</small></div>
+                        <div class="catalogue-book-actions"><div class="catalogue-stepper" aria-label="Modifier la quantité disponible"><button class="catalogue-stepper-button catalogue-stepper-decrease" type="button" [disabled]="isActionPending('catalogue-quantity') || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="catalogue-stepper-button catalogue-stepper-increase" type="button" [disabled]="isActionPending('catalogue-quantity') || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'increase')">+</button></div><button class="button button-outline catalogue-book-detail" type="button" (click)="openBook(book.isbn13)">Détails</button></div>
                       </article>
                     } @empty {<div class="empty-panel"><h2>Aucun livre disponible</h2><p>Modifiez la recherche ou ajoutez un livre depuis le référentiel externe.</p></div>}
                   </div>
                   <div class="pagination"><button type="button" [disabled]="cataloguePage <= 1" (click)="goToCataloguePage(cataloguePage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToCataloguePage(cataloguePage + 1)">→</button></div>
-                } @else if (loading()) {<p class="admin-status" role="status">Chargement du catalogue…</p>}
+                } @else if (catalogueBlock.status() === 'loading') {
+                  <div class="catalogue-book-list catalogue-book-list-skeleton" data-testid="catalogue-list-skeleton" aria-hidden="true">
+                    @for (row of [1, 2, 3]; track row) { <article class="catalogue-book-row catalogue-skeleton-row"><span class="admin-skeleton catalogue-book-cover"></span><div class="catalogue-book-identity"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line admin-skeleton-line-short"></span></div><span class="admin-skeleton admin-skeleton-action"></span></article> }
+                  </div>
+                  <p class="admin-refreshing catalogue-load-status" data-testid="catalogue-load-status" role="status">{{ catalogueLoadMessage() }}</p>
+                } @else if (catalogueBlock.error()) {
+                  <div class="admin-block-error" data-testid="catalogue-list-error" role="alert"><span>{{ catalogueBlock.error() }}</span><button data-testid="catalogue-list-retry" type="button" (click)="retryCatalogueList()">Réessayer</button></div>
+                }
                 </section>
 
                 <section class="catalogue-add-zone isbn-application-import-zone" aria-labelledby="isbn-application-import-title" data-testid="isbn-application-import">
@@ -720,7 +780,8 @@
                         @if (candidate.isbn13 === reference.isbn13) {
                           <form class="catalogue-candidate catalogue-candidate-inline" data-testid="catalogue-candidate-form" (ngSubmit)="addCatalogueCandidate()" novalidate>
                             <div class="catalogue-candidate-copy"><span class="section-kicker">Livre prêt à ajouter</span><h3>{{ candidate.title || 'Titre à compléter' }}</h3><p>{{ candidate.authors || 'Auteur non renseigné' }}{{ candidate.publisher ? ' · ' + candidate.publisher : '' }}{{ candidate.publicationYear ? ' · ' + candidate.publicationYear : '' }}</p><small>ISBN {{ candidate.isbn13 }} · source {{ candidate.source }}</small><div class="catalogue-candidate-status" data-testid="catalogue-candidate-status" aria-live="polite">@switch (catalogueCandidateStatus()?.state) {@case ('loading') {Vérification de la présence dans le fonds…} @case ('found') {Ce livre est déjà dans le fonds · {{ formatNumber(catalogueCandidateQuantity()) }} exemplaires disponibles.} @case ('not-found') {Ce livre n’est pas encore dans le fonds.} @case ('error') {La présence de ce livre n’a pas pu être vérifiée.}}</div></div>
-                            <div class="catalogue-candidate-fields"><label><span>Exemplaires à ajouter</span><div class="catalogue-quantity-stepper"><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-decrease" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity <= 0" aria-label="Diminuer le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(-1)">−</button><input type="number" name="catalogueAddQuantity" data-testid="catalogue-add-quantity" [(ngModel)]="catalogueAddQuantity" min="0" max="100000" step="1" required><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-increase" type="button" [disabled]="loading() || catalogueLookupLoading() || catalogueAddQuantity >= 100000" aria-label="Augmenter le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(1)">+</button></div></label><label><span>Note obligatoire</span><input name="catalogueAddNote" data-testid="catalogue-add-note" maxlength="500" [(ngModel)]="catalogueAddNote" required></label><button class="button button-primary" data-testid="catalogue-add-submit" type="submit" [disabled]="loading() || catalogueLookupLoading()">Ajouter le livre</button></div>
+                            <div class="catalogue-candidate-copy"><span class="section-kicker">Livre prêt à ajouter</span><h3>{{ candidate.title || 'Titre à compléter' }}</h3><p>{{ candidate.authors || 'Auteur non renseigné' }}{{ candidate.publisher ? ' · ' + candidate.publisher : '' }}{{ candidate.publicationYear ? ' · ' + candidate.publicationYear : '' }}</p><small>ISBN {{ candidate.isbn13 }} · source {{ candidate.source }}</small><div class="catalogue-candidate-status" data-testid="catalogue-candidate-status" aria-live="polite">@switch (catalogueCandidateStatus()?.state) {@case ('loading') {Vérification de la présence dans le fonds…} @case ('found') {Ce livre est déjà dans le fonds · {{ formatNumber(catalogueCandidateQuantity()) }} exemplaires disponibles.} @case ('not-found') {Ce livre n’est pas encore dans le fonds.} @case ('error') {La présence de ce livre n’a pas pu être vérifiée.}}</div></div>
+                            <div class="catalogue-candidate-fields"><label><span>Exemplaires à ajouter</span><div class="catalogue-quantity-stepper"><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-decrease" type="button" [disabled]="isActionPending('add-catalogue-book') || catalogueLookupLoading() || catalogueAddQuantity <= 0" aria-label="Diminuer le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(-1)">−</button><input type="number" name="catalogueAddQuantity" data-testid="catalogue-add-quantity" [(ngModel)]="catalogueAddQuantity" min="0" max="100000" step="1" required><button class="catalogue-stepper-button" data-testid="catalogue-add-quantity-increase" type="button" [disabled]="isActionPending('add-catalogue-book') || catalogueLookupLoading() || catalogueAddQuantity >= 100000" aria-label="Augmenter le nombre d’exemplaires à ajouter" (click)="adjustCatalogueAddQuantity(1)">+</button></div></label><label><span>Note obligatoire</span><input name="catalogueAddNote" data-testid="catalogue-add-note" maxlength="500" [(ngModel)]="catalogueAddNote" required></label><button class="button button-primary" data-testid="catalogue-add-submit" type="submit" [disabled]="isActionPending('add-catalogue-book') || catalogueLookupLoading()">Ajouter le livre</button></div>
                           </form>
                         }
                       }
@@ -741,21 +802,23 @@
                 <p class="admin-intro">Les ISBN restent ici tant qu’une notice bibliographique exploitable n’a pas été trouvée. Les échecs affichent leur motif pour choisir de corriger, réessayer ou retirer le livre.</p>
               </div>
               @if (isbnMetadataQueue(); as page) {
+                @if (isbnMetadataQueueBlock.error()) { <div class="admin-block-error" data-testid="isbn-queue-error" role="alert"><span>{{ isbnMetadataQueueBlock.error() }}</span><button type="button" (click)="retryIsbnMetadataQueue()">Réessayer</button></div> }
+                @if (isbnMetadataQueueBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                 <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
                   <div class="section-heading">
                     <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : metadataQueueFilter === 'not-found' ? 'sans notice trouvée' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
-                    <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
+                    <button class="text-link" type="button" (click)="loadIsbnMetadataQueue()">Actualiser</button>
                   </div>
                   <div class="isbn-queue-toolbar">
                     <span class="isbn-queue-filter-label">Afficher les fiches</span>
                     <div class="period-chips isbn-queue-filters" role="group" aria-label="Filtrer les ISBN par statut">
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'not-found'" [attr.aria-pressed]="metadataQueueFilter === 'not-found'" data-testid="isbn-queue-filter-not-found" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('not-found')">Notices non trouvées</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'not-found'" [attr.aria-pressed]="metadataQueueFilter === 'not-found'" data-testid="isbn-queue-filter-not-found" type="button" (click)="setIsbnMetadataQueueFilter('not-found')">Notices non trouvées</button>
                     </div>
                   </div>
-                  <div class="session-list" role="list">
+                  <div class="session-list" role="list" [class.admin-list-refreshing]="isbnMetadataQueueBlock.refreshing()" [attr.aria-busy]="isbnMetadataQueueBlock.refreshing() ? 'true' : null">
                     @for (item of page.items; track item.isbn13) {
                       <article class="session-card" role="listitem" [attr.data-testid]="'isbn-analysis-' + item.isbn13">
                         <div class="session-card-main">
@@ -764,9 +827,9 @@
                           @if (item.lastAttemptAt) {<small class="session-date">Dernier essai · {{ formatDate(item.lastAttemptAt, true) }} · {{ formatNumber(item.resolveAttempts) }} tentative{{ item.resolveAttempts > 1 ? 's' : '' }}</small>}
                         </div>
                         <div class="catalogue-book-actions isbn-analysis-actions" data-testid="isbn-analysis-actions">
-                          <button class="button button-outline" type="button" [disabled]="loading()" (click)="openBook(item.isbn13, 'isbn-queue')">Corriger</button>
-                          @if (item.metadataStatus !== 'Manual' && item.metadataStatus !== 'Discarded') {<button class="button button-outline" type="button" [disabled]="loading()" (click)="retryIsbnMetadata(item)">Réessayer</button>}
-                          <button class="danger-link" type="button" [disabled]="loading()" (click)="deleteIsbnMetadataCandidate(item)">Supprimer</button>
+                          <button class="button button-outline" type="button" (click)="openBook(item.isbn13, 'isbn-queue')">Corriger</button>
+                          @if (item.metadataStatus !== 'Manual' && item.metadataStatus !== 'Discarded') {<button class="button button-outline" type="button" [disabled]="isActionPending('isbn-metadata-retry')" (click)="retryIsbnMetadata(item)">Réessayer</button>}
+                          <button class="danger-link" type="button" [disabled]="isActionPending('isbn-metadata-delete')" (click)="deleteIsbnMetadataCandidate(item)">Supprimer</button>
                         </div>
                       </article>
                     } @empty {
@@ -783,7 +846,12 @@
                   </div>
                   @if (page.totalCount > page.pageSize) {<div class="pagination"><button type="button" [disabled]="page.page <= 1" (click)="goToIsbnMetadataQueuePage(page.page - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToIsbnMetadataQueuePage(page.page + 1)">→</button></div>}
                 </section>
-              } @else if (loading()) {<p class="admin-status" role="status">Chargement de la file ISBN…</p>}
+              } @else if (isbnMetadataQueueBlock.status() === 'loading') {
+                <div class="session-list" data-testid="isbn-queue-skeleton" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <article class="session-card admin-skeleton-session-card"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-action"></span></article> }</div>
+                <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+              } @else if (isbnMetadataQueueBlock.error()) {
+                <div class="admin-block-error" data-testid="isbn-queue-error" role="alert"><span>{{ isbnMetadataQueueBlock.error() }}</span><button type="button" (click)="retryIsbnMetadataQueue()">Réessayer</button></div>
+              }
             </section>
           }
 
@@ -834,10 +902,17 @@
                     <label class="fair-select"><span>Bourse analysée</span><select name="fairId" [ngModel]="selectedFairStats()?.fair?.id || ''" (ngModelChange)="selectFair($event)"><option value="">Choisir une bourse</option>@for (fair of fairsPage()?.fairs ?? []; track fair.id) {<option [value]="fair.id">{{ fairOptionLabel(fair) }}</option>}</select></label>
                   </div>
                   @if (selectedFairStats(); as stats) {
+                    @if (fairStatsBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                     <div class="stat-grid fair-stat-grid"><article class="stat-card"><strong class="stat-value">{{ formatNumber(stats.soldQuantity) }}</strong><span class="stat-label">Livres vendus</span><span class="stat-foot">{{ formatNumber(stats.soldTitles) }} titres distincts</span></article><article class="stat-card"><strong class="stat-value">{{ stats.revenue === null ? '—' : formatMoney(stats.revenue) }}</strong><span class="stat-label">Recette saisie</span><span class="stat-foot">Montant facultatif</span></article><article class="stat-card"><strong class="stat-value">{{ stats.averageBasket === null ? '—' : formatMoney(stats.averageBasket) }}</strong><span class="stat-label">Panier moyen</span><span class="stat-foot">Calculé sur les ventes</span></article><article class="stat-card"><strong class="stat-value">{{ fairOpenDays(stats.fair) }}</strong><span class="stat-label">Jours ouverts</span><span class="stat-foot">{{ formatDate(stats.fair.dateStart) }} → {{ formatDate(stats.fair.dateEnd) }}</span></article></div>
                     <div class="charts-grid"><article class="chart-card"><div class="section-heading"><div><h2>Livres vendus, par bourse</h2><p>Comparaison des bourses conservées</p></div></div><div class="bar-chart"><div class="bar-row bar-row-active"><span>{{ stats.fair.name }}</span><div class="bar-track"><i [style.width]="barWidth(stats.soldQuantity, maxFairSales())"></i></div><strong>{{ formatNumber(stats.soldQuantity) }}</strong></div>@for (fair of stats.previousFairs; track fair.fairId) {<div class="bar-row"><span>{{ fair.name }}</span><div class="bar-track"><i [style.width]="barWidth(fair.soldQuantity, maxFairSales())"></i></div><strong>{{ formatNumber(fair.soldQuantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune comparaison disponible.</p>}</div></article><div class="fair-side-stack"><article class="chart-card"><div class="section-heading"><div><h2>Ventes par journée</h2><p>Répartition des exemplaires vendus</p></div></div><div class="daily-bars">@for (day of stats.dailySales; track day.day) {<div><span>{{ formatDay(day.day) }}</span><div class="bar-track"><i [style.width]="barWidth(day.quantity, maxDailySales())"></i></div><strong>{{ formatNumber(day.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune vente par journée.</p>}</div></article><article class="revenue-card"><span class="section-kicker">La recette</span><p>Le catalogue connaît le total encaissé, pas le prix individuel de chaque livre.</p><strong>{{ stats.revenue === null ? '—' : formatMoney(stats.revenue) }}</strong><div class="revenue-editor"><input type="number" name="fairRevenue" [(ngModel)]="revenueInput" min="0" step="0.01" aria-label="Recette"><button class="text-link" type="button" (click)="saveFairRevenue()">Modifier</button></div><small>Source : saisie administrative</small></article></div></div>
                     <div class="charts-grid"><article class="chart-card"><div class="section-heading"><div><h2>Répartition par genre</h2><p>Exemplaires vendus</p></div></div><div class="bar-chart genre-chart">@for (item of stats.salesByGenre; track item.genre) {<div class="bar-row"><span>{{ item.genre || 'Sans genre' }}</span><div class="bar-track"><i [style.width]="barWidth(item.quantity, maxGenreSales())"></i></div><strong>{{ formatNumber(item.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de genre.</p>}</div></article><article class="chart-card"><div class="section-heading"><div><h2>Meilleures ventes</h2><p>Titres les plus vendus de la bourse</p></div></div><div class="top-book-list">@for (item of stats.topBooks; track item.isbn13) {<div class="top-book-row"><span>{{ item.title || item.isbn13 }}</span><div class="bar-track"><i [style.width]="barWidth(item.quantity, maxTopBookSales())"></i></div><strong>{{ formatNumber(item.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de vente.</p>}</div></article></div>
-                  } @else if (loading()) {<p class="admin-status" role="status">Chargement des bourses…</p>} @else {<div class="empty-panel"><h2>Choisissez une bourse</h2><p>Les statistiques détaillées sont calculées à partir des mouvements de vente réellement associés à la bourse.</p></div>}
+                  } @else if (fairsBlock.status() === 'loading' || fairStatsBlock.status() === 'loading') {
+                    <div class="stat-grid statistics-skeleton-grid" data-testid="fair-stat-skeletons" aria-hidden="true">@for (card of [1, 2, 3, 4]; track card) { <article class="stat-card admin-skeleton-card"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span></article> }</div>
+                    <div class="charts-grid statistics-skeleton-charts" aria-hidden="true"><article class="chart-card admin-skeleton-chart" data-testid="statistics-chart-skeleton"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article><article class="chart-card admin-skeleton-chart" data-testid="statistics-chart-skeleton"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article></div>
+                    <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+                  } @else if (fairsBlock.error() || fairStatsBlock.error()) {
+                    <div class="admin-block-error" role="alert"><span>{{ fairStatsBlock.error() || fairsBlock.error() }}</span><button type="button" (click)="retryStatistics()">Réessayer</button></div>
+                  } @else {<div class="empty-panel"><h2>Choisissez une bourse</h2><p>Les statistiques détaillées sont calculées à partir des mouvements de vente réellement associés à la bourse.</p></div>}
                 }
 
                 @case ('evolution') {
@@ -846,6 +921,7 @@
                     <ng-container *ngTemplateOutlet="statisticsPeriodPicker"></ng-container>
                   </div>
                   @if (fairsEvolution(); as evolution) {
+                    @if (fairsEvolutionBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                     @if (fairsEvolutionView(); as view) {
                       <div class="stat-grid evolution-stat-grid" data-testid="evolution-stat-grid">
                         <article class="evolution-stat-card"><strong>{{ formatNumber(evolution.fairCount) }}</strong><span>Bourses tenues</span><small>{{ view.periodLabel || 'Aucune bourse sur la période' }}</small></article>
@@ -923,7 +999,11 @@
                         </article>
                       </div>
                     }
-                  } @else if (loading()) {<p class="admin-status" role="status">Chargement de l’évolution…</p>} @else {<div class="empty-panel"><h2>Aucune bourse sur cette période</h2><p>Élargissez la période pour voir apparaître des données.</p></div>}
+                  } @else if (fairsEvolutionBlock.status() === 'loading') {
+                    <div class="stat-grid evolution-stat-grid" data-testid="evolution-stat-skeletons" aria-hidden="true">@for (card of [1, 2, 3, 4, 5]; track card) { <article class="evolution-stat-card admin-skeleton-card"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span></article> }</div>
+                    <article class="evolution-card evolution-chart-card admin-skeleton-chart" data-testid="evolution-chart-skeleton" aria-hidden="true"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article>
+                    <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+                  } @else if (fairsEvolutionBlock.error()) {<div class="admin-block-error" role="alert"><span>{{ fairsEvolutionBlock.error() }}</span><button type="button" (click)="retryStatistics()">Réessayer</button></div>} @else {<div class="empty-panel"><h2>Aucune bourse sur cette période</h2><p>Élargissez la période pour voir apparaître des données.</p></div>}
                 }
 
                 @case ('books') {
@@ -932,6 +1012,7 @@
                     <ng-container *ngTemplateOutlet="statisticsPeriodPicker"></ng-container>
                   </div>
                   @if (catalogueFlowStats(); as flow) {
+                    @if (catalogueFlowStatsBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                     <article class="chart-card"><div class="section-heading"><div><h2>Du carton au lecteur</h2><p>Scannés, gardés, vendus — sur la période choisie</p></div></div><div class="bar-chart book-flow-chart"><div class="bar-row bar-row-active"><span>Scannés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.scannedCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.scannedCount) }}</strong></div><div class="bar-row"><span>Gardés</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.keptCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.keptCount) }} · {{ formatPercent(flow.funnel.keptRatePercent) }}</strong></div><div class="bar-row"><span>Vendus</span><div class="bar-track"><i [style.width]="barWidth(flow.funnel.soldCount, maxFunnelCount())"></i></div><strong>{{ formatNumber(flow.funnel.soldCount) }} · {{ formatPercent(flow.funnel.soldRatePercent) }}</strong></div></div></article>
 
                     <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p><strong>{{ formatNumber(flow.funnel.dormantCount) }} dormants</strong> — gardés mais pas encore vendus, dont {{ formatNumber(flow.funnel.dormantOverYearCount) }} depuis plus d’un an. <button class="text-link" type="button" (click)="selectSection('dead-stock')">Ouvrir le désengorgement →</button></p></div>
@@ -940,7 +1021,10 @@
                       <article class="chart-card"><div class="section-heading"><div><h2>Combien de temps un livre attend</h2><p>Entre son entrée au catalogue et sa vente (approximation par ISBN)</p></div></div><div class="bar-chart book-flow-chart">@for (bucket of flow.timeToSellDistribution; track bucket.bucket) {<div class="bar-row"><span>{{ bucket.bucket }}</span><div class="bar-track"><i [style.width]="barWidth(bucket.quantity, maxTimeToSellQuantity())"></i></div><strong>{{ formatNumber(bucket.quantity) }} · {{ formatPercent(bucket.sharePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune vente sur cette période.</p>}</div></article>
                       <article class="chart-card"><div class="section-heading"><div><h2>Taux d’écoulement par genre</h2><p>Exemplaires vendus · part des exemplaires gardés</p></div></div><div class="bar-chart book-flow-chart genre-chart">@for (item of flow.flowRateByGenre; track item.genre) {<div class="bar-row"><span>{{ item.genre }}</span><div class="bar-track"><i [style.width]="barWidth(item.keptQuantity, maxGenreFlowQuantity())"></i></div><strong [attr.aria-label]="formatNumber(item.soldQuantity) + ' exemplaires vendus sur ' + formatNumber(item.keptQuantity) + ' gardés, soit ' + formatGenreFlowPercent(item.soldQuantity, item.flowRatePercent)">{{ formatNumber(item.soldQuantity) }} · {{ formatGenreFlowPercent(item.soldQuantity, item.flowRatePercent) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de genre.</p>}</div></article>
                     </div>
-                  } @else if (loading()) {<p class="admin-status" role="status">Chargement des statistiques du fonds…</p>} @else {<div class="empty-panel"><h2>Aucune donnée sur cette période</h2><p>Élargissez la période pour voir apparaître des données.</p></div>}
+                  } @else if (catalogueFlowStatsBlock.status() === 'loading') {
+                    <div class="charts-grid statistics-skeleton-charts" data-testid="catalogue-flow-stat-skeletons" aria-hidden="true"><article class="chart-card admin-skeleton-chart"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article><article class="chart-card admin-skeleton-chart" data-testid="statistics-chart-skeleton"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article><article class="chart-card admin-skeleton-chart" data-testid="statistics-chart-skeleton"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article></div>
+                    <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+                  } @else if (catalogueFlowStatsBlock.error()) {<div class="admin-block-error" role="alert"><span>{{ catalogueFlowStatsBlock.error() }}</span><button type="button" (click)="retryStatistics()">Réessayer</button></div>} @else {<div class="empty-panel"><h2>Aucune donnée sur cette période</h2><p>Élargissez la période pour voir apparaître des données.</p></div>}
                 }
 
                 @case ('volunteers') {
@@ -949,6 +1033,7 @@
                     <ng-container *ngTemplateOutlet="statisticsPeriodPicker"></ng-container>
                   </div>
                   @if (volunteerStatistics(); as stats) {
+                    @if (volunteerStatisticsBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                     <section class="volunteer-summary" data-testid="volunteer-summary" aria-label="Synthèse de l’équipe">
                       <div class="volunteer-summary-lead">
                         <span class="volunteer-summary-kicker">Ensemble, {{ statisticsPeriodPhrase() }}</span>
@@ -1009,7 +1094,11 @@
 
                     <div class="charts-grid volunteer-charts-grid"><article class="chart-card heatmap-card"><div class="section-heading"><div><h2>Quand chacun trie</h2><p>Sessions par bénévole et par mois</p></div></div><div class="heatmap-wrap">@for (row of stats.monthlyActivity; track row.volunteerId) {<div class="heatmap-row"><strong>{{ row.displayName }}</strong><div class="heatmap-cells">@for (month of row.months; track month.periodStart) {<i [style.opacity]="heatmapOpacity(month.sessionCount, maxMonthlySessions(stats.monthlyActivity))" [attr.title]="formatDate(month.periodStart) + ' · ' + formatNumber(month.sessionCount) + ' sessions'"></i>}</div></div>} @empty {<p class="empty-inline">Aucune session à afficher.</p>}</div></article><article class="chart-card"><div class="section-heading"><div><h2>Genres dominants</h2><p>Sur les livres gardés par l’équipe</p></div></div><div class="bar-chart genre-chart">@for (genre of stats.dominantGenres; track genre.name) {<div class="bar-row"><span>{{ genre.name }}</span><div class="bar-track"><i [style.width]="barWidth(genre.quantity, stats.dominantGenres[0]?.quantity || 0)"></i></div><strong>{{ formatNumber(genre.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucun genre à comparer.</p>}</div><div class="renewal-summary"><span><strong>{{ stats.renewal.newCount }}</strong> nouveaux</span><span><strong>{{ stats.renewal.regularCount }}</strong> réguliers</span><span><strong>{{ stats.renewal.withdrawingCount }}</strong> à relancer</span></div></article></div>
                     <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri et Caisse sont déduits des sessions et des ventes réellement journalisées. Les comptes et leurs droits restent gérés dans « Comptes &amp; rôles ».</p></div>
-                  } @else if (loading()) {<p class="admin-status" role="status">Chargement des statistiques bénévoles…</p>} @else {<div class="empty-panel"><h2>Aucune activité bénévole</h2><p>Les données apparaîtront ici dès qu’une session de tri ou une vente sera journalisée.</p></div>}
+                  } @else if (volunteerStatisticsBlock.status() === 'loading') {
+                    <section class="volunteer-summary admin-skeleton-chart" data-testid="volunteer-stat-skeletons" aria-hidden="true"><span class="admin-skeleton admin-skeleton-value"></span><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></section>
+                    <div class="charts-grid statistics-skeleton-charts" aria-hidden="true">@for (chart of [1, 2, 3]; track chart) { <article class="chart-card admin-skeleton-chart" data-testid="statistics-chart-skeleton"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-panel"></span></article> }</div>
+                    <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+                  } @else if (volunteerStatisticsBlock.error()) {<div class="admin-block-error" role="alert"><span>{{ volunteerStatisticsBlock.error() }}</span><button type="button" (click)="retryStatistics()">Réessayer</button></div>} @else {<div class="empty-panel"><h2>Aucune activité bénévole</h2><p>Les données apparaîtront ici dès qu’une session de tri ou une vente sera journalisée.</p></div>}
                 }
               }
             </section>
@@ -1058,11 +1147,11 @@
                         <label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>
                       }
                     </fieldset>
-                    <button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button>
+          <button class="button button-primary" type="submit" [disabled]="isActionPending('create-account')">Créer le compte</button>
                   </form>
                 }
                 <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
-                @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.role-chip-rare]="role.value === 'LivresRares'" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected" [class.role-chip-rare]="role === 'LivresRares'">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" [disabled]="loading()" [attr.data-testid]="'account-status-' + account.externalId" (click)="toggleAccountEnabled(account)">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
+                @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.role-chip-rare]="role.value === 'LivresRares'" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected" [class.role-chip-rare]="role === 'LivresRares'">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" [disabled]="isActionPending('account-status')" [attr.data-testid]="'account-status-' + account.externalId" (click)="toggleAccountEnabled(account)">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (accountsBlock.status() === 'loading') {<div class="account-list" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <article class="account-row admin-skeleton-session-card"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span></article> }</div>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="alert"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p><button type="button" (click)="loadAccounts()">Réessayer</button></div>}
                 <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse, Livres rares et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
                 <section class="passage-correction-card" aria-labelledby="passage-correction-title">
                   <div>
@@ -1079,7 +1168,7 @@
                         autocomplete="off"
                         required>
                     </label>
-                    <button class="button button-outline" type="submit" [disabled]="loading()">Rechercher un passage</button>
+                    <button class="button button-outline" type="submit">Rechercher un passage</button>
                   </form>
                   @if (checkoutPassageError(); as error) {
                     <p class="passage-correction-error" role="alert">{{ error }}</p>
@@ -1107,7 +1196,7 @@
                       <button
                         class="button button-outline"
                         type="submit"
-                        [disabled]="loading() || checkoutPassageReason.trim().length < 3 || checkoutPassageReason.length > 500">
+                        [disabled]="isActionPending('checkout-passage-dissociate') || checkoutPassageReason.trim().length < 3 || checkoutPassageReason.length > 500">
                         Dissocier ce passage
                       </button>
                     </form>
@@ -1117,7 +1206,7 @@
                 <section class="members-workspace" data-testid="members-workspace">
                   <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Membres du site.</h1><p class="admin-intro">Consultez les listes de recherche et protégez la délivrabilité des alertes. Les comptes sont créés en autonomie via Entra External ID.</p></div>
                   <form class="search-toolbar" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="button button-primary" type="submit">Rechercher</button></form>
-                  @if (membersPage(); as page) {<div class="list-meta"><span>{{ formatNumber(page.totalCount) }} comptes</span></div><div class="member-list">@for (member of page.members; track member.id) {<article class="member-row"><div><strong>{{ member.displayName || 'Nom non renseigné' }}</strong><span>{{ maskedEmail(member.email) }}</span></div><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span><span class="member-last-seen">{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" [attr.data-testid]="'member-detail-' + member.id" (click)="openMember(member.id)">Voir la fiche →</button></article>} @empty {<div class="empty-panel"><h2>Aucun membre</h2><p>Aucun compte ne correspond à ces critères.</p></div>}</div><div class="pagination"><button type="button" [disabled]="memberPage <= 1" (click)="goToMembersPage(memberPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToMembersPage(memberPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des membres…</p>}
+                  @if (membersPage(); as page) {<div class="list-meta"><span>{{ formatNumber(page.totalCount) }} comptes</span></div><div class="member-list" [class.admin-list-refreshing]="membersBlock.refreshing()">@for (member of page.members; track member.id) {<article class="member-row"><div><strong>{{ member.displayName || 'Nom non renseigné' }}</strong><span>{{ maskedEmail(member.email) }}</span></div><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span><span class="member-last-seen">{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" [attr.data-testid]="'member-detail-' + member.id" (click)="openMember(member.id)">Voir la fiche →</button></article>} @empty {<div class="empty-panel"><h2>Aucun membre</h2><p>Aucun compte ne correspond à ces critères.</p></div>}</div><div class="pagination"><button type="button" [disabled]="memberPage <= 1" (click)="goToMembersPage(memberPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToMembersPage(memberPage + 1)">→</button></div>} @else if (membersBlock.status() === 'loading') {<div class="member-list" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <article class="member-row admin-skeleton-session-card"><span class="admin-skeleton admin-skeleton-label"></span><span class="admin-skeleton admin-skeleton-line"></span></article> }</div>} @else if (membersBlock.error()) {<div class="admin-block-error" role="alert"><span>{{ membersBlock.error() }}</span><button type="button" (click)="loadMembers()">Réessayer</button></div>}
                 </section>
               }
             </section>
@@ -1126,12 +1215,24 @@
           @case ('settings') {
             <section class="admin-view" aria-labelledby="admin-title">
               <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Réglages</span><h1 id="admin-title">Paramètres.</h1><p class="admin-intro">Ces valeurs sont des décisions métier, pas des constantes techniques. Elles déterminent le verdict de la scanette, l’équilibre du stock et le délai de rattrapage.</p></div>
-              @if (settings(); as current) {<form class="settings-form" (ngSubmit)="saveSettings()"><div class="settings-table-head"><span>Paramètre</span><span>Règle</span><span>Valeur</span></div><div class="setting-row"><div><strong>Seuil de doublon déclenchant « inutile d’en garder »</strong><small>Au-delà de cette quantité d’exemplaires enregistrés, la scanette affiche le verdict rouge.</small></div><span class="rule-id">RG-10</span><label class="setting-input"><input type="number" name="duplicateThreshold" [(ngModel)]="settingsForm.duplicateThreshold" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Nombre de ventes à partir duquel un titre est « demandé »</strong><small>Sert au verdict vert « à garder » lors du tri.</small></div><span class="rule-id">RG-12</span><label class="setting-input"><input type="number" name="demandSalesThreshold" [(ngModel)]="settingsForm.demandSalesThreshold" min="0"><em>ventes</em></label></div><div class="setting-row"><div><strong>Seuil de valeur d’un livre rare</strong><small>Sans estimation automatique, le marquage reste manuel et ce seuil n’a aucun effet.</small></div><span class="rule-id">RG-14</span><label class="setting-input setting-input-disabled"><input value="—" disabled><em>non utilisé</em></label></div><div class="setting-row"><div><strong>Ancienneté déclenchant une proposition de retrait</strong><small>Filtre par défaut de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockAgeMonths" [(ngModel)]="deadStockAgeMonths" min="0"><em>mois</em></label></div><div class="setting-row"><div><strong>Quantité déclenchant une proposition de retrait</strong><small>Second filtre de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockMinQuantity" [(ngModel)]="settingsForm.deadStockMinQuantity" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Limite d’entrées d’une liste de recherche</strong><small>Par compte membre, sur le site public.</small></div><span class="rule-id">RG-27</span><label class="setting-input"><input type="number" name="watchlistMaxItems" [(ngModel)]="settingsForm.watchlistMaxItems" min="0"><em>livres</em></label></div><div class="setting-row"><div><strong>Délai minimum entre deux alertes</strong><small>Pour un même livre et un même membre, afin d’éviter le harcèlement au réapprovisionnement.</small></div><span class="rule-id">RG-30</span><label class="setting-input"><input type="number" name="alertCooldownDays" [(ngModel)]="settingsForm.alertCooldownDays" min="0"><em>jours</em></label></div><div class="setting-row"><div><strong>Inactivité avant clôture automatique d’une session</strong><small>Un bénévole qui range son appareil sans clôturer.</small></div><span class="rule-id">RG-43</span><label class="setting-input"><input type="number" name="sessionIdleHours" [(ngModel)]="sessionIdleHours" min="0" step="0.5"><em>heures</em></label></div><div class="setting-row setting-row-active"><div><strong>Délai entre clôture et envoi des alertes</strong><small>C’est la fenêtre de rattrapage. La réduire, c’est réduire le temps disponible pour corriger une erreur.</small></div><span class="rule-id">RG-44</span><label class="setting-input"><input type="number" name="alertDelayHours" [(ngModel)]="alertDelayHours" min="0" step="0.5"><em>heures</em></label></div><div class="setting-row"><div><strong>Signalements par membre et par 24 h</strong><small>Plafond glissant de signalements envoyés par un même membre.</small></div><span class="rule-id">RG-70</span><label class="setting-input"><input type="number" name="notFoundReportDailyLimit" [(ngModel)]="settingsForm.notFoundReportDailyLimit" min="1" max="100" required><em>signalements</em></label></div><div class="settings-footer"><span>Chaque modification est tracée et attribuée. Les valeurs prennent effet immédiatement, sans redéploiement.</span><button class="button button-primary" type="submit" [disabled]="loading()">Enregistrer</button></div></form>} @else if (loading()) {<p class="admin-status">Chargement des paramètres…</p>}
+              @if (settings(); as current) {<form class="settings-form" (ngSubmit)="saveSettings()"><div class="settings-table-head"><span>Paramètre</span><span>Règle</span><span>Valeur</span></div><div class="setting-row"><div><strong>Seuil de doublon déclenchant « inutile d’en garder »</strong><small>Au-delà de cette quantité d’exemplaires enregistrés, la scanette affiche le verdict rouge.</small></div><span class="rule-id">RG-10</span><label class="setting-input"><input type="number" name="duplicateThreshold" [(ngModel)]="settingsForm.duplicateThreshold" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Nombre de ventes à partir duquel un titre est « demandé »</strong><small>Sert au verdict vert « à garder » lors du tri.</small></div><span class="rule-id">RG-12</span><label class="setting-input"><input type="number" name="demandSalesThreshold" [(ngModel)]="settingsForm.demandSalesThreshold" min="0"><em>ventes</em></label></div><div class="setting-row"><div><strong>Seuil de valeur d’un livre rare</strong><small>Sans estimation automatique, le marquage reste manuel et ce seuil n’a aucun effet.</small></div><span class="rule-id">RG-14</span><label class="setting-input setting-input-disabled"><input value="—" disabled><em>non utilisé</em></label></div><div class="setting-row"><div><strong>Ancienneté déclenchant une proposition de retrait</strong><small>Filtre par défaut de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockAgeMonths" [(ngModel)]="deadStockAgeMonths" min="0"><em>mois</em></label></div><div class="setting-row"><div><strong>Quantité déclenchant une proposition de retrait</strong><small>Second filtre de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockMinQuantity" [(ngModel)]="settingsForm.deadStockMinQuantity" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Limite d’entrées d’une liste de recherche</strong><small>Par compte membre, sur le site public.</small></div><span class="rule-id">RG-27</span><label class="setting-input"><input type="number" name="watchlistMaxItems" [(ngModel)]="settingsForm.watchlistMaxItems" min="0"><em>livres</em></label></div><div class="setting-row"><div><strong>Délai minimum entre deux alertes</strong><small>Pour un même livre et un même membre, afin d’éviter le harcèlement au réapprovisionnement.</small></div><span class="rule-id">RG-30</span><label class="setting-input"><input type="number" name="alertCooldownDays" [(ngModel)]="settingsForm.alertCooldownDays" min="0"><em>jours</em></label></div><div class="setting-row"><div><strong>Inactivité avant clôture automatique d’une session</strong><small>Un bénévole qui range son appareil sans clôturer.</small></div><span class="rule-id">RG-43</span><label class="setting-input"><input type="number" name="sessionIdleHours" [(ngModel)]="sessionIdleHours" min="0" step="0.5"><em>heures</em></label></div><div class="setting-row setting-row-active"><div><strong>Délai entre clôture et envoi des alertes</strong><small>C’est la fenêtre de rattrapage. La réduire, c’est réduire le temps disponible pour corriger une erreur.</small></div><span class="rule-id">RG-44</span><label class="setting-input"><input type="number" name="alertDelayHours" [(ngModel)]="alertDelayHours" min="0" step="0.5"><em>heures</em></label></div><div class="setting-row"><div><strong>Signalements par membre et par 24 h</strong><small>Plafond glissant de signalements envoyés par un même membre.</small></div><span class="rule-id">RG-70</span><label class="setting-input"><input type="number" name="notFoundReportDailyLimit" [(ngModel)]="settingsForm.notFoundReportDailyLimit" min="1" max="100" required><em>signalements</em></label></div><div class="settings-footer"><span>Chaque modification est tracée et attribuée. Les valeurs prennent effet immédiatement, sans redéploiement.</span><button class="button button-primary" type="submit" [disabled]="isActionPending('save-settings')">Enregistrer</button></div></form>} @else if (settingsBlock.status() === 'loading') {<div class="settings-skeleton" aria-hidden="true">@for (row of [1, 2, 3, 4]; track row) { <div class="admin-skeleton admin-skeleton-line"></div> }</div>} @else if (settingsBlock.error()) {<div class="admin-block-error" role="alert"><span>{{ settingsBlock.error() }}</span><button type="button" (click)="loadSettings()">Réessayer</button></div>}
             </section>
           }
 
           @case ('alerts') {
-            <section class="admin-view" aria-labelledby="admin-title"><div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Fenêtre de rattrapage</span><h1 id="admin-title">Alertes.</h1><p class="admin-intro">Cette file reste accessible depuis les sessions : une alerte envoyée ne peut pas être rappelée.</p></div>@if (alertsPage(); as page) {<div class="simple-list alert-admin-list">@for (alert of page.alerts; track alert.id) {<div><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span><strong>{{ formatNumber(alert.itemCount) }} livres · échéance {{ formatDate(alert.dueAt, true) }}</strong><span>{{ alert.memberId || 'Membre non renseigné' }}</span><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="cancelAlert(alert)">Annuler</button><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="forceAlert(alert)">Forcer</button></div>} @empty {<p class="empty-inline">Aucune alerte.</p>}</div>} @else if (loading()) {<p class="admin-status">Chargement des alertes…</p>}</section>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Fenêtre de rattrapage</span><h1 id="admin-title">Alertes.</h1><p class="admin-intro">Cette file reste accessible depuis les sessions : une alerte envoyée ne peut pas être rappelée.</p></div>
+              @if (alertsPage(); as page) {
+                @if (alertsBlock.error()) { <div class="admin-block-error" role="alert"><span>{{ alertsBlock.error() }}</span><button type="button" (click)="retryAlerts()">Réessayer</button></div> }
+                @if (alertsBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
+                <div class="simple-list alert-admin-list" [class.admin-list-refreshing]="alertsBlock.refreshing()" [attr.aria-busy]="alertsBlock.refreshing() ? 'true' : null">@for (alert of page.alerts; track alert.id) {<div><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span><strong>{{ formatNumber(alert.itemCount) }} livres · échéance {{ formatDate(alert.dueAt, true) }}</strong><span>{{ alert.memberId || 'Membre non renseigné' }}</span><button class="text-link" type="button" [disabled]="alert.status !== 'Pending' || isActionPending('cancel-alert')" (click)="cancelAlert(alert)">Annuler</button><button class="text-link" type="button" [disabled]="alert.status !== 'Pending' || isActionPending('force-alert')" (click)="forceAlert(alert)">Forcer</button></div>} @empty {<p class="empty-inline">Aucune alerte.</p>}</div>
+              } @else if (alertsBlock.status() === 'loading') {
+                <div class="simple-list alert-admin-list" data-testid="alerts-list-skeleton" aria-hidden="true">@for (row of [1, 2, 3]; track row) { <div class="admin-skeleton-session-card"><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-action"></span></div> }</div>
+                <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
+              } @else if (alertsBlock.error()) {
+                <div class="admin-block-error" role="alert"><span>{{ alertsBlock.error() }}</span><button type="button" (click)="retryAlerts()">Réessayer</button></div>
+              }
+            </section>
           }
           }
         }
@@ -1192,7 +1293,7 @@
                 class="button button-outline"
                 data-testid="session-cancel-alerts"
                 type="button"
-                [disabled]="!sessionAlertActionsAvailable(session) || loading()"
+                [disabled]="!sessionAlertActionsAvailable(session) || isActionPending('cancel-session-alerts')"
                 (click)="cancelSessionAlerts()">
                 Annuler les {{ formatNumber(session.pendingAlertCount) }} alertes en attente
               </button>
@@ -1200,7 +1301,7 @@
                 class="button button-outline"
                 data-testid="session-force-alerts"
                 type="button"
-                [disabled]="!sessionAlertActionsAvailable(session) || loading()"
+                [disabled]="!sessionAlertActionsAvailable(session) || isActionPending('force-session-alerts')"
                 (click)="forceSessionAlerts()">
                 Forcer l’envoi immédiat
               </button>
@@ -1261,7 +1362,7 @@
                               [attr.data-testid]="'session-remove-movement-' + movement.id"
                               [attr.aria-label]="'Retirer le mouvement ' + movement.isbn13"
                               type="button"
-                              [disabled]="loading()"
+                              [disabled]="isActionPending('remove-movement')"
                               (click)="removeMovement(movement.id)">
                               Retirer ce livre
                             </button>
@@ -1305,7 +1406,7 @@
         </header>
         <footer class="session-confirmation-footer">
           <button class="button button-outline" data-testid="session-confirmation-cancel" type="button" autofocus (click)="cancelSessionConfirmation()">Annuler</button>
-          <button class="button" [class.button-primary]="confirmation.tone === 'accent'" [class.button-danger]="confirmation.tone === 'danger'" data-testid="session-confirmation-confirm" type="button" [disabled]="loading()" (click)="confirmSessionAction()">{{ confirmation.confirmLabel }}</button>
+          <button class="button" [class.button-primary]="confirmation.tone === 'accent'" [class.button-danger]="confirmation.tone === 'danger'" data-testid="session-confirmation-confirm" type="button" [disabled]="isSessionActionPending(confirmation)" (click)="confirmSessionAction()">{{ confirmation.confirmLabel }}</button>
         </footer>
       </section>
     </div>
@@ -1369,7 +1470,7 @@
         </div>
         <footer class="catalogue-confirmation-footer">
           <button class="button button-outline" data-testid="catalogue-confirmation-cancel" type="button" autofocus (click)="cancelCatalogueAdjustment()">Annuler</button>
-          <button class="button button-primary" data-testid="catalogue-confirmation-confirm" type="button" [disabled]="loading()" (click)="confirmCatalogueAdjustment()">{{ confirmation.direction === 'increase' ? 'Confirmer l’ajout' : 'Confirmer le retrait' }}</button>
+          <button class="button button-primary" data-testid="catalogue-confirmation-confirm" type="button" [disabled]="isActionPending('catalogue-quantity')" (click)="confirmCatalogueAdjustment()">{{ confirmation.direction === 'increase' ? 'Confirmer l’ajout' : 'Confirmer le retrait' }}</button>
         </footer>
       </section>
     </div>
@@ -1464,7 +1565,7 @@
         </header>
         <footer class="member-dialog-footer member-dialog-inset member-delete-dialog__footer">
           <button class="button button-outline" data-testid="member-delete-cancel" type="button" (click)="cancelMemberDeletion()">Annuler</button>
-          <button class="button button-danger" data-testid="member-delete-confirm" type="button" [disabled]="loading()" (click)="deleteMember()">Supprimer le compte</button>
+          <button class="button button-danger" data-testid="member-delete-confirm" type="button" [disabled]="isActionPending('delete-member')" (click)="deleteMember()">Supprimer le compte</button>
         </footer>
       </section>
     </div>

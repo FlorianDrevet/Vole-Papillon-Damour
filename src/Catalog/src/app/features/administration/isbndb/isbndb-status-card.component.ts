@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 
 import {CatalogAdminIsbndbStatus} from '../../../core/catalog.models';
 
@@ -11,6 +11,9 @@ import {CatalogAdminIsbndbStatus} from '../../../core/catalog.models';
 })
 export class IsbndbStatusCardComponent {
   @Input() status: CatalogAdminIsbndbStatus | null = null;
+  @Input() error: string | null = null;
+  @Input() refreshing = false;
+  @Output() retry = new EventEmitter<void>();
 
   quotaStatusLabel(): string {
     if (this.status?.status === 'Exhausted') {

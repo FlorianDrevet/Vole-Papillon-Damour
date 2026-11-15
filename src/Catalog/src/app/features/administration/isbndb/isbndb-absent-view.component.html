@@ -16,18 +16,19 @@
       <span>Rechercher un livre</span>
       <input name="isbndbAbsentSearch" [(ngModel)]="search" placeholder="ISBN, titre ou auteur…">
     </label>
-    <button class="button button-outline" type="submit" [disabled]="loading()">Rechercher</button>
+    <button class="button button-outline" type="submit">Rechercher</button>
   </form>
 
   @if (error(); as message) {
-    <p class="admin-status admin-status-error" role="alert">{{ message }}</p>
-  } @else if (loading() && !page()) {
-    <p class="admin-status" role="status">Chargement des livres hors ISBNdb…</p>
-  } @else if (page(); as current) {
+    <div class="admin-block-error" data-testid="isbndb-absent-error" role="alert"><span>{{ message }}</span><button data-testid="isbndb-absent-retry" type="button" (click)="loadPage()">Réessayer</button></div>
+  }
+
+  @if (page(); as current) {
+    @if (refreshing()) { <p class="admin-refreshing" data-testid="isbndb-absent-load-status" role="status">{{ loadMessage() }}</p> }
     <div class="isbndb-absent-column-headings" aria-hidden="true">
       <span>Livre</span><span>Fiche de secours</span><span>Champs manquants</span><span>En stock</span><span></span>
     </div>
-    <div class="isbndb-absent-list">
+    <div class="isbndb-absent-list" data-testid="isbndb-absent-list" [class.admin-list-refreshing]="refreshing()" [attr.aria-busy]="loading() ? 'true' : null">
       @for (item of current.items; track item.isbn13) {
         <article class="isbndb-absent-card" data-testid="isbndb-absent-book">
           <div class="isbndb-absent-book-identity">
@@ -55,10 +56,16 @@
     </div>
     @if (current.totalCount > current.pageSize) {
       <div class="pagination" aria-label="Pages des livres hors ISBNdb">
-        <button type="button" [disabled]="current.page <= 1 || loading()" (click)="goToPage(current.page - 1)">←</button>
+        <button type="button" [disabled]="current.page <= 1" (click)="goToPage(current.page - 1)">←</button>
         <span>Page {{ current.page }} / {{ pageCount() }}</span>
-        <button type="button" [disabled]="current.page >= pageCount() || loading()" (click)="goToPage(current.page + 1)">→</button>
+        <button type="button" [disabled]="current.page >= pageCount()" (click)="goToPage(current.page + 1)">→</button>
       </div>
     }
+  } @else if (status() === 'loading') {
+    <div class="isbndb-absent-column-headings" aria-hidden="true"><span>Livre</span><span>Fiche de secours</span><span>Champs manquants</span><span>En stock</span><span></span></div>
+    <div class="isbndb-absent-list isbndb-absent-list-skeleton" data-testid="isbndb-absent-skeleton" aria-hidden="true">
+      @for (row of [1, 2, 3]; track row) { <article class="isbndb-absent-card"><span class="admin-skeleton admin-skeleton-panel"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-line"></span><span class="admin-skeleton admin-skeleton-action"></span></article> }
+    </div>
+    <p class="admin-visually-hidden" role="status">Chargement des indicateurs…</p>
   }
 </section>

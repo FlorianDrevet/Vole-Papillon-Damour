@@ -1,7 +1,7 @@
 import {provideZonelessChangeDetection} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
-import {of} from 'rxjs';
+import {of, Subject} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
 import {CatalogAdminIsbndbAbsentBooksPage} from '../../../core/catalog.models';
@@ -123,5 +123,44 @@ describe('IsbndbAbsentViewComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Les livres qu’ISBNdb ne connaît pas apparaîtront ici.',
     );
+  });
+
+  it('keeps the previous page visible and offers a local retry after a failed refresh', async () => {
+    const refresh = new Subject<CatalogAdminIsbndbAbsentBooksPage>();
+    let pageRequests = 0;
+    api.getIsbndbAbsentBooks.and.callFake((_token, filters = {}) => {
+      if (filters.pageSize === 1) {
+        return of({...page, items: [], totalCount: filters.status === 'completed' ? 2 : 7});
+      }
+      pageRequests += 1;
+      if (pageRequests === 1) return of(page);
+      return pageRequests === 2 ? refresh : of({...page, page: 2});
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const pending = fixture.componentInstance.loadPage();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-book"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-list"]')?.classList)
+      .toContain('admin-list-refreshing');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Actualisation…');
+
+    refresh.error(new Error('service unavailable'));
+    await pending;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-book"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-error"][role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-retry"]')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('[data-testid="isbndb-absent-retry"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getIsbndbAbsentBooks).toHaveBeenCalledTimes(5);
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-error"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbndb-absent-book"]')).not.toBeNull();
   });
 });

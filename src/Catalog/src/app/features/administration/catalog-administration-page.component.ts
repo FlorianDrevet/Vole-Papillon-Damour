@@ -116,6 +116,14 @@ const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
 const ISBN_APPLICATION_IMPORT_BATCH_SIZE = 100;
 const MAX_BOOK_COVER_SIZE_BYTES = 8 * 1024 * 1024;
 const SUPPORTED_BOOK_COVER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ADMIN_MUTATION_ACTIONS = new Set([
+  'add-catalogue-book', 'catalogue-quantity', 'isbn-metadata-retry', 'isbndb-completion',
+  'isbndb-recheck', 'isbn-metadata-delete', 'book-not-found-close', 'book-cover-upload', 'metadata',
+  'quantity', 'withdraw', 'announcement', 'visibility', 'merge', 'permanent-delete-book', 'revenue',
+  'remove-movement', 'reassign-session', 'cancel-session', 'cancel-session-alerts', 'force-session-alerts',
+  'cancel-alert', 'force-alert', 'checkout-passage-dissociate', 'create-account', 'account-roles',
+  'account-status', 'member-alert-status', 'delete-member', 'save-settings',
+]);
 
 interface IsbnApplicationImportProgress {
   processedCount: number;
@@ -138,6 +146,24 @@ type IsbnApplicationInvalidExample = IsbnApplicationCsvPreview['invalidExamples'
 interface IsbnApplicationCombinedPreview extends Omit<IsbnApplicationCsvPreview, 'invalidExamples'> {
   fileCount: number;
   invalidExamples: IsbnApplicationInvalidExample[];
+}
+
+type AdminBlockStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+interface AdminBlockState<T> {
+  readonly status: WritableSignal<AdminBlockStatus>;
+  readonly data: WritableSignal<T | null>;
+  readonly refreshing: WritableSignal<boolean>;
+  readonly error: WritableSignal<string | null>;
+}
+
+function createAdminBlockState<T>(initialData: T | null = null): AdminBlockState<T> {
+  return {
+    status: signal<AdminBlockStatus>('idle'),
+    data: signal<T | null>(initialData),
+    refreshing: signal(false),
+    error: signal<string | null>(null),
+  };
 }
 
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
@@ -271,7 +297,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly hasAdministrationAccess = computed(() => this.isAdministrator() || this.isRareBookManager());
   readonly authError: Signal<string | null>;
   readonly activeSection = signal<CatalogAdminSection>('overview');
-  readonly loading = signal(false);
   readonly actionPending = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -282,7 +307,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
     return this.isRareBookManager() ? RARE_ONLY_NAV_GROUPS : [];
   });
-  readonly navigationBadgeCounts = signal<CatalogAdminNavigationCounts | null>(null);
+  readonly navigationCountsBlock = createAdminBlockState<CatalogAdminNavigationCounts>();
+  readonly navigationBadgeCounts = this.navigationCountsBlock.data;
 
   get navItems(): CatalogAdminNavItem[] {
     return this.navGroups().flatMap(group => group.items);
@@ -313,11 +339,25 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return count === null || count === undefined || count <= 0 ? null : this.formatNumber(count);
   }
 
-  readonly overview = signal<CatalogAdminOverview | null>(null);
-  readonly isbndbStatus = signal<CatalogAdminIsbndbStatus | null>(null);
+  readonly overviewBlock = createAdminBlockState<CatalogAdminOverview>();
+  readonly isbndbStatusBlock = createAdminBlockState<CatalogAdminIsbndbStatus>();
+  readonly sessionsBlock = createAdminBlockState<CatalogAdminScanSessionPage>();
+  readonly catalogueBlock = createAdminBlockState<CatalogAdminBookPage>();
+  readonly isbnMetadataQueueBlock = createAdminBlockState<CatalogAdminBookMetadataQueue>();
+  readonly alertsBlock = createAdminBlockState<CatalogAdminAlertPage>();
+  readonly fairsBlock = createAdminBlockState<CatalogAdminFairPage>();
+  readonly fairStatsBlock = createAdminBlockState<CatalogAdminFairStats>();
+  readonly fairsEvolutionBlock = createAdminBlockState<CatalogAdminFairsEvolution>();
+  readonly catalogueFlowStatsBlock = createAdminBlockState<CatalogAdminCatalogueFlowStats>();
+  readonly volunteerStatisticsBlock = createAdminBlockState<CatalogAdminVolunteerStatistics>();
+  readonly membersBlock = createAdminBlockState<CatalogAdminMemberPage>();
+  readonly accountsBlock = createAdminBlockState<CatalogAdminAccountPage>();
+  readonly settingsBlock = createAdminBlockState<CatalogAdminSettings>();
+  readonly overview = this.overviewBlock.data;
+  readonly isbndbStatus = this.isbndbStatusBlock.data;
   readonly isbndbAccessToken = signal('');
-  readonly catalogueBooksPage = signal<CatalogAdminBookPage | null>(null);
-  readonly isbnMetadataQueue = signal<CatalogAdminBookMetadataQueue | null>(null);
+  readonly catalogueBooksPage = this.catalogueBlock.data;
+  readonly isbnMetadataQueue = this.isbnMetadataQueueBlock.data;
   readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
   readonly catalogueAddCandidate = signal<CatalogBookCandidate | null>(null);
   readonly catalogueCandidateStatus = signal<CatalogBookCandidateStatus | null>(null);
@@ -348,16 +388,16 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly selectedBookNotFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly notFoundAccessToken = signal('');
   readonly bookNotFoundDialog = signal<{target: CatalogNotFoundQueueTarget; action: CatalogNotFoundCloseAction} | null>(null);
-  readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
-  readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
+  readonly fairsPage = this.fairsBlock.data;
+  readonly selectedFairStats = this.fairStatsBlock.data;
   readonly statisticsTab = signal<CatalogAdminStatisticsTab>('fairs');
-  readonly fairsEvolution = signal<CatalogAdminFairsEvolution | null>(null);
+  readonly fairsEvolution = this.fairsEvolutionBlock.data;
   readonly fairsEvolutionView = computed(() => {
     const evolution = this.fairsEvolution();
     return evolution ? buildFairsEvolutionView(evolution) : null;
   });
-  readonly catalogueFlowStats = signal<CatalogAdminCatalogueFlowStats | null>(null);
-  readonly volunteerStatistics = signal<CatalogAdminVolunteerStatistics | null>(null);
+  readonly catalogueFlowStats = this.catalogueFlowStatsBlock.data;
+  readonly volunteerStatistics = this.volunteerStatisticsBlock.data;
   readonly volunteerColumns = VOLUNTEER_COLUMNS;
   readonly volunteerSort = signal<VolunteerSort>(DEFAULT_VOLUNTEER_SORT);
   readonly sortedVolunteers = computed(() => {
@@ -368,15 +408,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     Math.max(0, ...(this.volunteerStatistics()?.volunteers.map(volunteer => volunteer.scannedCount) ?? [])));
   readonly maxVolunteerSold = computed(() =>
     Math.max(0, ...(this.volunteerStatistics()?.volunteers.map(volunteer => volunteer.soldQuantity) ?? [])));
-  readonly sessionsPage = signal<CatalogAdminScanSessionPage | null>(null);
+  readonly sessionsPage = this.sessionsBlock.data;
   readonly selectedSession = signal<CatalogAdminScanSession | null>(null);
   readonly sessionJournalOpen = signal(false);
-  readonly alertsPage = signal<CatalogAdminAlertPage | null>(null);
-  readonly membersPage = signal<CatalogAdminMemberPage | null>(null);
+  readonly alertsPage = this.alertsBlock.data;
+  readonly membersPage = this.membersBlock.data;
   readonly selectedMember = signal<CatalogAdminMemberDetail | null>(null);
   readonly memberDeletionConfirmation = signal<CatalogAdminMemberDetail | null>(null);
-  readonly settings = signal<CatalogAdminSettings | null>(null);
-  readonly accountsPage = signal<CatalogAdminAccountPage | null>(null);
+  readonly settings = this.settingsBlock.data;
+  readonly accountsPage = this.accountsBlock.data;
   readonly accountsTab = signal<CatalogAdminAccountsTab>('volunteers');
   readonly accountErrorMessage = signal<string | null>(null);
   readonly checkoutPassageLookup = signal<CatalogAdminCheckoutPassageLookup | null>(null);
@@ -389,6 +429,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   readonly deadStockBooks = signal<CatalogDeadStockBook[]>([]);
   readonly deadStockGeneratedAt = signal<string | null>(null);
+  readonly deadStockBlock = createAdminBlockState<CatalogDeadStockBook[]>();
 
   minAgeMonths = DEFAULT_MIN_AGE_MONTHS;
   minQuantity = DEFAULT_MIN_QUANTITY;
@@ -494,6 +535,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   private initializationTask: Promise<void> | null = null;
   private administrationInitialized = false;
   private catalogueSearchTimer: number | null = null;
+  private catalogueRequestId = 0;
+  private statisticsRequestId = 0;
+  private readonly blockRequestIds = new WeakMap<object, number>();
+  private catalogueRequestMode: 'page' | 'search' | 'refresh' = 'refresh';
+  private lastLoadedCatalogueSearch = '';
+  private lastLoadedCataloguePage = 1;
   private bookCloseOpener: HTMLElement | null = null;
 
   constructor(
@@ -616,22 +663,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async refreshSection(section: CatalogAdminSection): Promise<void> {
-    this.errorMessage.set(null);
-    try {
-      await this.loadSectionData(section);
-      if (!this.errorMessage()) {
-        this.sectionLoadedAt.set(section, Date.now());
-      }
-    } catch (error: unknown) {
-      this.showError(this.describeError(error));
-    }
-  }
-
-  private async loadIsbndbStatus(token: string): Promise<void> {
-    try {
-      this.isbndbStatus.set(await firstValueFrom(this.api.getIsbndbStatus(token)));
-    } catch {
-      this.isbndbStatus.set(null);
+    await this.loadSectionData(section);
+    if (!this.hasSectionLoadError(section)) {
+      this.sectionLoadedAt.set(section, Date.now());
     }
   }
 
@@ -680,6 +714,81 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async readBlock<T>(
+    block: AdminBlockState<T>,
+    load: (token: string) => Promise<T>,
+    options: {
+      accessToken?: string;
+      errorMessage?: string;
+      describeError?: (error: unknown) => string;
+      isCurrent?: () => boolean;
+      onSuccess?: (data: T) => void;
+    } = {},
+  ): Promise<T | null> {
+    if (!this.auth.isAuthenticated()) {
+      return null;
+    }
+
+    const requestId = (this.blockRequestIds.get(block) ?? 0) + 1;
+    this.blockRequestIds.set(block, requestId);
+    const isCurrent = () => this.blockRequestIds.get(block) === requestId && (options.isCurrent?.() ?? true);
+    if (!isCurrent()) {
+      return null;
+    }
+    const hasData = block.data() !== null;
+    block.status.set(hasData ? 'ready' : 'loading');
+    block.refreshing.set(hasData);
+    block.error.set(null);
+
+    try {
+      const token = options.accessToken ?? await this.auth.getApiAccessToken();
+      if (!isCurrent()) {
+        return null;
+      }
+      const data = await load(token);
+      if (!isCurrent()) {
+        return null;
+      }
+      block.data.set(data);
+      block.status.set('ready');
+      block.error.set(null);
+      options.onSuccess?.(data);
+      return data;
+    } catch (error: unknown) {
+      if (!isCurrent()) {
+        return null;
+      }
+      if (error instanceof CatalogAuthenticationRedirectStartedError) {
+        this.showError('Redirection vers Microsoft pour renouveler votre session…');
+      }
+      block.status.set('error');
+      block.error.set(options.errorMessage ?? options.describeError?.(error) ?? this.describeError(error));
+      return null;
+    } finally {
+      if (isCurrent()) {
+        block.refreshing.set(false);
+      }
+    }
+  }
+
+  private hasSectionLoadError(section: CatalogAdminSection): boolean {
+    switch (section) {
+      case 'overview':
+        return [this.overviewBlock, this.isbndbStatusBlock, this.sessionsBlock]
+          .some(block => block.status() === 'error');
+      case 'sessions': return this.sessionsBlock.status() === 'error';
+      case 'dead-stock': return this.deadStockBlock.status() === 'error';
+      case 'catalogue': return this.catalogueBlock.status() === 'error';
+      case 'isbn-queue': return this.isbnMetadataQueueBlock.status() === 'error';
+      case 'statistics':
+        return [this.fairsBlock, this.fairStatsBlock, this.fairsEvolutionBlock,
+          this.catalogueFlowStatsBlock, this.volunteerStatisticsBlock]
+          .some(block => block.status() === 'error');
+      case 'alerts': return this.alertsBlock.status() === 'error';
+      default: return Boolean(this.errorMessage());
+    }
+  }
+
   private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null, requesterParam: string | null): void {
     if (sectionParam && !isCatalogAdminSection(sectionParam)) {
       void this.router.navigate(['/administration', 'overview'], {replaceUrl: true});
@@ -716,25 +825,47 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadOverview(): Promise<void> {
-    await this.run('overview', async token => {
-      const [overviewResult, statusResult, sessionsResult] = await Promise.allSettled([
-        firstValueFrom(this.api.getOverview(token, undefined, undefined, true)),
-        firstValueFrom(this.api.getIsbndbStatus(token)),
-        firstValueFrom(this.api.getSessions(token, this.sessionFilters())),
-      ]);
+    await Promise.all([
+      this.readBlock(
+        this.overviewBlock,
+        token => firstValueFrom(this.api.getOverview(token, undefined, undefined, true)),
+        {errorMessage: 'Les indicateurs n’ont pas pu être chargés.'},
+      ),
+      this.readBlock(
+        this.isbndbStatusBlock,
+        token => firstValueFrom(this.api.getIsbndbStatus(token)),
+        {errorMessage: 'Ce chiffre n’a pas pu être chargé.'},
+      ),
+      this.readBlock(
+        this.sessionsBlock,
+        token => firstValueFrom(this.api.getSessions(token, this.sessionFilters())),
+        {errorMessage: 'La liste n’a pas pu être chargée.'},
+      ),
+    ]);
+  }
 
-      if (overviewResult.status === 'rejected') {
-        throw overviewResult.reason;
-      }
-      this.overview.set(overviewResult.value);
+  async retryOverview(): Promise<void> {
+    await this.readBlock(
+      this.overviewBlock,
+      token => firstValueFrom(this.api.getOverview(token, undefined, undefined, true)),
+      {errorMessage: 'Les indicateurs n’ont pas pu être chargés.'},
+    );
+  }
 
-      this.isbndbStatus.set(statusResult.status === 'fulfilled' ? statusResult.value : null);
-      if (sessionsResult.status === 'fulfilled') {
-        this.sessionsPage.set(sessionsResult.value);
-      } else {
-        throw sessionsResult.reason;
-      }
-    });
+  async retryIsbndbStatus(): Promise<void> {
+    await this.loadIsbndbStatus();
+  }
+
+  private async loadIsbndbStatus(accessToken?: string): Promise<void> {
+    await this.readBlock(
+      this.isbndbStatusBlock,
+      token => firstValueFrom(this.api.getIsbndbStatus(token)),
+      {accessToken, errorMessage: 'Ce chiffre n’a pas pu être chargé.'},
+    );
+  }
+
+  async retryOverviewSessions(): Promise<void> {
+    await this.loadSessions();
   }
 
   toggleMetadataGenre(genre: string): void {
@@ -801,21 +932,66 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async loadCatalogue(): Promise<void> {
     this.cancelCatalogueSearch();
-    await this.run('catalogue', async token => {
-      await this.loadCataloguePage(token);
-    });
+    const requestId = ++this.catalogueRequestId;
+    const search = this.catalogueSearch.trim();
+    this.catalogueRequestMode = search !== this.lastLoadedCatalogueSearch
+      ? 'search'
+      : this.cataloguePage !== this.lastLoadedCataloguePage ? 'page' : 'refresh';
+    const pageNumber = this.cataloguePage;
+    await this.readBlock(
+      this.catalogueBlock,
+      token => firstValueFrom(this.api.getBooks(token, {
+        search: search || undefined,
+        availableOnly: true,
+        page: pageNumber,
+        pageSize: this.cataloguePageSize,
+      })),
+      {
+        errorMessage: 'La liste n’a pas pu être chargée.',
+        isCurrent: () => requestId === this.catalogueRequestId,
+        onSuccess: () => {
+          this.lastLoadedCatalogueSearch = search;
+          this.lastLoadedCataloguePage = pageNumber;
+        },
+      },
+    );
   }
 
   async loadIsbnMetadataQueue(): Promise<void> {
-    await this.run('isbn-metadata-queue', async token => {
-      await this.loadIsbnMetadataQueuePage(token);
-    });
+    await this.loadIsbnMetadataQueueBlock();
+  }
+
+  async retryCatalogueList(): Promise<void> {
+    await this.loadCatalogue();
+  }
+
+  async retryIsbnMetadataQueue(): Promise<void> {
+    await this.loadIsbnMetadataQueueBlock();
+  }
+
+  private async loadIsbnMetadataQueueBlock(): Promise<void> {
+    const metadataStatus: 'Pending' | 'Failed' | 'NotFound' | undefined = this.metadataQueueFilter === 'all'
+      ? undefined
+      : this.metadataQueueFilter === 'pending' ? 'Pending'
+        : this.metadataQueueFilter === 'failed' ? 'Failed' : 'NotFound';
+    const pageNumber = this.metadataQueuePage;
+    await this.readBlock(
+      this.isbnMetadataQueueBlock,
+      token => firstValueFrom(this.api.getBookMetadataQueue(token, {
+        page: pageNumber,
+        pageSize: this.metadataQueuePageSize,
+        ...(metadataStatus ? {metadataStatus} : {}),
+      })),
+      {errorMessage: 'La liste n’a pas pu être chargée.'},
+    );
   }
 
   private async loadIsbndbAbsentWorkspace(): Promise<void> {
-    await this.run('isbndb-absent-access', async token => {
-      this.isbndbAccessToken.set(token);
-    });
+    try {
+      this.isbndbAccessToken.set(await this.auth.getApiAccessToken());
+    } catch (error: unknown) {
+      this.showError(this.describeError(error));
+    }
   }
 
   private metadataUpdateRequest(
@@ -884,7 +1060,17 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   catalogueLoading(): boolean {
-    return this.loading() && this.actionPending() === 'catalogue';
+    return this.catalogueBlock.status() === 'loading' || this.catalogueBlock.refreshing();
+  }
+
+  catalogueLoadMessage(): string {
+    if (this.catalogueRequestMode === 'search') {
+      return 'Recherche en cours…';
+    }
+    if (this.catalogueRequestMode === 'page') {
+      return `Chargement de la page ${this.cataloguePage}…`;
+    }
+    return 'Actualisation…';
   }
 
   async lookupCatalogueIsbn(): Promise<void> {
@@ -1226,7 +1412,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async confirmCatalogueAdjustment(): Promise<void> {
     const confirmation = this.catalogueConfirmation();
-    if (!confirmation || this.loading()) {
+    if (!confirmation || this.isActionPending('catalogue-quantity')) {
       return;
     }
 
@@ -1747,32 +1933,56 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadFairs(): Promise<void> {
-    await this.run('fairs', async token => {
-      const page = await firstValueFrom(this.api.getFairs(token));
-      this.fairsPage.set(page);
-      if (!this.selectedFairStats() && page.fairs.length > 0) {
-        const stats = await firstValueFrom(this.api.getFairStats(token, page.fairs[0].id));
-        this.selectedFairStats.set(stats);
-        this.revenueInput = stats.revenue;
-      }
-    });
+    const requestId = this.statisticsRequestId;
+    const page = await this.readBlock(
+      this.fairsBlock,
+      token => firstValueFrom(this.api.getFairs(token)),
+      {errorMessage: 'Les statistiques n’ont pas pu être chargées.', isCurrent: () => requestId === this.statisticsRequestId},
+    );
+    if (!page || this.selectedFairStats() || page.fairs.length === 0) {
+      return;
+    }
+    const stats = await this.readBlock(
+      this.fairStatsBlock,
+      token => firstValueFrom(this.api.getFairStats(token, page.fairs[0].id)),
+      {errorMessage: 'Les statistiques n’ont pas pu être chargées.', isCurrent: () => requestId === this.statisticsRequestId},
+    );
+    if (stats) {
+      this.revenueInput = stats.revenue;
+    }
   }
 
   async loadStatisticsTab(): Promise<void> {
+    this.resetStatisticsLoadingState();
+    const requestId = ++this.statisticsRequestId;
     if (this.statisticsTab() === 'volunteers') {
-      await this.loadVolunteerStatistics();
+      await this.loadVolunteerStatisticsForRequest(requestId);
       return;
     }
     if (this.statisticsTab() === 'evolution') {
-      await this.loadFairsEvolution();
+      await this.loadFairsEvolutionForRequest(requestId);
       return;
     }
     if (this.statisticsTab() === 'books') {
-      await this.loadCatalogueFlowStats();
+      await this.loadCatalogueFlowStatsForRequest(requestId);
       return;
     }
 
     await this.loadFairs();
+  }
+
+  async retryStatistics(): Promise<void> {
+    await this.loadStatisticsTab();
+  }
+
+  private resetStatisticsLoadingState(): void {
+    for (const block of [this.fairsBlock, this.fairStatsBlock, this.fairsEvolutionBlock,
+      this.catalogueFlowStatsBlock, this.volunteerStatisticsBlock]) {
+      if (block.status() === 'loading' || block.refreshing()) {
+        block.status.set(block.data() === null ? 'idle' : 'ready');
+        block.refreshing.set(false);
+      }
+    }
   }
 
   async selectStatisticsTab(tab: CatalogAdminStatisticsTab): Promise<void> {
@@ -1828,41 +2038,52 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadVolunteerStatistics(): Promise<void> {
+    await this.loadVolunteerStatisticsForRequest(++this.statisticsRequestId);
+  }
+
+  private async loadVolunteerStatisticsForRequest(requestId: number): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
-    await this.run('volunteer-statistics', async token => {
-      const fairOptions = this.ensureStatisticsFairOptions(token);
-      const statistics = firstValueFrom(this.api.getVolunteerStatistics(
+    await this.readBlock(this.volunteerStatisticsBlock, async token => {
+      this.ensureStatisticsFairOptions(token);
+      return firstValueFrom(this.api.getVolunteerStatistics(
         token,
         from,
         to,
         this.selectedStatisticsFairId(),
       ));
-      const [, result] = await Promise.all([fairOptions, statistics]);
-      this.volunteerStatistics.set(result);
+    }, {
+      errorMessage: 'Les statistiques n’ont pas pu être chargées.',
+      isCurrent: () => requestId === this.statisticsRequestId && this.statisticsTab() === 'volunteers',
     });
   }
 
   async loadFairsEvolution(): Promise<void> {
+    await this.loadFairsEvolutionForRequest(++this.statisticsRequestId);
+  }
+
+  private async loadFairsEvolutionForRequest(requestId: number): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
-    await this.run('fairs-evolution', async token => {
-      const fairOptions = this.ensureStatisticsFairOptions(token);
-      const statistics = firstValueFrom(
-        this.api.getFairsEvolution(token, from, to, this.selectedStatisticsFairId()),
-      );
-      const [, result] = await Promise.all([fairOptions, statistics]);
-      this.fairsEvolution.set(result);
+    await this.readBlock(this.fairsEvolutionBlock, async token => {
+      this.ensureStatisticsFairOptions(token);
+      return firstValueFrom(this.api.getFairsEvolution(token, from, to, this.selectedStatisticsFairId()));
+    }, {
+      errorMessage: 'Les statistiques n’ont pas pu être chargées.',
+      isCurrent: () => requestId === this.statisticsRequestId && this.statisticsTab() === 'evolution',
     });
   }
 
   async loadCatalogueFlowStats(): Promise<void> {
+    await this.loadCatalogueFlowStatsForRequest(++this.statisticsRequestId);
+  }
+
+  private async loadCatalogueFlowStatsForRequest(requestId: number): Promise<void> {
     const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
-    await this.run('catalogue-flow-stats', async token => {
-      const fairOptions = this.ensureStatisticsFairOptions(token);
-      const statistics = firstValueFrom(
-        this.api.getCatalogueFlowStats(token, from, to, this.selectedStatisticsFairId()),
-      );
-      const [, result] = await Promise.all([fairOptions, statistics]);
-      this.catalogueFlowStats.set(result);
+    await this.readBlock(this.catalogueFlowStatsBlock, async token => {
+      this.ensureStatisticsFairOptions(token);
+      return firstValueFrom(this.api.getCatalogueFlowStats(token, from, to, this.selectedStatisticsFairId()));
+    }, {
+      errorMessage: 'Les statistiques n’ont pas pu être chargées.',
+      isCurrent: () => requestId === this.statisticsRequestId && this.statisticsTab() === 'books',
     });
   }
 
@@ -1870,18 +2091,24 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return this.statisticsPeriod === 'fair' && this.statisticsFairId ? this.statisticsFairId : undefined;
   }
 
-  private async ensureStatisticsFairOptions(token: string): Promise<void> {
-    if (!this.fairsPage()) {
-      this.fairsPage.set(await firstValueFrom(this.api.getFairs(token)));
+  private ensureStatisticsFairOptions(token: string): void {
+    if (!this.fairsPage() && this.fairsBlock.status() !== 'loading') {
+      void this.readBlock(
+        this.fairsBlock,
+        accessToken => firstValueFrom(this.api.getFairs(accessToken)),
+        {accessToken: token, errorMessage: 'La liste des bourses n’a pas pu être chargée.'},
+      );
     }
   }
 
   async openFairStats(fair: CatalogAdminFair): Promise<void> {
-    await this.run('fair-stats', async token => {
-      const stats = await firstValueFrom(this.api.getFairStats(token, fair.id));
-      this.selectedFairStats.set(stats);
-      this.revenueInput = stats.revenue;
+    await this.readBlock(this.fairStatsBlock, token => firstValueFrom(this.api.getFairStats(token, fair.id)), {
+      errorMessage: 'Les statistiques de cette bourse n’ont pas pu être chargées.',
     });
+    const stats = this.selectedFairStats();
+    if (stats) {
+      this.revenueInput = stats.revenue;
+    }
   }
 
   async selectFair(fairId: string): Promise<void> {
@@ -1914,9 +2141,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadSessions(): Promise<void> {
-    await this.run('sessions', async token => {
-      this.sessionsPage.set(await firstValueFrom(this.api.getSessions(token, this.sessionFilters())));
-    });
+    await this.readBlock(
+      this.sessionsBlock,
+      token => firstValueFrom(this.api.getSessions(token, this.sessionFilters())),
+      {errorMessage: 'La liste n’a pas pu être chargée.'},
+    );
+  }
+
+  async retrySessions(): Promise<void> {
+    await this.loadSessions();
   }
 
   private sessionFilters(): CatalogAdminSessionFilters {
@@ -2098,7 +2331,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   async confirmSessionAction(): Promise<void> {
     const confirmation = this.sessionConfirmation();
     const session = this.selectedSession();
-    if (!confirmation || !session || confirmation.action.sessionId !== session.id || this.loading()) {
+    if (!confirmation || !session || confirmation.action.sessionId !== session.id
+      || this.isSessionActionPending(confirmation)) {
       return;
     }
 
@@ -2184,9 +2418,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       page: this.alertPage,
       pageSize: this.alertPageSize,
     };
-    await this.run('alerts', async token => {
-      this.alertsPage.set(await firstValueFrom(this.api.getAlerts(token, filters)));
-    });
+    await this.readBlock(
+      this.alertsBlock,
+      token => firstValueFrom(this.api.getAlerts(token, filters)),
+      {errorMessage: 'La liste n’a pas pu être chargée.'},
+    );
+  }
+
+  async retryAlerts(): Promise<void> {
+    await this.loadAlerts();
   }
 
   async cancelAlert(alert: CatalogAdminAlert): Promise<void> {
@@ -2218,8 +2458,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       page: this.memberPage,
       pageSize: this.memberPageSize,
     };
-    await this.run('members', async token => {
-      this.membersPage.set(await firstValueFrom(this.api.getMembers(token, filters)));
+    await this.readBlock(this.membersBlock, token => firstValueFrom(this.api.getMembers(token, filters)), {
+      errorMessage: 'La liste des membres n’a pas pu être chargée.',
     });
   }
 
@@ -2229,9 +2469,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       page: this.accountPage,
       pageSize: this.accountPageSize,
     };
-    await this.run('accounts', async token => {
-      this.accountsPage.set(await firstValueFrom(this.api.getAdminAccounts(token, filters)));
-    }, this.accountErrorMessage, error => this.describeAccountError(error));
+    this.accountErrorMessage.set(null);
+    await this.readBlock(this.accountsBlock, token => firstValueFrom(this.api.getAdminAccounts(token, filters)), {
+      describeError: error => this.describeAccountError(error),
+    });
+    this.accountErrorMessage.set(this.accountsBlock.error());
   }
 
   async lookupCheckoutPassage(): Promise<void> {
@@ -2477,15 +2719,16 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadSettings(): Promise<void> {
-    await this.run('settings', async token => {
-      const settings = await firstValueFrom(this.api.getSettings(token));
-      this.settings.set(settings);
+    await this.readBlock(this.settingsBlock, token => firstValueFrom(this.api.getSettings(token)), {
+      errorMessage: 'Les paramètres n’ont pas pu être chargés.',
+      onSuccess: settings => {
       this.settingsForm = {...settings};
       this.deadStockAgeMonths = settings.deadStockMinAgeDays > 0
         ? Math.max(1, Math.round(settings.deadStockMinAgeDays / 30))
         : 0;
       this.sessionIdleHours = settings.sessionIdleTimeoutMinutes / 60;
       this.alertDelayHours = settings.alertDelayMinutes / 60;
+      },
     });
   }
 
@@ -2536,13 +2779,18 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    await this.run('dead-stock', async token => {
-      const response = await firstValueFrom(
-        this.api.getDeadStock(token, filters.minAgeMonths, filters.minQuantity),
-      );
-      this.deadStockBooks.set(response.books);
-      this.deadStockGeneratedAt.set(response.generatedAt);
-    });
+    const response = await this.readBlock(this.deadStockBlock, async token => {
+      const result = await firstValueFrom(this.api.getDeadStock(token, filters.minAgeMonths, filters.minQuantity));
+      this.deadStockGeneratedAt.set(result.generatedAt);
+      return result.books;
+    }, {errorMessage: 'La liste n’a pas pu être chargée.'});
+    if (response) {
+      this.deadStockBooks.set(response);
+    }
+  }
+
+  async retryDeadStock(): Promise<void> {
+    await this.loadDeadStock();
   }
 
   exportCsv(): void {
@@ -3077,12 +3325,21 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async loadCataloguePage(token: string): Promise<void> {
-    this.catalogueBooksPage.set(await firstValueFrom(this.api.getBooks(token, {
-      search: this.catalogueSearch.trim() || undefined,
+    const search = this.catalogueSearch.trim();
+    const pageNumber = this.cataloguePage;
+    await this.readBlock(this.catalogueBlock, accessToken => firstValueFrom(this.api.getBooks(accessToken, {
+      search: search || undefined,
       availableOnly: true,
-      page: this.cataloguePage,
+      page: pageNumber,
       pageSize: this.cataloguePageSize,
-    })));
+    })), {
+      accessToken: token,
+      errorMessage: 'La liste n’a pas pu être chargée.',
+      onSuccess: () => {
+        this.lastLoadedCatalogueSearch = search;
+        this.lastLoadedCataloguePage = pageNumber;
+      },
+    });
   }
 
   private async loadIsbnMetadataQueuePage(token: string): Promise<void> {
@@ -3091,11 +3348,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       : this.metadataQueueFilter === 'pending' ? 'Pending'
         : this.metadataQueueFilter === 'failed' ? 'Failed' : 'NotFound';
 
-    this.isbnMetadataQueue.set(await firstValueFrom(this.api.getBookMetadataQueue(token, {
+    await this.readBlock(this.isbnMetadataQueueBlock, accessToken => firstValueFrom(this.api.getBookMetadataQueue(accessToken, {
       page: this.metadataQueuePage,
       pageSize: this.metadataQueuePageSize,
       ...(metadataStatus ? {metadataStatus} : {}),
-    })));
+    })), {accessToken: token, errorMessage: 'La liste n’a pas pu être chargée.'});
   }
 
   private cancelCatalogueSearch(): void {
@@ -3243,8 +3500,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.loading.set(true);
-    this.actionPending.set(action);
+    const isMutation = ADMIN_MUTATION_ACTIONS.has(action);
+    if (isMutation) {
+      this.actionPending.set(action);
+    }
     this.errorMessage.set(null);
     errorTarget.set(null);
 
@@ -3261,26 +3520,26 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         errorTarget.set(message);
       }
     } finally {
-      this.loading.set(false);
-      this.actionPending.set(null);
+      if (isMutation && this.actionPending() === action) {
+        this.actionPending.set(null);
+      }
     }
   }
 
   private async loadNavigationBadgeCounts(accessToken?: string): Promise<void> {
-    let token = accessToken;
-    if (!token) {
-      try {
-        token = await this.auth.getApiAccessToken();
-      } catch {
-        return;
-      }
-    }
+    await this.readBlock(
+      this.navigationCountsBlock,
+      token => firstValueFrom(this.api.getNavigationCounts(token)),
+      {accessToken, errorMessage: 'Les pastilles n’ont pas pu être chargées.'},
+    );
+  }
 
-    try {
-      this.navigationBadgeCounts.set(await firstValueFrom(this.api.getNavigationCounts(token)));
-    } catch {
-      // Navigation counts are supplemental; the selected workspace still loads its own data.
-    }
+  isActionPending(action: string): boolean {
+    return this.actionPending() === action;
+  }
+
+  isSessionActionPending(confirmation: CatalogAdminSessionConfirmation): boolean {
+    return this.isActionPending(confirmation.action.kind);
   }
 
   private validPage(page: number, response: {totalCount: number; pageSize: number} | null): boolean {

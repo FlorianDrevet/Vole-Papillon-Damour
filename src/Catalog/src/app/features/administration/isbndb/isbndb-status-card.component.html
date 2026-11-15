@@ -1,3 +1,10 @@
+@if (error) {
+  <div class="isbndb-status-error" data-testid="isbndb-status-error" role="alert">
+    <span>{{ error }}</span>
+    <button type="button" data-testid="isbndb-status-retry" (click)="retry.emit()">Réessayer</button>
+  </div>
+}
+
 @if (status; as current) {
   <section class="isbndb-status-card" aria-labelledby="isbndb-status-title" data-testid="isbndb-status-card">
     <header class="isbndb-card-heading">
@@ -5,7 +12,10 @@
         <span class="section-kicker">Source des fiches</span>
         <h2 id="isbndb-status-title">ISBNdb</h2>
       </div>
-      <span class="isbndb-status-pill" [class]="quotaStatusClass()">{{ quotaStatusLabel() }}</span>
+      <span class="isbndb-card-heading-status">
+        @if (refreshing) { <span class="isbndb-refreshing" role="status">Actualisation…</span> }
+        <span class="isbndb-status-pill" [class]="quotaStatusClass()">{{ quotaStatusLabel() }}</span>
+      </span>
     </header>
 
     <div class="isbndb-quota">
