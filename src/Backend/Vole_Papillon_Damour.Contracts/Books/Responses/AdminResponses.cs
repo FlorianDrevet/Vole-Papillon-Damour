@@ -36,7 +36,8 @@ public sealed record CatalogAdminOverviewResponse(
     AdminPeriodMetricsResponse PreviousPeriod,
     AdminStockSummaryResponse Stock,
     AdminFairSummaryResponse? LastFair,
-    int DeadStockCount,
+    int? DeadStockCount,
+    DateTimeOffset? DeadStockComputedAt,
     int UndatedAnnouncementCount,
     int IsbndbAbsentToCompleteCount = 0);
 

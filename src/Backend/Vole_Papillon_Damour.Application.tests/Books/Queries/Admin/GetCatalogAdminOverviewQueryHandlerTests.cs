@@ -50,17 +50,16 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         result.Value.CurrentPeriod.SoldQuantity.Should().Be(1);
         result.Value.CurrentPeriod.SoldTitles.Should().Be(1);
         result.Value.PreviousPeriod.SoldQuantity.Should().Be(0);
-        // Only the fiche with no sale, stock above the threshold and a first
-        // availability older than 180 days; the announcement correction is ignored.
-        result.Value.DeadStockCount.Should().Be(1);
+        ((int?)result.Value.DeadStockCount).Should().BeNull();
+        result.Value.DeadStockComputedAt.Should().BeNull();
         result.Value.UndatedAnnouncementCount.Should().Be(0);
         result.Value.IsbndbAbsentToCompleteCount.Should().Be(0);
-        fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
+        _ = fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
             .GetAdminPageAsync(default, default, default, default, default, default);
     }
 
     [Fact]
-    public async Task Handle_UsesFewerSqlRoundTripsForPeriodSummaries()
+    public async Task Handle_SkipsPerBookDriftScanWhenBuildingPeriodSummaries()
     {
         var sqlCapture = new SqlCaptureInterceptor();
         await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
@@ -91,12 +90,12 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         result.Value.PreviousPeriod.RejectedCount.Should().Be(0);
         result.Value.PreviousPeriod.SoldQuantity.Should().Be(2);
         result.Value.PreviousPeriod.SoldTitles.Should().Be(1);
-        sqlCapture.Commands.Should().HaveCount(12);
+        sqlCapture.Commands.Should().HaveCount(11);
         sqlCapture.Commands.Should().NotContain(command =>
             command.Contains("BookMovements", StringComparison.OrdinalIgnoreCase) &&
             command.Contains("QuantityAvailable", StringComparison.OrdinalIgnoreCase) &&
             command.Contains("SUM(", StringComparison.OrdinalIgnoreCase));
-        fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
+        _ = fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
             .GetAdminPageAsync(default, default, default, default, default, default);
     }
 

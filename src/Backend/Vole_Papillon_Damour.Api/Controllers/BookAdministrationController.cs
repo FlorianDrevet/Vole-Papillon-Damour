@@ -1354,6 +1354,7 @@ public static class BookAdministrationController
                 result.Stock.AnnouncedTitles),
             result.LastFair is null ? null : ToResponse(result.LastFair),
             result.DeadStockCount,
+            result.DeadStockComputedAt,
             result.UndatedAnnouncementCount,
             result.IsbndbAbsentToCompleteCount);
 

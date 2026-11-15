@@ -4,10 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
-using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
-using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using AssoEventsEntity = Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -44,11 +43,9 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
 
         // Every figure is aggregated in SQL: the movement ledger only grows, so the
         // dashboard must never materialize it (nor the whole catalog).
-        var settings = await dbContext.AssociationSettings
+        var dashboardSnapshot = await dbContext.AdminDashboardSnapshots
             .AsNoTracking()
-            .SingleOrDefaultAsync(candidate => candidate.Id ==
-                AssociationSettingsEntity.SingletonId,
-                cancellationToken);
+            .SingleOrDefaultAsync(candidate => candidate.Id == AdminDashboardSnapshot.SingletonId, cancellationToken);
         var bookFairs = await dbContext.AssoEvents
             .AsNoTracking()
             .WhereActiveBookFair()
@@ -106,22 +103,6 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             : await BuildPeriodMetricsAsync(from - duration, from, cancellationToken);
         var lastFair = await BuildLastFairSummaryAsync(bookFairs, to, cancellationToken);
 
-        var deadStockCutoff = to.AddDays(-(settings?.DeadStockMinAgeDays ?? 180));
-        var deadStockMinQuantity = settings?.DeadStockMinQuantity ?? 1;
-        var deadStockCount = await canonicalBooks
-            .Where(book =>
-                book.QuantityAvailable > deadStockMinQuantity &&
-                !dbContext.BookMovements.Any(movement =>
-                    movement.Isbn13 == book.Id &&
-                    movement.Type == BookMovementType.Sale))
-            .Select(book => dbContext.BookMovements
-                .Where(AdminQueryProjection.AffectsAvailableQuantity)
-                .Where(movement => movement.Isbn13 == book.Id && movement.Quantity > 0)
-                .Min(movement => (DateTime?)movement.OccurredAt))
-            .CountAsync(
-                firstAvailableAt => firstAvailableAt <= deadStockCutoff,
-                cancellationToken);
-
         return new CatalogAdminOverviewResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             currentPeriod,
@@ -132,7 +113,10 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 announcedQuantity,
                 announcedTitleCount),
             lastFair,
-            deadStockCount,
+            dashboardSnapshot?.DeadStockCount,
+            dashboardSnapshot is null
+                ? null
+                : new DateTimeOffset(dashboardSnapshot.ComputedAt, TimeSpan.Zero),
             undatedAnnouncementCount,
             isbndbAbsentToCompleteCount);
     }

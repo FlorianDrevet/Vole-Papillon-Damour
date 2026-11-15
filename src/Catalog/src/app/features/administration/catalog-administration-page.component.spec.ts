@@ -287,7 +287,8 @@ describe('CatalogAdministrationPageComponent', () => {
       previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
       stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
       lastFair: null,
-      deadStockCount: 0,
+      deadStockCount: null,
+      deadStockComputedAt: null,
       undatedAnnouncementCount: 0,
     } as CatalogAdminOverview));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
@@ -1055,6 +1056,7 @@ describe('CatalogAdministrationPageComponent', () => {
       stock: {availableQuantity: 4_812, availableTitles: 1_240, announcedQuantity: 0, announcedTitles: 0},
       lastFair: {id: 'fair', name: 'Bourse du 8 février', dateStart: '2026-02-08', dateEnd: null, soldQuantity: 812, soldTitles: 100, revenue: 1_140},
       deadStockCount: 287,
+      deadStockComputedAt: '2026-09-04T12:00:00Z',
       undatedAnnouncementCount: 7,
     } as CatalogAdminOverview));
 
@@ -1071,11 +1073,30 @@ describe('CatalogAdministrationPageComponent', () => {
       'Livres vendus',
       'Titres jamais vendus',
     ]);
+    expect(cards[3].textContent).toContain('287');
+    expect(cards[3].textContent).toContain('Calculé à 14:00 · file de retrait');
     expect(fixture.nativeElement.textContent).not.toContain('E-mails en attente');
     expect(fixture.nativeElement.textContent).not.toContain('Rares à expertiser');
     expect(fixture.nativeElement.textContent).not.toContain('Fiches sans métadonnées');
     expect(fixture.nativeElement.textContent).not.toContain('Écart d’inventaire');
     expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
+  });
+
+  it('shows a waiting state instead of zero before the first never-sold calculation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const card = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="admin-stat-card"]'),
+    ).find(item => item.querySelector('.stat-label')?.textContent?.trim() === 'Titres jamais vendus') as HTMLElement;
+
+    expect(card.querySelector('.stat-value')?.textContent?.trim()).toBe('—');
+    expect(card.textContent).toContain('Premier calcul en cours, disponible dans quelques minutes');
+    expect(card.textContent).toContain('Pas encore calculé');
+    expect(card.textContent).not.toContain('0');
   });
 
   it('loads all-time dashboard metrics without period controls', async () => {

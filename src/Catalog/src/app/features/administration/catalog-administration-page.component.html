@@ -207,10 +207,15 @@
                     <span class="stat-foot">Recette de la dernière bourse : {{ $safeNavigationMigration(current.lastFair?.revenue) === null || $safeNavigationMigration(current.lastFair?.revenue) === undefined ? '—' : formatMoney($safeNavigationMigration(current.lastFair?.revenue)) }}</span>
                   </article>
                   <article class="stat-card stat-card-dark" data-testid="admin-stat-card">
-                    <strong class="stat-value">{{ formatNumber(current.deadStockCount) }}</strong>
+                    <strong class="stat-value">{{ current.deadStockCount === null ? '—' : formatNumber(current.deadStockCount) }}</strong>
                     <span class="stat-label">Titres jamais vendus</span>
-                    <span class="stat-sub">Le principal levier de désengorgement</span>
-                    <span class="stat-foot">À vérifier dans la file de retrait</span>
+                    @if (current.deadStockCount === null) {
+                      <span class="stat-sub">Premier calcul en cours, disponible dans quelques minutes</span>
+                      <span class="stat-foot">Pas encore calculé</span>
+                    } @else {
+                      <span class="stat-sub">Le principal levier de désengorgement</span>
+                      <span class="stat-foot">Calculé à {{ formatIsbndbParisTime(current.deadStockComputedAt) }} · file de retrait</span>
+                    }
                   </article>
                 </div>
 

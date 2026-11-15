@@ -112,6 +112,31 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("SocialPostImports", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.AdminDashboardAggregate.AdminDashboardSnapshot", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DeadStockCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DeadStockMinAgeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DeadStockMinQuantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdminDashboardSnapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AdminDashboardSnapshots_Singleton", "[Id] = 1");
+                        });
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", b =>
                 {
                     b.Property<Guid>("Id")

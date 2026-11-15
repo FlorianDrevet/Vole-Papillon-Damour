@@ -781,7 +781,8 @@ export interface CatalogAdminOverview {
   previousPeriod: CatalogAdminPeriodMetrics;
   stock: CatalogAdminStockSummary;
   lastFair: CatalogAdminFairSummary | null;
-  deadStockCount: number;
+  deadStockCount: number | null;
+  deadStockComputedAt: string | null;
   undatedAnnouncementCount: number;
 }
 

@@ -24,6 +24,7 @@ using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.IsbndbAggregate;
 using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 using Vole_Papillon_Damour.Domain.FairDigestAggregate;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
 
 namespace Vole_Papillon_Damour.Infrastructure.Persistence;
@@ -64,6 +65,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
+    public DbSet<AdminDashboardSnapshot> AdminDashboardSnapshots => Set<AdminDashboardSnapshot>();
     public DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => Set<MemberRecommendationPreference>();
     public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
     public DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => Set<AnonymousFavoriteCount>();

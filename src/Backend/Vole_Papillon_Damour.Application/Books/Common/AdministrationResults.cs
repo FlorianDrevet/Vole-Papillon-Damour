@@ -30,13 +30,18 @@ public sealed record AdminFairSummaryResult(
     int SoldTitles,
     decimal? Revenue);
 
+public sealed record AdminDashboardSnapshotRefreshResult(
+    int DeadStockCount,
+    DateTimeOffset ComputedAt);
+
 public sealed record CatalogAdminOverviewResult(
     DateTimeOffset GeneratedAt,
     AdminPeriodMetricsResult CurrentPeriod,
     AdminPeriodMetricsResult PreviousPeriod,
     AdminStockSummaryResult Stock,
     AdminFairSummaryResult? LastFair,
-    int DeadStockCount,
+    int? DeadStockCount,
+    DateTimeOffset? DeadStockComputedAt,
     int UndatedAnnouncementCount,
     int IsbndbAbsentToCompleteCount = 0);
 

@@ -80,6 +80,25 @@ describe('CatalogAdministrationComponent account creation password', () => {
     expect(page.querySelectorAll('.admin-panel').length).toBe(1);
   });
 
+  it('treats a missing dead-stock snapshot as zero in the work count', () => {
+    const component = fixture.componentInstance as any;
+    component.overview.set({
+      generatedAt: '',
+      currentPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
+      lastFair: null,
+      deadStockCount: null,
+      undatedAnnouncementCount: 7,
+    });
+    component.isLoading.set(false);
+    fixture.detectChanges();
+
+    const workCard = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.admin-card'))
+      .find(card => card.querySelector('.admin-label')?.textContent?.trim() === 'À traiter');
+    expect(workCard?.querySelector('strong')?.textContent?.trim()).toBe('7');
+  });
+
   it('explains the temporary password requirements beside the field', () => {
     openCreateAccount();
 

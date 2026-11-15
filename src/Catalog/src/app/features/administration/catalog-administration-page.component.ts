@@ -763,7 +763,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       : '—';
   }
 
-  private formatIsbndbParisTime(value: string | null): string {
+  protected formatIsbndbParisTime(value: string | null): string {
     const date = value ? new Date(value) : null;
     return date && Number.isFinite(date.getTime())
       ? new Intl.DateTimeFormat('fr-FR', {

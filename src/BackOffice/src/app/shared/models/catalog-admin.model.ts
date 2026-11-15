@@ -31,7 +31,8 @@ export interface CatalogAdminOverview {
   previousPeriod: AdminPeriodMetrics;
   stock: AdminStockSummary;
   lastFair: AdminFairSummary | null;
-  deadStockCount: number;
+  deadStockCount: number | null;
+  deadStockComputedAt: string | null;
   undatedAnnouncementCount: number;
 }
 
