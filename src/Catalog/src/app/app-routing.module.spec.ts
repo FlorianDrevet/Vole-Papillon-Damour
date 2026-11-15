@@ -2,7 +2,6 @@ import {TestBed} from '@angular/core/testing';
 import {Router} from '@angular/router';
 import {RenderMode} from '@angular/ssr';
 
-import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {AppRoutingModule} from './app-routing.module';
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
@@ -21,12 +20,20 @@ describe('AppRoutingModule', () => {
     expect(route?.title).toBe('Vos données et le RGPD | Vole Papillon d’Amour');
   });
 
-  it('routes each administration workspace through a dedicated URL segment', () => {
+  it('redirects the administration root to overview and lazy-loads a section route', () => {
     TestBed.configureTestingModule({imports: [AppRoutingModule]});
+    const routes = TestBed.inject(Router).config;
+    const adminRoutes = routes.filter(item => item.path === 'administration' || item.path === 'administration/:section');
+    const rootRoute = routes.find(item => item.path === 'administration');
+    const sectionRoute = routes.find(item => item.path === 'administration/:section');
 
-    const route = TestBed.inject(Router).config.find(item => item.path === 'administration/:section');
-
-    expect(route?.component).toBe(CatalogAdministrationPageComponent);
+    expect(adminRoutes.length).toBe(2);
+    expect(rootRoute?.redirectTo).toBe('administration/overview');
+    expect(rootRoute?.pathMatch).toBe('full');
+    expect(sectionRoute?.component).toBeUndefined();
+    expect(sectionRoute?.loadChildren).toEqual(jasmine.any(Function));
+    expect(serverRoutes.find(item => item.path === 'administration')?.renderMode).toBe(RenderMode.Client);
+    expect(serverRoutes.find(item => item.path === 'administration/:section')?.renderMode).toBe(RenderMode.Client);
   });
 
   it('publishes dedicated public rare-book list and detail routes', () => {

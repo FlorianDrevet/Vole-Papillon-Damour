@@ -1,7 +1,9 @@
 import {provideZonelessChangeDetection, signal, WritableSignal} from '@angular/core';
-import {HttpErrorResponse} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, ParamMap, Router, RouterModule, convertToParamMap} from '@angular/router';
+import {provideHttpClient} from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
 import type {AccountInfo} from '@azure/msal-browser';
 import {BehaviorSubject, Observable, Subject, of, throwError} from 'rxjs';
@@ -166,6 +168,8 @@ describe('CatalogSearchPageComponent', () => {
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
@@ -175,6 +179,8 @@ describe('CatalogSearchPageComponent', () => {
 
     fixture = TestBed.createComponent(CatalogSearchPageComponent);
   });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify({ignoreCancelled: true}));
 
   it('offers list and grid controls and makes the grid view the default', async () => {
     api.search.and.returnValue(of(response));
@@ -1618,6 +1624,108 @@ describe('CatalogSearchPageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(unavailableMessage);
+  });
+
+  it('cancels stale genre searches and only renders the latest response', () => {
+    const http = TestBed.inject(HttpTestingController);
+    const httpApi = new CatalogApiService(TestBed.inject(HttpClient));
+    api.search.and.callFake(params => httpApi.search(params));
+
+    fixture.detectChanges();
+    const initialRequest = http.expectOne(request =>
+      request.url.endsWith('/catalog/search') && request.params.get('q') === 'saint-exupéry');
+    initialRequest.flush(response);
+
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Roman'}));
+    const staleRequest = http.expectOne(request => request.params.get('genre') === 'Roman');
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Policier'}));
+
+    expect(staleRequest.cancelled).toBeTrue();
+    const latestRequest = http.expectOne(request => request.params.get('genre') === 'Policier');
+    latestRequest.flush({
+      ...response,
+      books: [{...response.books[0], title: 'Réponse du filtre Policier'}],
+    });
+    fixture.detectChanges();
+
+    const results = fixture.nativeElement.querySelector('.book-list') as HTMLElement;
+    expect(results.textContent).toContain('Réponse du filtre Policier');
+    expect(results.textContent).not.toContain(response.books[0].title);
+  });
+
+  it('keeps the previous page visible and faded while the next page loads', () => {
+    const nextPage$ = new Subject<CatalogSearchResponse>();
+    api.search.and.returnValues(
+      of({...response, totalCount: null, hasMore: true}),
+      nextPage$.asObservable(),
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.book-search-result')?.textContent)
+      .toContain(response.books[0].title);
+
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', page: '2'}));
+    fixture.detectChanges();
+
+    const results = fixture.nativeElement.querySelector('.book-list') as HTMLElement;
+    expect(fixture.componentInstance.loading).toBeTrue();
+    expect(results.classList).toContain('book-list--refreshing');
+    expect(results.textContent).toContain(response.books[0].title);
+    expect(fixture.nativeElement.querySelector('.search-refresh-status')?.textContent)
+      .toContain('Page 2…');
+    expect((fixture.nativeElement.querySelector('.pagination button:last-child') as HTMLButtonElement).disabled)
+      .toBeFalse();
+    const genreBrowser = fixture.nativeElement.querySelector(
+      '.genre-filter-options .all-genres-link',
+    ) as HTMLButtonElement;
+    expect(genreBrowser.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelector('vpd-loader[variant="skeleton"]')).toBeNull();
+  });
+
+  it('prefetches the next page and serves forward and back navigation from the cache', async () => {
+    const firstPage: CatalogSearchResponse = {
+      ...response,
+      totalCount: null,
+      hasMore: true,
+      page: 1,
+    };
+    const secondPage: CatalogSearchResponse = {
+      ...response,
+      books: [{...response.books[0], title: 'Résultat de la page deux'}],
+      totalCount: null,
+      hasMore: false,
+      page: 2,
+    };
+    api.search.and.returnValues(of(firstPage), of(secondPage));
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.callFake(async (_commands, extras) => {
+      routeParams.next(convertToParamMap(extras?.queryParams ?? {}));
+      return true;
+    });
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.search).toHaveBeenCalledTimes(2);
+    expect(api.search.calls.argsFor(1)[0]).toEqual(jasmine.objectContaining({page: 2}));
+
+    const pagination = fixture.nativeElement.querySelector('.pagination:not(.external-pagination)') as HTMLElement;
+    (pagination.querySelector('button:last-child') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.search).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('.book-list')?.textContent)
+      .toContain('Résultat de la page deux');
+
+    const updatedPagination = fixture.nativeElement.querySelector(
+      '.pagination:not(.external-pagination)',
+    ) as HTMLElement;
+    (updatedPagination.querySelector('button:first-child') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.search).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('.book-list')?.textContent)
+      .toContain(response.books[0].title);
   });
 
   it('cancels a pending ISBNdb request when the reference page changes or the component is destroyed', () => {

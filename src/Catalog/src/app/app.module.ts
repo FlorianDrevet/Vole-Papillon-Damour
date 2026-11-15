@@ -16,19 +16,6 @@ import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {BookCardComponent} from './shared/book-card/book-card.component';
-import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
-import {AdminRareBookFormComponent} from './features/administration/rare-books/admin-rare-book-form.component';
-import {AdminRareBookPhotosComponent} from './features/administration/rare-books/admin-rare-book-photos.component';
-import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
-import {NotFoundReportCloseDialogComponent} from './features/administration/not-found-reports/not-found-report-close-dialog.component';
-import {NotFoundReportsViewComponent} from './features/administration/not-found-reports/not-found-reports-view.component';
-import {ManualRequestsViewComponent} from './features/administration/manual-requests/manual-requests-view.component';
-import {ManualRequesterDetailComponent} from './features/administration/manual-requests/manual-requester-detail.component';
-import {ManualRequestAddDialogComponent} from './features/administration/manual-requests/manual-request-add-dialog.component';
-import {ManualRequestDecisionDialogComponent} from './features/administration/manual-requests/manual-request-decision-dialog.component';
-import {IsbndbAbsentViewComponent} from './features/administration/isbndb/isbndb-absent-view.component';
-import {IsbndbStatusCardComponent} from './features/administration/isbndb/isbndb-status-card.component';
-import {FairDigestAdminComponent} from './features/administration/fair-digest/fair-digest-admin.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
@@ -52,7 +39,7 @@ import {SuggestionGridComponent} from './features/favorites/suggestion-grid.comp
 import {BrowserStorageBannerComponent} from './features/favorites/browser-storage-banner.component';
 import {MinimumHeartsControlComponent} from './features/favorites/minimum-hearts-control.component';
 import {HeartsComponent} from './shared/components/hearts/hearts.component';
-import {CatalogCoverDirective} from './shared/catalog-cover.directive';
+import {CatalogCoverModule} from './shared/catalog-cover.module';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
 
@@ -69,19 +56,6 @@ registerLocaleData(localeFr);
     CatalogWorkPageComponent,
     LegalPageComponent,
     BookCardComponent,
-    CatalogAdministrationPageComponent,
-    AdminRareBooksComponent,
-    AdminRareBookFormComponent,
-    AdminRareBookPhotosComponent,
-    NotFoundReportsViewComponent,
-    ManualRequestsViewComponent,
-    ManualRequesterDetailComponent,
-    ManualRequestAddDialogComponent,
-    ManualRequestDecisionDialogComponent,
-    IsbndbAbsentViewComponent,
-    IsbndbStatusCardComponent,
-    FairDigestAdminComponent,
-    NotFoundReportCloseDialogComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,
     NotFoundReportDialogComponent,
@@ -105,11 +79,11 @@ registerLocaleData(localeFr);
     BrowserStorageBannerComponent,
     MinimumHeartsControlComponent,
     HeartsComponent,
-    CatalogCoverDirective,
   ],
   imports: [
     BrowserModule,
     FormsModule,
+    CatalogCoverModule,
     AppRoutingModule,
     DesignSystemModule,
   ],

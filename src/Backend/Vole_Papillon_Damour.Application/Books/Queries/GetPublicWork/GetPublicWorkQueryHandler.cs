@@ -32,9 +32,12 @@ public sealed class GetPublicWorkQueryHandler(
         }
 
         var workId = query.WorkId.Trim();
+        var inProgressScanIsbns = await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+            dbContext,
+            cancellationToken);
         var books = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
                 dbContext.Books.AsNoTracking(),
-                dbContext)
+                inProgressScanIsbns)
             .Where(book => book.WorkId == workId)
             .ToListAsync(cancellationToken);
 

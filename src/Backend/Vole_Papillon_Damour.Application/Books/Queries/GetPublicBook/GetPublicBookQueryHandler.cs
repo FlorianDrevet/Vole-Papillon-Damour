@@ -34,9 +34,12 @@ public sealed class GetPublicBookQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
+        var inProgressScanIsbns = await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+            dbContext,
+            cancellationToken);
         var book = await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
                 dbContext.Books.AsNoTracking(),
-                dbContext)
+                inProgressScanIsbns)
             .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
         if (book is null || !PublicCatalogBookVisibility.IsVisible(book))
         {

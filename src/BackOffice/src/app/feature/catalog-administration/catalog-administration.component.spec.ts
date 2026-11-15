@@ -51,6 +51,54 @@ describe('CatalogAdministrationComponent account creation password', () => {
     return component;
   }
 
+  it('keeps only the useful overview indicators and simplifies the work count', () => {
+    const component = fixture.componentInstance as any;
+    component.overview.set({
+      generatedAt: '',
+      currentPeriod: {from: '', to: '', scannedCount: 4, keptCount: 3, rejectedCount: 1, soldQuantity: 2, soldTitles: 2},
+      previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      stock: {availableQuantity: 42, availableTitles: 20, announcedQuantity: 8, announcedTitles: 4},
+      lastFair: null,
+      deadStockCount: 2,
+      undatedAnnouncementCount: 7,
+    });
+    component.isLoading.set(false);
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    const cards = Array.from(page.querySelectorAll('.admin-card')) as HTMLElement[];
+    expect(cards.length).toBe(3);
+    expect(cards.map(card => card.querySelector('.admin-label')?.textContent?.trim())).toEqual([
+      'Stock disponible',
+      'Annoncé en bourse',
+      'À traiter',
+    ]);
+    expect(cards[2].textContent).toContain('9');
+    expect(cards[2].textContent).toContain('dates · dormant');
+    expect(page.textContent).not.toContain('Alertes en attente');
+    expect(page.textContent).not.toContain('Contrôles de cohérence');
+    expect(page.querySelectorAll('.admin-panel').length).toBe(1);
+  });
+
+  it('treats a missing dead-stock snapshot as zero in the work count', () => {
+    const component = fixture.componentInstance as any;
+    component.overview.set({
+      generatedAt: '',
+      currentPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
+      lastFair: null,
+      deadStockCount: null,
+      undatedAnnouncementCount: 7,
+    });
+    component.isLoading.set(false);
+    fixture.detectChanges();
+
+    const workCard = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.admin-card'))
+      .find(card => card.querySelector('.admin-label')?.textContent?.trim() === 'À traiter');
+    expect(workCard?.querySelector('strong')?.textContent?.trim()).toBe('7');
+  });
+
   it('explains the temporary password requirements beside the field', () => {
     openCreateAccount();
 

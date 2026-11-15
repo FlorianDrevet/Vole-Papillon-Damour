@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
@@ -823,6 +824,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
+    public DbSet<AdminDashboardSnapshot> AdminDashboardSnapshots => Set<AdminDashboardSnapshot>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
@@ -842,6 +844,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
         modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
+        modelBuilder.ApplyConfiguration(new AdminDashboardSnapshotConfiguration());
         modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());
         modelBuilder.ApplyConfiguration(new AnonymousFavoriteCountConfiguration());
         modelBuilder.Ignore<Product>();

@@ -112,6 +112,31 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("SocialPostImports", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.AdminDashboardAggregate.AdminDashboardSnapshot", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DeadStockCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DeadStockMinAgeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DeadStockMinQuantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdminDashboardSnapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AdminDashboardSnapshots_Singleton", "[Id] = 1");
+                        });
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", b =>
                 {
                     b.Property<Guid>("Id")
@@ -458,9 +483,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
 
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("FirstSeenAt", "Title"), new[] { "QuantityAvailable", "MetadataStatus", "IsFavoriteReference" });
+
                     b.HasIndex("IsIsbndbSourced", "IsAbsentFromIsbndb")
                         .HasDatabaseName("IX_Books_IsbndbSourceFlags")
                         .HasFilter("[IsIsbndbSourced] = 0");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("IsIsbndbSourced", "IsAbsentFromIsbndb"), new[] { "IsbndbCompletedAt" });
 
                     b.HasIndex("MetadataStatus", "BibliographicDetailsRefreshedAt")
                         .HasDatabaseName("IX_Books_MetadataStatus_BibliographicDetailsRefreshedAt");
@@ -474,6 +503,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsDescending(true, false)
                         .HasDatabaseName("IX_Books_PublicCatalog_UpdatedAt")
                         .HasFilter("[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("UpdatedAt", "Title"), new[] { "QuantityAvailable", "MetadataStatus", "IsFavoriteReference" });
 
                     b.ToTable("Books", null, t =>
                         {
@@ -736,6 +767,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasFilter("[ReversalOfMovementId] IS NOT NULL");
 
                     b.HasIndex("ScanSessionId");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("ScanSessionId"), new[] { "Isbn13" });
 
                     b.HasIndex("VolunteerId");
 

@@ -781,17 +781,21 @@ export interface CatalogAdminOverview {
   previousPeriod: CatalogAdminPeriodMetrics;
   stock: CatalogAdminStockSummary;
   lastFair: CatalogAdminFairSummary | null;
-  deadStockCount: number;
-  rareQueueCount: number;
-  metadataMissingCount: number;
+  deadStockCount: number | null;
+  deadStockComputedAt: string | null;
   undatedAnnouncementCount: number;
-  inventoryDriftTitleCount: number;
-  inventoryDriftQuantity: number;
-  pendingAlerts: {
-    pendingCount: number;
-    oldestDueAt: string | null;
-    nextDueAt: string | null;
-  };
+}
+
+export interface CatalogAdminNavigationCounts {
+  openScanSessions: number | null;
+  notFoundOpenTargets: number;
+  notFoundOverdueTargets: number;
+  manualRequestsFound: number | null;
+  manualRequestsFoundOverdue: number | null;
+  catalogueBooks: number | null;
+  isbnQueue: number | null;
+  isbndbAbsentToComplete: number | null;
+  publishedRareBooks: number;
 }
 
 export interface CatalogAdminIsbndbStatus {

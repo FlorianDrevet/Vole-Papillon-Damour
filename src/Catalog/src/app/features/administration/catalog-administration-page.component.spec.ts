@@ -30,6 +30,7 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminMemberOperation,
   CatalogAdminOverview,
+  CatalogAdminNavigationCounts,
   CatalogAdminIsbndbStatus,
   CatalogAdminIsbndbAbsentBooksPage,
   CatalogAdminRareBookPage,
@@ -253,7 +254,7 @@ describe('CatalogAdministrationPageComponent', () => {
     routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getOverview', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
+      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
       'getIsbndbStatus', 'getIsbndbAbsentBooks', 'setIsbndbCompletion', 'recheckIsbndbBook',
       'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook', 'permanentlyDeleteBook',
@@ -287,14 +288,21 @@ describe('CatalogAdministrationPageComponent', () => {
       previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
       stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
       lastFair: null,
-      deadStockCount: 0,
-      rareQueueCount: 0,
-      metadataMissingCount: 0,
+      deadStockCount: null,
+      deadStockComputedAt: null,
       undatedAnnouncementCount: 0,
-      inventoryDriftTitleCount: 0,
-      inventoryDriftQuantity: 0,
-      pendingAlerts: {pendingCount: 0, oldestDueAt: null, nextDueAt: null},
     } as CatalogAdminOverview));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    } as CatalogAdminNavigationCounts));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
     api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
     api.getIsbndbStatus.and.returnValue(of(isbndbStatus()));
@@ -437,7 +445,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
   it('offers a dedicated administrator login when signed out', async () => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Accès administration');
@@ -541,13 +549,16 @@ describe('CatalogAdministrationPageComponent', () => {
   it('nav lists Livres introuvables right after Désengorgement with its badge', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getNotFoundSummary.and.returnValue(of({
-      openTargetCount: 2,
-      overdueTargetCount: 1,
-      openReportCount: 3,
-      firstReportedAt: null,
-      latestComment: null,
-      withdrawalMovementIds: [],
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 2,
+      notFoundOverdueTargets: 1,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
     }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
@@ -564,7 +575,17 @@ describe('CatalogAdministrationPageComponent', () => {
   it('shows a manual request sidebar badge only for administrators with books to hand over', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 2, foundOverdueCount: 1}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 2,
+      manualRequestsFoundOverdue: 1,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -575,14 +596,22 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.admin-nav-badge-manual-requests')).not.toBeNull();
   });
 
-  it('initializesCatalogueBadges_whenAdministratorArrivesAtOverview_loadsAllThreeCounts', async () => {
+  it('loads only overview data once at entry, then only the selected catalogue section', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 84, page: 1, pageSize: 1}));
-    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 7, page: 1, pageSize: 1}));
-    api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 12, page: 1, pageSize: 1}));
-    api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 4, page: 1, pageSize: 1}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 3,
+      notFoundOpenTargets: 2,
+      notFoundOverdueTargets: 1,
+      manualRequestsFound: 4,
+      manualRequestsFoundOverdue: 2,
+      catalogueBooks: 84,
+      isbnQueue: 7,
+      isbndbAbsentToComplete: 4,
+      publishedRareBooks: 12,
+    }));
 
+    fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
@@ -591,19 +620,277 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.navBadge('isbn-queue')).toBe('7');
     expect(fixture.componentInstance.navBadge('isbndb-absent')).toBe('4');
     expect(fixture.componentInstance.navBadge('rare-books')).toBe('12');
+    expect(fixture.componentInstance.navBadge('sessions')).toBe('3');
+    expect(fixture.componentInstance.navBadge('not-found')).toBe('2');
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBe('4');
     expect(fixture.nativeElement.querySelector('a[href="/administration/catalogue"] .admin-nav-badge')?.textContent.trim()).toBe('84');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/isbn-queue"] .admin-nav-badge')?.textContent.trim()).toBe('7');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/isbndb-absent"] .admin-nav-badge')?.textContent.trim()).toBe('4');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/rare-books"] .admin-nav-badge')?.textContent.trim()).toBe('12');
     expect(fixture.nativeElement.querySelector('option[value="catalogue"]')?.textContent.trim()).toBe('Catalogue (84)');
-    expect(fixture.nativeElement.querySelector('option[value="isbn-queue"]')?.textContent.trim()).toBe('ISBN en cours d’analyse (7)');
-    expect(fixture.nativeElement.querySelector('option[value="rare-books"]')?.textContent.trim()).toBe('Livres rares (12)');
-    expect(api.getBooks).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
-    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
-    expect(api.getRareBooks).toHaveBeenCalledWith('access-token', {status: 'Published', page: 1, pageSize: 1});
-    expect(api.getIsbndbAbsentBooks).toHaveBeenCalledWith('access-token', {status: 'to-complete', page: 1, pageSize: 1});
-    expect(api.getIsbndbStatus).toHaveBeenCalledWith('access-token');
+    expect(api.getNavigationCounts).toHaveBeenCalledOnceWith('access-token');
+    expect(api.getOverview).toHaveBeenCalledOnceWith('access-token', undefined, undefined, true);
+    expect(api.getIsbndbStatus).toHaveBeenCalledOnceWith('access-token');
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+    expect(auth.initialize).toHaveBeenCalledTimes(1);
+    expect(api.getBooks).not.toHaveBeenCalled();
+    expect(api.getBookMetadataQueue).not.toHaveBeenCalled();
+    expect(api.getRareBooks).not.toHaveBeenCalled();
+    expect(api.getIsbndbAbsentBooks).not.toHaveBeenCalled();
+    expect(api.getDeadStock).not.toHaveBeenCalled();
+    expect(api.getNotFoundSummary).not.toHaveBeenCalled();
+    expect(api.getManualRequestSummary).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelector('[data-testid="isbndb-status-card"]')?.textContent).toContain('4 livres hors ISBNdb à compléter');
+
+    routeParams.next(convertToParamMap({section: 'catalogue'}));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getBooks).toHaveBeenCalledTimes(1);
+    expect(api.getBooks).toHaveBeenCalledWith('access-token', jasmine.objectContaining({page: 1}));
+    expect(api.getNavigationCounts).toHaveBeenCalledTimes(1);
+    expect(api.getOverview).toHaveBeenCalledTimes(1);
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows per-block skeletons while the overview and navigation counts are loading', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getOverview.and.returnValue(new Subject<CatalogAdminOverview>());
+    api.getNavigationCounts.and.returnValue(new Subject<CatalogAdminNavigationCounts>());
+    api.getIsbndbStatus.and.returnValue(new Subject<CatalogAdminIsbndbStatus>());
+    api.getSessions.and.returnValue(new Subject<CatalogAdminScanSessionPage>());
+
+    fixture.detectChanges();
+    void fixture.componentInstance.initialize();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelectorAll('[data-testid="overview-skeleton-card"][aria-hidden="true"]').length).toBe(4);
+    expect(root.querySelector('[data-testid="isbndb-status-skeleton"][aria-hidden="true"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="overview-alerts-skeleton"][aria-hidden="true"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="admin-nav-badge-skeleton"][aria-hidden="true"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="admin-loading-announcement"][role="status"]')?.textContent)
+      .toContain('Chargement des indicateurs…');
+  });
+
+  it('keeps overview cards and correction actions available when ISBNdb status fails, with a local retry', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getSessions.and.returnValue(of({
+      generatedAt: '',
+      sessions: [scanSession('session-correctable', 1)],
+      totalCount: 1,
+      page: 1,
+      pageSize: 50,
+    }));
+    const refreshedStatus = new Subject<CatalogAdminIsbndbStatus>();
+    api.getIsbndbStatus.and.returnValues(
+      throwError(() => new HttpErrorResponse({status: 503})),
+      refreshedStatus,
+    );
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(4);
+    expect(root.querySelector('[data-testid="isbndb-status-error"][role="alert"]')?.textContent)
+      .toContain('Ce chiffre n’a pas pu être chargé.');
+    expect(root.querySelector('[data-testid="isbndb-status-retry"]')).not.toBeNull();
+    expect(root.querySelector('.pending-alert-row button')?.textContent).toContain('Corriger');
+    expect((root.querySelector('.pending-alert-row button') as HTMLButtonElement).disabled).toBeFalse();
+
+    const retry = root.querySelector<HTMLButtonElement>('[data-testid="isbndb-status-retry"]')!;
+    retry.click();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.actionPending()).toBeNull();
+    expect((root.querySelector('.pending-alert-row button') as HTMLButtonElement).disabled).toBeFalse();
+
+    refreshedStatus.next(isbndbStatus());
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getIsbndbStatus).toHaveBeenCalledTimes(2);
+    expect(api.getOverview).toHaveBeenCalledTimes(1);
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+    expect(root.querySelector('[data-testid="isbndb-status-error"]')).toBeNull();
+    expect(root.querySelector('[data-testid="isbndb-status-card"]')).not.toBeNull();
+  });
+
+  it('shows an overview-sized local error card and retries only the overview request', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getOverview.and.returnValues(
+      throwError(() => new HttpErrorResponse({status: 503})),
+      of({
+        generatedAt: '',
+        currentPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+        previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+        stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
+        lastFair: null,
+        deadStockCount: null,
+        deadStockComputedAt: null,
+        undatedAnnouncementCount: 0,
+      } as CatalogAdminOverview),
+    );
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="overview-error-state"] [data-testid="overview-block-error"][role="alert"]')?.textContent)
+      .toContain('Les indicateurs n’ont pas pu être chargés.');
+    expect(root.querySelector('[data-testid="overview-error-state"] .stat-card')?.clientHeight).toBeGreaterThan(150);
+
+    root.querySelector<HTMLButtonElement>('[data-testid="overview-block-error"] button')!.click();
+    await fixture.whenStable();
+    expect(api.getOverview).toHaveBeenCalledTimes(2);
+    expect(api.getIsbndbStatus).toHaveBeenCalledTimes(1);
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="overview-error-state"]')).toBeNull();
+    expect(root.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(4);
+  });
+
+  it('keeps the previous catalogue page visible and faded while loading the requested page', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const firstPage: CatalogAdminBookPage = {
+      generatedAt: 'first', books: [catalogueBook()], totalCount: 6, page: 1, pageSize: 5,
+    };
+    const nextPage = new Subject<CatalogAdminBookPage>();
+    api.getBooks.and.returnValues(of(firstPage), nextPage);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('catalogue');
+    fixture.detectChanges();
+
+    fixture.componentInstance.goToCataloguePage(2);
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const list = root.querySelector<HTMLElement>('[data-testid="catalogue-book-list"]');
+    expect(list?.classList.contains('catalogue-book-list-refreshing')).toBeTrue();
+    expect(list?.textContent).toContain('Le Petit Prince');
+    expect(root.textContent).toContain('Chargement de la page 2…');
+    expect((root.querySelector('.pagination button:last-child') as HTMLButtonElement).disabled).toBeFalse();
+
+    nextPage.next({...firstPage, generatedAt: 'second', books: [], page: 2});
+    await fixture.whenStable();
+  });
+
+  it('keeps the previous catalogue results visible while a search is pending', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const firstPage: CatalogAdminBookPage = {
+      generatedAt: 'first', books: [catalogueBook()], totalCount: 1, page: 1, pageSize: 5,
+    };
+    const searchResults = new Subject<CatalogAdminBookPage>();
+    api.getBooks.and.returnValues(of(firstPage), searchResults);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('catalogue');
+    fixture.detectChanges();
+
+    fixture.componentInstance.catalogueSearch = 'Prince';
+    const request = fixture.componentInstance.loadCatalogue();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const list = root.querySelector<HTMLElement>('[data-testid="catalogue-book-list"]');
+    expect(list?.classList.contains('catalogue-book-list-refreshing')).toBeTrue();
+    expect(list?.textContent).toContain('Le Petit Prince');
+    expect(root.querySelector('[data-testid="catalogue-load-status"]')?.textContent).toContain('Recherche en cours…');
+
+    searchResults.next({...firstPage, generatedAt: 'search', books: []});
+    searchResults.complete();
+    await request;
+  });
+
+  it('preserves a catalogue list after a failed refresh and retries only that list', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const firstPage: CatalogAdminBookPage = {
+      generatedAt: 'first', books: [catalogueBook()], totalCount: 1, page: 1, pageSize: 5,
+    };
+    api.getBooks.and.returnValues(
+      of(firstPage),
+      throwError(() => new HttpErrorResponse({status: 503})),
+      of({...firstPage, generatedAt: 'recovered'}),
+    );
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('catalogue');
+    await fixture.componentInstance.loadCatalogue();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="catalogue-book-list"]')?.textContent).toContain('Le Petit Prince');
+    expect(root.querySelector('[data-testid="catalogue-list-error"][role="alert"]')?.textContent)
+      .toContain('La liste n’a pas pu être chargée.');
+    expect(root.querySelector('[data-testid="catalogue-list-retry"]')).not.toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-testid="catalogue-list-retry"]')!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getBooks).toHaveBeenCalledTimes(3);
+    expect(api.getOverview).toHaveBeenCalledTimes(1);
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+    expect(root.querySelector('[data-testid="catalogue-list-error"]')).toBeNull();
+    expect(root.querySelector('[data-testid="catalogue-book-list"]')?.textContent).toContain('Le Petit Prince');
+  });
+
+  it('only applies the newest in-flight response for session and ISBN queue lists', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const staleSessions = new Subject<CatalogAdminScanSessionPage>();
+    const newestSessions = new Subject<CatalogAdminScanSessionPage>();
+    api.getSessions.and.returnValues(staleSessions, newestSessions);
+
+    const staleSessionsRequest = fixture.componentInstance.loadSessions();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+    const newestSessionsRequest = fixture.componentInstance.loadSessions();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getSessions).toHaveBeenCalledTimes(2);
+    newestSessions.next({generatedAt: 'newest-session', sessions: [], totalCount: 0, page: 1, pageSize: 50});
+    newestSessions.complete();
+    await newestSessionsRequest;
+    staleSessions.next({generatedAt: 'stale-session', sessions: [], totalCount: 0, page: 1, pageSize: 50});
+    staleSessions.complete();
+    await staleSessionsRequest;
+    expect(fixture.componentInstance.sessionsPage()?.generatedAt).toBe('newest-session');
+
+    const staleQueue = new Subject<CatalogAdminBookMetadataQueue>();
+    const newestQueue = new Subject<CatalogAdminBookMetadataQueue>();
+    api.getBookMetadataQueue.and.returnValues(staleQueue, newestQueue);
+    const staleQueueRequest = fixture.componentInstance.loadIsbnMetadataQueue();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getBookMetadataQueue).toHaveBeenCalledTimes(1);
+    const newestQueueRequest = fixture.componentInstance.loadIsbnMetadataQueue();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getBookMetadataQueue).toHaveBeenCalledTimes(2);
+    newestQueue.next({generatedAt: 'newest-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    newestQueue.complete();
+    await newestQueueRequest;
+    staleQueue.next({generatedAt: 'stale-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    staleQueue.complete();
+    await staleQueueRequest;
+    expect(fixture.componentInstance.isbnMetadataQueue()?.generatedAt).toBe('newest-queue');
   });
 
   it('hides the badge and the dashboard tile when nothing is open', async () => {
@@ -617,12 +904,48 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.navBadge('manual-requests')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="manual-request-dashboard-tile"]')).toBeNull();
+    const options = Array.from(fixture.nativeElement.querySelectorAll('option')) as HTMLOptionElement[];
+    expect(options.every(option => !/\(0\)|\.\.\.|…/.test(option.textContent ?? ''))).toBeTrue();
+  });
+
+  it('keeps a recently visited section visible while refreshing it in the background', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const firstPage: CatalogAdminBookPage = {generatedAt: 'first', books: [], totalCount: 1, page: 1, pageSize: 50};
+    const refreshedPage: CatalogAdminBookPage = {generatedAt: 'refreshed', books: [], totalCount: 2, page: 1, pageSize: 50};
+    const refresh = new Subject<CatalogAdminBookPage>();
+    api.getBooks.and.returnValues(of(firstPage), refresh);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('catalogue');
+    await fixture.componentInstance.selectSection('sessions');
+    await fixture.componentInstance.selectSection('catalogue');
+
+    expect(api.getBooks).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.catalogueBooksPage()).toBe(firstPage);
+
+    refresh.next(refreshedPage);
+    refresh.complete();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.catalogueBooksPage()).toBe(refreshedPage);
   });
 
   it('shows the dashboard handover tile with the overdue count and opens manual requests', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 3, foundOverdueCount: 2}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 3,
+      manualRequestsFoundOverdue: 2,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -645,7 +968,17 @@ describe('CatalogAdministrationPageComponent', () => {
   it('omits the dashboard handover overdue mention when no books are overdue', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 1, foundOverdueCount: 0}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 1,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -837,11 +1170,21 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
     expect(api.setIsbndbCompletion).toHaveBeenCalledOnceWith('access-token', book.isbn13, true);
     expect(api.getIsbndbStatus).toHaveBeenCalled();
-    expect(fixture.componentInstance.successMessage()).toBe('La fiche est marquée comme complétée.');
+    expect(fixture.componentInstance.successMessage()).toBe('Le livre est marqué comme complété.');
   });
 
   it('hides the ISBNdb absent navigation badge when no books need completion', () => {
-    fixture.componentInstance.navigationBadgeCounts.set({'isbndb-absent': 0});
+    fixture.componentInstance.navigationBadgeCounts.set({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    });
 
     expect(fixture.componentInstance.navBadge('isbndb-absent')).toBeNull();
   });
@@ -1050,7 +1393,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.statisticsTab()).toBe('evolution');
   });
 
-  it('renders the maquette dashboard title and eight data cards', async () => {
+  it('renders exactly the four maquette dashboard cards in order and keeps the scan-session alert list', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getOverview.and.returnValue(of({
@@ -1060,12 +1403,8 @@ describe('CatalogAdministrationPageComponent', () => {
       stock: {availableQuantity: 4_812, availableTitles: 1_240, announcedQuantity: 0, announcedTitles: 0},
       lastFair: {id: 'fair', name: 'Bourse du 8 février', dateStart: '2026-02-08', dateEnd: null, soldQuantity: 812, soldTitles: 100, revenue: 1_140},
       deadStockCount: 287,
-      rareQueueCount: 12,
-      metadataMissingCount: 38,
+      deadStockComputedAt: '2026-09-04T12:00:00Z',
       undatedAnnouncementCount: 7,
-      inventoryDriftTitleCount: 38,
-      inventoryDriftQuantity: 124,
-      pendingAlerts: {pendingCount: 14, oldestDueAt: null, nextDueAt: null},
     } as CatalogAdminOverview));
 
     fixture.detectChanges();
@@ -1073,9 +1412,38 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="admin-title"]')?.textContent).toContain('Tableau de bord.');
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(8);
-    expect(fixture.nativeElement.textContent).toContain('Disponibles et annoncés');
+    const cards = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]')) as HTMLElement[];
+    expect(cards.length).toBe(4);
+    expect(cards.map(card => card.querySelector('.stat-label')?.textContent?.trim())).toEqual([
+      'Disponibles et annoncés',
+      'Livres triés',
+      'Livres vendus',
+      'Titres jamais vendus',
+    ]);
+    expect(cards[3].textContent).toContain('287');
+    expect(cards[3].textContent).toContain('Calculé à 14:00 · file de retrait');
+    expect(fixture.nativeElement.textContent).not.toContain('E-mails en attente');
+    expect(fixture.nativeElement.textContent).not.toContain('Rares à expertiser');
+    expect(fixture.nativeElement.textContent).not.toContain('Fiches sans métadonnées');
+    expect(fixture.nativeElement.textContent).not.toContain('Écart d’inventaire');
     expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
+  });
+
+  it('shows a waiting state instead of zero before the first never-sold calculation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const card = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="admin-stat-card"]'),
+    ).find(item => item.querySelector('.stat-label')?.textContent?.trim() === 'Titres jamais vendus') as HTMLElement;
+
+    expect(card.querySelector('.stat-value')?.textContent?.trim()).toBe('—');
+    expect(card.textContent).toContain('Premier calcul en cours, disponible dans quelques minutes');
+    expect(card.textContent).toContain('Pas encore calculé');
+    expect(card.textContent).not.toContain('0');
   });
 
   it('loads all-time dashboard metrics without period controls', async () => {
@@ -1127,7 +1495,18 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.statusLabel(active.status)).toBe('En cours');
   });
 
-  it('shows the number of active sessions in the sidebar badge', () => {
+  it('shows the active session count from navigation counts in the sidebar badge', () => {
+    fixture.componentInstance.navigationBadgeCounts.set({
+      openScanSessions: 2,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    });
     fixture.componentInstance.sessionsPage.set({
       generatedAt: '2026-09-11T10:00:00Z',
       sessions: [
@@ -1388,7 +1767,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.canPermanentlyDeleteBook(book)).toBeTrue();
-    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.actionPending()).toBeNull();
 
     const deleteButton = (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLButtonElement>('[data-testid="permanently-delete-book"]');
@@ -1484,7 +1863,7 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
   });
 
-  it('shows a loader on the catalogue refresh action while the server request is pending', async () => {
+  it('keeps the catalogue refresh action available while its read request is pending', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     const page: CatalogAdminBookPage = {
@@ -1506,7 +1885,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="catalogue-refresh-loader"]')).not.toBeNull();
-    expect((fixture.nativeElement.querySelector('[data-testid="catalogue-refresh"]') as HTMLButtonElement).disabled).toBeTrue();
+    expect((fixture.nativeElement.querySelector('[data-testid="catalogue-refresh"]') as HTMLButtonElement).disabled).toBeFalse();
 
     pending.next(page);
     pending.complete();
@@ -1799,7 +2178,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '.catalogue-reference-row',
     );
     expect(referenceRow?.nextElementSibling?.getAttribute('data-testid')).toBe('catalogue-candidate-form');
-    expect(fixture.nativeElement.textContent).toContain('Cette fiche est déjà dans le fonds');
+    expect(fixture.nativeElement.textContent).toContain('Ce livre est déjà dans le fonds');
     expect(fixture.nativeElement.textContent).toContain('4 exemplaires disponibles');
     const quantity = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="catalogue-add-quantity"]',
@@ -1882,7 +2261,7 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Cette fiche n’est pas encore dans le fonds');
+    expect(fixture.nativeElement.textContent).toContain('Ce livre n’est pas encore dans le fonds');
   });
 
   it('renders the two statistics tabs and omits the quality-data screen', async () => {
@@ -2169,6 +2548,7 @@ describe('CatalogAdministrationPageComponent', () => {
   it('starts the volunteer statistics request while fair options are still loading', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
+    fixture.componentInstance.statisticsTab.set('volunteers');
     const fairsResponse = new Subject<CatalogAdminFairPage>();
     api.getFairs.and.returnValue(fairsResponse);
 
@@ -2182,6 +2562,42 @@ describe('CatalogAdministrationPageComponent', () => {
     await loading;
 
     expect(statisticsStartedBeforeFairsLoaded).toBeTrue();
+  });
+
+  it('ignores a statistics response after the user changes tabs', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const staleVolunteerStats = new Subject<CatalogAdminVolunteerStatistics>();
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    api.getVolunteerStatistics.and.returnValue(staleVolunteerStats);
+
+    const volunteerRequest = fixture.componentInstance.selectStatisticsTab('volunteers');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(api.getVolunteerStatistics).toHaveBeenCalledTimes(1);
+
+    await fixture.componentInstance.selectStatisticsTab('books');
+    staleVolunteerStats.next({
+      generatedAt: 'stale', from: null, to: null, fairId: null,
+      team: {
+        activeVolunteerCount: 0, scannedCount: 0, keptCount: 0, rejectedCount: 0,
+        keptRatePercent: null, soldQuantity: 0, soldOfKeptRatePercent: null,
+        sessionCount: 0, scanDurationMinutes: 0, cashDurationMinutes: 0,
+        totalDurationMinutes: 0, averageSessionsPerVolunteer: null,
+      },
+      volunteers: [], monthlyActivity: [],
+      renewal: {newCount: 0, regularCount: 0, withdrawingCount: 0, windowDays: 90},
+      dominantGenres: [],
+    });
+    staleVolunteerStats.complete();
+    await volunteerRequest;
+
+    expect(fixture.componentInstance.statisticsTab()).toBe('books');
+    expect(fixture.componentInstance.volunteerStatistics()).toBeNull();
+    expect(fixture.componentInstance.catalogueFlowStats()).not.toBeNull();
   });
 
   it('distinguishes fairs with the same name by their dates in the statistics selector', () => {

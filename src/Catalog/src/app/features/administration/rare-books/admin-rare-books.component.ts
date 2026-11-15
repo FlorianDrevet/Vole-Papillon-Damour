@@ -2,7 +2,9 @@ import {isPlatformBrowser} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   OnInit,
+  Output,
   PLATFORM_ID,
   inject,
 } from '@angular/core';
@@ -29,6 +31,7 @@ type RareBookIsbnFilter = 'all' | 'with' | 'without';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminRareBooksComponent implements OnInit {
+  @Output() navigationCountsChanged = new EventEmitter<void>();
   readonly facade = inject(AdminRareBooksFacade);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -82,10 +85,16 @@ export class AdminRareBooksComponent implements OnInit {
 
   async publish(): Promise<void> {
     await this.facade.publish();
+    if (!this.facade.error()) {
+      this.navigationCountsChanged.emit();
+    }
   }
 
   async unpublish(): Promise<void> {
     await this.facade.unpublish();
+    if (!this.facade.error()) {
+      this.navigationCountsChanged.emit();
+    }
   }
 
   async deleteSelected(): Promise<void> {
@@ -93,6 +102,9 @@ export class AdminRareBooksComponent implements OnInit {
       return;
     }
     await this.facade.deleteSelected();
+    if (!this.facade.error()) {
+      this.navigationCountsChanged.emit();
+    }
   }
 
   async handlePhotoAction(action: RareBookPhotoAction): Promise<void> {

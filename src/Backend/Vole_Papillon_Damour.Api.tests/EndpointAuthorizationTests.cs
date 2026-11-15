@@ -161,6 +161,35 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public async Task Navigation_counts_allow_rare_book_volunteers_and_administrators_only()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddAuthorization(options =>
+            options.AddPolicy("RareBooks", policy => policy.RequireRole("LivresRares", "Administration", "Admin")));
+        builder.Services.AddSingleton(Substitute.For<IMediator>());
+        await using var application = builder.Build();
+        application.UseRouting();
+        application.UseBookAdministrationController();
+
+        var endpoint = application.Services.GetRequiredService<EndpointDataSource>()
+            .Endpoints.OfType<RouteEndpoint>()
+            .Single(candidate => RouteOf(candidate) == "/books/admin/navigation-counts");
+        var policy = endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Should().ContainSingle().Subject.Policy;
+        policy.Should().Be("RareBooks");
+
+        var authorization = application.Services.GetRequiredService<IAuthorizationService>();
+        var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+        var member = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, "Volunteer")], "test"));
+        var rareBooksVolunteer = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, "LivresRares")], "test"));
+        var administrator = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, "Administration")], "test"));
+
+        (await AuthorizeIsbndbAsync(authorization, endpoint, anonymous)).Should().Be(StatusCodes.Status401Unauthorized);
+        (await AuthorizeIsbndbAsync(authorization, endpoint, member)).Should().Be(StatusCodes.Status403Forbidden);
+        (await AuthorizeIsbndbAsync(authorization, endpoint, rareBooksVolunteer)).Should().Be(StatusCodes.Status200OK);
+        (await AuthorizeIsbndbAsync(authorization, endpoint, administrator)).Should().Be(StatusCodes.Status200OK);
+    }
+
+    [Fact]
     public void Cash_sales_require_the_caisse_policy()
     {
         var endpoint = RegisteredEndpoints()

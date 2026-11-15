@@ -13,9 +13,14 @@ public static class IsbndbSubjectReader
     public static IReadOnlyList<string> Read(Book book, string? recordSubjects)
     {
         ArgumentNullException.ThrowIfNull(book);
+        return Read(recordSubjects, book.RawPayload);
+    }
+
+    public static IReadOnlyList<string> Read(string? recordSubjects, string? fallbackPayload)
+    {
         var stored = ReadStringArray(recordSubjects);
         if (stored.Count > 0) return stored;
-        return ReadFallbackPayload(book.RawPayload);
+        return ReadFallbackPayload(fallbackPayload);
     }
 
     private static IReadOnlyList<string> ReadStringArray(string? json)

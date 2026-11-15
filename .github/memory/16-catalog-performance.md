@@ -89,3 +89,33 @@ each current/previous period summary from five SQL commands into two. The SQLite
 counter regression measured 22 commands before and 13 after (41% fewer); Application
 tests pass 698/698. No Azure resource, database or deployment was changed. Recheck
 production latency after merging and deploying the API.
+
+## Public catalogue and admin portal optimization — implementation in progress — 2026-11-15
+
+- Tasks 0–13 of `docs/features/perf-catalogue-admin/02-plan.md` are committed on the
+  dedicated `fix/perf-catalogue-admin` branch. Task 13 lazily loads the administration
+  module, fetches only the active parent-owned workspace, overlaps navigation counts
+  with workspace loading, uses the navigation-count endpoint for badges and attention
+  tiles, and refreshes visited sections in the background during a 60-second cache window.
+- Task 14 adds typed per-block read state, keeps prior list data during refresh, ignores
+  stale responses, adds local retry/error UI and shared reduced-motion skeleton styles.
+  The statistics request runs no longer wait for fair options and ignore results after a
+  tab change.
+- Catalog administration target specs pass 95/95. After synchronizing with the latest
+  `origin/main`, the full Catalog suite is 659/663. Its four failing tests (three
+  AccountCard assertions and one CatalogAccountPage assertion) are in component/test files
+  unchanged from `origin/main`. Catalog production build passes with the initial bundle at
+  1.10 MB and the administration component stylesheet at 59.95 kB (the configured error
+  limit is 60 kB).
+- Task 15 validation: the .NET solution passes 1,164/1,164; Catalog production build
+  and BackOffice production builds pass. BackOffice bootstrap checks pass 4/6; the two
+  failing script assertions expect a static bootstrap array and direct MSAL initializer,
+  which differ from the current conditional bootstrap in files unchanged from `origin/main`.
+  Task 14 did not modify BackOffice files.
+- Final validation could not rerun the local SQL seed, plans, endpoint timings, or admin
+  network count because neither Podman nor Docker could reach a daemon. The earlier
+  five-request local measurements and 14 November pre-fix App Insights values remain the
+  only available numbers; no post-fix production measurement is claimed.
+- `graphify update .` completed. The authenticated responsive visual check is still pending:
+  Windows Computer Use stopped because it could not determine the browser's current URL
+  with enough confidence to proceed. No Azure resource, database or deployment changed.

@@ -28,6 +28,7 @@
 ## Catalog
 
 - Catalog is a separate SSR site. Public search/detail/work routes are crawlable; `/compte`, `/administration`, and `/desinscription` are client-only/private and `noindex,nofollow`.
+- Catalog administration is lazy-loaded from `/administration/:section`; the bare route redirects to `/administration/overview`. Its page requests aggregate navigation counts alongside only the active workspace, and reopens cached parent-owned workspace data immediately while refreshing for up to 60 seconds.
 - Use typed `CatalogApiService`/admin APIs. Search, pagination, filters, and reports belong on the API; never fetch every record for client-side filtering. Keep local catalogue results distinct from external reference results.
 - `/administration/catalogue` requests `availableOnly=true`, filtering `quantityAvailable > 0` in the paged API query. The list shows available copy counts and describes entries as books; the underlying bibliographic record and editor remain available through book details.
 - `Ma sélection` is distinct from `Livres suivis` (work/edition watchlist). Availability, future announcements, and rare-book prices remain truthful and separate; no UI should invent reservations, book prices, role assignment, or physical-carton data.

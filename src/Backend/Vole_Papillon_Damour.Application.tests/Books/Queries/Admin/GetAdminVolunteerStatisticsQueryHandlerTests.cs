@@ -3,6 +3,7 @@ using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -53,7 +54,8 @@ public sealed class GetAdminVolunteerStatisticsQueryHandlerTests
     [Fact]
     public async Task Handle_aggregates_the_team_and_nets_voided_sales()
     {
-        await using var fixture = await ScanBookFixture.CreateAsync();
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
         var fair = await fixture.AddFairAsync(
             new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero),
@@ -133,6 +135,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandlerTests
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(GeneratedAt);
         var handler = new GetAdminVolunteerStatisticsQueryHandler(fixture.Context, clock);
+        sqlCapture.Clear();
 
         var result = await handler.Handle(
             new GetAdminVolunteerStatisticsQuery(null, null, fair.Id.Value),
@@ -153,6 +156,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandlerTests
             volunteer.DisplayName == "Bea Booker" && volunteer.SoldQuantity == 1);
         result.Value.MonthlyActivity.Should().HaveCount(2);
         result.Value.Renewal.NewCount.Should().Be(2);
+        StatisticsSqlAssertions.AssertBookAndMovementQueriesAreNarrow(sqlCapture);
     }
 
     [Fact]

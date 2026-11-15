@@ -16,14 +16,16 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 | Livres disponibles et annoncés (total et titres distincts) | Mesure de la saturation du local |
 | Livres triés sur la période, gardés / écartés | Mesure de l'activité de tri et du taux de rejet |
 | Ventes sur la dernière bourse : **nombre de livres** | Résultat de l'événement. Le système ne connaît aucun prix (`RG-50`) : la recette n'apparaît que si elle a été saisie à la main (`RG-51`) |
-| Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
-| Fiches rares en brouillon ou sans photo | File de travail |
-| Alertes en attente d'envoi | Sessions dont les e-mails ne sont pas encore partis, avec le temps restant. **Fenêtre de rattrapage** (`RG-44`) |
-| Fiches sans métadonnées | File de travail |
-| Écart d'inventaire estimé | Signal de dérive du compteur (`RG-34`) |
+| Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. Calculé en arrière-plan, au plus 15 min de retard, avec l'heure de calcul affichée (`RG-163`). |
 
 Ce tableau existe dès le palier 1, même sous forme sommaire : sans lui, on n'a aucun
 moyen de vérifier que le palier 1 a atteint son critère de passage.
+
+Les cartes « Fiches rares à expertiser », « Alertes en attente d'envoi », « Fiches sans
+métadonnées » et « Écart d'inventaire estimé » ont été retirées le 15 novembre 2026, jugées
+non pertinentes (`RG-168`, `docs/features/perf-catalogue-admin/`). Le travail correspondant
+reste accessible par l'espace Livres rares, la section Alertes et la file ISBN. Les
+indicateurs se chargent bloc par bloc (`RG-161`).
 
 ## 2. Statistiques par bourse
 

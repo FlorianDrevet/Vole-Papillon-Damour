@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -26,21 +27,53 @@ public static class PublicCatalogBookVisibility
                !string.IsNullOrWhiteSpace(book.Title);
     }
 
+    public static bool IsVisible(PublicCatalogBookProjection book)
+    {
+        return !book.IsHiddenFromCatalog &&
+               !book.IsFavoriteReference &&
+               !book.HasRedirect &&
+               book.MetadataStatus is BookMetadataStatus.Resolved or BookMetadataStatus.Manual &&
+               !string.IsNullOrWhiteSpace(book.Title);
+    }
+
+    public static async Task<Isbn13[]> GetInProgressScanIsbnsAsync(
+        IProjectDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var inProgressSessionIds = await dbContext.ScanSessions
+            .AsNoTracking()
+            .Where(session => session.Status == ScanSessionStatus.InProgress)
+            .Select(session => session.Id)
+            .ToArrayAsync(cancellationToken);
+
+        if (inProgressSessionIds.Length == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.BookMovements
+            .AsNoTracking()
+            .Where(movement => movement.ScanSessionId != null &&
+                               inProgressSessionIds.Contains(movement.ScanSessionId))
+            .Select(movement => movement.Isbn13)
+            .Distinct()
+            .ToArrayAsync(cancellationToken);
+    }
+
     /// <summary>
     /// Applies metadata visibility and in-progress scan-session filtering to public catalog books.
     /// </summary>
     public static IQueryable<Book> FilterPublicCatalogBooks(
         IQueryable<Book> books,
-        IProjectDbContext dbContext)
+        IReadOnlyCollection<Isbn13> inProgressScanIsbns)
     {
-        return books
-            .Where(Predicate)
-            // Scanning applies stock changes immediately; keep those ISBNs private while the session is open.
-            .Where(book => !dbContext.BookMovements.Any(movement =>
-                movement.Isbn13 == book.Id &&
-                movement.ScanSessionId != null &&
-                dbContext.ScanSessions.Any(session =>
-                    session.Id == movement.ScanSessionId &&
-                    session.Status == ScanSessionStatus.InProgress)));
+        var visibleBooks = books.Where(Predicate);
+        if (inProgressScanIsbns.Count == 0)
+        {
+            return visibleBooks;
+        }
+
+        // Scanning applies stock changes immediately; keep those ISBNs private while the session is open.
+        return visibleBooks.Where(book => !inProgressScanIsbns.Contains(book.Id));
     }
 }

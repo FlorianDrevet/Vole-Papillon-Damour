@@ -6,7 +6,6 @@ import {CatalogHomePageComponent} from './features/home/catalog-home-page.compon
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
-import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
@@ -28,8 +27,12 @@ const routes: Routes = [
   {path: 'livres-rares/:id', component: CatalogRareBookDetailPageComponent},
   {path: 'livres/:slug', component: CatalogBookDetailPageComponent},
   {path: 'oeuvre/:workId', component: CatalogWorkPageComponent},
-  {path: 'administration', component: CatalogAdministrationPageComponent},
-  {path: 'administration/:section', component: CatalogAdministrationPageComponent},
+  {path: 'administration', redirectTo: 'administration/overview', pathMatch: 'full'},
+  {
+    path: 'administration/:section',
+    loadChildren: () => import('./features/administration/catalog-administration.module')
+      .then(module => module.CatalogAdministrationModule),
+  },
   {path: 'compte', component: CatalogAccountPageComponent},
   {path: 'desinscription', component: CatalogUnsubscribePageComponent},
   {

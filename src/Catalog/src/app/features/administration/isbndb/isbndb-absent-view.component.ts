@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, computed, signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -21,7 +21,9 @@ export class IsbndbAbsentViewComponent implements OnChanges {
   @Output() bookSelected = new EventEmitter<string>();
 
   readonly page = signal<CatalogAdminIsbndbAbsentBooksPage | null>(null);
-  readonly loading = signal(false);
+  readonly status = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  readonly refreshing = signal(false);
+  readonly loading = computed(() => this.status() === 'loading' || this.refreshing());
   readonly error = signal<string | null>(null);
   readonly filter = signal<IsbndbAbsentFilter>('to-complete');
   readonly pendingCount = signal(0);
@@ -32,6 +34,8 @@ export class IsbndbAbsentViewComponent implements OnChanges {
   readonly pageSize = 5;
 
   private requestVersion = 0;
+  private loadedSearch = '';
+  private loadedPage = 1;
 
   constructor(private readonly api: CatalogAdminApiService) {}
 
@@ -70,6 +74,12 @@ export class IsbndbAbsentViewComponent implements OnChanges {
     return page && page.pageSize > 0 ? Math.max(1, Math.ceil(page.totalCount / page.pageSize)) : 1;
   }
 
+  loadMessage(): string {
+    if (this.appliedSearch !== this.loadedSearch) return 'Recherche en cours…';
+    if (this.currentPage !== this.loadedPage) return `Chargement de la page ${this.currentPage}…`;
+    return 'Actualisation…';
+  }
+
   missingFieldLabel(field: string): string {
     const labels: Record<string, string> = {
       Summary: 'Résumé',
@@ -100,7 +110,9 @@ export class IsbndbAbsentViewComponent implements OnChanges {
   async loadPage(): Promise<void> {
     if (!this.accessToken) return;
     const version = ++this.requestVersion;
-    this.loading.set(true);
+    const hasPage = this.page() !== null;
+    this.status.set(hasPage ? 'ready' : 'loading');
+    this.refreshing.set(hasPage);
     this.error.set(null);
     try {
       const page = await firstValueFrom(this.api.getIsbndbAbsentBooks(this.accessToken, {
@@ -112,13 +124,17 @@ export class IsbndbAbsentViewComponent implements OnChanges {
       if (version === this.requestVersion) {
         this.page.set(page);
         this.currentPage = page.page;
+        this.loadedSearch = this.appliedSearch;
+        this.loadedPage = page.page;
+        this.status.set('ready');
       }
     } catch {
       if (version === this.requestVersion) {
+        this.status.set('error');
         this.error.set('Impossible de charger les livres hors ISBNdb. Réessayez dans un instant.');
       }
     } finally {
-      if (version === this.requestVersion) this.loading.set(false);
+      if (version === this.requestVersion) this.refreshing.set(false);
     }
   }
 

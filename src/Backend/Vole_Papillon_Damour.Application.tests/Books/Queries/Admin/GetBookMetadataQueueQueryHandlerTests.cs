@@ -63,6 +63,29 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
         result.Value.Items.Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task Handle_ProjectsTheQueuePageAndOmitsAnUnrequestedStatusFilter()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
+        sql.Clear();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetBookMetadataQueueQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(new GetBookMetadataQueueQuery(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(2);
+        var pageSql = sql.Commands.Single(command => command.Contains("LIMIT", StringComparison.OrdinalIgnoreCase));
+        pageSql.Should().NotContain("RawPayload");
+        pageSql.Should().NotContain("Summary");
+        pageSql.Should().NotContain("ManuallyEditedFields");
+        pageSql.Should().NotContain("@__metadataStatus");
+    }
+
     [Theory]
     [InlineData(BookMetadataStatus.Pending, 1)]
     [InlineData(BookMetadataStatus.Failed, 2)]

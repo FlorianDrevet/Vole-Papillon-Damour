@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
@@ -63,6 +64,7 @@ public interface IProjectDbContext
     DbSet<BookRecommendationJob> BookRecommendationJobs => throw new NotSupportedException();
     DbSet<BookNeighbor> BookNeighbors => throw new NotSupportedException();
     DbSet<RecommendationGeneration> RecommendationGenerations => throw new NotSupportedException();
+    DbSet<AdminDashboardSnapshot> AdminDashboardSnapshots => throw new NotSupportedException();
     DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => throw new NotSupportedException();
     DbSet<MemberFavoriteBook> MemberFavoriteBooks => throw new NotSupportedException();
     DbSet<AnonymousFavoriteCount> AnonymousFavoriteCounts => throw new NotSupportedException();

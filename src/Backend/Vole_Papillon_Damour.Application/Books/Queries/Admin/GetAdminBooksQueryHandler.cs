@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -25,30 +26,55 @@ public sealed class GetAdminBooksQueryHandler(
             return Errors.Book.InvalidAdminPage();
         }
 
+        BookMetadataStatus? metadataStatus = null;
+        if (!string.IsNullOrWhiteSpace(query.MetadataStatus))
+        {
+            if (!Enum.TryParse<BookMetadataStatus>(query.MetadataStatus.Trim(), true, out var parsedStatus) ||
+                !Enum.IsDefined(parsedStatus))
+            {
+                return Error.Validation("Book.InvalidMetadataStatus", "The metadata status is not supported.");
+            }
+
+            metadataStatus = parsedStatus;
+        }
+
         var generatedAt = dateTimeProvider.UtcNow;
         if (generatedAt.Kind != DateTimeKind.Utc)
         {
             return Error.Validation("Book.InvalidClock", "The administration clock must be expressed in UTC.");
         }
 
-        var booksQuery = dbContext.Books
-            .AsNoTracking()
-            .Where(book =>
-                (book.MetadataStatus == BookMetadataStatus.Resolved ||
-                 book.MetadataStatus == BookMetadataStatus.Manual) &&
-                book.Title != null &&
-                book.Title.Trim() != string.Empty)
-            .Where(book => query.Rare == null || dbContext.RareBooks
-                .AsNoTracking()
-                .Any(rareBook => rareBook.Isbn13 == book.Id) == query.Rare)
-            .Where(book => query.Hidden == null || book.IsHiddenFromCatalog == query.Hidden)
-            .Where(book => string.IsNullOrWhiteSpace(query.MetadataStatus) ||
-                           book.MetadataStatus.ToString() == query.MetadataStatus)
-            .Where(book => query.AvailableOnly != true || book.QuantityAvailable > 0)
-            .Where(book => query.Undated != true || dbContext.BookAnnouncements.Any(
+        var booksQuery = AdminQueryPredicates.Catalogue(dbContext.Books.AsNoTracking());
+        if (query.Rare is { } rare)
+        {
+            var rareBooks = dbContext.RareBooks.AsNoTracking();
+            booksQuery = rare
+                ? booksQuery.Where(book => rareBooks.Any(rareBook => rareBook.Isbn13 == book.Id))
+                : booksQuery.Where(book => !rareBooks.Any(rareBook => rareBook.Isbn13 == book.Id));
+        }
+
+        if (query.Hidden is { } hidden)
+        {
+            booksQuery = booksQuery.Where(book => book.IsHiddenFromCatalog == hidden);
+        }
+
+        if (metadataStatus is { } requestedStatus)
+        {
+            booksQuery = booksQuery.Where(book => book.MetadataStatus == requestedStatus);
+        }
+
+        if (query.AvailableOnly == true)
+        {
+            booksQuery = booksQuery.Where(book => book.QuantityAvailable > 0);
+        }
+
+        if (query.Undated == true)
+        {
+            booksQuery = booksQuery.Where(book => dbContext.BookAnnouncements.Any(
                 announcement => announcement.Isbn13 == book.Id &&
                                 announcement.Status == BookAnnouncementStatus.Announced &&
                                 announcement.AssoEventsId == null));
+        }
 
         var search = query.Search?.Trim();
         if (!string.IsNullOrWhiteSpace(search))
@@ -65,14 +91,50 @@ public sealed class GetAdminBooksQueryHandler(
         }
 
         var totalCount = await booksQuery.CountAsync(cancellationToken);
-        var pageBooks = await booksQuery
+        var pageIsbns = await booksQuery
             .OrderByDescending(book => book.UpdatedAt)
             .ThenBy(book => book.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Include(book => book.Genres)
+            .Select(book => book.Id)
             .ToListAsync(cancellationToken);
-        var ids = pageBooks.Select(book => book.Id).ToArray();
+        var pageBooks = pageIsbns.Count == 0
+            ? []
+            : await dbContext.Books.AsNoTracking()
+                .Where(book => pageIsbns.Contains(book.Id))
+                .Select(book => new AdminBookQueryProjection(
+                    book.Id,
+                    book.WorkId,
+                    book.Title,
+                    book.Authors,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.PhysicalFormat,
+                    book.Language,
+                    book.Genre,
+                    book.MetadataStatus,
+                    book.MetadataSource,
+                    book.ManuallyEditedFields,
+                    book.QuantityAvailable,
+                    book.SalesCount,
+                    book.RejectionCount,
+                    book.IsHiddenFromCatalog,
+                    book.RedirectedToIsbn13,
+                    book.CoverUrl,
+                    book.FirstSeenAt,
+                    book.LastAvailableAt,
+                    book.UpdatedAt,
+                    book.IsIsbndbSourced,
+                    book.IsAbsentFromIsbndb,
+                    book.IsbndbCheckedAt,
+                    book.IsbndbCompletedAt,
+                    book.Pages,
+                    book.Edition,
+                    book.Summary,
+                    book.Genres.Select(genre => genre.Name).ToArray()))
+                .ToListAsync(cancellationToken);
+        var booksByIsbn = pageBooks.ToDictionary(book => book.Id);
+        var ids = pageIsbns.ToArray();
         var rareIsbns = ids.Length == 0
             ? []
             : (await dbContext.RareBooks
@@ -87,23 +149,32 @@ public sealed class GetAdminBooksQueryHandler(
                 .AsNoTracking()
                 .Where(announcement => ids.Contains(announcement.Isbn13))
                 .ToListAsync(cancellationToken);
-        var records = ids.Length == 0
-            ? new Dictionary<Isbn13, Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord>()
+        var recordSubjects = ids.Length == 0
+            ? new Dictionary<Isbn13, string?>()
             : await dbContext.BookIsbndbRecords.AsNoTracking()
                 .Where(record => ids.Contains(record.Isbn13))
-                .ToDictionaryAsync(record => record.Isbn13, cancellationToken);
+                .Select(record => new { record.Isbn13, record.Subjects })
+                .ToDictionaryAsync(record => record.Isbn13, record => record.Subjects, cancellationToken);
+        var rawPayloadIsbns = ids
+            .Where(isbn => IsbndbSubjectReader.Read(recordSubjects.GetValueOrDefault(isbn), null).Count == 0)
+            .ToArray();
+        var rawPayloads = rawPayloadIsbns.Length == 0
+            ? new Dictionary<Isbn13, string?>()
+            : await dbContext.Books.AsNoTracking()
+                .Where(book => rawPayloadIsbns.Contains(book.Id))
+                .Select(book => new { book.Id, book.RawPayload })
+                .ToDictionaryAsync(book => book.Id, book => book.RawPayload, cancellationToken);
 
         // The page projection does not include movements, so they are not loaded.
         return new AdminBookPageResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
-            pageBooks
-                .Select(book => AdminQueryProjection.ToBookResult(
-                    book,
+            pageIsbns
+                .Select(isbn => AdminQueryProjection.ToBookResult(
+                    booksByIsbn[isbn],
                     announcements,
-                    [],
-                    rareIsbns.Contains(book.Id.Value),
-                    false,
-                    records.GetValueOrDefault(book.Id)))
+                    rareIsbns.Contains(isbn.Value),
+                    recordSubjects.GetValueOrDefault(isbn),
+                    rawPayloads.GetValueOrDefault(isbn)))
                 .ToArray(),
             totalCount,
             query.Page,

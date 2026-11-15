@@ -93,6 +93,10 @@
 .isbndb-absent-action { justify-self: end; }
 .isbndb-mobile-label { display: none; }
 
+.admin-skeleton-panel { width: 50px; height: 68px; border-radius: 6px; }
+.admin-skeleton-line { height: 11px; }
+.admin-skeleton-action { width: 106px; height: 38px; border-radius: 10px; }
+
 @media (max-width: 1120px) {
   .isbndb-absent-column-headings { display: none; }
   .isbndb-absent-card { grid-template-columns: minmax(0, 1.8fr) minmax(110px, 1fr) minmax(140px, 1.3fr); }

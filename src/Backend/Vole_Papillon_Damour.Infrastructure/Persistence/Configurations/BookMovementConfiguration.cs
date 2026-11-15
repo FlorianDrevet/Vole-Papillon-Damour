@@ -94,7 +94,8 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
         builder.HasIndex(movement => new { movement.Type, movement.OccurredAt })
             .IncludeProperties(movement => new { movement.Quantity, movement.Isbn13 });
         builder.HasIndex(movement => new { movement.AssoEventsId, movement.Type });
-        builder.HasIndex(movement => movement.ScanSessionId);
+        builder.HasIndex(movement => movement.ScanSessionId)
+            .IncludeProperties(movement => movement.Isbn13);
         builder.HasIndex(movement => movement.ClientGestureId)
             .IsUnique()
             .HasFilter("[ClientGestureId] IS NOT NULL");

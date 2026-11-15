@@ -198,6 +198,34 @@
 .isbndb-unmatched-subjects li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .isbndb-unmatched-subjects li strong { color: var(--admin-ink); font-family: var(--admin-mono, 'IBM Plex Mono'), monospace; }
 
+.isbndb-card-heading-status { display: grid; justify-items: end; gap: 6px; }
+.isbndb-refreshing { color: var(--admin-slate); font-size: .68rem; }
+.isbndb-status-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--admin-red) 35%, transparent);
+  border-radius: 12px;
+  background: var(--admin-white);
+  color: var(--admin-red);
+  font-size: .78rem;
+}
+.isbndb-status-error button {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 @media (max-width: 680px) {
   .isbndb-status-card { padding: 18px 16px; }
   .isbndb-card-heading,

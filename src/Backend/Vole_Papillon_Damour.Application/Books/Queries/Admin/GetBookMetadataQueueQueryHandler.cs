@@ -32,15 +32,7 @@ public sealed class GetBookMetadataQueueQueryHandler(
             return Error.Validation("Book.InvalidClock", "The administration clock must be expressed in UTC.");
         }
 
-        var queue = dbContext.Books
-            .AsNoTracking()
-            .Where(book => book.MetadataStatus != BookMetadataStatus.Discarded)
-            .Where(book =>
-                book.MetadataStatus == BookMetadataStatus.Pending ||
-                book.MetadataStatus == BookMetadataStatus.Failed ||
-                book.MetadataStatus == BookMetadataStatus.NotFound ||
-                book.Title == null ||
-                book.Title.Trim() == string.Empty);
+        var queue = AdminQueryPredicates.MetadataQueue(dbContext.Books.AsNoTracking());
 
         if (query.MetadataStatus is { } metadataStatus)
         {

@@ -3,6 +3,7 @@ using System.Text;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -16,7 +17,8 @@ namespace Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 
 public sealed class SearchCatalogQueryHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    HybridCache cache)
     : IRequestHandler<SearchCatalogQuery, ErrorOr<PublicCatalogSearchResult>>
 {
     private const int MaxPageSize = 60;
@@ -40,9 +42,17 @@ public sealed class SearchCatalogQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
+        var inProgressScanIsbns = await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(
+            dbContext,
+            cancellationToken);
         var catalogBooksQuery = PublicCatalogBookVisibility.FilterPublicCatalogBooks(
             dbContext.Books.AsNoTracking(),
-            dbContext);
+            inProgressScanIsbns);
+        var genreFacets = await PublicCatalogGenreFacets.GetAsync(
+            catalogBooksQuery,
+            cache,
+            cancellationToken);
+        var genres = genreFacets.Select(facet => facet.Name).ToArray();
         var normalizedSearch = Normalize(query.Search);
         var searchTerms = query.Search?
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -75,9 +85,22 @@ public sealed class SearchCatalogQueryHandler(
         }
         if (!string.IsNullOrWhiteSpace(query.Genre))
         {
-            var genre = query.Genre.Trim();
+            var genre = PublicCatalogGenreFacets.ResolveCanonicalName(query.Genre, genreFacets);
+            if (genre is null)
+            {
+                return new PublicCatalogSearchResult(
+                    nowUtc,
+                    [],
+                    0,
+                    HasMore: false,
+                    query.Page,
+                    query.PageSize,
+                    genres,
+                    genreFacets);
+            }
+
             filteredBooksQuery = filteredBooksQuery.Where(book =>
-                book.Genres.Any(bookGenre => bookGenre.Name == genre));
+                book.Genres.Any(bookGenre => bookGenre.Name == EF.Constant(genre)));
         }
 
         var activeAnnouncementIsbns = Array.Empty<Isbn13>();
@@ -139,36 +162,54 @@ public sealed class SearchCatalogQueryHandler(
                 .Any(rareBook => rareBook.Isbn13 == book.Id));
         }
 
-        var genreFacetRows = await catalogBooksQuery
-            .SelectMany(book => book.Genres)
-            .Where(bookGenre => bookGenre.Name != string.Empty)
-            .GroupBy(bookGenre => bookGenre.Name)
-            .Select(group => new PublicCatalogGenreFacetResult(group.Key, group.Count()))
-            .ToListAsync(cancellationToken);
-        var genreFacets = genreFacetRows
-            .GroupBy(facet => facet.Name.Trim(), StringComparer.OrdinalIgnoreCase)
-            .Select(group => new PublicCatalogGenreFacetResult(
-                group.Key,
-                group.Sum(facet => facet.BookCount)))
-            .OrderByDescending(facet => facet.BookCount)
-            .ThenBy(facet => facet.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToArray();
-        var genres = genreFacets.Select(facet => facet.Name).ToArray();
-
         var orderedBooksQuery = OrderBooks(filteredBooksQuery, query.Sort, normalizedSearch);
         var pageOffset = checked((query.Page - 1) * query.PageSize);
-        var pageBooksWithLookahead = await orderedBooksQuery
-            .Include(book => book.Genres)
+        var pageIsbnsWithLookahead = await orderedBooksQuery
+            .Select(book => book.Id)
             .Skip(pageOffset)
             .Take(query.PageSize + 1)
             .ToListAsync(cancellationToken);
-        var hasMore = pageBooksWithLookahead.Count > query.PageSize;
+        var hasMore = pageIsbnsWithLookahead.Count > query.PageSize;
         if (hasMore)
         {
-            pageBooksWithLookahead.RemoveAt(pageBooksWithLookahead.Count - 1);
+            pageIsbnsWithLookahead.RemoveAt(pageIsbnsWithLookahead.Count - 1);
         }
 
-        var pageBooks = pageBooksWithLookahead;
+        var pageIsbns = pageIsbnsWithLookahead.ToArray();
+        var projectedPageBooks = pageIsbns.Length == 0
+            ? []
+            : await dbContext.Books
+                .AsNoTracking()
+                .Where(book => pageIsbns.Contains(book.Id))
+                .Select(book => new PublicCatalogBookProjection(
+                    book.Id.Value,
+                    book.Title,
+                    book.Authors,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.PhysicalFormat,
+                    book.Language,
+                    book.Genre,
+                    book.WorkId,
+                    book.CoverUrl,
+                    book.QuantityAvailable,
+                    book.LastAvailableAt,
+                    book.FirstSeenAt,
+                    book.UpdatedAt,
+                    book.MetadataStatus,
+                    book.IsHiddenFromCatalog,
+                    book.IsFavoriteReference,
+                    book.RedirectedToIsbn13 != null,
+                    book.CoverSource,
+                    book.Genres.Select(genre => genre.Name).ToArray()))
+                .ToListAsync(cancellationToken);
+        var projectedBooksByIsbn = projectedPageBooks.ToDictionary(
+            book => book.Isbn13,
+            StringComparer.Ordinal);
+        var pageBooks = pageIsbns
+            .Select(isbn => projectedBooksByIsbn[isbn.Value])
+            .ToArray();
+
         int? totalCount;
         if (query.IncludeTotalCount)
         {
@@ -176,12 +217,11 @@ public sealed class SearchCatalogQueryHandler(
         }
         else
         {
-            totalCount = !hasMore && (pageBooks.Count > 0 || query.Page == 1)
-                ? checked(pageOffset + pageBooks.Count)
+            totalCount = !hasMore && (pageBooks.Length > 0 || query.Page == 1)
+                ? checked(pageOffset + pageBooks.Length)
                 : null;
         }
 
-        var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
         var publishedAvailableRareIsbns = pageIsbns.Length == 0
             ? []
             : (await dbContext.RareBooks

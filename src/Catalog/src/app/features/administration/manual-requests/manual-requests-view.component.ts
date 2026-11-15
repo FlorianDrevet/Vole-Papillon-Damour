@@ -24,6 +24,7 @@ type ManualRequestsAdminTab = CatalogManualRequestTab | 'requesters';
 export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
   @Input() accessToken = '';
   @Output() countsChanged = new EventEmitter<CatalogManualRequestSummary>();
+  @Output() mutationCompleted = new EventEmitter<void>();
   @Output() requesterSelected = new EventEmitter<string | null>();
 
   @ViewChild('requestsHeading') private requestsHeading?: ElementRef<HTMLElement>;
@@ -334,6 +335,7 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     this.success.set(null);
     try {
       await action();
+      this.mutationCompleted.emit();
       return true;
     } catch {
       this.error.set('Cette action n’a pas abouti. Vérifiez la connexion puis réessayez.');

@@ -22,15 +22,24 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
             return Errors.Book.FairNotFound(query.FairId);
         }
 
-        var fair = await dbContext.AssoEvents.AsNoTracking().SingleOrDefaultAsync(
-            candidate => candidate.Id == AssoEventsId.Create(query.FairId),
-            cancellationToken);
+        var fair = await dbContext.AssoEvents
+            .AsNoTracking()
+            .Where(candidate => candidate.Id == AssoEventsId.Create(query.FairId))
+            .Select(candidate => new TargetFairProjection(
+                candidate.Id,
+                candidate.Name,
+                candidate.DateStart,
+                candidate.DateEnd,
+                candidate.IsCancelled,
+                candidate.BookRevenue,
+                candidate.EventsType))
+            .SingleOrDefaultAsync(cancellationToken);
         if (fair is null)
         {
             return Errors.Book.FairNotFound(query.FairId);
         }
 
-        if (fair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
+        if (fair.EventType?.Value != EventsType.EventsTypeEnum.Books)
         {
             return Errors.Book.TargetFairMustBeBooks();
         }
@@ -40,12 +49,17 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
             .Where(movement =>
                 movement.AssoEventsId == fair.Id &&
                 movement.Type == BookMovementType.Sale)
+            .Select(movement => new FairSaleProjection(
+                movement.Isbn13,
+                movement.Quantity,
+                movement.OccurredAt))
             .ToListAsync(cancellationToken);
         var soldIsbns = sales.Select(sale => sale.Isbn13).Distinct().ToArray();
         var books = await dbContext.Books
             .AsNoTracking()
             .Where(book => soldIsbns.Contains(book.Id))
-            .ToDictionaryAsync(book => book.Id, cancellationToken);
+            .Select(StatisticsProjectionExpressions.FairBook)
+            .ToDictionaryAsync(book => book.Isbn13, cancellationToken);
 
         var soldQuantity = sales.Sum(sale => Math.Abs(sale.Quantity));
         var salesByGenre = sales
@@ -85,6 +99,11 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
             .AsNoTracking()
             .Where(candidate => candidate.EventsType == new EventsType(EventsType.EventsTypeEnum.Books) &&
                                 !candidate.IsCancelled)
+            .Select(candidate => new PreviousFairProjection(
+                candidate.Id,
+                candidate.Name,
+                candidate.DateStart,
+                candidate.BookRevenue))
             .ToListAsync(cancellationToken);
         // SQLite cannot translate DateTimeOffset comparisons consistently; compare dates in memory.
         previousFairs = previousFairs
@@ -99,6 +118,9 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
                 movement.Type == BookMovementType.Sale &&
                 movement.AssoEventsId != null &&
                 previousFairIds.Contains(movement.AssoEventsId!))
+            .Select(movement => new PreviousFairSaleProjection(
+                movement.AssoEventsId,
+                movement.Quantity))
             .ToListAsync(cancellationToken);
         var comparisons = previousFairs
             .Select(previous => new AdminFairComparisonResult(
@@ -131,4 +153,26 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
             dailySales,
             comparisons);
     }
+
+    private sealed record TargetFairProjection(
+        AssoEventsId Id,
+        string Name,
+        DateTimeOffset DateStart,
+        DateTimeOffset? DateEnd,
+        bool IsCancelled,
+        decimal? BookRevenue,
+        EventsType? EventType);
+
+    private sealed record FairSaleProjection(
+        Isbn13 Isbn13,
+        int Quantity,
+        DateTime OccurredAt);
+
+    private sealed record PreviousFairProjection(
+        AssoEventsId Id,
+        string Name,
+        DateTimeOffset DateStart,
+        decimal? BookRevenue);
+
+    private sealed record PreviousFairSaleProjection(AssoEventsId? AssoEventsId, int Quantity);
 }
