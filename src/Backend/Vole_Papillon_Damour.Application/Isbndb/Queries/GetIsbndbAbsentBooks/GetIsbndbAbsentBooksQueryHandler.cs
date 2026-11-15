@@ -3,8 +3,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Isbndb;
-using Vole_Papillon_Damour.Domain.BookAggregate;
-using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -22,8 +20,10 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
             return Errors.Book.InvalidAdminPage();
 
         var books = dbContext.Books.AsNoTracking()
-            .Where(book => book.IsAbsentFromIsbndb &&
-                (status == "completed" ? book.IsbndbCompletedAt != null : book.IsbndbCompletedAt == null));
+            .Where(book => book.IsAbsentFromIsbndb);
+        books = status == "completed"
+            ? books.Where(book => book.IsbndbCompletedAt != null)
+            : books.Where(book => book.IsbndbCompletedAt == null);
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
@@ -37,27 +37,68 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
         }
 
         var total = await books.CountAsync(cancellationToken);
-        var pageBooks = await books
+        var pageIsbns = await books
             .OrderByDescending(book => book.QuantityAvailable > 0)
             .ThenByDescending(book => book.FirstSeenAt)
             .ThenBy(book => book.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Include(book => book.Genres)
+            .Select(book => book.Id)
             .ToListAsync(cancellationToken);
-        var isbn13s = pageBooks.Select(book => book.Id).ToArray();
-        var records = await dbContext.BookIsbndbRecords.AsNoTracking()
-            .Where(record => isbn13s.Contains(record.Isbn13))
-            .ToDictionaryAsync(record => record.Isbn13, cancellationToken);
+        var isbn13s = pageIsbns.ToArray();
+        var pageBooks = isbn13s.Length == 0
+            ? []
+            : await dbContext.Books.AsNoTracking()
+                .Where(book => isbn13s.Contains(book.Id))
+                .Select(book => new IsbndbAbsentBookProjection(
+                    book.Id,
+                    book.Title,
+                    book.Authors,
+                    book.CoverUrl,
+                    book.MetadataSource,
+                    book.QuantityAvailable,
+                    book.Summary,
+                    book.Genre,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.Pages,
+                    book.Edition,
+                    book.Genres.Select(genre => genre.Name).ToArray(),
+                    book.FirstSeenAt,
+                    book.IsbndbCheckedAt,
+                    book.IsbndbCompletedAt))
+                .ToListAsync(cancellationToken);
+        var pageBooksByIsbn = pageBooks.ToDictionary(book => book.Id);
+        var recordSubjects = isbn13s.Length == 0
+            ? new Dictionary<Isbn13, string?>()
+            : await dbContext.BookIsbndbRecords.AsNoTracking()
+                .Where(record => isbn13s.Contains(record.Isbn13))
+                .Select(record => new { record.Isbn13, record.Subjects })
+                .ToDictionaryAsync(record => record.Isbn13, record => record.Subjects, cancellationToken);
+        var fallbackPayloadIsbns = isbn13s
+            .Where(isbn => IsbndbSubjectReader.Read(recordSubjects.GetValueOrDefault(isbn), null).Count == 0)
+            .ToArray();
+        var fallbackPayloads = fallbackPayloadIsbns.Length == 0
+            ? new Dictionary<Isbn13, string?>()
+            : await dbContext.Books.AsNoTracking()
+                .Where(book => fallbackPayloadIsbns.Contains(book.Id))
+                .Select(book => new { book.Id, book.RawPayload })
+                .ToDictionaryAsync(book => book.Id, book => book.RawPayload, cancellationToken);
 
         return new IsbndbAbsentBooksPageResult(
-            pageBooks.Select(book => ToResult(book, records.GetValueOrDefault(book.Id))).ToArray(),
+            pageIsbns.Select(isbn => ToResult(
+                pageBooksByIsbn[isbn],
+                recordSubjects.GetValueOrDefault(isbn),
+                fallbackPayloads.GetValueOrDefault(isbn))).ToArray(),
             total,
             query.Page,
             query.PageSize);
     }
 
-    private static IsbndbAbsentBookResult ToResult(Book book, BookIsbndbRecord? record)
+    private static IsbndbAbsentBookResult ToResult(
+        IsbndbAbsentBookProjection book,
+        string? recordSubjects,
+        string? fallbackPayload)
     {
         var missing = new List<string>();
         if (string.IsNullOrWhiteSpace(book.Summary)) missing.Add("Summary");
@@ -83,11 +124,29 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
             book.PublicationYear,
             book.Pages,
             book.Edition,
-            book.Genres.Select(genre => genre.Name).ToArray(),
-            IsbndbSubjectReader.Read(book, record?.Subjects),
+            book.Genres,
+            IsbndbSubjectReader.Read(recordSubjects, fallbackPayload),
             new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
             book.IsbndbCheckedAt is { } checkedAt ? new DateTimeOffset(checkedAt, TimeSpan.Zero) : null,
             book.IsbndbCompletedAt is { } completedAt ? new DateTimeOffset(completedAt, TimeSpan.Zero) : null);
     }
+
+    private sealed record IsbndbAbsentBookProjection(
+        Isbn13 Id,
+        string? Title,
+        string? Authors,
+        string? CoverUrl,
+        BookMetadataSource? MetadataSource,
+        int QuantityAvailable,
+        string? Summary,
+        string? Genre,
+        string? Publisher,
+        int? PublicationYear,
+        int? Pages,
+        string? Edition,
+        IReadOnlyList<string> Genres,
+        DateTime FirstSeenAt,
+        DateTime? IsbndbCheckedAt,
+        DateTime? IsbndbCompletedAt);
 
 }

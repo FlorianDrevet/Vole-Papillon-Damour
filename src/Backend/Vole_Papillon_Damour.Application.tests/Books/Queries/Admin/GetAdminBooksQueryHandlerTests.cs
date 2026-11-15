@@ -133,6 +133,89 @@ public sealed class GetAdminBooksQueryHandlerTests
         result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070363735");
     }
 
+    [Theory]
+    [InlineData("Manual", 1)]
+    [InlineData("Pending", 0)]
+    public async Task Handle_UsesEnumMetadataFilterAndKeepsThePagedSqlProjectionLight(
+        string metadataStatus,
+        int expectedTotalCount)
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        var manual = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        SetTitle(manual, "Livre manuel");
+        await fixture.AddBookAsync("9782070408504", quantityAvailable: 1);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
+
+        sql.Clear();
+        var result = await handler.Handle(
+            new GetAdminBooksQuery(null, metadataStatus, null, null, 1, 50),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(expectedTotalCount);
+        if (metadataStatus == "Manual")
+        {
+            result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be(manual.Id.Value);
+        }
+        else
+        {
+            result.Value.Books.Should().BeEmpty();
+        }
+        var pageSql = sql.Commands.Single(command => command.Contains("LIMIT", StringComparison.OrdinalIgnoreCase));
+        pageSql.Should().Contain("MetadataStatus");
+        pageSql.Should().NotContain("CAST");
+        pageSql.Should().NotContain("RawPayload");
+        pageSql.Should().NotContain("Summary");
+        pageSql.Should().NotContain("ManuallyEditedFields");
+        pageSql.Should().NotContain(" IS NULL OR ");
+    }
+
+    [Fact]
+    public async Task Handle_RejectsUnknownMetadataStatusBeforeQuerying()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminBooksQuery(null, "Retired", null, null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.InvalidMetadataStatus");
+        sql.Commands.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_PreservesSubjectsFromFallbackPayloadAfterProjectingThePage()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch("Livre avec sujet", null, null, null, null, null, null, null,
+                [BookMetadataField.Title]),
+            BookMetadataSource.OpenLibrary,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "{\"subjects\":[\"Robinsonades\"]}");
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+
+        var result = await new GetAdminBooksQueryHandler(fixture.Context, clock).Handle(
+            new GetAdminBooksQuery(null, null, null, null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Subjects
+            .Should().ContainSingle().Which.Should().Be("Robinsonades");
+    }
+
     private static void SetTitle(Book book, string title)
     {
         book.ApplyManualMetadata(

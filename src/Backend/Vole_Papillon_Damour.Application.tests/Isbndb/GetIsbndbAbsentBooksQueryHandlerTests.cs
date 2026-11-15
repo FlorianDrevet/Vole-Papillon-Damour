@@ -45,6 +45,54 @@ public sealed class GetIsbndbAbsentBooksQueryHandlerTests
         completedResult.Value.Items.Should().ContainSingle(item => item.Isbn13 == completed.Id.Value);
     }
 
+    [Fact]
+    public async Task Handle_PagesByIsbnBeforeSelectingDisplayColumns()
+    {
+        var sql = new Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook.SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        var book = CreateAbsentBook("9782070363735", Now.AddDays(-2), "Les Misérables", "Victor Hugo", "Bnf");
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        sql.Clear();
+
+        var result = await new GetIsbndbAbsentBooksQueryHandler(fixture.Context).Handle(
+            new GetIsbndbAbsentBooksQuery("to-complete", null, 1, 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(1);
+        result.Value.Items.Should().ContainSingle().Which.Isbn13.Should().Be(book.Id.Value);
+        var pageSql = sql.Commands.Single(command => command.Contains("LIMIT", StringComparison.OrdinalIgnoreCase));
+        pageSql.Should().NotContain("RawPayload");
+        pageSql.Should().NotContain("Summary");
+        pageSql.Should().NotContain("ManuallyEditedFields");
+    }
+
+    [Fact]
+    public async Task Handle_PreservesSubjectsFromFallbackPayloadAfterProjectingThePage()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        Isbn13.TryCreate("9782070363735", out var isbn).Should().BeTrue();
+        var book = Book.Create(isbn, Now.AddDays(-2));
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch("Livre absent", "Auteur", null, null, null, null, null, null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            BookMetadataSource.Bnf,
+            Now.AddDays(-2),
+            "{\"subjects\":[\"Robinsonades\"]}");
+        book.MarkAbsentFromIsbndb(Now.AddDays(-1));
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await new GetIsbndbAbsentBooksQueryHandler(fixture.Context).Handle(
+            new GetIsbndbAbsentBooksQuery("to-complete", null, 1, 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Items.Should().ContainSingle().Which.Subjects
+            .Should().ContainSingle().Which.Should().Be("Robinsonades");
+    }
+
     private static Book CreateAbsentBook(string isbn, DateTime firstSeenAt, string title, string authors, string source)
     {
         Isbn13.TryCreate(isbn, out var isbn13).Should().BeTrue();

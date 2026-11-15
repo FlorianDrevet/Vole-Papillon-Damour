@@ -2,6 +2,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Isbndb;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -15,6 +16,40 @@ internal static class AdminQueryProjection
         bool isRare,
         bool includeMovements = true,
         BookIsbndbRecord? isbndbRecord = null)
+    {
+        var movementRows = includeMovements
+            ? movements
+                .Where(movement => movement.Isbn13 == book.Id)
+                .OrderByDescending(movement => movement.OccurredAt)
+                .ThenByDescending(movement => movement.Id.Value)
+                .Select(ToMovementResult)
+                .ToArray()
+            : [];
+
+        return ToBookResultCore(
+            AdminBookQueryProjection.FromBook(book),
+            announcements,
+            movementRows,
+            isRare,
+            isbndbRecord?.Subjects,
+            book.RawPayload);
+    }
+
+    public static AdminBookResult ToBookResult(
+        AdminBookQueryProjection book,
+        IEnumerable<BookAnnouncement> announcements,
+        bool isRare,
+        string? recordSubjects,
+        string? rawPayload) =>
+        ToBookResultCore(book, announcements, [], isRare, recordSubjects, rawPayload);
+
+    private static AdminBookResult ToBookResultCore(
+        AdminBookQueryProjection book,
+        IEnumerable<BookAnnouncement> announcements,
+        IReadOnlyList<AdminBookMovementResult> movementRows,
+        bool isRare,
+        string? recordSubjects,
+        string? rawPayload)
     {
         var announcementRows = announcements
             .Where(announcement => announcement.Isbn13 == book.Id)
@@ -32,15 +67,6 @@ internal static class AdminQueryProjection
                     : null,
                 announcement.ScanSessionId.Value))
             .ToArray();
-
-        var movementRows = includeMovements
-            ? movements
-                .Where(movement => movement.Isbn13 == book.Id)
-                .OrderByDescending(movement => movement.OccurredAt)
-                .ThenByDescending(movement => movement.Id.Value)
-                .Select(ToMovementResult)
-                .ToArray()
-            : [];
 
         return new AdminBookResult(
             book.Id.Value,
@@ -79,8 +105,8 @@ internal static class AdminQueryProjection
             book.Pages,
             book.Edition,
             book.Summary,
-            book.Genres.Select(genre => genre.Name).ToArray(),
-            IsbndbSubjectReader.Read(book, isbndbRecord?.Subjects),
+            book.Genres,
+            IsbndbSubjectReader.Read(recordSubjects, rawPayload),
             book.MetadataSource is { } fallback && fallback != Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.BookMetadataSource.Isbndb
                 ? fallback.ToString()
                 : null);
@@ -121,4 +147,68 @@ internal static class AdminQueryProjection
             movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.Withdrawal ||
             (movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.Correction &&
              (movement.Note == null || !movement.Note.StartsWith(AnnouncementCorrectionNotePrefix)));
+}
+
+internal sealed record AdminBookQueryProjection(
+    Isbn13 Id,
+    string? WorkId,
+    string? Title,
+    string? Authors,
+    string? Publisher,
+    int? PublicationYear,
+    string? PhysicalFormat,
+    string? Language,
+    string? Genre,
+    BookMetadataStatus MetadataStatus,
+    BookMetadataSource? MetadataSource,
+    string? ManuallyEditedFields,
+    int QuantityAvailable,
+    int SalesCount,
+    int RejectionCount,
+    bool IsHiddenFromCatalog,
+    Isbn13? RedirectedToIsbn13,
+    string? CoverUrl,
+    DateTime FirstSeenAt,
+    DateTime? LastAvailableAt,
+    DateTime UpdatedAt,
+    bool IsIsbndbSourced,
+    bool IsAbsentFromIsbndb,
+    DateTime? IsbndbCheckedAt,
+    DateTime? IsbndbCompletedAt,
+    int? Pages,
+    string? Edition,
+    string? Summary,
+    IReadOnlyList<string> Genres)
+{
+    public static AdminBookQueryProjection FromBook(Book book) =>
+        new(
+            book.Id,
+            book.WorkId,
+            book.Title,
+            book.Authors,
+            book.Publisher,
+            book.PublicationYear,
+            book.PhysicalFormat,
+            book.Language,
+            book.Genre,
+            book.MetadataStatus,
+            book.MetadataSource,
+            book.ManuallyEditedFields,
+            book.QuantityAvailable,
+            book.SalesCount,
+            book.RejectionCount,
+            book.IsHiddenFromCatalog,
+            book.RedirectedToIsbn13,
+            book.CoverUrl,
+            book.FirstSeenAt,
+            book.LastAvailableAt,
+            book.UpdatedAt,
+            book.IsIsbndbSourced,
+            book.IsAbsentFromIsbndb,
+            book.IsbndbCheckedAt,
+            book.IsbndbCompletedAt,
+            book.Pages,
+            book.Edition,
+            book.Summary,
+            book.Genres.Select(genre => genre.Name).ToArray());
 }
