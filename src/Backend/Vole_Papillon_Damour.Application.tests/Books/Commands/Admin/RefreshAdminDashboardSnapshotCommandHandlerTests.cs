@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -58,7 +60,13 @@ public sealed class RefreshAdminDashboardSnapshotCommandHandlerTests
         await fixture.Context.SaveChangesAsync();
         clock.UtcNow.Returns(Now.AddMinutes(10));
 
-        var overviewHandler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock);
+        var hybridCacheServices = new ServiceCollection().AddLogging();
+        hybridCacheServices.AddHybridCache();
+        using var overviewCacheProvider = hybridCacheServices.BuildServiceProvider();
+        var overviewHandler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            overviewCacheProvider.GetRequiredService<HybridCache>());
         var overviewBeforeRefresh = await overviewHandler.Handle(
             new GetCatalogAdminOverviewQuery(From: null, To: null),
             CancellationToken.None);

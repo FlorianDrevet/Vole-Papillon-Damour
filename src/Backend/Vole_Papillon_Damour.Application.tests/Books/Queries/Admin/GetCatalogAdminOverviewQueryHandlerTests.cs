@@ -1,12 +1,17 @@
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
@@ -36,7 +41,11 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         await fixture.Context.SaveChangesAsync();
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
-        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock);
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            cacheServices.GetRequiredService<HybridCache>());
 
         var result = await handler.Handle(
             new GetCatalogAdminOverviewQuery(From: null, To: null),
@@ -74,7 +83,11 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         await fixture.Context.SaveChangesAsync();
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
-        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock);
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            cacheServices.GetRequiredService<HybridCache>());
         sqlCapture.Clear();
 
         var result = await handler.Handle(
@@ -90,7 +103,7 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         result.Value.PreviousPeriod.RejectedCount.Should().Be(0);
         result.Value.PreviousPeriod.SoldQuantity.Should().Be(2);
         result.Value.PreviousPeriod.SoldTitles.Should().Be(1);
-        sqlCapture.Commands.Should().HaveCount(11);
+        sqlCapture.Commands.Count.Should().BeLessThanOrEqualTo(6);
         sqlCapture.Commands.Should().NotContain(command =>
             command.Contains("BookMovements", StringComparison.OrdinalIgnoreCase) &&
             command.Contains("QuantityAvailable", StringComparison.OrdinalIgnoreCase) &&
@@ -99,13 +112,80 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
             .GetAdminPageAsync(default, default, default, default, default, default);
     }
 
+    [Fact]
+    public async Task Handle_ReusesTheSameOverviewForThirtySeconds()
+    {
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 3);
+        var announcedBook = await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(Now.AddDays(-5), TimeSpan.Zero),
+            new DateTimeOffset(Now.AddDays(-4), TimeSpan.Zero),
+            null,
+            null);
+        fair.SetBookRevenue(123m);
+        var session = await fixture.AddSessionAsync(
+            ScanMode.NextFair,
+            fair.Id,
+            startedAt: Now.AddDays(-1));
+        fixture.Context.BookAnnouncements.Add(BookAnnouncement.Create(
+            BookAnnouncementId.CreateUnique(),
+            book.Id,
+            fair.Id,
+            4,
+            Now.AddDays(-2),
+            session.Id));
+        fixture.Context.BookAnnouncements.Add(BookAnnouncement.Create(
+            BookAnnouncementId.CreateUnique(),
+            announcedBook.Id,
+            null,
+            2,
+            Now.AddDays(-1),
+            session.Id));
+        AddMovement(fixture, book, BookMovementType.Sale, -1, Now.AddDays(-2));
+        AddMovement(fixture, book, BookMovementType.Sale, -2, Now.AddDays(-3), assoEventsId: fair.Id);
+        await fixture.Context.SaveChangesAsync();
+        sqlCapture.Clear();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            cacheServices.GetRequiredService<HybridCache>());
+        var query = new GetCatalogAdminOverviewQuery(From: null, To: null);
+
+        var first = await handler.Handle(query, CancellationToken.None);
+        first.IsError.Should().BeFalse();
+        sqlCapture.Commands.Should().NotBeEmpty();
+        sqlCapture.Commands.Count.Should().BeLessThanOrEqualTo(6);
+        sqlCapture.Clear();
+
+        var second = await handler.Handle(query, CancellationToken.None);
+
+        second.IsError.Should().BeFalse();
+        second.Value.Should().BeEquivalentTo(first.Value);
+        first.Value.Stock.AnnouncedQuantity.Should().Be(6);
+        first.Value.Stock.AnnouncedTitles.Should().Be(2);
+        first.Value.UndatedAnnouncementCount.Should().Be(1);
+        first.Value.CurrentPeriod.SoldQuantity.Should().Be(3);
+        first.Value.CurrentPeriod.SoldTitles.Should().Be(1);
+        first.Value.LastFair.Should().NotBeNull();
+        first.Value.LastFair!.SoldQuantity.Should().Be(2);
+        first.Value.LastFair.SoldTitles.Should().Be(1);
+        first.Value.LastFair.Revenue.Should().Be(123m);
+        sqlCapture.Commands.Should().BeEmpty();
+    }
+
     private static void AddMovement(
         ScanBookFixture fixture,
         Book book,
         BookMovementType type,
         int quantity,
         DateTime occurredAt,
-        string? note = null)
+        string? note = null,
+        AssoEventsId? assoEventsId = null)
     {
         fixture.Context.BookMovements.Add(BookMovement.Create(
             BookMovementId.CreateUnique(),
@@ -117,8 +197,16 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
             clockSuspect: false,
             scanSessionId: null,
             volunteerId: null,
-            assoEventsId: null,
+            assoEventsId: assoEventsId,
             note: note,
             clientGestureId: null));
+    }
+
+    private static ServiceProvider CreateHybridCacheProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddHybridCache();
+        return services.BuildServiceProvider();
     }
 }

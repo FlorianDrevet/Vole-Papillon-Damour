@@ -1,21 +1,31 @@
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
-using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using AssoEventsEntity = Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
 public sealed class GetCatalogAdminOverviewQueryHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    HybridCache cache)
     : IRequestHandler<GetCatalogAdminOverviewQuery, ErrorOr<CatalogAdminOverviewResult>>
 {
+    private static readonly HybridCacheEntryOptions CacheOptions = new()
+    {
+        Expiration = TimeSpan.FromSeconds(30),
+        LocalCacheExpiration = TimeSpan.FromSeconds(30),
+    };
+
     public async Task<ErrorOr<CatalogAdminOverviewResult>> Handle(
         GetCatalogAdminOverviewQuery query,
         CancellationToken cancellationToken)
@@ -41,6 +51,29 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             return Error.Validation("Book.InvalidPeriod", "The administration period cannot exceed one year.");
         }
 
+        var cacheKey = $"admin:catalog-overview:{FormatCachePeriod(query.From)}:{FormatCachePeriod(query.To)}:{query.AllTime}";
+        return await cache.GetOrCreateAsync(
+            cacheKey,
+            new OverviewState(this, from, to, generatedAt, duration, query.AllTime),
+            static (state, token) => state.Handler.BuildOverviewAsync(
+                state.From,
+                state.To,
+                state.GeneratedAt,
+                state.Duration,
+                state.AllTime,
+                token),
+            CacheOptions,
+            cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask<CatalogAdminOverviewResult> BuildOverviewAsync(
+        DateTime from,
+        DateTime to,
+        DateTime generatedAt,
+        TimeSpan duration,
+        bool allTime,
+        CancellationToken cancellationToken)
+    {
         // Every figure is aggregated in SQL: the movement ledger only grows, so the
         // dashboard must never materialize it (nor the whole catalog).
         var dashboardSnapshot = await dbContext.AdminDashboardSnapshots
@@ -52,22 +85,18 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             .ToListAsync(cancellationToken);
         var bookFairIds = bookFairs.Select(fair => fair.Id).ToArray();
 
-        var canonicalBooks = dbContext.Books
+        var bookSummary = await dbContext.Books
             .AsNoTracking()
-            .Where(book => book.RedirectedToIsbn13 == null);
-        var bookSummary = await canonicalBooks
             .GroupBy(_ => 1)
             .Select(books => new
             {
-                AvailableQuantity = books.Sum(book => book.QuantityAvailable),
-                AvailableTitleCount = books.Count(book => book.QuantityAvailable > 0),
+                AvailableQuantity = books.Sum(book => book.RedirectedToIsbn13 == null ? book.QuantityAvailable : 0),
+                AvailableTitleCount = books.Count(book =>
+                    book.RedirectedToIsbn13 == null && book.QuantityAvailable > 0),
+                IsbndbAbsentToCompleteCount = books.Count(book =>
+                    book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null),
             })
             .SingleOrDefaultAsync(cancellationToken);
-        var availableQuantity = bookSummary?.AvailableQuantity ?? 0;
-        var availableTitleCount = bookSummary?.AvailableTitleCount ?? 0;
-        var isbndbAbsentToCompleteCount = await dbContext.Books.AsNoTracking().CountAsync(
-            book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null,
-            cancellationToken);
 
         var activeAnnouncements = dbContext.BookAnnouncements
             .AsNoTracking()
@@ -75,121 +104,183 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 announcement.Status == BookAnnouncementStatus.Announced &&
                 (announcement.AssoEventsId == null ||
                  bookFairIds.Contains(announcement.AssoEventsId!)));
-        var announcedQuantity = await activeAnnouncements.SumAsync(
-            announcement => announcement.Quantity,
-            cancellationToken);
-        var announcedTitleCount = await activeAnnouncements
-            .Select(announcement => announcement.Isbn13)
-            .Distinct()
-            .CountAsync(cancellationToken);
-        var undatedAnnouncementCount = await dbContext.BookAnnouncements
-            .AsNoTracking()
-            .CountAsync(
-                announcement =>
-                    announcement.Status == BookAnnouncementStatus.Announced &&
-                    announcement.AssoEventsId == null,
-                cancellationToken);
+        var announcementSummary = await activeAnnouncements
+            .GroupBy(_ => 1)
+            .Select(announcements => new
+            {
+                AnnouncedQuantity = announcements.Sum(announcement => announcement.Quantity),
+                AnnouncedTitleCount = announcements.Select(announcement => announcement.Isbn13).Distinct().Count(),
+                UndatedAnnouncementCount = announcements.Count(announcement => announcement.AssoEventsId == null),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-        var currentPeriod = await BuildPeriodMetricsAsync(from, to, cancellationToken);
-        var previousPeriod = query.AllTime
-            ? new AdminPeriodMetricsResult(
-                new DateTimeOffset(from, TimeSpan.Zero),
-                new DateTimeOffset(from, TimeSpan.Zero),
-                0,
-                0,
-                0,
-                0,
-                0)
-            : await BuildPeriodMetricsAsync(from - duration, from, cancellationToken);
-        var lastFair = await BuildLastFairSummaryAsync(bookFairs, to, cancellationToken);
+        DateTime? previousFrom = allTime ? null : from - duration;
+        var lastFair = FindLastFair(bookFairs, to);
+        var sessionMetrics = await BuildSessionMetricsAsync(from, to, previousFrom, cancellationToken);
+        var salesMetrics = await BuildSalesMetricsAsync(from, to, previousFrom, lastFair, cancellationToken);
+        var currentPeriod = ToPeriodResult(
+            from,
+            to,
+            sessionMetrics?.CurrentScannedCount ?? 0,
+            sessionMetrics?.CurrentKeptCount ?? 0,
+            sessionMetrics?.CurrentRejectedCount ?? 0,
+            salesMetrics?.CurrentSoldQuantity ?? 0,
+            salesMetrics?.CurrentSoldTitleCount ?? 0);
+        var previousPeriod = allTime
+            ? EmptyPeriod(from, from)
+            : ToPeriodResult(
+                previousFrom!.Value,
+                from,
+                sessionMetrics?.PreviousScannedCount ?? 0,
+                sessionMetrics?.PreviousKeptCount ?? 0,
+                sessionMetrics?.PreviousRejectedCount ?? 0,
+                salesMetrics?.PreviousSoldQuantity ?? 0,
+                salesMetrics?.PreviousSoldTitleCount ?? 0);
 
         return new CatalogAdminOverviewResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             currentPeriod,
             previousPeriod,
             new AdminStockSummaryResult(
-                availableQuantity,
-                availableTitleCount,
-                announcedQuantity,
-                announcedTitleCount),
-            lastFair,
+                bookSummary?.AvailableQuantity ?? 0,
+                bookSummary?.AvailableTitleCount ?? 0,
+                announcementSummary?.AnnouncedQuantity ?? 0,
+                announcementSummary?.AnnouncedTitleCount ?? 0),
+            ToLastFairSummary(lastFair, salesMetrics),
             dashboardSnapshot?.DeadStockCount,
             dashboardSnapshot is null
                 ? null
                 : new DateTimeOffset(dashboardSnapshot.ComputedAt, TimeSpan.Zero),
-            undatedAnnouncementCount,
-            isbndbAbsentToCompleteCount);
+            announcementSummary?.UndatedAnnouncementCount ?? 0,
+            bookSummary?.IsbndbAbsentToCompleteCount ?? 0);
     }
 
-    private async Task<AdminPeriodMetricsResult> BuildPeriodMetricsAsync(
+    private async Task<SessionMetricAggregate?> BuildSessionMetricsAsync(
         DateTime from,
         DateTime to,
+        DateTime? previousFrom,
         CancellationToken cancellationToken)
     {
-        var sessions = dbContext.ScanSessions
+        var lowerBound = previousFrom ?? from;
+        return await dbContext.ScanSessions
             .AsNoTracking()
-            .Where(session => session.StartedAt >= from && session.StartedAt < to);
-        var sales = dbContext.BookMovements
+            .Where(session => session.StartedAt >= lowerBound && session.StartedAt < to)
+            .GroupBy(_ => 1)
+            .Select(sessions => new SessionMetricAggregate(
+                sessions.Where(session => session.StartedAt >= from).Sum(session => session.ScannedCount),
+                sessions.Where(session => session.StartedAt >= from).Sum(session => session.KeptCount),
+                sessions.Where(session => session.StartedAt >= from).Sum(session => session.RejectedCount),
+                sessions.Where(session => session.StartedAt < from).Sum(session => session.ScannedCount),
+                sessions.Where(session => session.StartedAt < from).Sum(session => session.KeptCount),
+                sessions.Where(session => session.StartedAt < from).Sum(session => session.RejectedCount)))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<SalesMetricAggregate?> BuildSalesMetricsAsync(
+        DateTime from,
+        DateTime to,
+        DateTime? previousFrom,
+        AssoEventsEntity? lastFair,
+        CancellationToken cancellationToken)
+    {
+        var lowerBound = previousFrom ?? from;
+        var lastFairId = lastFair?.Id;
+        return await dbContext.BookMovements
             .AsNoTracking()
             .Where(movement =>
                 movement.Type == BookMovementType.Sale &&
-                movement.OccurredAt >= from &&
-                movement.OccurredAt < to);
-        var sessionMetrics = await sessions
+                ((movement.OccurredAt >= lowerBound && movement.OccurredAt < to) ||
+                 (lastFairId != null && movement.AssoEventsId == lastFairId)))
             .GroupBy(_ => 1)
-            .Select(group => new
-            {
-                ScannedCount = group.Sum(session => session.ScannedCount),
-                KeptCount = group.Sum(session => session.KeptCount),
-                RejectedCount = group.Sum(session => session.RejectedCount),
-            })
+            .Select(sales => new SalesMetricAggregate(
+                sales.Where(movement => movement.OccurredAt >= from && movement.OccurredAt < to)
+                    .Sum(movement => Math.Abs(movement.Quantity)),
+                sales.Where(movement => movement.OccurredAt >= from && movement.OccurredAt < to)
+                    .Select(movement => movement.Isbn13).Distinct().Count(),
+                sales.Where(movement => movement.OccurredAt >= lowerBound && movement.OccurredAt < from)
+                    .Sum(movement => Math.Abs(movement.Quantity)),
+                sales.Where(movement => movement.OccurredAt >= lowerBound && movement.OccurredAt < from)
+                    .Select(movement => movement.Isbn13).Distinct().Count(),
+                lastFairId == null
+                    ? 0
+                    : sales.Where(movement => movement.AssoEventsId == lastFairId)
+                        .Sum(movement => Math.Abs(movement.Quantity)),
+                lastFairId == null
+                    ? 0
+                    : sales.Where(movement => movement.AssoEventsId == lastFairId)
+                        .Select(movement => movement.Isbn13).Distinct().Count()))
             .SingleOrDefaultAsync(cancellationToken);
-        var salesMetrics = await sales
-            .GroupBy(_ => 1)
-            .Select(group => new
-            {
-                SoldQuantity = group.Sum(movement => Math.Abs(movement.Quantity)),
-                SoldTitleCount = group.Select(movement => movement.Isbn13).Distinct().Count(),
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-
-        return new AdminPeriodMetricsResult(
-            new DateTimeOffset(from, TimeSpan.Zero),
-            new DateTimeOffset(to, TimeSpan.Zero),
-            sessionMetrics?.ScannedCount ?? 0,
-            sessionMetrics?.KeptCount ?? 0,
-            sessionMetrics?.RejectedCount ?? 0,
-            salesMetrics?.SoldQuantity ?? 0,
-            salesMetrics?.SoldTitleCount ?? 0);
     }
 
-    private async Task<AdminFairSummaryResult?> BuildLastFairSummaryAsync(
-        IEnumerable<AssoEventsEntity> bookFairs,
-        DateTime to,
-        CancellationToken cancellationToken)
-    {
-        var fair = bookFairs
+    private static AssoEventsEntity? FindLastFair(IEnumerable<AssoEventsEntity> bookFairs, DateTime to) =>
+        bookFairs
             .Where(candidate => candidate.DateStart.UtcDateTime <= to)
             .OrderByDescending(candidate => candidate.DateStart)
             .FirstOrDefault();
+
+    private static AdminFairSummaryResult? ToLastFairSummary(
+        AssoEventsEntity? fair,
+        SalesMetricAggregate? sales)
+    {
         if (fair is null)
         {
             return null;
         }
 
-        var fairId = fair.Id;
-        var sales = dbContext.BookMovements
-            .AsNoTracking()
-            .Where(movement =>
-                movement.Type == BookMovementType.Sale &&
-                movement.AssoEventsId == fairId);
         return new AdminFairSummaryResult(
             fair.Id.Value,
             fair.Name,
             fair.DateStart,
             fair.DateEnd,
-            await sales.SumAsync(movement => Math.Abs(movement.Quantity), cancellationToken),
-            await sales.Select(movement => movement.Isbn13).Distinct().CountAsync(cancellationToken),
+            sales?.LastFairSoldQuantity ?? 0,
+            sales?.LastFairSoldTitleCount ?? 0,
             fair.BookRevenue);
     }
+
+    private static AdminPeriodMetricsResult ToPeriodResult(
+        DateTime from,
+        DateTime to,
+        int scannedCount,
+        int keptCount,
+        int rejectedCount,
+        int soldQuantity,
+        int soldTitleCount) =>
+        new(
+            new DateTimeOffset(from, TimeSpan.Zero),
+            new DateTimeOffset(to, TimeSpan.Zero),
+            scannedCount,
+            keptCount,
+            rejectedCount,
+            soldQuantity,
+            soldTitleCount);
+
+    private static AdminPeriodMetricsResult EmptyPeriod(DateTime from, DateTime to) =>
+        new(new DateTimeOffset(from, TimeSpan.Zero), new DateTimeOffset(to, TimeSpan.Zero), 0, 0, 0, 0, 0);
+
+    private static string FormatCachePeriod(DateTimeOffset? value) =>
+        value?.UtcDateTime.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "default";
+
+    private sealed record OverviewState(
+        GetCatalogAdminOverviewQueryHandler Handler,
+        DateTime From,
+        DateTime To,
+        DateTime GeneratedAt,
+        TimeSpan Duration,
+        bool AllTime);
+
+    private sealed record SessionMetricAggregate(
+        int CurrentScannedCount,
+        int CurrentKeptCount,
+        int CurrentRejectedCount,
+        int PreviousScannedCount,
+        int PreviousKeptCount,
+        int PreviousRejectedCount);
+
+    private sealed record SalesMetricAggregate(
+        int CurrentSoldQuantity,
+        int CurrentSoldTitleCount,
+        int PreviousSoldQuantity,
+        int PreviousSoldTitleCount,
+        int LastFairSoldQuantity,
+        int LastFairSoldTitleCount);
 }
