@@ -4,7 +4,7 @@
 
 - Worktree : `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-isbn-not-found-tab`
 - Branche : `feat/isbn-not-found-tab`
-- Canvas Claude Design : *(ajouté en phase 2)*
+- Canvas Claude Design : https://claude.ai/artifact/S9FpHwgqzyR7F2SB8F512J
 
 ## Statut
 
