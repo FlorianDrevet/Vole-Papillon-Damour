@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
-import {Observable, Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
+import {Observable, Subject, catchError, firstValueFrom, map, of, switchMap, takeUntil, tap} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {catalogSearchSidebarGenres} from '../../core/catalog-genres';
@@ -20,6 +20,7 @@ import {
   CatalogIsbndbEditionSearchResponse,
   CatalogSearchParams,
   CatalogSearchResponse,
+  CatalogRareBookFilters,
   CatalogSort,
   CatalogReferenceSearchResponse,
   CatalogRareBookPage,
@@ -28,6 +29,7 @@ import {
 } from '../../core/catalog.models';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogSearchCacheService} from '../../core/catalog-search-cache.service';
 
 interface CatalogSearchRouteState {
   query: string;
@@ -57,6 +59,15 @@ interface CatalogGenreFilterOption {
   bookCount: number | null;
 }
 
+type CatalogLocalSearchRequest =
+  | {kind: 'catalog'; params: CatalogSearchParams}
+  | {kind: 'rare'; filters: CatalogRareBookFilters};
+
+type CatalogLocalSearchResult =
+  | {kind: 'catalog'; response: CatalogSearchResponse}
+  | {kind: 'rare'; response: CatalogRareBookPage}
+  | {kind: 'error'};
+
 @Component({
   selector: 'app-catalog-search-page',
   standalone: false,
@@ -80,6 +91,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   columns: CatalogGridColumns = 4;
   readonly gridColumnChoices: readonly CatalogGridColumns[] = [3, 4, 5];
   loading = true;
+  loadingMessage = 'Recherche en cours…';
   error = false;
   response: CatalogSearchResponse | null = null;
   rareResponse: CatalogRareBookPage | null = null;
@@ -144,13 +156,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   ];
 
   private readonly destroyed = new Subject<void>();
+  private readonly localSearchRequests = new Subject<CatalogLocalSearchRequest>();
   private readonly isbndbEditionSearchCancelled = new Subject<void>();
   private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
   private readonly pendingGenreFavoriteStorageKey = 'vpd.catalog.pending-genre-favorite';
   private routeState: CatalogSearchRouteState | null = null;
   private currentPage = 1;
   private currentReferencePage = 1;
-  private localLoadVersion = 0;
   private externalLoadVersion = 0;
   private localCatalogueIsbns = new Set<string>();
 
@@ -158,6 +170,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly api: CatalogApiService,
+    private readonly searchCache: CatalogSearchCacheService,
     private readonly auth: CatalogAuthService,
     private readonly memberApi: CatalogMemberApiService,
     private readonly changeDetector: ChangeDetectorRef,
@@ -166,11 +179,74 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.browseMode = this.route.snapshot.data['browse'] === true;
+    this.localSearchRequests
+      .pipe(
+        switchMap(request => {
+          this.loading = true;
+          this.error = false;
+          this.changeDetector.markForCheck();
+
+          const result$: Observable<CatalogLocalSearchResult> = request.kind === 'rare'
+            ? this.api.getPublicRareBooks(request.filters).pipe(
+              map(response => ({kind: 'rare', response} as const)),
+            )
+            : this.searchCache.search(request.params).pipe(
+              tap(response => this.searchCache.prefetchNextPage(request.params, response)),
+              map(response => ({kind: 'catalog', response} as const)),
+            );
+
+          return result$.pipe(
+            catchError(() => of({kind: 'error'} as const)),
+          );
+        }),
+        takeUntil(this.destroyed),
+      )
+      .subscribe(result => {
+        if (result.kind === 'error') {
+          this.error = true;
+          this.loading = false;
+          this.rareResponse = null;
+          this.response = null;
+          this.localCatalogueIsbns.clear();
+          this.changeDetector.markForCheck();
+          return;
+        }
+
+        if (result.kind === 'rare') {
+          this.rareResponse = result.response;
+          this.response = {
+            generatedAt: result.response.generatedAt,
+            books: [],
+            totalCount: result.response.totalCount,
+            hasMore: result.response.page * result.response.pageSize < result.response.totalCount,
+            page: result.response.page,
+            pageSize: result.response.pageSize,
+            genres: [],
+          };
+          this.localCatalogueIsbns = new Set(
+            result.response.books
+              .map(book => this.normalizeIsbn(book.isbn13))
+              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+          );
+        } else {
+          this.rareResponse = null;
+          this.response = result.response;
+          this.localCatalogueIsbns = new Set(
+            result.response.books
+              .map(book => this.normalizeIsbn(book.isbn13))
+              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+          );
+        }
+        this.loading = false;
+        this.changeDetector.markForCheck();
+      });
+
     this.route.queryParamMap
       .pipe(takeUntil(this.destroyed))
       .subscribe(params => {
         const nextState = this.readRouteState(params);
         const previousState = this.routeState;
+        const localStateChanged = !previousState || this.localRouteStateChanged(previousState, nextState);
         this.query = nextState.query;
         this.submittedQuery = nextState.query;
         this.genre = nextState.genre;
@@ -186,8 +262,26 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.routeState = nextState;
 
         const externalStateChanged = !previousState || this.externalRouteStateChanged(previousState, nextState);
-        if (!previousState || this.localRouteStateChanged(previousState, nextState)) {
-          this.loadLocalResults();
+        if (localStateChanged) {
+          this.loadingMessage = this.localLoadingMessage(previousState, nextState);
+          if (previousState && previousState.rareOnly !== nextState.rareOnly) {
+            this.response = null;
+            this.rareResponse = null;
+            this.localCatalogueIsbns.clear();
+          }
+          const request: CatalogLocalSearchRequest = this.rareOnly
+            ? {
+              kind: 'rare',
+              filters: {
+                search: this.submittedQuery,
+                includeSold: this.includeExhausted,
+                sort: this.rareSort(),
+                page: this.currentPage,
+                pageSize: 24,
+              },
+            }
+            : {kind: 'catalog', params: this.searchParams()};
+          this.localSearchRequests.next(request);
         }
         if (externalStateChanged) {
           this.loadExternalResults();
@@ -203,6 +297,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.isbndbEditionSearchCancelled.complete();
     this.destroyed.next();
     this.destroyed.complete();
+    this.localSearchRequests.complete();
   }
 
   submitSearch(): void {
@@ -968,68 +1063,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     return `${reference.isbn13 || reference.workId || reference.title || 'reference'}-${index}`;
   }
 
-  private loadLocalResults(): void {
-    const loadVersion = ++this.localLoadVersion;
-    this.localCatalogueIsbns.clear();
-    this.loading = true;
-    this.error = false;
-    this.changeDetector.markForCheck();
-    const result$: Observable<CatalogSearchResponse | CatalogRareBookPage> = this.rareOnly
-      ? this.api.getPublicRareBooks({
-        search: this.submittedQuery,
-        includeSold: this.includeExhausted,
-        sort: this.rareSort(),
-        page: this.currentPage,
-        pageSize: 24,
-      })
-      : this.api.search(this.searchParams());
-    result$
-      .pipe(
-        catchError(() => {
-          if (loadVersion === this.localLoadVersion) {
-            this.error = true;
-          }
-          return of(null);
-        }),
-        takeUntil(this.destroyed),
-      )
-      .subscribe(response => {
-        if (loadVersion !== this.localLoadVersion) {
-          return;
-        }
+  private localLoadingMessage(
+    previousState: CatalogSearchRouteState | null,
+    nextState: CatalogSearchRouteState,
+  ): string {
+    if (nextState.genre && previousState?.genre !== nextState.genre) {
+      return `Filtre « ${nextState.genre} » en cours…`;
+    }
 
-        if (this.rareOnly) {
-          const rareResponse = response as CatalogRareBookPage | null;
-          this.rareResponse = rareResponse;
-          this.response = rareResponse
-            ? {
-              generatedAt: rareResponse.generatedAt,
-              books: [],
-              totalCount: rareResponse.totalCount,
-              hasMore: rareResponse.page * rareResponse.pageSize < rareResponse.totalCount,
-              page: rareResponse.page,
-              pageSize: rareResponse.pageSize,
-              genres: [],
-            }
-            : null;
-          this.localCatalogueIsbns = new Set(
-            (rareResponse?.books ?? [])
-              .map(book => this.normalizeIsbn(book.isbn13))
-              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
-          );
-        } else {
-          const catalogResponse = response as CatalogSearchResponse | null;
-          this.rareResponse = null;
-          this.response = catalogResponse;
-          this.localCatalogueIsbns = new Set(
-            (catalogResponse?.books ?? [])
-              .map(book => this.normalizeIsbn(book.isbn13))
-              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
-          );
-        }
-        this.loading = false;
-        this.changeDetector.markForCheck();
-      });
+    if (previousState && previousState.page !== nextState.page) {
+      return `Page ${nextState.page}…`;
+    }
+    if (!previousState && nextState.page > 1) {
+      return `Page ${nextState.page}…`;
+    }
+
+    return 'Recherche en cours…';
   }
 
   private loadExternalResults(): void {
