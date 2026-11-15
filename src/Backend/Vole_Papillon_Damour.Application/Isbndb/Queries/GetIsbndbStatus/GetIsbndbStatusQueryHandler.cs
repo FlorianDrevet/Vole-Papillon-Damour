@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Vole_Papillon_Damour.Application.Books.Common;
+using Microsoft.Extensions.Caching.Hybrid;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -11,9 +11,17 @@ namespace Vole_Papillon_Damour.Application.Isbndb.Queries.GetIsbndbStatus;
 
 public sealed class GetIsbndbStatusQueryHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    HybridCache cache)
     : IRequestHandler<GetIsbndbStatusQuery, IsbndbStatusResult>
 {
+    private const string UnmatchedSubjectsCacheKey = "isbndb:unmatched-subjects";
+    private static readonly HybridCacheEntryOptions UnmatchedSubjectsCacheOptions = new()
+    {
+        Expiration = TimeSpan.FromMinutes(10),
+        LocalCacheExpiration = TimeSpan.FromMinutes(10),
+    };
+
     public async Task<IsbndbStatusResult> Handle(
         GetIsbndbStatusQuery query,
         CancellationToken cancellationToken)
@@ -28,17 +36,76 @@ public sealed class GetIsbndbStatusQueryHandler(
             .OrderBy(item => item.Usage)
             .ToListAsync(cancellationToken);
 
-        var candidates = AdminQueryPredicates.IsbndbCandidates(dbContext.Books.AsNoTracking());
-        var pendingTotal = await candidates.CountAsync(cancellationToken);
-        var pendingInStock = await candidates.CountAsync(book =>
-            book.QuantityAvailable > 0 || dbContext.BookAnnouncements.Any(announcement =>
-                announcement.Isbn13 == book.Id && announcement.Status == BookAnnouncementStatus.Announced),
-            cancellationToken);
-        var absentToComplete = await AdminQueryPredicates.IsbndbAbsentToComplete(dbContext.Books.AsNoTracking())
-            .CountAsync(cancellationToken);
+        var bookCounts = await dbContext.Books.AsNoTracking()
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                PendingTotal = group.Count(book =>
+                    !book.IsIsbndbSourced &&
+                    !book.IsAbsentFromIsbndb &&
+                    book.MetadataStatus != BookMetadataStatus.Discarded &&
+                    book.RedirectedToIsbn13 == null),
+                PendingInStock = group.Count(book =>
+                    !book.IsIsbndbSourced &&
+                    !book.IsAbsentFromIsbndb &&
+                    book.MetadataStatus != BookMetadataStatus.Discarded &&
+                    book.RedirectedToIsbn13 == null &&
+                    (book.QuantityAvailable > 0 || dbContext.BookAnnouncements.Any(announcement =>
+                        announcement.Isbn13 == book.Id && announcement.Status == BookAnnouncementStatus.Announced))),
+                PendingBeforeMigration = group.Count(book =>
+                    !book.IsIsbndbSourced &&
+                    !book.IsAbsentFromIsbndb &&
+                    book.MetadataStatus != BookMetadataStatus.Discarded &&
+                    book.RedirectedToIsbn13 == null &&
+                    book.MetadataSource != BookMetadataSource.Isbndb),
+                AbsentToComplete = group.Count(book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        var pendingTotal = bookCounts?.PendingTotal ?? 0;
+        var pendingInStock = bookCounts?.PendingInStock ?? 0;
+        var pendingBeforeMigration = bookCounts?.PendingBeforeMigration ?? 0;
+        var absentToComplete = bookCounts?.AbsentToComplete ?? 0;
         var lastRun = await dbContext.IsbndbCatchUpRuns.AsNoTracking()
             .OrderByDescending(run => run.StartedAt)
             .FirstOrDefaultAsync(cancellationToken);
+        var unmatchedSubjects = await cache.GetOrCreateAsync(
+            UnmatchedSubjectsCacheKey,
+            dbContext,
+            static async (context, token) => await LoadUnmatchedSubjectsAsync(context, token),
+            UnmatchedSubjectsCacheOptions,
+            cancellationToken: cancellationToken);
+
+        var utcStatus = quota.Status(now).ToString();
+        var inStockPending = pendingInStock;
+        return new IsbndbStatusResult(
+            quota.DailyLimit,
+            quota.DailyRemaining,
+            ToOffset(quota.ObservedAt),
+            ToOffset(quota.ResetsAt),
+            utcStatus,
+            ToOffset(quota.ExhaustedUntil),
+            usages.Select(item => new IsbndbUsageTodayResult(item.Usage.ToString(), item.Credits)).ToArray(),
+            new IsbndbPendingCatchUpResult(
+                pendingTotal,
+                inStockPending,
+                pendingBeforeMigration),
+            absentToComplete,
+            lastRun is null
+                ? null
+                : new IsbndbLastRunResult(
+                    new DateTimeOffset(lastRun.StartedAt, TimeSpan.Zero),
+                    lastRun.EndedAt is { } endedAt ? new DateTimeOffset(endedAt, TimeSpan.Zero) : null,
+                    lastRun.Filled,
+                    lastRun.Absent,
+                    lastRun.Remaining,
+                    lastRun.StopReason?.ToString()),
+            unmatchedSubjects);
+    }
+
+    private static async ValueTask<IReadOnlyList<IsbndbUnmatchedSubjectResult>> LoadUnmatchedSubjectsAsync(
+        IProjectDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
         var records = await dbContext.BookIsbndbRecords.AsNoTracking()
             .Select(record => new { record.Subjects, record.Publisher, record.Authors })
             .ToListAsync(cancellationToken);
@@ -54,32 +121,11 @@ public sealed class GetIsbndbStatusQueryHandler(
             }
         }
 
-        var utcStatus = quota.Status(now).ToString();
-        var inStockPending = pendingInStock;
-        return new IsbndbStatusResult(
-            quota.DailyLimit,
-            quota.DailyRemaining,
-            ToOffset(quota.ObservedAt),
-            ToOffset(quota.ResetsAt),
-            utcStatus,
-            ToOffset(quota.ExhaustedUntil),
-            usages.Select(item => new IsbndbUsageTodayResult(item.Usage.ToString(), item.Credits)).ToArray(),
-            new IsbndbPendingCatchUpResult(
-                pendingTotal,
-                inStockPending,
-                await candidates.CountAsync(book => book.MetadataSource != BookMetadataSource.Isbndb, cancellationToken)),
-            absentToComplete,
-            lastRun is null
-                ? null
-                : new IsbndbLastRunResult(
-                    new DateTimeOffset(lastRun.StartedAt, TimeSpan.Zero),
-                    lastRun.EndedAt is { } endedAt ? new DateTimeOffset(endedAt, TimeSpan.Zero) : null,
-                    lastRun.Filled,
-                    lastRun.Absent,
-                    lastRun.Remaining,
-                    lastRun.StopReason?.ToString()),
-            unmatched.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
-                .Take(10).Select(pair => new IsbndbUnmatchedSubjectResult(pair.Key, pair.Value)).ToArray());
+        return unmatched.OrderByDescending(pair => pair.Value)
+            .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .Select(pair => new IsbndbUnmatchedSubjectResult(pair.Key, pair.Value))
+            .ToArray();
     }
 
     private static IReadOnlyList<string>? DeserializeStrings(string? json)

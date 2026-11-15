@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -41,7 +43,11 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
             .Handle(new GetAdminBooksQuery(null, null, null, null), default);
         var queue = await new GetBookMetadataQueueQueryHandler(fixture.Context, clock)
             .Handle(new GetBookMetadataQueueQuery(), default);
-        var isbndb = await new GetIsbndbStatusQueryHandler(fixture.Context, clock)
+        using var cacheServices = CreateHybridCacheProvider();
+        var isbndb = await new GetIsbndbStatusQueryHandler(
+                fixture.Context,
+                clock,
+                cacheServices.GetRequiredService<HybridCache>())
             .Handle(new GetIsbndbStatusQuery(), default);
         var rareBooks = await new GetAdminRareBooksQueryHandler(fixture.Context, clock)
             .Handle(new GetAdminRareBooksQuery(Status: "Published"), default);
@@ -132,5 +138,12 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
         await fixture.Context.SaveChangesAsync();
 
         return fixture;
+    }
+
+    private static ServiceProvider CreateHybridCacheProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddHybridCache();
+        return services.BuildServiceProvider();
     }
 }

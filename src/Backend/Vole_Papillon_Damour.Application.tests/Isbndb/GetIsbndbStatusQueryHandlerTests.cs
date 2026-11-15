@@ -1,5 +1,9 @@
+using System.Data.Common;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.DependencyInjection;
 using Vole_Papillon_Damour.Application.Isbndb.Queries.GetIsbndbStatus;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate;
@@ -55,7 +59,11 @@ public sealed class GetIsbndbStatusQueryHandlerTests
         fixture.Context.IsbndbCatchUpRuns.Add(run);
         await fixture.Context.SaveChangesAsync();
 
-        var handler = new GetIsbndbStatusQueryHandler(fixture.Context, new FixedDateTimeProvider(Now));
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetIsbndbStatusQueryHandler(
+            fixture.Context,
+            new FixedDateTimeProvider(Now),
+            cacheServices.GetRequiredService<HybridCache>());
         var result = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
 
         result.DailyLimit.Should().Be(5_000);
@@ -71,8 +79,83 @@ public sealed class GetIsbndbStatusQueryHandlerTests
         result.UnmatchedSubjects.Should().ContainSingle(item => item.Subject == "Robinsonades" && item.Count == 1);
     }
 
+    [Fact]
+    public async Task Handle_aggregates_book_counts_and_caches_unmatched_subjects_for_ten_minutes()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        Isbn13.TryCreate("9782070363735", out var pendingIsbn).Should().BeTrue();
+        var pending = Book.Create(pendingIsbn, Now.AddDays(-2));
+        pending.RecordAvailableEntry(Now.AddDays(-1));
+        fixture.Context.Books.Add(pending);
+
+        Isbn13.TryCreate("9782070409228", out var absentIsbn).Should().BeTrue();
+        var absent = Book.Create(absentIsbn, Now.AddDays(-10));
+        absent.ApplyAutomaticMetadata(
+            new BookMetadataPatch("Livre absent", "Auteur", null, null, null, null, null, null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            BookMetadataSource.Bnf,
+            Now.AddDays(-10),
+            null);
+        absent.MarkAbsentFromIsbndb(Now.AddDays(-2));
+        fixture.Context.Books.Add(absent);
+        fixture.Context.BookIsbndbRecords.Add(BookIsbndbRecord.Create(
+            absentIsbn,
+            Now.AddDays(-2),
+            authors: "[\"Hugo, Victor\"]",
+            subjects: "[\"Romans\",\"Robinsonades\"]"));
+        await fixture.Context.SaveChangesAsync();
+
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetIsbndbStatusQueryHandler(
+            fixture.Context,
+            new FixedDateTimeProvider(Now),
+            cacheServices.GetRequiredService<HybridCache>());
+
+        sql.Clear();
+        var first = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
+
+        first.PendingCatchUp.Should().Be(new IsbndbPendingCatchUpResult(1, 1, 1));
+        first.AbsentToComplete.Should().Be(1);
+        first.UnmatchedSubjects.Should().ContainSingle(item => item.Subject == "Robinsonades" && item.Count == 1);
+        sql.Commands.Count(command => command.Contains("\"Books\"", StringComparison.Ordinal))
+            .Should().Be(1);
+
+        sql.Clear();
+        var second = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
+
+        second.UnmatchedSubjects.Should().BeEquivalentTo(first.UnmatchedSubjects);
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("BookIsbndbRecords", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static ServiceProvider CreateHybridCacheProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddHybridCache();
+        return services.BuildServiceProvider();
+    }
+
     private sealed class FixedDateTimeProvider(DateTime now) : Application.Common.Interfaces.Services.IDateTimeProvider
     {
         public DateTime UtcNow => now;
+    }
+
+    private sealed class SqlCaptureInterceptor : DbCommandInterceptor
+    {
+        public List<string> Commands { get; } = [];
+
+        public void Clear() => Commands.Clear();
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            Commands.Add(command.CommandText);
+            return ValueTask.FromResult(result);
+        }
     }
 }
