@@ -63,6 +63,26 @@ Mesures de référence, plan forcé « Amour » exécuté avec Roman, à froid :
 | `GET /books/admin/catalogue/flow-stats` | 7,3 s | — |
 | `GET /books/admin/volunteers/stats` | 6,9 s | — |
 
+## Mesures locales après optimisation (15 novembre 2026)
+
+API locale Aspire/SQL Server, après échauffement puis cinq requêtes HTTPS par endpoint.
+Les temps incluent l'API et la sérialisation de la réponse; le seed contient 19 500 fiches
+et 21 450 mouvements. Il ne contient pas de sessions ni de bénévoles. Pour mesurer les
+statistiques d'une bourse, une bourse locale temporaire a été associée aux ventes
+synthétiques puis supprimée après la mesure.
+
+| Endpoint | p50 | min–max | Réponse |
+|---|---:|---:|---:|
+| `GET /scan/me/statistics` | 13,4 ms | 12,9–13,8 ms | 2 605 o |
+| `GET /books/admin/volunteers/stats` | 26,2 ms | 22,7–47,6 ms | 503 o |
+| `GET /books/admin/catalogue/flow-stats` | 155,2 ms | 124,8–170,1 ms | 1 921 o |
+| `GET /books/admin/fairs/{fairId}/stats` | 120,1 ms | 115,2–136,0 ms | 6 514 o |
+
+Les quatre endpoints restent sous 500 ms sur ce seed. Les rapports de bénévoles ont peu de
+données d'activité, car le seed n'inclut pas de sessions, de comptes bénévoles ni leurs
+mouvements. Ces temps locaux ne remplacent pas une mesure après déploiement sur le trafic
+de production.
+
 Ouverture du tableau de bord : 24 s, 27 appels dont `overview` ×2, `isbndb/status` ×2 et
 les quatre compteurs `pageSize=1` ×2. La base S0 culmine à 87 % de ses DTU. La mémoire de
 l'API tourne en médiane à 443 Mo pour une limite de 512 Mo.

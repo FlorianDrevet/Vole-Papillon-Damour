@@ -3,6 +3,7 @@ using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -49,7 +50,8 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandlerTests
     [Fact]
     public async Task Handle_builds_the_funnel_and_the_genre_flow_rate()
     {
-        await using var fixture = await ScanBookFixture.CreateAsync();
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
         var session = await fixture.AddSessionAsync(
             ScanMode.AvailableNow,
             volunteerId: VolunteerId,
@@ -76,6 +78,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandlerTests
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(GeneratedAt);
         var handler = new GetAdminCatalogueFlowStatsQueryHandler(fixture.Context, clock);
+        sqlCapture.Clear();
 
         var result = await handler.Handle(new GetAdminCatalogueFlowStatsQuery(), CancellationToken.None);
 
@@ -89,6 +92,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandlerTests
         result.Value.FlowRateByGenre.Should().Contain(item =>
             item.Genre == "Bandes dessinées" && item.KeptQuantity == 1 && item.SoldQuantity == 0 && item.FlowRatePercent == 0m);
         result.Value.TimeToSellDistribution.Sum(bucket => bucket.Quantity).Should().Be(1);
+        StatisticsSqlAssertions.AssertBookAndMovementQueriesAreNarrow(sqlCapture);
     }
 
     [Fact]

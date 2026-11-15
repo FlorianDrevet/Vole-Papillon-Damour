@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -17,7 +18,8 @@ public sealed class GetAdminFairStatsQueryHandlerTests
     [Fact]
     public async Task Handle_computes_sales_by_genre_and_lists_previous_fairs()
     {
-        await using var fixture = await ScanBookFixture.CreateAsync();
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
         var previousFair = await fixture.AddFairAsync(
             new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
@@ -47,6 +49,7 @@ public sealed class GetAdminFairStatsQueryHandlerTests
         await fixture.Context.SaveChangesAsync();
 
         var handler = new GetAdminFairStatsQueryHandler(fixture.Context);
+        sqlCapture.Clear();
 
         var result = await handler.Handle(new GetAdminFairStatsQuery(fair.Id.Value), CancellationToken.None);
 
@@ -56,6 +59,7 @@ public sealed class GetAdminFairStatsQueryHandlerTests
         result.Value.AverageBasket.Should().Be(20m);
         result.Value.SalesByGenre.Should().ContainSingle(item => item.Genre == "Romans" && item.Quantity == 20);
         result.Value.PreviousFairs.Should().ContainSingle(item => item.FairId == previousFair.Id.Value && item.SoldQuantity == 10);
+        StatisticsSqlAssertions.AssertBookAndMovementQueriesAreNarrow(sqlCapture);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -29,7 +30,8 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
     [Fact]
     public async Task Handle_projects_only_the_authenticated_volunteers_activity_and_nets_voided_sales()
     {
-        await using var fixture = await ScanBookFixture.CreateAsync();
+        var sqlCapture = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sqlCapture);
         var fair = await fixture.AddFairAsync(
             new DateTimeOffset(2026, 9, 6, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 9, 7, 0, 0, 0, TimeSpan.Zero),
@@ -78,6 +80,14 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
             BookMetadataSource.OpenLibrary,
             SessionStartedAt,
             rawPayload: null);
+
+        fixture.Context.BookMovements.Add(AddMovement(
+            roman,
+            BookMovementType.DirectEntry,
+            SessionStartedAt.AddDays(-1),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000003")),
+            scanSessionId: null,
+            fair.Id));
 
         var romanScan = AddMovement(
             roman,
@@ -158,6 +168,7 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
             fixture.Context,
             clock,
             fixture.AlertOutbox);
+        sqlCapture.Clear();
 
         var result = await handler.Handle(
             new GetVolunteerStatisticsQuery(VolunteerId),
@@ -170,6 +181,7 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
         result.Value.Scan.SessionCount.Should().Be(1);
         result.Value.Scan.DurationMinutes.Should().Be(120);
         result.Value.Scan.Impact.RareCount.Should().Be(1);
+        result.Value.Scan.Impact.NewTitleCount.Should().Be(1);
         result.Value.Scan.Impact.AlertItemCount.Should().Be(4);
         result.Value.Scan.Monthly.Single(month => month.PeriodStart.Month == 9).Kept.Should().Be(2);
         result.Value.Scan.Monthly.Single(month => month.PeriodStart.Month == 9).Rejected.Should().Be(1);
@@ -184,6 +196,18 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
             fairStats.Id == fair.Id.Value && fairStats.NetSoldQuantity == 2);
         result.Value.Cash.EstimatedRevenueShare.Should().Be(250m);
         result.Value.Cash.EstimatedTriAndCashOverlap.Should().Be(2);
+
+        StatisticsSqlAssertions.AssertBookAndMovementQueriesAreNarrow(sqlCapture);
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"BookMovements\"", StringComparison.Ordinal) &&
+            (command.Contains("ROW_NUMBER", StringComparison.Ordinal) ||
+             command.Contains("GROUP BY", StringComparison.Ordinal)));
+        sqlCapture.Commands.Should().Contain(command =>
+            command.Contains("FROM \"ScanSessions\"", StringComparison.Ordinal) &&
+            command.Contains("\"ScannedCount\"", StringComparison.Ordinal) &&
+            command.Contains("\"KeptCount\"", StringComparison.Ordinal) &&
+            !command.Contains("\"StartedAt\"", StringComparison.Ordinal) &&
+            !command.Contains("\"Id\"", StringComparison.Ordinal));
     }
 
     [Fact]

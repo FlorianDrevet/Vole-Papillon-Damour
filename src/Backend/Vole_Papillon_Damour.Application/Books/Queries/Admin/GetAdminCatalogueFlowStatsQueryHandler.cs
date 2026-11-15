@@ -5,9 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
-using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
@@ -82,7 +80,9 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             sessionsQuery = sessionsQuery.Where(session => session.TargetAssoEventsId == selectedFair.Id);
         }
 
-        var sessions = await sessionsQuery.ToListAsync(cancellationToken);
+        var sessions = await sessionsQuery
+            .Select(session => new {session.Id, session.ScannedCount})
+            .ToListAsync(cancellationToken);
         var scannedCount = sessions.Sum(session => session.ScannedCount);
 
         var movementsQuery = dbContext.BookMovements
@@ -110,7 +110,9 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
                 (movement.ScanSessionId != null && sessionIds.Contains(movement.ScanSessionId)));
         }
 
-        var movements = await movementsQuery.ToArrayAsync(cancellationToken);
+        var movements = await movementsQuery
+            .Select(StatisticsProjectionExpressions.CatalogueMovement)
+            .ToArrayAsync(cancellationToken);
 
         var keptMovements = movements
             .Where(movement => movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry)
@@ -118,11 +120,12 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
         var sales = BuildEffectiveSales(movements);
         var bookIsbns = keptMovements.Select(movement => movement.Isbn13).Distinct().ToArray();
         var books = bookIsbns.Length == 0
-            ? new Dictionary<Isbn13, Book>()
+            ? new Dictionary<Isbn13, StatisticsBookProjection>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Where(book => bookIsbns.Contains(book.Id))
-                .ToDictionaryAsync(book => book.Id, cancellationToken);
+                .Select(StatisticsProjectionExpressions.CatalogueBook)
+                .ToDictionaryAsync(book => book.Isbn13, cancellationToken);
 
         var keptCount = keptMovements.Sum(movement => Math.Abs(movement.Quantity));
         var soldCount = sales.Sum(sale => sale.Quantity);
@@ -158,9 +161,9 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
     }
 
     private static IReadOnlyList<AdminCatalogueGenreFlowResult> BuildGenreFlow(
-        IReadOnlyCollection<BookMovement> keptMovements,
+        IReadOnlyCollection<StatisticsCatalogueMovementProjection> keptMovements,
         IReadOnlyCollection<EffectiveSale> sales,
-        IReadOnlyDictionary<Isbn13, Book> books)
+        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
     {
         var keptByGenre = keptMovements
             .GroupBy(movement => GetGenre(movement.Isbn13, books), StringComparer.OrdinalIgnoreCase)
@@ -184,7 +187,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
     }
 
     private static IReadOnlyList<AdminCatalogueTimeToSellBucketResult> BuildTimeToSellDistribution(
-        IReadOnlyCollection<BookMovement> keptMovements,
+        IReadOnlyCollection<StatisticsCatalogueMovementProjection> keptMovements,
         IReadOnlyCollection<EffectiveSale> sales)
     {
         var firstKeptAtByIsbn = keptMovements
@@ -212,12 +215,13 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             .ToArray();
     }
 
-    private static string GetGenre(Isbn13 isbn, IReadOnlyDictionary<Isbn13, Book> books) =>
+    private static string GetGenre(Isbn13 isbn, IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books) =>
         books.TryGetValue(isbn, out var book) && !string.IsNullOrWhiteSpace(book.Genre)
             ? book.Genre!
             : "Sans genre";
 
-    private static IReadOnlyList<EffectiveSale> BuildEffectiveSales(IReadOnlyCollection<BookMovement> movements)
+    private static IReadOnlyList<EffectiveSale> BuildEffectiveSales(
+        IReadOnlyCollection<StatisticsCatalogueMovementProjection> movements)
     {
         var sales = movements
             .Where(movement => movement.Type == BookMovementType.Sale && movement.Quantity < 0)
@@ -246,5 +250,5 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             ? null
             : decimal.Round(soldQuantity * 100m / keptQuantity, 2, MidpointRounding.AwayFromZero);
 
-    private sealed record EffectiveSale(BookMovement Movement, int Quantity);
+    private sealed record EffectiveSale(StatisticsCatalogueMovementProjection Movement, int Quantity);
 }

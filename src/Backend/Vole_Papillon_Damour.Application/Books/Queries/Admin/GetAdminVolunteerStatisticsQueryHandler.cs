@@ -5,14 +5,10 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
-using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
-using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -82,7 +78,9 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             sessionsQuery = sessionsQuery.Where(session => session.TargetAssoEventsId == selectedFair.Id);
         }
 
-        var sessions = await sessionsQuery.ToListAsync(cancellationToken);
+        var sessions = await sessionsQuery
+            .Select(StatisticsProjectionExpressions.AdminScanSession)
+            .ToListAsync(cancellationToken);
         var sessionsById = sessions.ToDictionary(session => session.Id, session => session);
 
         var movementsQuery = dbContext.BookMovements
@@ -112,7 +110,9 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
                 (movement.ScanSessionId != null && sessionIds.Contains(movement.ScanSessionId)));
         }
 
-        var movements = await movementsQuery.ToArrayAsync(cancellationToken);
+        var movements = await movementsQuery
+            .Select(StatisticsProjectionExpressions.BookMovement)
+            .ToArrayAsync(cancellationToken);
 
         var scanMovements = movements
             .Where(movement =>
@@ -130,16 +130,21 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
 
         var bookIsbns = scanMovements.Select(movement => movement.Isbn13).Distinct().ToArray();
         var books = bookIsbns.Length == 0
-            ? new Dictionary<Isbn13, Book>()
+            ? new Dictionary<Isbn13, StatisticsBookProjection>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Where(book => bookIsbns.Contains(book.Id))
-                .ToDictionaryAsync(book => book.Id, cancellationToken);
+                .Select(StatisticsProjectionExpressions.AdminVolunteerBook)
+                .ToDictionaryAsync(book => book.Isbn13, cancellationToken);
         var volunteers = volunteerIds.Length == 0
-            ? new Dictionary<UserId, User>()
+            ? new Dictionary<UserId, StatisticsVolunteerNameProjection>()
             : await dbContext.Users
                 .AsNoTracking()
                 .Where(user => volunteerIds.Contains(user.Id))
+                .Select(user => new StatisticsVolunteerNameProjection(
+                    user.Id,
+                    user.Name == null ? null : user.Name.FirstName,
+                    user.Name == null ? null : user.Name.LastName))
                 .ToDictionaryAsync(user => user.Id, cancellationToken);
 
         var contributions = volunteerIds
@@ -194,11 +199,11 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
     private static AdminVolunteerContributionResult BuildContribution(
         UserId volunteerId,
         DateTime generatedAt,
-        IReadOnlyCollection<ScanSession> sessions,
-        IReadOnlyCollection<BookMovement> scanMovements,
+        IReadOnlyCollection<StatisticsAdminScanSessionProjection> sessions,
+        IReadOnlyCollection<StatisticsBookMovementProjection> scanMovements,
         IReadOnlyCollection<EffectiveSale> sales,
-        IReadOnlyDictionary<Isbn13, Book> books,
-        IReadOnlyDictionary<UserId, User> volunteers)
+        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books,
+        IReadOnlyDictionary<UserId, StatisticsVolunteerNameProjection> volunteers)
     {
         var volunteerSessions = sessions
             .Where(session => session.VolunteerId == volunteerId)
@@ -266,7 +271,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
     private static IReadOnlyList<AdminVolunteerMonthlyActivityResult> BuildMonthlyActivity(
         DateTime generatedAt,
         IReadOnlyCollection<AdminVolunteerContributionResult> contributions,
-        IReadOnlyCollection<ScanSession> sessions)
+        IReadOnlyCollection<StatisticsAdminScanSessionProjection> sessions)
     {
         var firstMonth = new DateTime(
             generatedAt.Year,
@@ -316,8 +321,8 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
     }
 
     private static IReadOnlyList<AdminVolunteerGenreResult> BuildDominantGenres(
-        IReadOnlyCollection<BookMovement> scanMovements,
-        IReadOnlyDictionary<Isbn13, Book> books)
+        IReadOnlyCollection<StatisticsBookMovementProjection> scanMovements,
+        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
     {
         return scanMovements
             .Where(IsKeptScan)
@@ -330,8 +335,8 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
     }
 
     private static string? BuildDominantGenre(
-        IReadOnlyCollection<BookMovement> keptScans,
-        IReadOnlyDictionary<Isbn13, Book> books)
+        IReadOnlyCollection<StatisticsBookMovementProjection> keptScans,
+        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
     {
         return keptScans
             .GroupBy(movement => GetGenre(movement, books), StringComparer.OrdinalIgnoreCase)
@@ -341,12 +346,15 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             .FirstOrDefault();
     }
 
-    private static string GetGenre(BookMovement movement, IReadOnlyDictionary<Isbn13, Book> books) =>
+    private static string GetGenre(
+        StatisticsBookMovementProjection movement,
+        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books) =>
         books.TryGetValue(movement.Isbn13, out var book) && !string.IsNullOrWhiteSpace(book.Genre)
             ? book.Genre!
             : "Sans genre";
 
-    private static IReadOnlyList<EffectiveSale> BuildEffectiveSales(IReadOnlyCollection<BookMovement> movements)
+    private static IReadOnlyList<EffectiveSale> BuildEffectiveSales(
+        IReadOnlyCollection<StatisticsBookMovementProjection> movements)
     {
         var sales = movements
             .Where(movement => movement.Type == BookMovementType.Sale && movement.Quantity < 0)
@@ -367,7 +375,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             .ToArray();
     }
 
-    private static bool IsKeptScan(BookMovement movement) =>
+    private static bool IsKeptScan(StatisticsBookMovementProjection movement) =>
         movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry or
             BookMovementType.ManualRequestHold;
 
@@ -376,7 +384,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             ? null
             : decimal.Round(numerator * 100m / denominator, 1, MidpointRounding.AwayFromZero);
 
-    private static int GetSessionDurationMinutes(ScanSession session)
+    private static int GetSessionDurationMinutes(StatisticsAdminScanSessionProjection session)
     {
         var end = session.EndedAt ?? session.LastScanAt;
         return Math.Max(0, (int)Math.Ceiling((end - session.StartedAt).TotalMinutes));
@@ -398,9 +406,9 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             });
     }
 
-    private static string GetDisplayName(User user, UserId userId)
+    private static string GetDisplayName(StatisticsVolunteerNameProjection volunteer, UserId userId)
     {
-        var name = user.Name is null ? null : $"{user.Name.FirstName} {user.Name.LastName}".Trim();
+        var name = $"{volunteer.FirstName} {volunteer.LastName}".Trim();
         return string.IsNullOrWhiteSpace(name)
             ? $"Bénévole {userId.Value.ToString()[..8]}"
             : name;
@@ -421,5 +429,5 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
         }
     }
 
-    private sealed record EffectiveSale(BookMovement Movement, int Quantity);
+    private sealed record EffectiveSale(StatisticsBookMovementProjection Movement, int Quantity);
 }
