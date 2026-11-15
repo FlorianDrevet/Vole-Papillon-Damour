@@ -17,7 +17,7 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
     private static readonly DateTime Now = new(2026, 9, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task Handle_AggregatesStockLedgerDriftAndDeadStock()
+    public async Task Handle_PreservesOverviewMetricsWithoutDashboardAlertOrInventoryDriftAggregates()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var deadStock = await fixture.AddBookAsync("9782070363735", quantityAvailable: 3);
@@ -34,12 +34,9 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         AddMovement(fixture, sold, BookMovementType.DirectEntry, 2, Now.AddDays(-10));
         AddMovement(fixture, sold, BookMovementType.Sale, -1, Now.AddDays(-2));
         await fixture.Context.SaveChangesAsync();
-        fixture.AlertOutbox
-            .GetAdminPageAsync(default, default, default, default, default, default)
-            .ReturnsForAnyArgs(new BookAlertOutboxAdminPage([], 0, 1, 1));
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
-        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock, fixture.AlertOutbox);
+        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock);
 
         var result = await handler.Handle(
             new GetCatalogAdminOverviewQuery(From: null, To: null),
@@ -48,15 +45,18 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Stock.AvailableQuantity.Should().Be(6);
         result.Value.Stock.AvailableTitles.Should().Be(3);
+        result.Value.Stock.AnnouncedQuantity.Should().Be(0);
+        result.Value.Stock.AnnouncedTitles.Should().Be(0);
         result.Value.CurrentPeriod.SoldQuantity.Should().Be(1);
         result.Value.CurrentPeriod.SoldTitles.Should().Be(1);
         result.Value.PreviousPeriod.SoldQuantity.Should().Be(0);
         // Only the fiche with no sale, stock above the threshold and a first
         // availability older than 180 days; the announcement correction is ignored.
         result.Value.DeadStockCount.Should().Be(1);
-        // Only 9783140464079 disagrees with its ledger (2 in stock, no movement).
-        result.Value.InventoryDriftTitleCount.Should().Be(1);
-        result.Value.InventoryDriftQuantity.Should().Be(2);
+        result.Value.UndatedAnnouncementCount.Should().Be(0);
+        result.Value.IsbndbAbsentToCompleteCount.Should().Be(0);
+        fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
+            .GetAdminPageAsync(default, default, default, default, default, default);
     }
 
     [Fact]
@@ -73,12 +73,9 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         AddMovement(fixture, previousPeriodBook, BookMovementType.DirectEntry, 2, Now.AddDays(-45));
         AddMovement(fixture, previousPeriodBook, BookMovementType.Sale, -2, Now.AddDays(-35));
         await fixture.Context.SaveChangesAsync();
-        fixture.AlertOutbox
-            .GetAdminPageAsync(default, default, default, default, default, default)
-            .ReturnsForAnyArgs(new BookAlertOutboxAdminPage([], 0, 1, 1));
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
-        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock, fixture.AlertOutbox);
+        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock);
         sqlCapture.Clear();
 
         var result = await handler.Handle(
@@ -94,7 +91,13 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         result.Value.PreviousPeriod.RejectedCount.Should().Be(0);
         result.Value.PreviousPeriod.SoldQuantity.Should().Be(2);
         result.Value.PreviousPeriod.SoldTitles.Should().Be(1);
-        sqlCapture.Commands.Should().HaveCount(13);
+        sqlCapture.Commands.Should().HaveCount(12);
+        sqlCapture.Commands.Should().NotContain(command =>
+            command.Contains("BookMovements", StringComparison.OrdinalIgnoreCase) &&
+            command.Contains("QuantityAvailable", StringComparison.OrdinalIgnoreCase) &&
+            command.Contains("SUM(", StringComparison.OrdinalIgnoreCase));
+        fixture.AlertOutbox.DidNotReceiveWithAnyArgs()
+            .GetAdminPageAsync(default, default, default, default, default, default);
     }
 
     private static void AddMovement(

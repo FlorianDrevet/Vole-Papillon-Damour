@@ -30,11 +30,6 @@ public sealed record AdminFairSummaryResponse(
     int SoldTitles,
     decimal? Revenue);
 
-public sealed record AdminAlertQueueSummaryResponse(
-    int PendingCount,
-    DateTimeOffset? OldestDueAt,
-    DateTimeOffset? NextDueAt);
-
 public sealed record CatalogAdminOverviewResponse(
     DateTimeOffset GeneratedAt,
     AdminPeriodMetricsResponse CurrentPeriod,
@@ -42,12 +37,7 @@ public sealed record CatalogAdminOverviewResponse(
     AdminStockSummaryResponse Stock,
     AdminFairSummaryResponse? LastFair,
     int DeadStockCount,
-    int RareQueueCount,
-    int MetadataMissingCount,
     int UndatedAnnouncementCount,
-    int InventoryDriftTitleCount,
-    int InventoryDriftQuantity,
-    AdminAlertQueueSummaryResponse PendingAlerts,
     int IsbndbAbsentToCompleteCount = 0);
 
 public sealed record AdminAnnouncementResponse(

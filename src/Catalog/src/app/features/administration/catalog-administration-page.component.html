@@ -212,30 +212,6 @@
                     <span class="stat-sub">Le principal levier de désengorgement</span>
                     <span class="stat-foot">À vérifier dans la file de retrait</span>
                   </article>
-                  <article class="stat-card stat-card-blue" data-testid="admin-stat-card">
-                    <strong class="stat-value">{{ formatNumber(current.pendingAlerts.pendingCount) }}</strong>
-                    <span class="stat-label">E-mails en attente</span>
-                    <span class="stat-sub">Les sessions restent corrigeables pendant la fenêtre prévue</span>
-                    <span class="stat-foot">Prochaine échéance : {{ formatCountdown(current.pendingAlerts.nextDueAt) }}</span>
-                  </article>
-                  <article class="stat-card stat-card-purple" data-testid="admin-stat-card">
-                    <strong class="stat-value">{{ formatNumber(current.rareQueueCount) }}</strong>
-                    <span class="stat-label">Rares à expertiser</span>
-                    <span class="stat-sub">À étiqueter manuellement sur le livre</span>
-                    <span class="stat-foot">File de travail</span>
-                  </article>
-                  <article class="stat-card" data-testid="admin-stat-card">
-                    <strong class="stat-value">{{ formatNumber(current.metadataMissingCount) }}</strong>
-                    <span class="stat-label">Fiches sans métadonnées</span>
-                    <span class="stat-sub">Titre, auteur ou éditeur à compléter</span>
-                    <span class="stat-foot">File de travail</span>
-                  </article>
-                  <article class="stat-card stat-card-red" data-testid="admin-stat-card">
-                    <strong class="stat-value">− {{ formatNumber(current.inventoryDriftQuantity) }}</strong>
-                    <span class="stat-label">Écart d’inventaire</span>
-                    <span class="stat-sub">{{ formatNumber(current.inventoryDriftTitleCount) }} fiches concernées par le ledger</span>
-                    <span class="stat-foot">Écart à traiter fiche par fiche</span>
-                  </article>
                 </div>
 
                 <app-isbndb-status-card [status]="isbndbStatus()"></app-isbndb-status-card>

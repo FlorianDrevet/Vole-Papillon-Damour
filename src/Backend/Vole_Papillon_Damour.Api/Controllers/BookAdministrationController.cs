@@ -1354,15 +1354,7 @@ public static class BookAdministrationController
                 result.Stock.AnnouncedTitles),
             result.LastFair is null ? null : ToResponse(result.LastFair),
             result.DeadStockCount,
-            result.RareQueueCount,
-            result.MetadataMissingCount,
             result.UndatedAnnouncementCount,
-            result.InventoryDriftTitleCount,
-            result.InventoryDriftQuantity,
-            new AdminAlertQueueSummaryResponse(
-                result.PendingAlerts.PendingCount,
-                result.PendingAlerts.OldestDueAt,
-                result.PendingAlerts.NextDueAt),
             result.IsbndbAbsentToCompleteCount);
 
     private static AdminPeriodMetricsResponse ToResponse(AdminPeriodMetricsResult result) =>

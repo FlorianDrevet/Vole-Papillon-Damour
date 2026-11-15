@@ -288,12 +288,7 @@ describe('CatalogAdministrationPageComponent', () => {
       stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
       lastFair: null,
       deadStockCount: 0,
-      rareQueueCount: 0,
-      metadataMissingCount: 0,
       undatedAnnouncementCount: 0,
-      inventoryDriftTitleCount: 0,
-      inventoryDriftQuantity: 0,
-      pendingAlerts: {pendingCount: 0, oldestDueAt: null, nextDueAt: null},
     } as CatalogAdminOverview));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
     api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
@@ -1050,7 +1045,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.statisticsTab()).toBe('evolution');
   });
 
-  it('renders the maquette dashboard title and eight data cards', async () => {
+  it('renders exactly the four maquette dashboard cards in order and keeps the scan-session alert list', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getOverview.and.returnValue(of({
@@ -1060,12 +1055,7 @@ describe('CatalogAdministrationPageComponent', () => {
       stock: {availableQuantity: 4_812, availableTitles: 1_240, announcedQuantity: 0, announcedTitles: 0},
       lastFair: {id: 'fair', name: 'Bourse du 8 février', dateStart: '2026-02-08', dateEnd: null, soldQuantity: 812, soldTitles: 100, revenue: 1_140},
       deadStockCount: 287,
-      rareQueueCount: 12,
-      metadataMissingCount: 38,
       undatedAnnouncementCount: 7,
-      inventoryDriftTitleCount: 38,
-      inventoryDriftQuantity: 124,
-      pendingAlerts: {pendingCount: 14, oldestDueAt: null, nextDueAt: null},
     } as CatalogAdminOverview));
 
     fixture.detectChanges();
@@ -1073,8 +1063,18 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="admin-title"]')?.textContent).toContain('Tableau de bord.');
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(8);
-    expect(fixture.nativeElement.textContent).toContain('Disponibles et annoncés');
+    const cards = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]')) as HTMLElement[];
+    expect(cards.length).toBe(4);
+    expect(cards.map(card => card.querySelector('.stat-label')?.textContent?.trim())).toEqual([
+      'Disponibles et annoncés',
+      'Livres triés',
+      'Livres vendus',
+      'Titres jamais vendus',
+    ]);
+    expect(fixture.nativeElement.textContent).not.toContain('E-mails en attente');
+    expect(fixture.nativeElement.textContent).not.toContain('Rares à expertiser');
+    expect(fixture.nativeElement.textContent).not.toContain('Fiches sans métadonnées');
+    expect(fixture.nativeElement.textContent).not.toContain('Écart d’inventaire');
     expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
   });
 

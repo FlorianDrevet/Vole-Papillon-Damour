@@ -14,8 +14,7 @@ namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
 public sealed class GetCatalogAdminOverviewQueryHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider,
-    IBookAlertOutbox bookAlertOutbox)
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetCatalogAdminOverviewQuery, ErrorOr<CatalogAdminOverviewResult>>
 {
     public async Task<ErrorOr<CatalogAdminOverviewResult>> Handle(
@@ -65,22 +64,10 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             {
                 AvailableQuantity = books.Sum(book => book.QuantityAvailable),
                 AvailableTitleCount = books.Count(book => book.QuantityAvailable > 0),
-                RareTitleCount = books.Count(book => dbContext.RareBooks
-                    .AsNoTracking()
-                    .PublishedAvailable()
-                    .Any(rareBook => rareBook.Isbn13 == book.Id)),
-                MetadataToReviewCount = books.Count(book =>
-                    book.MetadataStatus == BookMetadataStatus.Pending ||
-                    book.MetadataStatus == BookMetadataStatus.NotFound ||
-                    book.MetadataStatus == BookMetadataStatus.Failed ||
-                    book.Title == null ||
-                    book.Title.Trim() == string.Empty),
             })
             .SingleOrDefaultAsync(cancellationToken);
         var availableQuantity = bookSummary?.AvailableQuantity ?? 0;
         var availableTitleCount = bookSummary?.AvailableTitleCount ?? 0;
-        var rareTitleCount = bookSummary?.RareTitleCount ?? 0;
-        var metadataToReviewCount = bookSummary?.MetadataToReviewCount ?? 0;
         var isbndbAbsentToCompleteCount = await dbContext.Books.AsNoTracking().CountAsync(
             book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null,
             cancellationToken);
@@ -135,24 +122,6 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 firstAvailableAt => firstAvailableAt <= deadStockCutoff,
                 cancellationToken);
 
-        // Only fiches whose stock disagrees with the ledger come back from SQL.
-        var inventoryDifferences = await canonicalBooks
-            .Select(book => book.QuantityAvailable - dbContext.BookMovements
-                .Where(AdminQueryProjection.AffectsAvailableQuantity)
-                .Where(movement => movement.Isbn13 == book.Id)
-                .Sum(movement => movement.Quantity))
-            .Where(difference => difference != 0)
-            .ToListAsync(cancellationToken);
-
-        var pendingAlerts = await bookAlertOutbox.GetAdminPageAsync(
-            BookAlertQueueStatus.Pending,
-            null,
-            null,
-            1,
-            1,
-            cancellationToken);
-        var pendingAlertAt = pendingAlerts.Items.FirstOrDefault()?.DueAt;
-
         return new CatalogAdminOverviewResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             currentPeriod,
@@ -164,15 +133,7 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 announcedTitleCount),
             lastFair,
             deadStockCount,
-            rareTitleCount,
-            metadataToReviewCount,
             undatedAnnouncementCount,
-            inventoryDifferences.Count,
-            inventoryDifferences.Sum(difference => Math.Abs(difference)),
-            new AdminAlertQueueSummaryResult(
-                pendingAlerts.TotalCount,
-                pendingAlertAt is { } oldest ? new DateTimeOffset(oldest, TimeSpan.Zero) : null,
-                pendingAlertAt is { } next ? new DateTimeOffset(next, TimeSpan.Zero) : null),
             isbndbAbsentToCompleteCount);
     }
 

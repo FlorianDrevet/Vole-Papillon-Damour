@@ -32,16 +32,7 @@ export interface CatalogAdminOverview {
   stock: AdminStockSummary;
   lastFair: AdminFairSummary | null;
   deadStockCount: number;
-  rareQueueCount: number;
-  metadataMissingCount: number;
   undatedAnnouncementCount: number;
-  inventoryDriftTitleCount: number;
-  inventoryDriftQuantity: number;
-  pendingAlerts: {
-    pendingCount: number;
-    oldestDueAt: string | null;
-    nextDueAt: string | null;
-  };
 }
 
 export interface AdminAnnouncement {
