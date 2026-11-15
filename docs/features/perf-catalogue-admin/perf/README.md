@@ -86,3 +86,14 @@ de production.
 Ouverture du tableau de bord : 24 s, 27 appels dont `overview` ×2, `isbndb/status` ×2 et
 les quatre compteurs `pageSize=1` ×2. La base S0 culmine à 87 % de ses DTU. La mémoire de
 l'API tourne en médiane à 443 Mo pour une limite de 512 Mo.
+
+### Vérification de fin de tâche — 15 novembre 2026
+
+Cette reprise n'a pas rejoué le seed, `02-genres-rares.sql`, les plans SQL ni les mesures
+HTTP : `podman ps` et `docker ps` ne peuvent pas joindre de daemon local. Aucune nouvelle
+valeur après correctif n'est donc revendiquée pour `/catalog/search`, les listes admin ou
+le nombre d'appels réseau à l'ouverture de `/administration`. Les cinq requêtes HTTP par
+endpoint et les chiffres du tableau de bord ci-dessus sont les relevés locaux précédents ;
+les mesures App Insights restent celles d'avant correctif du 14 novembre. Refaire le
+scénario CA-01 et le comptage réseau dans un environnement local avec SQL actif, puis
+mesurer les endpoints après déploiement avant de conclure sur la production.

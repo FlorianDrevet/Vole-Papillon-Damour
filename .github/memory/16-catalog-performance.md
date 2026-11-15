@@ -101,10 +101,21 @@ production latency after merging and deploying the API.
   stale responses, adds local retry/error UI and shared reduced-motion skeleton styles.
   The statistics request runs no longer wait for fair options and ignore results after a
   tab change.
-- Catalog administration target specs pass 95/95. The full Catalog suite is 648/651;
-  its three failing AccountCard assertions are the known `origin/main` failures. The
-  production build passes with the existing initial-bundle warning and the administration
-  component stylesheet at 59.95 kB (the configured error limit is 60 kB).
+- Catalog administration target specs pass 95/95. After synchronizing with the latest
+  `origin/main`, the full Catalog suite is 659/663. Its four failing tests (three
+  AccountCard assertions and one CatalogAccountPage assertion) are in component/test files
+  unchanged from `origin/main`. Catalog production build passes with the initial bundle at
+  1.10 MB and the administration component stylesheet at 59.95 kB (the configured error
+  limit is 60 kB).
+- Task 15 validation: the .NET solution passes 1,164/1,164; Catalog production build
+  and BackOffice production builds pass. BackOffice bootstrap checks pass 4/6; the two
+  failing script assertions expect a static bootstrap array and direct MSAL initializer,
+  which differ from the current conditional bootstrap in files unchanged from `origin/main`.
+  Task 14 did not modify BackOffice files.
+- Final validation could not rerun the local SQL seed, plans, endpoint timings, or admin
+  network count because neither Podman nor Docker could reach a daemon. The earlier
+  five-request local measurements and 14 November pre-fix App Insights values remain the
+  only available numbers; no post-fix production measurement is claimed.
 - `graphify update .` completed. The authenticated responsive visual check is still pending:
   Windows Computer Use stopped because it could not determine the browser's current URL
   with enough confidence to proceed. No Azure resource, database or deployment changed.
