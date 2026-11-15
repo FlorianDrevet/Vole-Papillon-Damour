@@ -68,6 +68,7 @@ import {
   CatalogAdminMemberFilters,
   CatalogAdminMemberPage,
   CatalogAdminOverview,
+  CatalogAdminNavigationCounts,
   CatalogAdminIsbndbStatus,
   CatalogAdminCreateAccountRequest,
   CatalogAdminScanSession,
@@ -109,6 +110,7 @@ const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
 const MAX_BOOK_QUANTITY = 100_000;
 const CATALOGUE_SEARCH_DEBOUNCE_MS = 2_000;
+const ADMIN_SECTION_CACHE_MS = 60_000;
 const CATALOGUE_ADJUSTMENT_QUANTITY = 1;
 const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
 const ISBN_APPLICATION_IMPORT_BATCH_SIZE = 100;
@@ -154,9 +156,6 @@ type CatalogAdminNavIcon =
   | 'accounts'
   | 'mail'
   | 'settings';
-
-type CatalogAdminNavigationBadgeSection = 'catalogue' | 'isbn-queue' | 'isbndb-absent' | 'rare-books';
-type CatalogAdminNavigationBadgeCounts = Partial<Record<CatalogAdminNavigationBadgeSection, number>>;
 
 interface CatalogAdminNavItem {
   id: CatalogAdminSection;
@@ -283,39 +282,35 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
     return this.isRareBookManager() ? RARE_ONLY_NAV_GROUPS : [];
   });
-  readonly navigationBadgeCounts = signal<CatalogAdminNavigationBadgeCounts>({});
+  readonly navigationBadgeCounts = signal<CatalogAdminNavigationCounts | null>(null);
 
   get navItems(): CatalogAdminNavItem[] {
     return this.navGroups().flatMap(group => group.items);
   }
 
   navBadge(section: CatalogAdminSection): string | null {
-    if (section === 'not-found') {
-      const count = this.notFoundSummary()?.openTargetCount ?? 0;
-      return count > 0 ? this.formatNumber(count) : null;
-    }
-    if (section === 'manual-requests') {
-      const count = this.manualRequestSummary()?.foundCount ?? 0;
-      return count > 0 ? this.formatNumber(count) : null;
-    }
-    if (section === 'isbndb-absent') {
-      const count = this.navigationBadgeCounts()['isbndb-absent'];
-      return count && count > 0 ? this.formatNumber(count) : null;
+    const counts = this.navigationBadgeCounts();
+    if (!counts) {
+      return null;
     }
 
-    const totalCount = section === 'sessions'
-      ? this.sessionsPage() ? this.openSessionCount() : undefined
-      : section === 'catalogue'
-        ? this.catalogueBooksPage()?.totalCount ?? this.navigationBadgeCounts().catalogue
-        : section === 'isbn-queue'
-          ? this.isbnMetadataQueue()?.totalCount ?? this.navigationBadgeCounts()['isbn-queue']
-        : section === 'rare-books'
-          ? this.rareBooksFacade.page()
-            ? this.rareBooksFacade.publishedCount()
-            : this.navigationBadgeCounts()['rare-books']
-        : undefined;
+    const count = section === 'sessions'
+      ? counts.openScanSessions
+      : section === 'not-found'
+        ? counts.notFoundOpenTargets
+        : section === 'manual-requests'
+          ? counts.manualRequestsFound
+          : section === 'catalogue'
+            ? counts.catalogueBooks
+            : section === 'isbn-queue'
+              ? counts.isbnQueue
+              : section === 'isbndb-absent'
+                ? counts.isbndbAbsentToComplete
+                : section === 'rare-books'
+                  ? counts.publishedRareBooks
+                  : undefined;
 
-    return totalCount === undefined ? null : this.formatNumber(totalCount);
+    return count === null || count === undefined || count <= 0 ? null : this.formatNumber(count);
   }
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
@@ -495,6 +490,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyed = new Subject<void>();
+  private readonly sectionLoadedAt = new Map<CatalogAdminSection, number>();
+  private initializationTask: Promise<void> | null = null;
   private administrationInitialized = false;
   private catalogueSearchTimer: number | null = null;
   private bookCloseOpener: HTMLElement | null = null;
@@ -533,33 +530,28 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async initialize(): Promise<void> {
+    if (!this.initializationTask) {
+      this.initializationTask = this.initializeAdministration();
+    }
+    await this.initializationTask;
+  }
+
+  private async initializeAdministration(): Promise<void> {
     await this.auth.initialize();
-    let navigationBadgeCountsTask: Promise<void> | undefined;
     if (this.auth.isAuthenticated() && this.hasAdministrationAccess()) {
-      navigationBadgeCountsTask = this.loadNavigationBadgeCounts();
       if (!this.isAdministrator() && this.isRareBookManager()) {
         if (!(['rare-books', 'not-found'] as CatalogAdminSection[]).includes(this.activeSection())) {
           this.activeSection.set('rare-books');
           await this.router.navigate(['/administration', 'rare-books'], {replaceUrl: true});
         }
-        await this.loadNotFoundSummary();
-        if (this.activeSection() === 'not-found') {
-          await this.loadSection('not-found');
-        }
-      } else {
-        await this.loadOverview();
-        await this.loadSessions();
-        await this.loadDeadStock();
-        await this.loadNotFoundSummary();
-        await this.loadManualRequestSummary();
-
-        if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
-          await this.loadSection(this.activeSection());
-        }
       }
+
+      await Promise.all([
+        this.loadNavigationBadgeCounts(),
+        this.loadSection(this.activeSection()),
+      ]);
     }
     this.administrationInitialized = true;
-    await navigationBadgeCountsTask;
   }
 
   async login(): Promise<void> {
@@ -613,6 +605,37 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async loadSection(section: CatalogAdminSection): Promise<void> {
+    const now = Date.now();
+    const loadedAt = this.sectionLoadedAt.get(section);
+    if (loadedAt !== undefined && now - loadedAt < ADMIN_SECTION_CACHE_MS) {
+      void this.refreshSection(section);
+      return;
+    }
+
+    await this.refreshSection(section);
+  }
+
+  private async refreshSection(section: CatalogAdminSection): Promise<void> {
+    this.errorMessage.set(null);
+    try {
+      await this.loadSectionData(section);
+      if (!this.errorMessage()) {
+        this.sectionLoadedAt.set(section, Date.now());
+      }
+    } catch (error: unknown) {
+      this.showError(this.describeError(error));
+    }
+  }
+
+  private async loadIsbndbStatus(token: string): Promise<void> {
+    try {
+      this.isbndbStatus.set(await firstValueFrom(this.api.getIsbndbStatus(token)));
+    } catch {
+      this.isbndbStatus.set(null);
+    }
+  }
+
+  private async loadSectionData(section: CatalogAdminSection): Promise<void> {
     switch (section) {
       case 'overview':
         await this.loadOverview();
@@ -694,20 +717,24 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async loadOverview(): Promise<void> {
     await this.run('overview', async token => {
-      const overview = this.api.getOverview(token, undefined, undefined, true);
-      this.overview.set(await firstValueFrom(overview));
-      await this.loadIsbndbStatus(token);
-    });
-  }
+      const [overviewResult, statusResult, sessionsResult] = await Promise.allSettled([
+        firstValueFrom(this.api.getOverview(token, undefined, undefined, true)),
+        firstValueFrom(this.api.getIsbndbStatus(token)),
+        firstValueFrom(this.api.getSessions(token, this.sessionFilters())),
+      ]);
 
-  private async loadIsbndbStatus(token: string): Promise<void> {
-    try {
-      const status = await firstValueFrom(this.api.getIsbndbStatus(token));
-      this.isbndbStatus.set(status);
-      this.navigationBadgeCounts.update(counts => ({...counts, 'isbndb-absent': status.absentToComplete}));
-    } catch {
-      this.isbndbStatus.set(null);
-    }
+      if (overviewResult.status === 'rejected') {
+        throw overviewResult.reason;
+      }
+      this.overview.set(overviewResult.value);
+
+      this.isbndbStatus.set(statusResult.status === 'fulfilled' ? statusResult.value : null);
+      if (sessionsResult.status === 'fulfilled') {
+        this.sessionsPage.set(sessionsResult.value);
+      } else {
+        throw sessionsResult.reason;
+      }
+    });
   }
 
   toggleMetadataGenre(genre: string): void {
@@ -1170,6 +1197,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.catalogueReferenceResults.set([]);
       this.showSuccess('Le livre a été ajouté au catalogue.');
       await this.loadCataloguePage(token);
+      await this.loadNavigationBadgeCounts(token);
     });
   }
 
@@ -1335,6 +1363,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.showSuccess(completed ? 'Le livre est marqué comme complété.' : 'Le livre est rouvert.');
       await this.loadBookDetail(token, book.isbn13);
       await this.loadIsbndbStatus(token);
+      await this.loadNavigationBadgeCounts(token);
       this.bookDetailReturnSection.set(returnSection);
     });
   }
@@ -1437,6 +1466,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.selectedBook.set(book);
       this.selectedBookNotFoundSummary.set(summary);
       this.notFoundSummary.set(overviewSummary);
+      await this.loadNavigationBadgeCounts(token);
       if (this.bookCloseOpener?.isConnected) {
         this.bookCloseOpener.focus();
       } else {
@@ -1467,6 +1497,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.manualRequestSummary.set(summary);
   }
 
+  refreshNavigationBadgeCounts(): void {
+    void this.loadNavigationBadgeCounts();
+  }
+
   openManualRequester(requesterId: string | null): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -1488,19 +1522,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.notFoundAccessToken.set(token);
       this.notFoundSummary.set(await firstValueFrom(this.api.getNotFoundSummary(token)));
     });
-  }
-
-  private async loadManualRequestSummary(): Promise<void> {
-    if (!this.auth.isAuthenticated()) {
-      return;
-    }
-
-    try {
-      const token = await this.auth.getApiAccessToken();
-      this.manualRequestSummary.set(await firstValueFrom(this.api.getManualRequestSummary(token)));
-    } catch {
-      this.manualRequestSummary.set(null);
-    }
   }
 
   private async loadManualRequestWorkspace(): Promise<void> {
@@ -1596,6 +1617,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       } else if (returnSection !== 'isbndb-absent') {
         await this.loadCataloguePage(token);
       }
+      await this.loadNavigationBadgeCounts(token);
     });
   }
 
@@ -1640,6 +1662,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.showSuccess('Le retrait a été journalisé.');
       await this.openBook(book.isbn13);
       await this.loadCatalogue();
+      await this.loadNavigationBadgeCounts(token);
     });
   }
 
@@ -1891,17 +1914,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async loadSessions(): Promise<void> {
-    const filters: CatalogAdminSessionFilters = {
+    await this.run('sessions', async token => {
+      this.sessionsPage.set(await firstValueFrom(this.api.getSessions(token, this.sessionFilters())));
+    });
+  }
+
+  private sessionFilters(): CatalogAdminSessionFilters {
+    return {
       status: this.sessionStatus || undefined,
       from: this.sessionFrom ? new Date(`${this.sessionFrom}T00:00:00Z`).toISOString() : undefined,
       to: this.sessionTo ? new Date(`${this.sessionTo}T23:59:59Z`).toISOString() : undefined,
       page: this.sessionPage,
       pageSize: this.sessionPageSize,
     };
-
-    await this.run('sessions', async token => {
-      this.sessionsPage.set(await firstValueFrom(this.api.getSessions(token, filters)));
-    });
   }
 
   setSessionPreset(preset: 'correctable' | 'all' | 'open' | 'alerts'): void {
@@ -2131,6 +2156,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.showSuccess('La session a été annulée avec une correction tracée.');
       await this.openSession(session.id);
       await this.loadSessions();
+      await this.loadNavigationBadgeCounts(token);
     });
   }
 
@@ -3240,50 +3266,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async loadNavigationBadgeCounts(): Promise<void> {
-    let token: string;
+  private async loadNavigationBadgeCounts(accessToken?: string): Promise<void> {
+    let token = accessToken;
+    if (!token) {
+      try {
+        token = await this.auth.getApiAccessToken();
+      } catch {
+        return;
+      }
+    }
+
     try {
-      token = await this.auth.getApiAccessToken();
+      this.navigationBadgeCounts.set(await firstValueFrom(this.api.getNavigationCounts(token)));
     } catch {
-      return;
-    }
-
-    const requests: Promise<void>[] = [];
-    if (this.isAdministrator()) {
-      requests.push(this.captureNavigationBadgeCount(
-        'catalogue',
-        () => firstValueFrom(this.api.getBooks(token, {page: 1, pageSize: 1})),
-      ));
-      requests.push(this.captureNavigationBadgeCount(
-        'isbn-queue',
-        () => firstValueFrom(this.api.getBookMetadataQueue(token, {page: 1, pageSize: 1})),
-      ));
-      requests.push(this.captureNavigationBadgeCount(
-        'isbndb-absent',
-        () => firstValueFrom(this.api.getIsbndbAbsentBooks(token, {
-          status: 'to-complete', page: 1, pageSize: 1,
-        })),
-      ));
-    }
-    if (this.hasAdministrationAccess()) {
-      requests.push(this.captureNavigationBadgeCount(
-        'rare-books',
-        () => firstValueFrom(this.api.getRareBooks(token, {status: 'Published', page: 1, pageSize: 1})),
-      ));
-    }
-
-    await Promise.all(requests);
-  }
-
-  private async captureNavigationBadgeCount(
-    section: CatalogAdminNavigationBadgeSection,
-    load: () => Promise<{totalCount: number}>,
-  ): Promise<void> {
-    try {
-      const page = await load();
-      this.navigationBadgeCounts.update(counts => ({...counts, [section]: page.totalCount}));
-    } catch {
-      // The counts are supplemental; opening a workspace still loads its full data.
+      // Navigation counts are supplemental; the selected workspace still loads its own data.
     }
   }
 

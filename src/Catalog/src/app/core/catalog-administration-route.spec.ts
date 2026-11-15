@@ -1,10 +1,16 @@
 import {
   CATALOG_ADMIN_SECTIONS,
+  catalogAdminSectionFromRoute,
   catalogAdminSectionPath,
   isCatalogAdminSection,
 } from './catalog-administration-route';
 
 describe('catalog administration routes', () => {
+  it('defaults to overview when the route has no section', () => {
+    expect(catalogAdminSectionFromRoute(null)).toBe('overview');
+    expect(catalogAdminSectionFromRoute('catalogue')).toBe('catalogue');
+  });
+
   it('recognizes the rare-books workspace as an administration section', () => {
     expect(CATALOG_ADMIN_SECTIONS).toContain('rare-books');
     expect(isCatalogAdminSection('rare-books')).toBeTrue();

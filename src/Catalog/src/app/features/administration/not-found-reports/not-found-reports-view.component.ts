@@ -31,6 +31,7 @@ export class NotFoundReportsViewComponent implements OnChanges {
   @Input() canManageEditions = false;
   @Input() canManageRareBooks = false;
   @Output() countsChanged = new EventEmitter<CatalogNotFoundSummary>();
+  @Output() mutationCompleted = new EventEmitter<void>();
 
   readonly activeTab = signal<NotFoundTab>('open');
   readonly queue = signal<CatalogNotFoundQueue | null>(null);
@@ -182,6 +183,7 @@ export class NotFoundReportsViewComponent implements OnChanges {
         confirmation.action,
         confirmation.request as CatalogNotFoundCloseRequest,
       ));
+      this.mutationCompleted.emit();
       this.closingTarget.set(null);
       this.closeOpener = null;
       this.queuePage.set(1);

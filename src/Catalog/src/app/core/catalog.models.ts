@@ -786,6 +786,18 @@ export interface CatalogAdminOverview {
   undatedAnnouncementCount: number;
 }
 
+export interface CatalogAdminNavigationCounts {
+  openScanSessions: number | null;
+  notFoundOpenTargets: number;
+  notFoundOverdueTargets: number;
+  manualRequestsFound: number | null;
+  manualRequestsFoundOverdue: number | null;
+  catalogueBooks: number | null;
+  isbnQueue: number | null;
+  isbndbAbsentToComplete: number | null;
+  publishedRareBooks: number;
+}
+
 export interface CatalogAdminIsbndbStatus {
   dailyLimit: number;
   dailyRemaining: number;

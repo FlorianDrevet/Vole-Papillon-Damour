@@ -27,6 +27,7 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   @Output() requesterCreated = new EventEmitter<string>();
   @Output() addBookRequested = new EventEmitter<string>();
   @Output() countsChanged = new EventEmitter<CatalogManualRequestSummary>();
+  @Output() mutationCompleted = new EventEmitter<void>();
 
   @ViewChild('deleteDialog') private deleteDialog?: ElementRef<HTMLElement>;
   @ViewChild('requesterHeading') private requesterHeading?: ElementRef<HTMLElement>;
@@ -330,6 +331,7 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
       await action();
       await this.refreshRequester(false);
       await this.refreshRequestCounts();
+      this.mutationCompleted.emit();
       return true;
     } catch {
       this.error.set('Cette action n’a pas abouti. Vérifiez la connexion puis réessayez.');

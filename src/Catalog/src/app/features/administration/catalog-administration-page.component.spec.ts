@@ -30,6 +30,7 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminMemberOperation,
   CatalogAdminOverview,
+  CatalogAdminNavigationCounts,
   CatalogAdminIsbndbStatus,
   CatalogAdminIsbndbAbsentBooksPage,
   CatalogAdminRareBookPage,
@@ -253,7 +254,7 @@ describe('CatalogAdministrationPageComponent', () => {
     routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getOverview', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
+      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
       'getIsbndbStatus', 'getIsbndbAbsentBooks', 'setIsbndbCompletion', 'recheckIsbndbBook',
       'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook', 'permanentlyDeleteBook',
@@ -291,6 +292,17 @@ describe('CatalogAdministrationPageComponent', () => {
       deadStockComputedAt: null,
       undatedAnnouncementCount: 0,
     } as CatalogAdminOverview));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    } as CatalogAdminNavigationCounts));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
     api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
     api.getIsbndbStatus.and.returnValue(of(isbndbStatus()));
@@ -433,7 +445,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
   it('offers a dedicated administrator login when signed out', async () => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Accès administration');
@@ -537,13 +549,16 @@ describe('CatalogAdministrationPageComponent', () => {
   it('nav lists Livres introuvables right after Désengorgement with its badge', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getNotFoundSummary.and.returnValue(of({
-      openTargetCount: 2,
-      overdueTargetCount: 1,
-      openReportCount: 3,
-      firstReportedAt: null,
-      latestComment: null,
-      withdrawalMovementIds: [],
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 2,
+      notFoundOverdueTargets: 1,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
     }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
@@ -560,7 +575,17 @@ describe('CatalogAdministrationPageComponent', () => {
   it('shows a manual request sidebar badge only for administrators with books to hand over', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 2, foundOverdueCount: 1}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 2,
+      manualRequestsFoundOverdue: 1,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -571,14 +596,22 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.admin-nav-badge-manual-requests')).not.toBeNull();
   });
 
-  it('initializesCatalogueBadges_whenAdministratorArrivesAtOverview_loadsAllThreeCounts', async () => {
+  it('loads only overview data once at entry, then only the selected catalogue section', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 84, page: 1, pageSize: 1}));
-    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 7, page: 1, pageSize: 1}));
-    api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 12, page: 1, pageSize: 1}));
-    api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 4, page: 1, pageSize: 1}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 3,
+      notFoundOpenTargets: 2,
+      notFoundOverdueTargets: 1,
+      manualRequestsFound: 4,
+      manualRequestsFoundOverdue: 2,
+      catalogueBooks: 84,
+      isbnQueue: 7,
+      isbndbAbsentToComplete: 4,
+      publishedRareBooks: 12,
+    }));
 
+    fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
@@ -587,19 +620,34 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.navBadge('isbn-queue')).toBe('7');
     expect(fixture.componentInstance.navBadge('isbndb-absent')).toBe('4');
     expect(fixture.componentInstance.navBadge('rare-books')).toBe('12');
+    expect(fixture.componentInstance.navBadge('sessions')).toBe('3');
+    expect(fixture.componentInstance.navBadge('not-found')).toBe('2');
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBe('4');
     expect(fixture.nativeElement.querySelector('a[href="/administration/catalogue"] .admin-nav-badge')?.textContent.trim()).toBe('84');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/isbn-queue"] .admin-nav-badge')?.textContent.trim()).toBe('7');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/isbndb-absent"] .admin-nav-badge')?.textContent.trim()).toBe('4');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/rare-books"] .admin-nav-badge')?.textContent.trim()).toBe('12');
     expect(fixture.nativeElement.querySelector('option[value="catalogue"]')?.textContent.trim()).toBe('Catalogue (84)');
-    expect(fixture.nativeElement.querySelector('option[value="isbn-queue"]')?.textContent.trim()).toBe('ISBN en cours d’analyse (7)');
-    expect(fixture.nativeElement.querySelector('option[value="rare-books"]')?.textContent.trim()).toBe('Livres rares (12)');
-    expect(api.getBooks).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
-    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 1});
-    expect(api.getRareBooks).toHaveBeenCalledWith('access-token', {status: 'Published', page: 1, pageSize: 1});
-    expect(api.getIsbndbAbsentBooks).toHaveBeenCalledWith('access-token', {status: 'to-complete', page: 1, pageSize: 1});
-    expect(api.getIsbndbStatus).toHaveBeenCalledWith('access-token');
+    expect(api.getNavigationCounts).toHaveBeenCalledOnceWith('access-token');
+    expect(api.getOverview).toHaveBeenCalledOnceWith('access-token', undefined, undefined, true);
+    expect(api.getIsbndbStatus).toHaveBeenCalledOnceWith('access-token');
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
+    expect(auth.initialize).toHaveBeenCalledTimes(1);
+    expect(api.getBooks).not.toHaveBeenCalled();
+    expect(api.getBookMetadataQueue).not.toHaveBeenCalled();
+    expect(api.getRareBooks).not.toHaveBeenCalled();
+    expect(api.getIsbndbAbsentBooks).not.toHaveBeenCalled();
+    expect(api.getDeadStock).not.toHaveBeenCalled();
+    expect(api.getNotFoundSummary).not.toHaveBeenCalled();
+    expect(api.getManualRequestSummary).not.toHaveBeenCalled();
     expect(fixture.nativeElement.querySelector('[data-testid="isbndb-status-card"]')?.textContent).toContain('4 livres hors ISBNdb à compléter');
+
+    routeParams.next(convertToParamMap({section: 'catalogue'}));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getBooks).toHaveBeenCalledTimes(1);
+    expect(api.getBooks).toHaveBeenCalledWith('access-token', jasmine.objectContaining({page: 1}));
+    expect(api.getNavigationCounts).toHaveBeenCalledTimes(1);
+    expect(api.getOverview).toHaveBeenCalledTimes(1);
+    expect(api.getSessions).toHaveBeenCalledTimes(1);
   });
 
   it('hides the badge and the dashboard tile when nothing is open', async () => {
@@ -613,12 +661,48 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.navBadge('manual-requests')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="manual-request-dashboard-tile"]')).toBeNull();
+    const options = Array.from(fixture.nativeElement.querySelectorAll('option')) as HTMLOptionElement[];
+    expect(options.every(option => !/\(0\)|\.\.\.|…/.test(option.textContent ?? ''))).toBeTrue();
+  });
+
+  it('keeps a recently visited section visible while refreshing it in the background', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const firstPage: CatalogAdminBookPage = {generatedAt: 'first', books: [], totalCount: 1, page: 1, pageSize: 50};
+    const refreshedPage: CatalogAdminBookPage = {generatedAt: 'refreshed', books: [], totalCount: 2, page: 1, pageSize: 50};
+    const refresh = new Subject<CatalogAdminBookPage>();
+    api.getBooks.and.returnValues(of(firstPage), refresh);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('catalogue');
+    await fixture.componentInstance.selectSection('sessions');
+    await fixture.componentInstance.selectSection('catalogue');
+
+    expect(api.getBooks).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.catalogueBooksPage()).toBe(firstPage);
+
+    refresh.next(refreshedPage);
+    refresh.complete();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.catalogueBooksPage()).toBe(refreshedPage);
   });
 
   it('shows the dashboard handover tile with the overdue count and opens manual requests', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 3, foundOverdueCount: 2}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 3,
+      manualRequestsFoundOverdue: 2,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -641,7 +725,17 @@ describe('CatalogAdministrationPageComponent', () => {
   it('omits the dashboard handover overdue mention when no books are overdue', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    api.getManualRequestSummary.and.returnValue(of({foundCount: 1, foundOverdueCount: 0}));
+    api.getNavigationCounts.and.returnValue(of({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 1,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    }));
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
@@ -837,7 +931,17 @@ describe('CatalogAdministrationPageComponent', () => {
   });
 
   it('hides the ISBNdb absent navigation badge when no books need completion', () => {
-    fixture.componentInstance.navigationBadgeCounts.set({'isbndb-absent': 0});
+    fixture.componentInstance.navigationBadgeCounts.set({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    });
 
     expect(fixture.componentInstance.navBadge('isbndb-absent')).toBeNull();
   });
@@ -1148,7 +1252,18 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.statusLabel(active.status)).toBe('En cours');
   });
 
-  it('shows the number of active sessions in the sidebar badge', () => {
+  it('shows the active session count from navigation counts in the sidebar badge', () => {
+    fixture.componentInstance.navigationBadgeCounts.set({
+      openScanSessions: 2,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 0,
+      isbnQueue: 0,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 0,
+    });
     fixture.componentInstance.sessionsPage.set({
       generatedAt: '2026-09-11T10:00:00Z',
       sessions: [

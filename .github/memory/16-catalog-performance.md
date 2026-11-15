@@ -89,3 +89,19 @@ each current/previous period summary from five SQL commands into two. The SQLite
 counter regression measured 22 commands before and 13 after (41% fewer); Application
 tests pass 698/698. No Azure resource, database or deployment was changed. Recheck
 production latency after merging and deploying the API.
+
+## Public catalogue and admin portal optimization — implementation in progress — 2026-11-15
+
+- Tasks 0–12 of `docs/features/perf-catalogue-admin/02-plan.md` are committed on the
+  dedicated `fix/perf-catalogue-admin` branch. Task 13 lazily loads the administration
+  module, fetches only the active parent-owned workspace, overlaps navigation counts
+  with workspace loading, uses the navigation-count endpoint for badges and attention
+  tiles, and refreshes visited sections in the background during a 60-second cache window.
+- Catalog target tests pass 93/93. The production build emits a separate
+  `catalog-administration-module` chunk (about 615 kB raw); the initial browser bundle is
+  about 1.10 MB and continues to report its configured budget warning. The full Catalog
+  suite is 639/642: the three failing AccountCard assertions are the known failures also
+  present on `origin/main`.
+- Graphify was updated locally after these edits. The responsive authenticated check and
+  remaining tasks 14–15 are still pending. No Azure resource, database or deployment was
+  changed.
