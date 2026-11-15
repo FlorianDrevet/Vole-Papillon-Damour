@@ -31,13 +31,7 @@ public sealed class GetAdminBooksQueryHandler(
             return Error.Validation("Book.InvalidClock", "The administration clock must be expressed in UTC.");
         }
 
-        var booksQuery = dbContext.Books
-            .AsNoTracking()
-            .Where(book =>
-                (book.MetadataStatus == BookMetadataStatus.Resolved ||
-                 book.MetadataStatus == BookMetadataStatus.Manual) &&
-                book.Title != null &&
-                book.Title.Trim() != string.Empty)
+        var booksQuery = AdminQueryPredicates.Catalogue(dbContext.Books.AsNoTracking())
             .Where(book => query.Rare == null || dbContext.RareBooks
                 .AsNoTracking()
                 .Any(rareBook => rareBook.Isbn13 == book.Id) == query.Rare)

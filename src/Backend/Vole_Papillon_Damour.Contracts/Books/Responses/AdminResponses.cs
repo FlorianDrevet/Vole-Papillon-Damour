@@ -41,6 +41,17 @@ public sealed record CatalogAdminOverviewResponse(
     int UndatedAnnouncementCount,
     int IsbndbAbsentToCompleteCount = 0);
 
+public sealed record AdminNavigationCountsResponse(
+    int? OpenScanSessions,
+    int NotFoundOpenTargets,
+    int NotFoundOverdueTargets,
+    int? ManualRequestsFound,
+    int? ManualRequestsFoundOverdue,
+    int? CatalogueBooks,
+    int? IsbnQueue,
+    int? IsbndbAbsentToComplete,
+    int PublishedRareBooks);
+
 public sealed record AdminAnnouncementResponse(
     Guid Id,
     string Isbn13,

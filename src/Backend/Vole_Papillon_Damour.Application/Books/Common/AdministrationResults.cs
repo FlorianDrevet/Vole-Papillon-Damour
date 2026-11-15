@@ -34,6 +34,17 @@ public sealed record AdminDashboardSnapshotRefreshResult(
     int DeadStockCount,
     DateTimeOffset ComputedAt);
 
+public sealed record AdminNavigationCountsResult(
+    int? OpenScanSessions,
+    int NotFoundOpenTargets,
+    int NotFoundOverdueTargets,
+    int? ManualRequestsFound,
+    int? ManualRequestsFoundOverdue,
+    int? CatalogueBooks,
+    int? IsbnQueue,
+    int? IsbndbAbsentToComplete,
+    int PublishedRareBooks);
+
 public sealed record CatalogAdminOverviewResult(
     DateTimeOffset GeneratedAt,
     AdminPeriodMetricsResult CurrentPeriod,

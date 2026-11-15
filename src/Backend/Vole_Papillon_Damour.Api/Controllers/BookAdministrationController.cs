@@ -182,6 +182,25 @@ public static class BookAdministrationController
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
+                    "/books/admin/navigation-counts",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var isAdministrator = principal.IsInRole("Administration") || principal.IsInRole("Admin");
+                        var isRareBooksOnly = principal.IsInRole("LivresRares") && !isAdministrator;
+                        var result = await mediator.Send(
+                            new GetAdminNavigationCountsQuery(isAdministrator, isRareBooksOnly),
+                            cancellationToken);
+                        return result.Match(
+                            counts => Results.Ok(ToResponse(counts)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminNavigationCounts")
+                .RequireAuthorization("RareBooks");
+
+            endpoints.MapGet(
                     "/books/admin/books",
                     async (
                         string? search,
@@ -1357,6 +1376,18 @@ public static class BookAdministrationController
             result.DeadStockComputedAt,
             result.UndatedAnnouncementCount,
             result.IsbndbAbsentToCompleteCount);
+
+    private static AdminNavigationCountsResponse ToResponse(AdminNavigationCountsResult result) =>
+        new(
+            result.OpenScanSessions,
+            result.NotFoundOpenTargets,
+            result.NotFoundOverdueTargets,
+            result.ManualRequestsFound,
+            result.ManualRequestsFoundOverdue,
+            result.CatalogueBooks,
+            result.IsbnQueue,
+            result.IsbndbAbsentToComplete,
+            result.PublishedRareBooks);
 
     private static AdminPeriodMetricsResponse ToResponse(AdminPeriodMetricsResult result) =>
         new(result.From, result.To, result.ScannedCount, result.KeptCount, result.RejectedCount,

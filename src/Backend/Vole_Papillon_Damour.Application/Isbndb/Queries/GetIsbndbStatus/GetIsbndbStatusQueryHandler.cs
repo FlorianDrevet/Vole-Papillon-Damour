@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -27,18 +28,14 @@ public sealed class GetIsbndbStatusQueryHandler(
             .OrderBy(item => item.Usage)
             .ToListAsync(cancellationToken);
 
-        var candidates = dbContext.Books.Where(book =>
-            !book.IsIsbndbSourced &&
-            !book.IsAbsentFromIsbndb &&
-            book.MetadataStatus != BookMetadataStatus.Discarded &&
-            book.RedirectedToIsbn13 == null);
+        var candidates = AdminQueryPredicates.IsbndbCandidates(dbContext.Books.AsNoTracking());
         var pendingTotal = await candidates.CountAsync(cancellationToken);
         var pendingInStock = await candidates.CountAsync(book =>
             book.QuantityAvailable > 0 || dbContext.BookAnnouncements.Any(announcement =>
                 announcement.Isbn13 == book.Id && announcement.Status == BookAnnouncementStatus.Announced),
             cancellationToken);
-        var absentToComplete = await dbContext.Books.AsNoTracking()
-            .CountAsync(book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null, cancellationToken);
+        var absentToComplete = await AdminQueryPredicates.IsbndbAbsentToComplete(dbContext.Books.AsNoTracking())
+            .CountAsync(cancellationToken);
         var lastRun = await dbContext.IsbndbCatchUpRuns.AsNoTracking()
             .OrderByDescending(run => run.StartedAt)
             .FirstOrDefaultAsync(cancellationToken);
