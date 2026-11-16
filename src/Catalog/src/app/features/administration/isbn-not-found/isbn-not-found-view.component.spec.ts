@@ -88,6 +88,18 @@ describe('IsbnNotFoundViewComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Page 2 / 2');
   });
 
+  it('requests opening the CSV import dialog', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const importRequested = jasmine.createSpy('importRequested');
+    fixture.componentInstance.importRequested.subscribe(importRequested);
+
+    (fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import"]') as HTMLButtonElement).click();
+
+    expect(importRequested).toHaveBeenCalledOnceWith(undefined);
+  });
+
   it('disables export and shows the empty state when no ISBN remain', async () => {
     api.getIsbnNotFoundBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5}));
     fixture.detectChanges();

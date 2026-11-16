@@ -860,10 +860,16 @@
             <app-isbn-not-found-view
               [accessToken]="isbnNotFoundAccessToken()"
               [refreshVersion]="isbnNotFoundRefreshVersion()"
-              [busy]="loading()"
               (bookSelected)="openBook($event, 'isbn-not-found')"
               (retryRequested)="retryIsbnMetadata($event, 'isbn-not-found')"
-              (deleteRequested)="deleteIsbnMetadataCandidate($event, 'isbn-not-found')"></app-isbn-not-found-view>
+              (deleteRequested)="deleteIsbnMetadataCandidate($event, 'isbn-not-found')"
+              (importRequested)="openIsbnNotFoundImportDialog()"></app-isbn-not-found-view>
+            @if (isbnNotFoundImportOpen()) {
+              <app-isbn-not-found-import-dialog
+                [accessToken]="isbnNotFoundAccessToken()"
+                (closed)="isbnNotFoundImportOpen.set(false)"
+                (importCompleted)="onIsbnNotFoundImportCompleted()"></app-isbn-not-found-import-dialog>
+            }
           }
 
           @case ('isbndb-absent') {

@@ -1,0 +1,107 @@
+<div class="isbn-import-backdrop" data-testid="isbn-not-found-import-dialog" (click)="cancel()">
+  <section class="isbn-import-dialog" role="dialog" aria-modal="true" aria-labelledby="isbn-import-title" (click)="$event.stopPropagation()">
+    <input #filePicker class="visually-hidden" data-testid="isbn-import-file-input" type="file" accept=".csv,text/csv" (change)="onFileInputChange($event)">
+
+    @if (state() === 'drop') {
+      <span class="section-kicker">Import CSV · étape 1 sur 2</span>
+      <h2 id="isbn-import-title">Déposer le fichier complété</h2>
+      <div class="isbn-import-drop-zone" [class.is-dragging]="dragging()" data-zone="E3-zone-depot" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+        <strong>Glissez le fichier ici</strong>
+        <span>ou</span>
+        <button class="button button-outline" data-testid="isbn-import-choose-file" type="button" (click)="chooseAnotherFile()">Choisir un fichier .csv</button>
+        <small>5 000 lignes et 2 Mo maximum</small>
+      </div>
+      <div class="isbn-import-footer"><button class="button button-outline" data-testid="isbn-import-cancel" type="button" (click)="cancel()">Annuler</button></div>
+    } @else if (state() === 'previewing') {
+      <span class="section-kicker">Import CSV · étape 1 sur 2</span>
+      <h2 id="isbn-import-title">Vérifier le fichier avant d’enregistrer</h2>
+      <p class="admin-status" role="status">Analyse du fichier…</p>
+      <div class="isbn-import-progress is-indeterminate" role="progressbar" aria-label="Analyse du fichier"></div>
+      <div class="isbn-import-footer"><button class="button button-outline" data-testid="isbn-import-cancel" type="button" (click)="cancel()">Annuler</button></div>
+    } @else if (state() === 'file-error') {
+      <span class="section-kicker">Import CSV · fichier refusé</span>
+      <h2 id="isbn-import-title">Le fichier ne peut pas être lu</h2>
+      <p class="admin-status admin-status-error" role="alert" data-zone="E3-erreur-fichier">{{ errorMessage() }}</p>
+      <p class="admin-intro">Exportez à nouveau le fichier depuis la liste et complétez ses colonnes sans les renommer.</p>
+      <div class="isbn-import-footer">
+        <button class="button button-outline" data-testid="isbn-import-choose-another" type="button" (click)="chooseAnotherFile()">Choisir un autre fichier</button>
+        <button class="button button-outline" data-testid="isbn-import-cancel" type="button" (click)="cancel()">Annuler</button>
+      </div>
+    } @else if (state() === 'save-error') {
+      <span class="section-kicker">Import CSV · enregistrement interrompu</span>
+      <h2 id="isbn-import-title">L’import n’a pas pu se terminer</h2>
+      <p class="admin-status admin-status-error" role="alert" data-zone="E3-erreur-enregistrement">{{ errorMessage() }}</p>
+      <p class="admin-intro">Les fiches déjà enregistrées restent dans le catalogue. Relancez l’import : les lignes déjà traitées seront vérifiées à nouveau.</p>
+      <div class="isbn-import-footer">
+        <button class="button button-outline" data-testid="isbn-import-cancel" type="button" (click)="cancel()">Fermer</button>
+        <button class="button button-primary" data-testid="isbn-import-choose-another" type="button" (click)="chooseAnotherFile()">Choisir à nouveau le fichier</button>
+      </div>
+    } @else if (state() === 'saving') {
+      <span class="section-kicker">Import CSV · étape 2 sur 2</span>
+      <h2 id="isbn-import-title">Enregistrement des fiches…</h2>
+      <div class="isbn-import-progress is-indeterminate" role="progressbar" aria-label="Enregistrement des fiches" data-zone="E3-progression"></div>
+      <p class="admin-status" role="status">Enregistrement des {{ preview()?.readyCount ?? 0 }} fiches. Ne fermez pas cette page.</p>
+      <div class="isbn-import-footer"><button class="button button-outline" type="button" disabled>Annuler</button></div>
+    } @else if (state() === 'preview' && preview(); as current) {
+      <span class="section-kicker">Import CSV · étape 1 sur 2</span>
+      <h2 id="isbn-import-title" data-zone="E3-titre E3-titre-mobile">Vérifier le fichier avant d’enregistrer</h2>
+      <p class="isbn-import-file" data-zone="E3-nom-fichier E3-nom-fichier-mobile"><span>{{ selectedFile()?.name }}</span> · {{ current.dataRowCount }} lignes lues · <button class="text-link" data-testid="isbn-import-choose-another" type="button" (click)="chooseAnotherFile()">Choisir un autre fichier</button></p>
+
+      <div class="isbn-import-stats" data-zone="E3-synthese E3-synthese-mobile">
+        <article class="isbn-import-stat" data-zone="E3-stat-pretes"><strong class="stat-ready">{{ current.readyCount }}</strong><span>Fiches prêtes</span></article>
+        <article class="isbn-import-stat" data-zone="E3-stat-sans-auteur"><strong class="stat-without-author">{{ current.withoutAuthorCount }}</strong><span>Sans auteur · restent à compléter</span></article>
+        <article class="isbn-import-stat" data-zone="E3-stat-ignorees"><strong>{{ current.ignoredCount }}</strong><span>Ignorées · lignes vides</span></article>
+        <article class="isbn-import-stat" data-zone="E3-stat-rejetees"><strong class="stat-rejected">{{ current.rejectedCount }}</strong><span>Rejetées</span></article>
+      </div>
+
+      @if (current.readyCount === 0) {
+        <section class="empty-panel" data-zone="E3-aucune-valide">
+          <h3>Aucune ligne à enregistrer</h3>
+          <p>{{ current.dataRowCount }} lignes lues : 0 prête, {{ current.ignoredCount }} ignorées (colonnes vides). Faites compléter le fichier par l’agent avant de le déposer.</p>
+        </section>
+      } @else if (current.rejectedCount > 0) {
+        <p class="isbn-import-summary-line"><strong>{{ current.rejectedCount }} lignes rejetées</strong> ne seront pas enregistrées. Corrigez le fichier puis redéposez-le : les {{ current.readyCount }} fiches prêtes peuvent déjà être enregistrées.</p>
+      }
+
+      @if (current.rejections.length > 0) {
+        <div class="isbn-import-rejections" data-zone="E3-table-rejets E3-table-rejets-mobile">
+          <table>
+            <thead><tr><th>Ligne</th><th>ISBN</th><th>Motif</th></tr></thead>
+            <tbody>
+              @for (rejection of visibleRejections(current.rejections); track rejection.rowNumber) {
+                <tr><td data-label="Ligne">{{ rejection.rowNumber }}</td><td class="isbn-label" data-label="ISBN">{{ rejection.isbn || '—' }}</td><td data-label="Motif">{{ rejection.reason }}</td></tr>
+              }
+            </tbody>
+          </table>
+          @if (remainingRejectionCount(current.rejections) > 0) {
+            <p class="isbn-import-more-rejections">+ {{ remainingRejectionCount(current.rejections) }} autres lignes rejetées · <button class="text-link" type="button" (click)="toggleRejectionDetails()">voir le détail</button></p>
+          } @else if (current.rejections.length > 6) {
+            <button class="text-link" type="button" (click)="toggleRejectionDetails()">Masquer le détail</button>
+          }
+        </div>
+      }
+
+      <div class="isbn-import-footer">
+        <button class="button button-outline" data-testid="isbn-import-cancel" data-zone="E3-bouton-annuler E3-bouton-annuler-mobile" type="button" (click)="cancel()">Annuler</button>
+        <button class="button button-primary" data-testid="isbn-import-save" data-zone="E3-bouton-enregistrer E3-bouton-enregistrer-mobile" type="button" [disabled]="current.readyCount === 0" (click)="saveImport()">Enregistrer {{ current.readyCount }} fiche{{ current.readyCount > 1 ? 's' : '' }}</button>
+      </div>
+    } @else if (state() === 'result' && result(); as completed) {
+      <span class="section-kicker">Import CSV · terminé</span>
+      <h2 id="isbn-import-title" data-zone="E3-resume">{{ completed.importedCount }} fiches enregistrées</h2>
+      <ul class="isbn-import-result-summary">
+        <li><strong>{{ completedCount(completed) }}</strong> marquées « complétées » dans Livres hors ISBNdb</li>
+        <li><strong>{{ completed.withoutAuthorCount }}</strong> sans auteur, restées « à compléter »</li>
+        <li><strong>{{ ignoredCount(completed.dataRowCount, completed.importedCount, completed.rejectedCount) }}</strong> lignes ignorées (colonnes vides)</li>
+        <li><strong>{{ completed.rejectedCount }}</strong> lignes rejetées@if (completed.rejectedCount > 0) { : <button class="text-link" data-testid="isbn-import-rejection-details" type="button" (click)="toggleRejectionDetails()">{{ showAllRejections() ? 'masquer le détail' : 'voir le détail' }}</button> }</li>
+      </ul>
+      @if (showAllRejections() && completed.rejections.length > 0) {
+        <div class="isbn-import-rejections isbn-import-result-rejections">
+          <table><thead><tr><th>Ligne</th><th>ISBN</th><th>Motif</th></tr></thead>
+            <tbody>@for (rejection of completed.rejections; track rejection.rowNumber) {<tr><td data-label="Ligne">{{ rejection.rowNumber }}</td><td class="isbn-label" data-label="ISBN">{{ rejection.isbn || '—' }}</td><td data-label="Motif">{{ rejection.reason }}</td></tr>}</tbody>
+          </table>
+        </div>
+      }
+      <div class="isbn-import-footer"><button class="button button-primary" data-testid="isbn-import-close-result" type="button" (click)="closeResult()">Fermer</button></div>
+    }
+  </section>
+</div>

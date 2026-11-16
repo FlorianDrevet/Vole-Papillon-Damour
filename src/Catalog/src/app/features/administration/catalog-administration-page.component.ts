@@ -360,6 +360,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly isbndbAccessToken = signal('');
   readonly isbnNotFoundAccessToken = signal('');
   readonly isbnNotFoundRefreshVersion = signal(0);
+  readonly isbnNotFoundImportOpen = signal(false);
   readonly catalogueBooksPage = this.catalogueBlock.data;
   readonly isbnMetadataQueue = this.isbnMetadataQueueBlock.data;
   readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
@@ -873,6 +874,16 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async retryOverviewSessions(): Promise<void> {
     await this.loadSessions();
+  }
+
+  async onIsbnNotFoundImportCompleted(): Promise<void> {
+    this.isbnNotFoundRefreshVersion.update(version => version + 1);
+    await this.loadOverview();
+  }
+
+  openIsbnNotFoundImportDialog(): void {
+    this.isbnNotFoundImportOpen.set(true);
+  }
   }
 
   toggleMetadataGenre(genre: string): void {

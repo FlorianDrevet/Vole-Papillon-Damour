@@ -57,6 +57,7 @@ import {ManualRequestAddDialogComponent} from './manual-requests/manual-request-
 import {ManualRequestDecisionDialogComponent} from './manual-requests/manual-request-decision-dialog.component';
 import {IsbndbAbsentViewComponent} from './isbndb/isbndb-absent-view.component';
 import {IsbnNotFoundViewComponent} from './isbn-not-found/isbn-not-found-view.component';
+import {IsbnNotFoundImportDialogComponent} from './isbn-not-found/isbn-not-found-import-dialog.component';
 import {IsbndbStatusCardComponent} from './isbndb/isbndb-status-card.component';
 import {FairDigestAdminComponent} from './fair-digest/fair-digest-admin.component';
 
@@ -255,7 +256,8 @@ describe('CatalogAdministrationPageComponent', () => {
     routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'getIsbnNotFoundBooks', 'retryBookMetadata',
+      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'getIsbnNotFoundBooks',
+      'previewIsbnNotFoundImport', 'importIsbnNotFound', 'retryBookMetadata',
       'getIsbndbStatus', 'getIsbndbAbsentBooks', 'setIsbndbCompletion', 'recheckIsbndbBook',
       'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook', 'permanentlyDeleteBook',
@@ -413,6 +415,7 @@ describe('CatalogAdministrationPageComponent', () => {
         IsbndbStatusCardComponent,
         IsbndbAbsentViewComponent,
         IsbnNotFoundViewComponent,
+        IsbnNotFoundImportDialogComponent,
         FairDigestAdminComponent,
         CatalogCoverDirective,
         AdminRareBooksComponent,
@@ -1392,6 +1395,29 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(fixture.componentInstance.activeSection()).toBe('isbn-not-found');
     expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-view"]')).not.toBeNull();
+  });
+
+  it('opens and closes the CSV import dialog from ISBN non trouvés', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    fixture.componentInstance.activeSection.set('isbn-not-found');
+    fixture.componentInstance.isbnNotFoundAccessToken.set('access-token');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-view"]')).not.toBeNull();
+    const openDialog = spyOn(fixture.componentInstance, 'openIsbnNotFoundImportDialog').and.callThrough();
+    (fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import"]') as HTMLButtonElement).click();
+    expect(openDialog).toHaveBeenCalled();
+    expect(fixture.componentInstance.isbnNotFoundImportOpen()).toBeTrue();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import-dialog"]')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('[data-testid="isbn-import-cancel"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import-dialog"]')).toBeNull();
   });
 
   it('previews a selected cover and uploads it separately from metadata', async () => {
