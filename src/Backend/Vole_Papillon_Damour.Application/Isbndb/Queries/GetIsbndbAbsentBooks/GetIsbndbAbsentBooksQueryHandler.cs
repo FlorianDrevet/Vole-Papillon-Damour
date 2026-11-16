@@ -20,7 +20,8 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
             return Errors.Book.InvalidAdminPage();
 
         var books = dbContext.Books.AsNoTracking()
-            .Where(book => book.IsAbsentFromIsbndb);
+            .Where(book => book.IsAbsentFromIsbndb &&
+                book.Title != null && book.Title.Trim() != string.Empty);
         books = status == "completed"
             ? books.Where(book => book.IsbndbCompletedAt != null)
             : books.Where(book => book.IsbndbCompletedAt == null);
