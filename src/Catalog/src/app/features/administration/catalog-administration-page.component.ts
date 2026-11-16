@@ -884,7 +884,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   openIsbnNotFoundImportDialog(): void {
     this.isbnNotFoundImportOpen.set(true);
   }
-  }
 
   toggleMetadataGenre(genre: string): void {
     const current = this.metadataForm.genres;

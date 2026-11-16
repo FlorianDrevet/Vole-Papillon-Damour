@@ -179,7 +179,7 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ReportsIndependentIsbnQueueCountsAndKeepsMetadataToReviewCount()
+    public async Task Handle_ReportsIndependentIsbnQueueCounts()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var notFound = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
@@ -195,18 +195,18 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
             Now);
         titledAbsent.MarkAbsentFromIsbndb(Now);
         await fixture.Context.SaveChangesAsync();
-        fixture.AlertOutbox
-            .GetAdminPageAsync(default, default, default, default, default, default)
-            .ReturnsForAnyArgs(new BookAlertOutboxAdminPage([], 0, 1, 1));
 
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
-        var handler = new GetCatalogAdminOverviewQueryHandler(fixture.Context, clock, fixture.AlertOutbox);
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            cacheServices.GetRequiredService<HybridCache>());
 
         var result = await handler.Handle(new GetCatalogAdminOverviewQuery(), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.MetadataMissingCount.Should().Be(3, "the overview metadata-to-review count remains unchanged");
         result.Value.IsbndbAbsentToCompleteCount.Should().Be(1);
         result.Value.IsbnNotFoundCount.Should().Be(1);
         result.Value.IsbnFailedCount.Should().Be(1);

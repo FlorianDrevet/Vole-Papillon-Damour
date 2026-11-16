@@ -306,6 +306,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     } as CatalogAdminNavigationCounts));
@@ -567,6 +569,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -593,6 +597,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 1,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -904,10 +910,10 @@ describe('CatalogAdministrationPageComponent', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(api.getBookMetadataQueue).toHaveBeenCalledTimes(2);
-    newestQueue.next({generatedAt: 'newest-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    newestQueue.next({generatedAt: 'newest-queue', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0});
     newestQueue.complete();
     await newestQueueRequest;
-    staleQueue.next({generatedAt: 'stale-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    staleQueue.next({generatedAt: 'stale-queue', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0});
     staleQueue.complete();
     await staleQueueRequest;
     expect(fixture.componentInstance.isbnMetadataQueue()?.generatedAt).toBe('newest-queue');
@@ -963,6 +969,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 2,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -996,6 +1004,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -1117,13 +1127,18 @@ describe('CatalogAdministrationPageComponent', () => {
       generatedAt: '', items: [], totalCount: 7, page: 1, pageSize: 50, failedCount: 3,
     });
     component.navigationBadgeCounts.set({
-      catalogue: 84,
-      'isbn-queue': 3,
-      'isbn-not-found': 2,
-      'isbndb-absent': 0,
-      'rare-books': 12,
-    } as never);
-    component.overview.set({isbnNotFoundCount: 2} as CatalogAdminOverview);
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 84,
+      isbnQueue: 3,
+      isbnNotFoundCount: 2,
+      isbnFailedCount: 3,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 12,
+    });
     const navBadge = component.navBadge as (section: string) => string | null;
 
     expect(navBadge.call(component, 'isbn-queue')).toBe('3');
@@ -1225,6 +1240,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     });
@@ -1610,6 +1627,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     });

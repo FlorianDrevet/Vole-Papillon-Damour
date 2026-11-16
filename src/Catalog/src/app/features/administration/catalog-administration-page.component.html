@@ -807,14 +807,14 @@
                 <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
                   <div class="section-heading">
                     <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
-                    <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
+                    <button class="text-link" type="button" [disabled]="isbnMetadataQueueBlock.status() === 'loading' || isbnMetadataQueueBlock.refreshing()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
                   </div>
                   <div class="isbn-queue-toolbar">
                     <span class="isbn-queue-filter-label">Afficher les fiches</span>
                     <div class="period-chips isbn-queue-filters" role="group" aria-label="Filtrer les ISBN par statut">
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
-                      <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" [disabled]="loading()" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'all'" [attr.aria-pressed]="metadataQueueFilter === 'all'" data-testid="isbn-queue-filter-all" type="button" [disabled]="isbnMetadataQueueBlock.status() === 'loading' || isbnMetadataQueueBlock.refreshing()" (click)="setIsbnMetadataQueueFilter('all')">Toutes</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'pending'" [attr.aria-pressed]="metadataQueueFilter === 'pending'" data-testid="isbn-queue-filter-pending" type="button" [disabled]="isbnMetadataQueueBlock.status() === 'loading' || isbnMetadataQueueBlock.refreshing()" (click)="setIsbnMetadataQueueFilter('pending')">En cours</button>
+                      <button class="period-chip" [class.active]="metadataQueueFilter === 'failed'" [attr.aria-pressed]="metadataQueueFilter === 'failed'" data-testid="isbn-queue-filter-failed" type="button" [disabled]="isbnMetadataQueueBlock.status() === 'loading' || isbnMetadataQueueBlock.refreshing()" (click)="setIsbnMetadataQueueFilter('failed')">Échecs</button>
                     </div>
                   </div>
                   <div class="session-list" role="list" [class.admin-list-refreshing]="isbnMetadataQueueBlock.refreshing()" [attr.aria-busy]="isbnMetadataQueueBlock.refreshing() ? 'true' : null">
