@@ -789,6 +789,20 @@ export interface CatalogAdminOverview {
   isbnFailedCount: number;
 }
 
+export interface CatalogAdminNavigationCounts {
+  openScanSessions: number | null;
+  notFoundOpenTargets: number;
+  notFoundOverdueTargets: number;
+  manualRequestsFound: number | null;
+  manualRequestsFoundOverdue: number | null;
+  catalogueBooks: number | null;
+  isbnQueue: number | null;
+  isbndbAbsentToComplete: number | null;
+  publishedRareBooks: number;
+  isbnNotFoundCount: number;
+  isbnFailedCount: number;
+}
+
 export interface CatalogAdminIsbndbStatus {
   dailyLimit: number;
   dailyRemaining: number;

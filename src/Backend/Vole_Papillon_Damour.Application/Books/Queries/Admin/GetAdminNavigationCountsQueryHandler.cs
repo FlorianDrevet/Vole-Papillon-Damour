@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
@@ -76,6 +77,10 @@ public sealed class GetAdminNavigationCountsQueryHandler(
         var isbndbAbsentToComplete = await AdminQueryPredicates
             .IsbndbAbsentToComplete(dbContext.Books.AsNoTracking())
             .CountAsync(cancellationToken);
+        var isbnNotFoundCount = await dbContext.Books.AsNoTracking()
+            .CountAsync(book => book.MetadataStatus == BookMetadataStatus.NotFound, cancellationToken);
+        var isbnFailedCount = await dbContext.Books.AsNoTracking()
+            .CountAsync(book => book.MetadataStatus == BookMetadataStatus.Failed, cancellationToken);
 
         return new AdminNavigationCountsResult(
             openScanSessions,
@@ -86,6 +91,8 @@ public sealed class GetAdminNavigationCountsQueryHandler(
             catalogueBooks,
             isbnQueue,
             isbndbAbsentToComplete,
-            publishedRareBooks);
+            publishedRareBooks,
+            isbnNotFoundCount,
+            isbnFailedCount);
     }
 }

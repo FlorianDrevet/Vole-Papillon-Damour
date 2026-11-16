@@ -211,7 +211,8 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
     label: 'Le fonds de livres',
     items: [
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
-      {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
+      {id: 'isbn-queue', label: 'Analyse des ISBNs', icon: 'isbn'},
+      {id: 'isbn-not-found', label: 'ISBN non trouvés', icon: 'isbn'},
       {id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'},
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
       {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
@@ -319,7 +320,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     if (!counts) {
       return null;
     }
-
     const count = section === 'sessions'
       ? counts.openScanSessions
       : section === 'not-found'
@@ -327,13 +327,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         : section === 'manual-requests'
           ? counts.manualRequestsFound
           : section === 'catalogue'
-            ? counts.catalogueBooks
+            ? undefined
             : section === 'isbn-queue'
-              ? counts.isbnQueue
+              ? counts.isbnFailedCount
+              : section === 'isbn-not-found'
+                ? counts.isbnNotFoundCount
               : section === 'isbndb-absent'
                 ? counts.isbndbAbsentToComplete
                 : section === 'rare-books'
-                  ? counts.publishedRareBooks
+                  ? undefined
                   : undefined;
 
     return count === null || count === undefined || count <= 0 ? null : this.formatNumber(count);

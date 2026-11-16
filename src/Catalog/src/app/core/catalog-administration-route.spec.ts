@@ -1,6 +1,7 @@
 import {
   CATALOG_ADMIN_SECTIONS,
   catalogAdminSectionFromRoute,
+  CatalogAdminSection,
   catalogAdminSectionPath,
   isCatalogAdminSection,
 } from './catalog-administration-route';
@@ -32,6 +33,15 @@ describe('catalog administration routes', () => {
   it('recognizes the ISBN analysis queue as an administration section', () => {
     expect(isCatalogAdminSection('isbn-queue')).toBeTrue();
     expect(catalogAdminSectionPath('isbn-queue')).toBe('/administration/isbn-queue');
+  });
+
+  it('recognizes ISBN not found immediately after the analysis queue', () => {
+    const section: CatalogAdminSection = 'isbn-not-found';
+    expect(CATALOG_ADMIN_SECTIONS).toContain(section);
+    expect(CATALOG_ADMIN_SECTIONS.indexOf(section))
+      .toBe(CATALOG_ADMIN_SECTIONS.indexOf('isbn-queue') + 1);
+    expect(isCatalogAdminSection(section)).toBeTrue();
+    expect(catalogAdminSectionPath(section)).toBe('/administration/isbn-not-found');
   });
 
   it('recognizes the ISBNdb absent-books workspace', () => {

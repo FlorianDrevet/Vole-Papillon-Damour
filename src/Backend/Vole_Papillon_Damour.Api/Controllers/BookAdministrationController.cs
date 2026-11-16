@@ -1522,7 +1522,9 @@ public static class BookAdministrationController
             result.CatalogueBooks,
             result.IsbnQueue,
             result.IsbndbAbsentToComplete,
-            result.PublishedRareBooks);
+            result.PublishedRareBooks,
+            result.IsbnNotFoundCount,
+            result.IsbnFailedCount);
 
     private static AdminPeriodMetricsResponse ToResponse(AdminPeriodMetricsResult result) =>
         new(result.From, result.To, result.ScannedCount, result.KeptCount, result.RejectedCount,

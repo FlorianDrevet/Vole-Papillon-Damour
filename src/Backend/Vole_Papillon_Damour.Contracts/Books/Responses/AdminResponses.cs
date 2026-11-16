@@ -52,7 +52,9 @@ public sealed record AdminNavigationCountsResponse(
     int? CatalogueBooks,
     int? IsbnQueue,
     int? IsbndbAbsentToComplete,
-    int PublishedRareBooks);
+    int PublishedRareBooks,
+    int IsbnNotFoundCount = 0,
+    int IsbnFailedCount = 0);
 
 public sealed record AdminAnnouncementResponse(
     Guid Id,
