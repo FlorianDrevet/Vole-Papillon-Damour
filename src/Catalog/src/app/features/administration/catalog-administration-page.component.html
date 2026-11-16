@@ -806,13 +806,8 @@
                 @if (isbnMetadataQueueBlock.refreshing()) { <p class="admin-refreshing" role="status">Actualisation…</p> }
                 <section class="isbn-analysis-zone" aria-labelledby="isbn-analysis-title">
                   <div class="section-heading">
-<<<<<<< HEAD
-                    <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : metadataQueueFilter === 'not-found' ? 'sans notice trouvée' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
-                    <button class="text-link" type="button" (click)="loadIsbnMetadataQueue()">Actualiser</button>
-=======
                     <div><span class="section-kicker">File de traitement</span><h2 id="isbn-analysis-title">{{ formatNumber(page.totalCount) }} ISBN {{ metadataQueueFilter === 'failed' ? 'en échec' : metadataQueueFilter === 'pending' ? 'en cours' : 'à vérifier' }}</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div>
                     <button class="text-link" type="button" [disabled]="loading()" (click)="loadIsbnMetadataQueue()">Actualiser</button>
->>>>>>> 3ba9236f (feat(isbn-queue): rubrique Analyse des ISBNs sans les notices non trouvées)
                   </div>
                   <div class="isbn-queue-toolbar">
                     <span class="isbn-queue-filter-label">Afficher les fiches</span>
@@ -859,6 +854,16 @@
 
           @case ('rare-books') {
             <app-admin-rare-books (navigationCountsChanged)="refreshNavigationBadgeCounts()"></app-admin-rare-books>
+          }
+
+          @case ('isbn-not-found') {
+            <app-isbn-not-found-view
+              [accessToken]="isbnNotFoundAccessToken()"
+              [refreshVersion]="isbnNotFoundRefreshVersion()"
+              [busy]="loading()"
+              (bookSelected)="openBook($event, 'isbn-not-found')"
+              (retryRequested)="retryIsbnMetadata($event, 'isbn-not-found')"
+              (deleteRequested)="deleteIsbnMetadataCandidate($event, 'isbn-not-found')"></app-isbn-not-found-view>
           }
 
           @case ('isbndb-absent') {

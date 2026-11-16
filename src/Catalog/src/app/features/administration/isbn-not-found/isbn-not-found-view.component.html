@@ -1,0 +1,92 @@
+<section class="admin-view isbn-not-found-view" aria-labelledby="admin-title" data-testid="isbn-not-found-view">
+  <div class="admin-heading">
+    <span class="admin-accent" aria-hidden="true"></span>
+    <span class="admin-kicker">Le fonds de livres</span>
+    <h1 id="admin-title" data-zone="E2-titre E2-titre-mobile">ISBN non trouvés.</h1>
+    <p class="admin-intro" data-zone="E2-intro E2-intro-mobile">Aucune source (ISBNdb, BnF, Open Library, Google Books) ne connaît ces ISBN. Exportez la liste, faites-la compléter par un agent, puis réimportez le fichier : chaque ligne est vérifiée avant d’être enregistrée.</p>
+  </div>
+
+  <div class="section-heading isbn-not-found-count">
+    <div><span class="section-kicker">À compléter</span><h2 data-zone="E2-compteur E2-compteur-mobile">{{ page()?.totalCount ?? 0 }} ISBN sans notice trouvée</h2></div>
+    <button class="text-link" data-testid="isbn-not-found-refresh" type="button" [disabled]="loading() || busy" (click)="refresh()">Actualiser</button>
+  </div>
+
+  <div class="isbn-not-found-toolbar" data-zone="E2-barre-actions E2-barre-actions-mobile">
+    <button class="button button-outline" data-testid="isbn-not-found-export" data-zone="E2-bouton-exporter E2-bouton-exporter-mobile" type="button" [disabled]="!canExport()" (click)="exportCsv()">
+      {{ exporting() ? 'Préparation du fichier…' : 'Exporter en CSV' }}
+    </button>
+    <button class="button button-primary" data-testid="isbn-not-found-import" data-zone="E2-bouton-importer E2-bouton-importer-mobile" type="button" [disabled]="busy" (click)="importRequested.emit()">Importer un CSV</button>
+    <button class="text-link isbn-not-found-format-toggle" data-testid="isbn-not-found-format-help" data-zone="E2-lien-format E2-lien-format-mobile" type="button" [attr.aria-expanded]="formatHelpExpanded()" (click)="toggleFormatHelp()">
+      Format du fichier {{ formatHelpExpanded() ? '▴' : '▾' }}
+    </button>
+  </div>
+
+  @if (formatHelpExpanded()) {
+    <section class="isbn-not-found-format-help" data-zone="E2-aide-format" aria-label="Format du fichier CSV">
+      <p>CSV séparé par des points-virgules, UTF-8, première ligne = en-têtes. Ne modifiez ni l’ordre ni les noms des colonnes ni la colonne ISBN. Seul le titre est obligatoire ; laissez vide ce que vous ne savez pas. Sans auteur, la fiche sera enregistrée mais restera « à compléter » dans Livres hors ISBNdb.</p>
+      <div class="isbn-not-found-format-table-wrap">
+        <table>
+          <thead><tr><th>Colonne</th><th>Contenu attendu</th><th>Limite</th></tr></thead>
+          <tbody>
+            <tr><td data-testid="isbn-not-found-format-column">ISBN</td><td>Pré-rempli, ne pas modifier</td><td>—</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Titre</td><td>Titre du livre — obligatoire</td><td>500 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Auteurs</td><td>Auteur(s), séparés par une virgule</td><td>500 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Editeur</td><td>Maison d’édition</td><td>200 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Annee_publication</td><td>Année, nombre entier</td><td>1 à 9999</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Format</td><td>Poche, grand format…</td><td>50 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Langue</td><td>Code langue, ex. fr</td><td>10 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Genre_principal</td><td>Un genre</td><td>100 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Genres</td><td>Plusieurs genres séparés par « | »</td><td>100 caractères chacun</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Resume</td><td>Résumé du livre</td><td>20 000 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Pages</td><td>Nombre entier</td><td>1 à 100 000</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Edition</td><td>Édition du livre</td><td>100 caractères</td></tr>
+            <tr><td data-testid="isbn-not-found-format-column">Couverture_URL</td><td>Adresse web de l’image</td><td>URL</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (exportError(); as exportMessage) {
+    <p class="admin-status admin-status-error" role="alert">{{ exportMessage }}</p>
+  }
+
+  @if (error(); as message) {
+    <p class="admin-status admin-status-error" role="alert" data-zone="E2-erreur">{{ message }}</p>
+  } @else if (loading() && !page()) {
+    <p class="admin-status" role="status" data-zone="E2-chargement">Chargement des ISBN non trouvés…</p>
+  } @else if (page(); as current) {
+    @if (current.items.length === 0) {
+      <div class="empty-panel isbn-not-found-empty" data-zone="E2-vide">
+        <h2>Aucun ISBN sans notice</h2>
+        <p>Les ISBN pour lesquels aucune source n’a trouvé de notice apparaîtront ici.</p>
+      </div>
+    } @else {
+      <div class="isbn-not-found-list" role="list" data-zone="E2-liste E2-liste-mobile">
+        @for (item of current.items; track item.isbn13) {
+          <article class="isbn-not-found-row" role="listitem" data-testid="isbn-not-found-book" data-zone="E2-ligne">
+            <div class="isbn-not-found-row-main">
+              <div class="isbn-not-found-row-title"><span class="isbn-label">{{ item.isbn13 }}</span><span class="status-pill status-pill-not-found">Non trouvé</span></div>
+              <p>{{ item.failureReason || 'Aucune notice bibliographique trouvée pour cet ISBN.' }}</p>
+              @if (formatLastAttempt(item.lastAttemptAt); as lastAttempt) {
+                <small>Dernier essai · {{ lastAttempt }} · {{ item.resolveAttempts }} tentative{{ item.resolveAttempts > 1 ? 's' : '' }}</small>
+              }
+            </div>
+            <div class="isbn-not-found-row-actions">
+              <button class="button button-outline" data-testid="isbn-not-found-open-book" data-zone="E2-action-completer" type="button" [disabled]="loading() || busy" (click)="openBook(item)">Compléter →</button>
+              <button class="button button-outline" data-testid="isbn-not-found-retry" data-zone="E2-action-reessayer" type="button" [disabled]="loading() || busy" (click)="retry(item)">Réessayer</button>
+              <button class="danger-link" data-testid="isbn-not-found-delete" data-zone="E2-action-supprimer" type="button" [disabled]="loading() || busy" (click)="delete(item)">Supprimer</button>
+            </div>
+          </article>
+        }
+      </div>
+      @if (current.totalCount > current.pageSize) {
+        <nav class="pagination isbn-not-found-pagination" aria-label="Pages des ISBN non trouvés" data-zone="E2-pagination">
+          <button data-testid="isbn-not-found-previous-page" type="button" [disabled]="current.page <= 1 || loading() || busy" aria-label="Page précédente" (click)="goToPage(current.page - 1)">←</button>
+          <span>Page {{ current.page }} / {{ pageCount() }}</span>
+          <button data-testid="isbn-not-found-next-page" type="button" [disabled]="current.page >= pageCount() || loading() || busy" aria-label="Page suivante" (click)="goToPage(current.page + 1)">→</button>
+        </nav>
+      }
+    }
+  }
+</section>
