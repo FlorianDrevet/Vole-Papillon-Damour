@@ -74,9 +74,7 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.TotalCount.Should().Be(1);
-        var failedCount = result.Value.GetType().GetProperty("FailedCount");
-        failedCount.Should().NotBeNull();
-        failedCount!.GetValue(result.Value).Should().Be(2);
+        result.Value.FailedCount.Should().Be(2);
     }
 
     [Fact]

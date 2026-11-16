@@ -252,6 +252,32 @@ public static class BookAdministrationController
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
+                    "/books/admin/books/isbn-not-found",
+                    async (
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetIsbnNotFoundQuery(page ?? 1, pageSize ?? 50),
+                            cancellationToken);
+                        return result.Match(
+                            value => Results.Ok(new AdminIsbnNotFoundPageResponse(
+                                value.Items.Select(item => new AdminIsbnNotFoundBookResponse(
+                                    item.Isbn13,
+                                    item.FailureReason,
+                                    item.ResolveAttempts,
+                                    item.LastAttemptAt)).ToArray(),
+                                value.TotalCount,
+                                value.Page,
+                                value.PageSize)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminIsbnNotFoundBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
                     "/books/admin/recommendations",
                     async (
                         string? search,
@@ -1375,7 +1401,9 @@ public static class BookAdministrationController
             result.DeadStockCount,
             result.DeadStockComputedAt,
             result.UndatedAnnouncementCount,
-            result.IsbndbAbsentToCompleteCount);
+            result.IsbndbAbsentToCompleteCount,
+            result.IsbnNotFoundCount,
+            result.IsbnFailedCount);
 
     private static AdminNavigationCountsResponse ToResponse(AdminNavigationCountsResult result) =>
         new(

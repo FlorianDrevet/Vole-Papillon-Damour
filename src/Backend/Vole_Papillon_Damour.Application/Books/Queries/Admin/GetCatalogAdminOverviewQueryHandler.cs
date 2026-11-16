@@ -94,7 +94,10 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 AvailableTitleCount = books.Count(book =>
                     book.RedirectedToIsbn13 == null && book.QuantityAvailable > 0),
                 IsbndbAbsentToCompleteCount = books.Count(book =>
-                    book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null),
+                    book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null &&
+                    book.Title != null && book.Title.Trim() != string.Empty),
+                IsbnNotFoundCount = books.Count(book => book.MetadataStatus == BookMetadataStatus.NotFound),
+                IsbnFailedCount = books.Count(book => book.MetadataStatus == BookMetadataStatus.Failed),
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -152,7 +155,9 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
                 ? null
                 : new DateTimeOffset(dashboardSnapshot.ComputedAt, TimeSpan.Zero),
             announcementSummary?.UndatedAnnouncementCount ?? 0,
-            bookSummary?.IsbndbAbsentToCompleteCount ?? 0);
+            bookSummary?.IsbndbAbsentToCompleteCount ?? 0,
+            bookSummary?.IsbnNotFoundCount ?? 0,
+            bookSummary?.IsbnFailedCount ?? 0);
     }
 
     private async Task<SessionMetricAggregate?> BuildSessionMetricsAsync(

@@ -54,7 +54,9 @@ public sealed record CatalogAdminOverviewResult(
     int? DeadStockCount,
     DateTimeOffset? DeadStockComputedAt,
     int UndatedAnnouncementCount,
-    int IsbndbAbsentToCompleteCount = 0);
+    int IsbndbAbsentToCompleteCount = 0,
+    int IsbnNotFoundCount = 0,
+    int IsbnFailedCount = 0);
 
 public sealed record AdminBookPageResult(
     DateTimeOffset GeneratedAt,
@@ -74,6 +76,18 @@ public sealed record BookMetadataQueuePageResult(
 public sealed record BookMetadataQueueItemResult(
     string Isbn13,
     string MetadataStatus,
+    string? FailureReason,
+    int ResolveAttempts,
+    DateTimeOffset? LastAttemptAt);
+
+public sealed record IsbnNotFoundPageResult(
+    IReadOnlyList<IsbnNotFoundBookResult> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record IsbnNotFoundBookResult(
+    string Isbn13,
     string? FailureReason,
     int ResolveAttempts,
     DateTimeOffset? LastAttemptAt);

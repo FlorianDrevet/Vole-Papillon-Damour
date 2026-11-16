@@ -289,10 +289,11 @@ public class EndpointAuthorizationTests
         var endpoints = RegisteredEndpoints()
             .Where(endpoint => RouteOf(endpoint) is
                 "/books/admin/books/metadata-queue" or
+                "/books/admin/books/isbn-not-found" or
                 "/books/admin/books/{isbn13}/metadata/retry")
             .ToList();
 
-        endpoints.Should().HaveCount(2);
+        endpoints.Should().HaveCount(3);
         endpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
         endpoints.SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
             .Should().Contain(data => data.Policy == "Administration");

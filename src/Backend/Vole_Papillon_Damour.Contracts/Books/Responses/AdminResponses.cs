@@ -39,7 +39,9 @@ public sealed record CatalogAdminOverviewResponse(
     int? DeadStockCount,
     DateTimeOffset? DeadStockComputedAt,
     int UndatedAnnouncementCount,
-    int IsbndbAbsentToCompleteCount = 0);
+    int IsbndbAbsentToCompleteCount = 0,
+    int IsbnNotFoundCount = 0,
+    int IsbnFailedCount = 0);
 
 public sealed record AdminNavigationCountsResponse(
     int? OpenScanSessions,
@@ -128,6 +130,18 @@ public sealed record AdminBookMetadataQueuePageResponse(
     int Page,
     int PageSize,
     int FailedCount);
+
+public sealed record AdminIsbnNotFoundPageResponse(
+    IReadOnlyList<AdminIsbnNotFoundBookResponse> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record AdminIsbnNotFoundBookResponse(
+    string Isbn13,
+    string? FailureReason,
+    int ResolveAttempts,
+    DateTimeOffset? LastAttemptAt);
 
 public sealed record AdminBookMetadataQueueItemResponse(
     string Isbn13,
