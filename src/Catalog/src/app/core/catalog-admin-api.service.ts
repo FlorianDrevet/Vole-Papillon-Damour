@@ -25,6 +25,9 @@ import {
   CatalogAdminFairDigestStatus,
   CatalogAdminFairDigestTestResult,
   CatalogAdminBookMetadataQueue,
+  CatalogAdminIsbnNotFoundImportPreview,
+  CatalogAdminIsbnNotFoundImportResult,
+  CatalogAdminIsbnNotFoundPage,
   CatalogAdminMetadataRetry,
   CatalogAdminCatalogueFilters,
   CatalogAdminBookPage,
@@ -176,6 +179,48 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogAdminBookMetadataQueue>(
       `${this.apiUrl}/books/admin/books/metadata-queue`,
       this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  getIsbnNotFoundBooks(
+    accessToken: string,
+    filters: {page?: number; pageSize?: number} = {},
+  ): Observable<CatalogAdminIsbnNotFoundPage> {
+    return this.http.get<CatalogAdminIsbnNotFoundPage>(
+      `${this.apiUrl}/books/admin/books/isbn-not-found`,
+      this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  exportIsbnNotFoundCsv(accessToken: string): Observable<Blob> {
+    return this.http.get(
+      `${this.apiUrl}/books/admin/books/isbn-not-found/export`,
+      {...this.options(accessToken), responseType: 'blob'},
+    );
+  }
+
+  previewIsbnNotFoundImport(accessToken: string, file: File): Observable<CatalogAdminIsbnNotFoundImportPreview> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<CatalogAdminIsbnNotFoundImportPreview>(
+      `${this.apiUrl}/books/admin/books/isbn-not-found/import/preview`,
+      formData,
+      this.options(accessToken),
+    );
+  }
+
+  importIsbnNotFound(
+    accessToken: string,
+    file: File,
+    readyIsbns: readonly string[],
+  ): Observable<CatalogAdminIsbnNotFoundImportResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    readyIsbns.forEach(isbn => formData.append('readyIsbns', isbn));
+    return this.http.post<CatalogAdminIsbnNotFoundImportResult>(
+      `${this.apiUrl}/books/admin/books/isbn-not-found/import`,
+      formData,
+      this.options(accessToken),
     );
   }
 

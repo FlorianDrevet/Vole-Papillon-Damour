@@ -291,6 +291,9 @@ describe('CatalogAdministrationPageComponent', () => {
       deadStockCount: null,
       deadStockComputedAt: null,
       undatedAnnouncementCount: 0,
+      isbndbAbsentToCompleteCount: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
     } as CatalogAdminOverview));
     api.getNavigationCounts.and.returnValue(of({
       openScanSessions: 0,
@@ -304,7 +307,7 @@ describe('CatalogAdministrationPageComponent', () => {
       publishedRareBooks: 0,
     } as CatalogAdminNavigationCounts));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
-    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
+    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0} as CatalogAdminBookMetadataQueue));
     api.getIsbndbStatus.and.returnValue(of(isbndbStatus()));
     api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5} as CatalogAdminIsbndbAbsentBooksPage));
     api.setIsbndbCompletion.and.returnValue(of({isbn13: '9782070363735', isCompleted: true, completedAt: null, completedBy: null, changed: true}));
@@ -1241,6 +1244,7 @@ describe('CatalogAdministrationPageComponent', () => {
       totalCount: 0,
       page: 1,
       pageSize: 50,
+      failedCount: 0,
     } as CatalogAdminBookMetadataQueue));
     fixture.detectChanges();
 
@@ -1405,6 +1409,9 @@ describe('CatalogAdministrationPageComponent', () => {
       deadStockCount: 287,
       deadStockComputedAt: '2026-09-04T12:00:00Z',
       undatedAnnouncementCount: 7,
+      isbndbAbsentToCompleteCount: 4,
+      isbnNotFoundCount: 5,
+      isbnFailedCount: 2,
     } as CatalogAdminOverview));
 
     fixture.detectChanges();

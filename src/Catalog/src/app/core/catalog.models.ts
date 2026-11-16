@@ -784,18 +784,9 @@ export interface CatalogAdminOverview {
   deadStockCount: number | null;
   deadStockComputedAt: string | null;
   undatedAnnouncementCount: number;
-}
-
-export interface CatalogAdminNavigationCounts {
-  openScanSessions: number | null;
-  notFoundOpenTargets: number;
-  notFoundOverdueTargets: number;
-  manualRequestsFound: number | null;
-  manualRequestsFoundOverdue: number | null;
-  catalogueBooks: number | null;
-  isbnQueue: number | null;
-  isbndbAbsentToComplete: number | null;
-  publishedRareBooks: number;
+  isbndbAbsentToCompleteCount: number;
+  isbnNotFoundCount: number;
+  isbnFailedCount: number;
 }
 
 export interface CatalogAdminIsbndbStatus {
@@ -1010,6 +1001,46 @@ export interface CatalogAdminBookMetadataQueue {
   totalCount: number;
   page: number;
   pageSize: number;
+  failedCount: number;
+}
+
+export interface CatalogAdminIsbnNotFoundBook {
+  isbn13: string;
+  failureReason: string | null;
+  resolveAttempts: number;
+  lastAttemptAt: string | null;
+}
+
+export interface CatalogAdminIsbnNotFoundPage {
+  items: CatalogAdminIsbnNotFoundBook[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogAdminIsbnNotFoundImportRejection {
+  rowNumber: number;
+  isbn: string;
+  reason: string;
+}
+
+export interface CatalogAdminIsbnNotFoundImportPreview {
+  dataRowCount: number;
+  readyCount: number;
+  withoutAuthorCount: number;
+  ignoredCount: number;
+  rejectedCount: number;
+  rejections: CatalogAdminIsbnNotFoundImportRejection[];
+  readyIsbns: string[];
+}
+
+export interface CatalogAdminIsbnNotFoundImportResult {
+  dataRowCount: number;
+  importedCount: number;
+  withoutAuthorCount: number;
+  markedAbsentCount: number;
+  rejectedCount: number;
+  rejections: CatalogAdminIsbnNotFoundImportRejection[];
 }
 
 export interface CatalogAdminMetadataRetry {
