@@ -35,7 +35,7 @@
             @if (item.coverUrl) {<img class="isbndb-absent-cover" [src]="item.coverUrl" alt="">} @else {<span class="isbndb-absent-cover book-cover-placeholder" aria-hidden="true"></span>}
             <div>
               <span class="isbn-label">{{ item.isbn13 }}</span>
-              <strong>{{ item.title || 'Titre inconnu' }}</strong>
+              @if (item.title) {<strong>{{ item.title }}</strong>}
               <span>{{ item.authors || 'Auteur non renseigné' }}</span>
             </div>
           </div>
