@@ -278,6 +278,18 @@ public static class BookAdministrationController
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
+                    "/books/admin/books/isbn-not-found/export",
+                    async (IMediator mediator, CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(new ExportIsbnNotFoundQuery(), cancellationToken);
+                        return result.Match<IResult>(
+                            file => Results.File(file.Content, "text/csv; charset=utf-8", file.FileName),
+                            error => error.Result());
+                    })
+                .WithName("ExportAdminIsbnNotFoundBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
                     "/books/admin/recommendations",
                     async (
                         string? search,
