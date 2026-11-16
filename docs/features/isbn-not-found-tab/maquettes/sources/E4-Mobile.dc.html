@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E4 Navigation mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.pad{padding:24px}.opt{padding:11px 14px;border-bottom:1px solid var(--admin-line-soft);font-size:14px}.opt.on{background:var(--admin-paper-2);font-weight:600}.og{padding:10px 14px 6px;color:var(--admin-slate);font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--admin-paper)}.lst{border:1px solid var(--admin-mist);border-radius:4px;background:#fff}.cap{margin:22px 0 10px;color:var(--admin-slate);font-size:13.5px;line-height:1.5}</style>
+</helmet>
+<div class="pg" style="width:390px;height:1000px">
+<div class="pad">
+<span class="lab">Sélecteur de rubrique · nominal</span>
+<div class="lst" data-zone="E4-selecteur-mobile" role="listbox" aria-label="Aller à une rubrique de l’administration">
+<div class="og">Le fonds de livres</div>
+<div class="opt" data-zone="E4-option-catalogue">Catalogue</div>
+<div class="opt on" data-zone="E4-option-analyse">Analyse des ISBNs (3)</div>
+<div class="opt" data-zone="E4-option-non-trouves">ISBN non trouvés (214)</div>
+<div class="opt" data-zone="E4-option-hors-isbndb">Livres hors ISBNdb (47)</div>
+<div class="opt" data-zone="E4-option-livres-rares">Livres rares</div>
+<div class="opt">Statistiques</div></div>
+<p class="cap">Le nombre entre parenthèses n’apparaît que s’il est supérieur à 0. Catalogue et Livres rares n’en ont plus.</p>
+<span class="lab">Compteurs à 0</span>
+<div class="lst" data-zone="E4-selecteur-mobile-zero" role="listbox" aria-label="Aller à une rubrique — compteurs à zéro">
+<div class="og">Le fonds de livres</div>
+<div class="opt">Catalogue</div><div class="opt on">Analyse des ISBNs</div><div class="opt">ISBN non trouvés</div><div class="opt">Livres hors ISBNdb</div><div class="opt">Livres rares</div><div class="opt">Statistiques</div></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

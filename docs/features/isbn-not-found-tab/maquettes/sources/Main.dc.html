@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E1 Analyse des ISBNs desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}a{color:#0c6ea6}</style>
+</helmet>
+<div class="pg" style="width:1440px;height:1040px">
+<div class="top"><span class="logo">VPD</span><span class="brand">Vole Papillon d'Amour</span><span class="tag">Administration</span></div>
+<div class="lay">
+<aside class="side" aria-label="Navigation administration">
+<span class="sb-rule"></span><span class="sb-k">Administration</span><h2 class="sb-t">Bourse aux livres</h2><span class="sb-s">Espace sécurisé</span>
+<div class="ng"><span class="nl">Pendant la bourse</span>
+<div class="ni"><i class="ic"></i>Tableau de bord</div><div class="ni"><i class="ic"></i>Sessions de scan<span class="bd">2</span></div><div class="ni"><i class="ic"></i>Désengorgement</div><div class="ni"><i class="ic"></i>Livres introuvables<span class="bd">12</span></div><div class="ni"><i class="ic"></i>Demandes manuelles<span class="bd">3</span></div></div>
+<div class="ng"><span class="nl">Le fonds de livres</span>
+<div class="ni"><i class="ic"></i>Catalogue</div><div class="ni on"><i class="ic"></i>Analyse des ISBNs<span class="bd">3</span></div><div class="ni"><i class="ic"></i>ISBN non trouvés<span class="bd">214</span></div><div class="ni"><i class="ic"></i>Livres hors ISBNdb<span class="bd">47</span></div><div class="ni"><i class="ic"></i>Livres rares</div><div class="ni"><i class="ic"></i>Statistiques</div></div>
+<div class="ng"><span class="nl">Réservé à l'administration</span>
+<div class="ni"><i class="ic"></i>Comptes &amp; rôles</div><div class="ni"><i class="ic"></i>E-mail avant la bourse</div><div class="ni"><i class="ic"></i>Paramètres</div></div>
+</aside>
+<main class="main"><section class="view">
+<div class="hd"><span class="acc"></span><span class="kick">Import des livres</span>
+<h1 id="admin-title" data-zone="E1-titre">Analyse des ISBNs.</h1>
+<p class="intro" data-zone="E1-intro">Les ISBN restent ici tant qu’une notice bibliographique exploitable n’a pas été trouvée. Les échecs affichent leur motif pour choisir de corriger, réessayer ou retirer le livre. Les ISBN qu’aucune source ne connaît sont dans <a href="E2-Desktop.dc.html" data-zone="E1-lien-non-trouves">ISBN non trouvés →</a></p></div>
+<div class="sh"><div><span class="sk">File de traitement</span><h2 data-zone="E1-compteur">9 ISBN à vérifier</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div><button class="lnk" type="button">Actualiser</button></div>
+<div class="tb" data-zone="E1-filtres"><span class="fl">Afficher les fiches</span>
+<div class="chips" role="group" aria-label="Filtrer les ISBN par statut"><button class="chip on" type="button" aria-pressed="true" data-zone="E1-filtre-toutes">Toutes</button><button class="chip" type="button" aria-pressed="false" data-zone="E1-filtre-en-cours">En cours</button><button class="chip" type="button" aria-pressed="false" data-zone="E1-filtre-echecs">Échecs</button></div></div>
+<div role="list" style="margin-top:12px" data-zone="E1-liste">
+<article class="row" role="listitem" data-zone="E1-ligne"><div class="rm"><div class="tl"><span class="isbn">9782070368228</span><span class="pill pend">En cours</span></div><span class="dt">Dernier essai · 14 nov. 2026 à 21:40 · 1 tentative</span></div><div class="acts" data-zone="E1-actions-ligne"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm"><div class="tl"><span class="isbn">9782253004226</span><span class="pill fail">Échec</span></div><p class="rs">Délai dépassé lors de la consultation d’Open Library.</p><span class="dt">Dernier essai · 14 nov. 2026 à 21:12 · 3 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm"><div class="tl"><span class="isbn">9782070413119</span><span class="pill pend">En cours</span></div><span class="dt">Dernier essai · 14 nov. 2026 à 20:58 · 1 tentative</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm"><div class="tl"><span class="isbn">9782266071529</span><span class="pill fail">Échec</span></div><p class="rs">Erreur lors de la consultation des fournisseurs de notices.</p><span class="dt">Dernier essai · 14 nov. 2026 à 19:03 · 2 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm"><div class="tl"><span class="isbn">9782290349281</span><span class="pill pend">En cours</span></div><span class="dt">Dernier essai · 14 nov. 2026 à 18:47 · 1 tentative</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm"><div class="tl"><span class="isbn">9782743617257</span><span class="pill fail">Échec</span></div><p class="rs">Erreur lors de la consultation des fournisseurs de notices.</p><span class="dt">Dernier essai · 14 nov. 2026 à 17:21 · 4 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+</div>
+</section></main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

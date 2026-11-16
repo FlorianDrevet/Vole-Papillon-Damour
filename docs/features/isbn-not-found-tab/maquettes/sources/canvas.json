@@ -1,0 +1,42 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-15T09:00:00Z"},
+  "title": "ISBN non trouvés — maquettes administration",
+  "launch": {"view": "canvas"},
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1040, "title": "E1 · Analyse des ISBNs — desktop"},
+    "E1-Mobile.dc.html": {"x": 1520, "y": 0, "w": 390, "h": 1180, "title": "E1 · Analyse des ISBNs — mobile"},
+    "E1-Etats.dc.html": {"x": 1990, "y": 0, "w": 1100, "h": 1040, "title": "E1 · Analyse des ISBNs — états"},
+    "E2-Desktop.dc.html": {"x": 0, "y": 1700, "w": 1440, "h": 1160, "title": "E2 · ISBN non trouvés — desktop"},
+    "E2-Mobile.dc.html": {"x": 1520, "y": 1700, "w": 390, "h": 1300, "title": "E2 · ISBN non trouvés — mobile"},
+    "E2-Etats.dc.html": {"x": 1990, "y": 1700, "w": 1100, "h": 1300, "title": "E2 · ISBN non trouvés — états"},
+    "E3-Desktop.dc.html": {"x": 0, "y": 3400, "w": 1440, "h": 900, "title": "E3 · Import CSV : aperçu — desktop"},
+    "E3-Mobile.dc.html": {"x": 1520, "y": 3400, "w": 390, "h": 1180, "title": "E3 · Import CSV : aperçu — mobile"},
+    "E3-Etats.dc.html": {"x": 1990, "y": 3400, "w": 1180, "h": 1500, "title": "E3 · Import CSV — états"},
+    "E4-Desktop.dc.html": {"x": 0, "y": 5100, "w": 1100, "h": 1000, "title": "E4 · Navigation — desktop et états"},
+    "E4-Mobile.dc.html": {"x": 1180, "y": 5100, "w": 390, "h": 1000, "title": "E4 · Navigation — mobile"},
+    "E5-Desktop.dc.html": {"x": 0, "y": 6800, "w": 1440, "h": 1060, "title": "E5 · Livres hors ISBNdb — desktop"},
+    "E5-Mobile.dc.html": {"x": 1520, "y": 6800, "w": 390, "h": 1300, "title": "E5 · Livres hors ISBNdb — mobile"},
+    "E5-Etats.dc.html": {"x": 1990, "y": 6800, "w": 1100, "h": 900, "title": "E5 · Livres hors ISBNdb — états"}
+  },
+  "order": [
+    "Main.dc.html", "E1-Mobile.dc.html", "E1-Etats.dc.html",
+    "E2-Desktop.dc.html", "E2-Mobile.dc.html", "E2-Etats.dc.html",
+    "E3-Desktop.dc.html", "E3-Mobile.dc.html", "E3-Etats.dc.html",
+    "E4-Desktop.dc.html", "E4-Mobile.dc.html",
+    "E5-Desktop.dc.html", "E5-Mobile.dc.html", "E5-Etats.dc.html"
+  ],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "E1 · Analyse des ISBNs (modifié)", "kind": "title1", "maxW": 3090},
+    "t2": {"x": 0, "y": 1400, "text": "E2 · ISBN non trouvés (nouveau)", "kind": "title1", "maxW": 3090},
+    "t3": {"x": 0, "y": 3100, "text": "E3 · Import CSV (nouveau)", "kind": "title1", "maxW": 3170},
+    "t4": {"x": 0, "y": 4800, "text": "E4 · Navigation latérale (modifié)", "kind": "title1", "maxW": 1570},
+    "t5": {"x": 0, "y": 6500, "text": "E5 · Livres hors ISBNdb (modifié)", "kind": "title1", "maxW": 3090},
+    "n1": {"x": 3170, "y": 0, "w": 420, "fill": "blue", "text": "RG-02 : « Toutes » n'inclut plus les ISBN sans notice. Le filtre « Notices non trouvées » disparaît.\nRG-11 : la pastille de la navigation affiche seulement les échecs (3), quel que soit le filtre actif.\nRenommage : « ISBN en cours d'analyse » → « Analyse des ISBNs »."},
+    "n2": {"x": 3170, "y": 1700, "w": 420, "fill": "orange", "text": "RG-01 : liste = ISBN sans notice trouvée dans aucune source.\nRG-07 : l'export contient tous les ISBN de la liste (pas seulement la page), colonnes vides.\nRG-08 : CSV ; UTF-8 BOM ; nom isbn-non-trouves-AAAA-MM-JJ.csv. Export désactivé si liste vide.\nRG-12 : pastille = nombre à compléter."},
+    "n3": {"x": 3250, "y": 3400, "w": 420, "fill": "orange", "text": "RG-14 : deux temps, aperçu sans écriture puis confirmation.\nRG-15/16/17/18 : en-têtes, ISBN, ligne vide ignorée, valeurs contrôlées.\nRG-19 : les lignes valides sont enregistrées même si d'autres sont rejetées.\nRG-20 : fiche manuelle + marquée « complétée » (sans auteur : reste à compléter).\nRG-21 : état revérifié à l'enregistrement."},
+    "n4": {"x": 1650, "y": 5100, "w": 420, "fill": "teal", "text": "RG-09 : aucune pastille à 0, ni dans le menu ni dans le sélecteur mobile.\nRG-10 : plus de pastille sur Catalogue ni Livres rares.\nRG-11/12/13 : Analyse = échecs ; ISBN non trouvés = à compléter ; Hors ISBNdb = à compléter (sans les livres sans titre)."},
+    "n5": {"x": 3170, "y": 6800, "w": 420, "fill": "blue", "text": "RG-04 : seuls les livres absents d'ISBNdb avec une fiche exploitable (titre) sont listés : plus de « Titre inconnu ».\nRG-05/20 : un livre importé par CSV arrive directement dans « Complétées ».\nRG-06 : les compteurs concordent avec la pastille et la carte d'état ISBNdb."}
+  },
+  "designSystems": []
+}

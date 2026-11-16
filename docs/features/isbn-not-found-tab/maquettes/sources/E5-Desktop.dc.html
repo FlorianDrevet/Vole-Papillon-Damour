@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E5 Livres hors ISBNdb desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.gh,.gc{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr) minmax(0,1.6fr) 90px 130px;gap:20px;align-items:center}.gh{margin-top:20px;padding:0 0 8px;border-bottom:1px solid var(--admin-line);color:var(--admin-muted);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase}.gc{padding:16px 0;border-bottom:1px solid var(--admin-line-soft);font-size:13.5px;color:var(--admin-slate)}.cov{display:inline-block;width:40px;height:58px;margin-right:14px;border:1px solid var(--admin-line-soft);background:repeating-linear-gradient(135deg,#e9f4fb 0 8px,#f7fbfe 8px 16px);flex:none}.bk{display:flex;align-items:center}.bk strong{display:block;color:var(--admin-ink);font-size:14.5px}.mf{display:inline-block;margin:0 6px 4px 0;padding:3px 8px;border-radius:999px;background:#fce5cd;color:var(--admin-orange-dark);font:500 10px 'IBM Plex Mono',monospace}.srch{display:flex;gap:12px;align-items:flex-end;margin-top:18px}.srch label{flex:1;max-width:520px}.srch span{display:block;margin-bottom:6px;color:var(--admin-slate);font-size:12.5px}.srch .in{height:42px;display:flex;align-items:center;padding:0 16px;border:1px solid var(--admin-line);border-radius:999px;background:#fff;color:var(--admin-muted);font-size:14px}</style>
+</helmet>
+<div class="pg" style="width:1440px;height:1060px">
+<div class="top"><span class="logo">VPD</span><span class="brand">Vole Papillon d'Amour</span><span class="tag">Administration</span></div>
+<div class="lay">
+<aside class="side" aria-label="Navigation administration">
+<span class="sb-rule"></span><span class="sb-k">Administration</span><h2 class="sb-t">Bourse aux livres</h2><span class="sb-s">Espace sécurisé</span>
+<div class="ng"><span class="nl">Pendant la bourse</span>
+<div class="ni"><i class="ic"></i>Tableau de bord</div><div class="ni"><i class="ic"></i>Sessions de scan<span class="bd">2</span></div><div class="ni"><i class="ic"></i>Désengorgement</div><div class="ni"><i class="ic"></i>Livres introuvables<span class="bd">12</span></div><div class="ni"><i class="ic"></i>Demandes manuelles<span class="bd">3</span></div></div>
+<div class="ng"><span class="nl">Le fonds de livres</span>
+<div class="ni"><i class="ic"></i>Catalogue</div><div class="ni"><i class="ic"></i>Analyse des ISBNs<span class="bd">3</span></div><div class="ni"><i class="ic"></i>ISBN non trouvés<span class="bd">214</span></div><div class="ni on"><i class="ic"></i>Livres hors ISBNdb<span class="bd">47</span></div><div class="ni"><i class="ic"></i>Livres rares</div><div class="ni"><i class="ic"></i>Statistiques</div></div>
+<div class="ng"><span class="nl">Réservé à l'administration</span>
+<div class="ni"><i class="ic"></i>Comptes &amp; rôles</div><div class="ni"><i class="ic"></i>E-mail avant la bourse</div><div class="ni"><i class="ic"></i>Paramètres</div></div>
+</aside>
+<main class="main"><section class="view">
+<div class="hd"><span class="acc"></span><span class="kick">Le fonds de livres</span>
+<h1 id="admin-title">Livres hors ISBNdb.</h1>
+<p class="intro">ISBNdb ne connaît pas ces livres : leur fiche vient de la BnF, d’Open Library ou de Google Books et il manque souvent des informations. Complétez-les, puis marquez-les complétées pour relancer les recommandations.</p></div>
+<div class="chips" role="group" aria-label="Filtrer les livres hors ISBNdb" style="margin-top:28px"><button class="chip on" type="button" aria-pressed="true" data-zone="E5-filtre-a-completer">À compléter · 47</button><button class="chip" type="button" aria-pressed="false" data-zone="E5-filtre-completees">Complétées · 231</button></div>
+<form class="srch" data-zone="E5-recherche"><label><span>Rechercher un livre</span><div class="in">ISBN, titre ou auteur…</div></label><button class="btn btn-o" type="button">Rechercher</button></form>
+<div class="gh" aria-hidden="true"><span>Livre</span><span>Fiche de secours</span><span>Champs manquants</span><span>En stock</span><span></span></div>
+<div data-zone="E5-liste">
+<article class="gc" data-zone="E5-ligne-livre"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782070413119</span><strong>Le Petit Prince</strong><span>Antoine de Saint-Exupéry</span></div></div><span>BnF</span><div><span class="mf">Résumé</span><span class="mf">Pages</span></div><span>2 exemplaires</span><button class="btn btn-o" type="button">Compléter →</button></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782253004226</span><strong>La Gloire de mon père</strong><span>Marcel Pagnol</span></div></div><span>Open Library</span><div><span class="mf">Couverture</span><span class="mf">Genre</span></div><span>1 exemplaire</span><button class="btn btn-o" type="button">Compléter →</button></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782266071529</span><strong>Les Fourmis</strong><span>Bernard Werber</span></div></div><span>Google Books</span><div><span class="mf">Éditeur</span></div><span>Aucun</span><button class="btn btn-o" type="button">Compléter →</button></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782290349281</span><strong>Le Seigneur des anneaux, t. 1</strong><span>J. R. R. Tolkien</span></div></div><span>BnF</span><div><span class="mf">Résumé</span><span class="mf">Année</span><span class="mf">Pages</span></div><span>3 exemplaires</span><button class="btn btn-o" type="button">Compléter →</button></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782743617257</span><strong>Chagrin d’école</strong><span>Daniel Pennac</span></div></div><span>Open Library</span><div><span class="mf">Résumé</span></div><span>Aucun</span><button class="btn btn-o" type="button">Compléter →</button></article>
+</div>
+<nav class="pgr" aria-label="Pages des livres hors ISBNdb"><b>←</b><span>Page 1 / 10</span><b>→</b></nav>
+</section></main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

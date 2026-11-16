@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E1 Analyse des ISBNs mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}a{color:#0c6ea6}.pg .main{padding:28px 24px 40px}.pg h1{font-size:32px}.pg .row{flex-direction:column;align-items:flex-start;gap:14px}.pg .sh{flex-direction:column;margin-top:30px}</style>
+</helmet>
+<div class="pg" style="width:390px;height:1180px">
+<div class="top" style="height:64px;padding:0 24px"><span class="logo" style="width:34px;height:34px">VPD</span><span class="brand" style="font-size:16px">Vole Papillon d'Amour</span></div>
+<label class="msel"><span class="lab" style="margin:0">Aller à une rubrique</span><span class="box"><span>Analyse des ISBNs (3)</span><span aria-hidden="true">▾</span></span></label>
+<main class="main"><section class="view">
+<div class="hd"><span class="acc"></span><span class="kick">Import des livres</span>
+<h1 id="admin-title" data-zone="E1-titre-mobile">Analyse des ISBNs.</h1>
+<p class="intro" data-zone="E1-intro-mobile" style="font-size:14.5px">Les ISBN restent ici tant qu’une notice bibliographique exploitable n’a pas été trouvée. Les échecs affichent leur motif pour choisir de corriger, réessayer ou retirer le livre. Les ISBN qu’aucune source ne connaît sont dans <a href="E2-Mobile.dc.html">ISBN non trouvés →</a></p></div>
+<div class="sh"><div><span class="sk">File de traitement</span><h2>9 ISBN à vérifier</h2><p>Ces fiches n’apparaissent ni dans le catalogue public ni dans le catalogue général de l’administration.</p></div><button class="lnk" type="button">Actualiser</button></div>
+<div class="tb" data-zone="E1-filtres-mobile"><span class="fl">Afficher les fiches</span>
+<div class="chips" role="group" aria-label="Filtrer les ISBN par statut"><button class="chip on" type="button" aria-pressed="true">Toutes</button><button class="chip" type="button" aria-pressed="false">En cours</button><button class="chip" type="button" aria-pressed="false">Échecs</button></div></div>
+<div role="list" style="margin-top:12px" data-zone="E1-liste-mobile">
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782070368228</span><span class="pill pend">En cours</span></div><span class="dt">Dernier essai · 14 nov. 2026 à 21:40 · 1 tentative</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782253004226</span><span class="pill fail">Échec</span></div><p class="rs">Délai dépassé lors de la consultation d’Open Library.</p><span class="dt">Dernier essai · 14 nov. 2026 à 21:12 · 3 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782070413119</span><span class="pill pend">En cours</span></div><span class="dt">Dernier essai · 14 nov. 2026 à 20:58 · 1 tentative</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782266071529</span><span class="pill fail">Échec</span></div><p class="rs">Erreur lors de la consultation des fournisseurs de notices.</p><span class="dt">Dernier essai · 14 nov. 2026 à 19:03 · 2 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Corriger</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+</div>
+</section></main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
