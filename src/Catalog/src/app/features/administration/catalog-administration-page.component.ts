@@ -443,7 +443,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly cataloguePageSize = 5;
   metadataQueuePage = 1;
   readonly metadataQueuePageSize = 50;
-  metadataQueueFilter: 'all' | 'pending' | 'failed' | 'not-found' = 'all';
+  metadataQueueFilter: 'all' | 'pending' | 'failed' = 'all';
   catalogueAddQuantity = 1;
   catalogueAddNote = 'Ajout depuis le catalogue';
 
@@ -1021,7 +1021,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     };
   }
 
-  async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed' | 'not-found'): Promise<void> {
+  async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed'): Promise<void> {
     if (this.metadataQueueFilter === filter) {
       return;
     }
@@ -3345,10 +3345,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async loadIsbnMetadataQueuePage(token: string): Promise<void> {
-    const metadataStatus: 'Pending' | 'Failed' | 'NotFound' | undefined = this.metadataQueueFilter === 'all'
+    const metadataStatus: 'Pending' | 'Failed' | undefined = this.metadataQueueFilter === 'all'
       ? undefined
-      : this.metadataQueueFilter === 'pending' ? 'Pending'
-        : this.metadataQueueFilter === 'failed' ? 'Failed' : 'NotFound';
+      : this.metadataQueueFilter === 'pending' ? 'Pending' : 'Failed';
 
     await this.readBlock(this.isbnMetadataQueueBlock, accessToken => firstValueFrom(this.api.getBookMetadataQueue(accessToken, {
       page: this.metadataQueuePage,

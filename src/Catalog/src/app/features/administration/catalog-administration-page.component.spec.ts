@@ -524,7 +524,8 @@ describe('CatalogAdministrationPageComponent', () => {
       'Livres introuvables',
       'Demandes manuelles',
       'Catalogue',
-      'ISBN en cours d’analyse',
+      'Analyse des ISBNs',
+      'ISBN non trouvés',
       'Livres hors ISBNdb',
       'Livres rares',
       'Statistiques',
@@ -1250,6 +1251,7 @@ describe('CatalogAdministrationPageComponent', () => {
       totalCount: 1,
       page: 1,
       pageSize: 50,
+      failedCount: 1,
     } as CatalogAdminBookMetadataQueue));
     fixture.detectChanges();
 
@@ -1257,6 +1259,9 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const row = fixture.nativeElement.querySelector('[data-testid="isbn-analysis-9782070363735"]') as HTMLElement;
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Analyse des ISBNs.');
+    expect(fixture.nativeElement.querySelector('.admin-intro')?.textContent).toContain('Les échecs affichent leur motif');
+    expect(fixture.nativeElement.querySelector('.admin-intro a[href="/administration/isbn-not-found"]')?.textContent).toContain('ISBN non trouvés →');
     expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 50});
     expect(row.textContent).toContain('9782070363735');
     expect(row.textContent).toContain('Échec');
@@ -1281,6 +1286,11 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     await fixture.componentInstance.selectSection('isbn-queue');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.isbn-queue-filters .period-chip')).toHaveSize(3);
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-not-found"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN à vérifier');
+
     fixture.componentInstance.metadataQueuePage = 2;
     fixture.detectChanges();
     const failedFilter = fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-failed"]') as HTMLButtonElement;
@@ -1302,18 +1312,12 @@ describe('CatalogAdministrationPageComponent', () => {
       metadataStatus: 'Pending',
     });
 
-    const notFoundFilter = fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-not-found"]') as HTMLButtonElement | null;
-    expect(notFoundFilter).not.toBeNull();
-    await fixture.componentInstance.setIsbnMetadataQueueFilter('not-found');
-
-    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {
-      page: 1,
-      pageSize: 50,
-      metadataStatus: 'NotFound',
-    });
     fixture.detectChanges();
-    expect(notFoundFilter?.getAttribute('aria-pressed')).toBe('true');
-    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN sans notice');
+    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN en cours');
+
+    await fixture.componentInstance.setIsbnMetadataQueueFilter('failed');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Aucun échec');
   });
 
   it('retries an ISBN from its analysis row and refreshes the queue', async () => {
@@ -1348,7 +1352,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.selectedBook()?.isbn13).toBe(book.isbn13);
-    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('ISBN en cours d’analyse');
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Analyse des ISBNs');
     expect(fixture.nativeElement.textContent).not.toContain('Titre à compléter');
     expect(fixture.nativeElement.querySelector('input[type="file"][accept*="image/jpeg"]')).not.toBeNull();
   });
