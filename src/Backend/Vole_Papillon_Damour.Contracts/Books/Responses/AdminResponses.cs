@@ -149,12 +149,21 @@ public sealed record AdminIsbnNotFoundImportPreviewResponse(
     int WithoutAuthorCount,
     int IgnoredCount,
     int RejectedCount,
-    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections);
+    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections,
+    IReadOnlyList<string> ReadyIsbns);
 
 public sealed record AdminIsbnNotFoundImportRejectionResponse(
     int RowNumber,
     string Isbn,
     string Reason);
+
+public sealed record AdminIsbnNotFoundImportResponse(
+    int DataRowCount,
+    int ImportedCount,
+    int WithoutAuthorCount,
+    int MarkedAbsentCount,
+    int RejectedCount,
+    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections);
 
 public sealed record AdminBookMetadataQueueItemResponse(
     string Isbn13,

@@ -292,10 +292,11 @@ public class EndpointAuthorizationTests
                 "/books/admin/books/isbn-not-found" or
                 "/books/admin/books/isbn-not-found/export" or
                 "/books/admin/books/isbn-not-found/import/preview" or
+                "/books/admin/books/isbn-not-found/import" or
                 "/books/admin/books/{isbn13}/metadata/retry")
             .ToList();
 
-        endpoints.Should().HaveCount(5);
+        endpoints.Should().HaveCount(6);
         endpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
         endpoints.SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
             .Should().Contain(data => data.Policy == "Administration");

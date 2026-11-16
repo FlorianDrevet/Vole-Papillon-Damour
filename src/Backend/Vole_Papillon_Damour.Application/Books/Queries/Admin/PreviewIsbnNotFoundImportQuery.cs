@@ -17,6 +17,7 @@ public sealed record PreviewIsbnNotFoundImportResult(
     int WithoutAuthorCount,
     int IgnoredCount,
     int RejectedCount,
-    IReadOnlyList<IsbnNotFoundImportRejectionResult> Rejections);
+    IReadOnlyList<IsbnNotFoundImportRejectionResult> Rejections,
+    IReadOnlyList<string> ReadyIsbns);
 
 public sealed record IsbnNotFoundImportRejectionResult(int RowNumber, string Isbn, string Reason);

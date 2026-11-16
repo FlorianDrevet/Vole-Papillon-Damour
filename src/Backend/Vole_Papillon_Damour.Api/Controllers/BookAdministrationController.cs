@@ -11,6 +11,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.CancelBookAlerts;
 using Vole_Papillon_Damour.Application.Books.Commands.DeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.PermanentlyDeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ForceBookAlerts;
+using Vole_Papillon_Damour.Application.Books.Commands.ImportIsbnNotFound;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
 using Vole_Papillon_Damour.Application.Books.Commands.UploadBookCover;
@@ -324,10 +325,62 @@ public static class BookAdministrationController
                                     new AdminIsbnNotFoundImportRejectionResponse(
                                         rejection.RowNumber,
                                         rejection.Isbn,
-                                        rejection.Reason)).ToArray())),
+                                        rejection.Reason)).ToArray(),
+                                preview.ReadyIsbns)),
                             error => error.Result());
                     })
                 .WithName("PreviewAdminIsbnNotFoundImport")
+                .DisableAntiforgery()
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/books/isbn-not-found/import",
+                    async (
+                        [FromForm] ImportIsbnNotFoundRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null || request.File.Length == 0)
+                        {
+                            return Results.BadRequest(new { error = "Un fichier CSV est requis." });
+                        }
+
+                        if (request.File.Length > PreviewIsbnNotFoundImportQuery.MaximumFileSizeBytes)
+                        {
+                            return Results.BadRequest(new { error = "Le fichier dépasse la limite de 2 Mo." });
+                        }
+
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        using var memory = new MemoryStream((int)request.File.Length);
+                        await stream.CopyToAsync(memory, cancellationToken);
+                        var result = await mediator.Send(
+                            new ImportIsbnNotFoundCommand(
+                                memory.ToArray(),
+                                request.ReadyIsbns ?? [],
+                                administratorId),
+                            cancellationToken);
+
+                        return result.Match<IResult>(
+                            imported => Results.Ok(new AdminIsbnNotFoundImportResponse(
+                                imported.DataRowCount,
+                                imported.ImportedCount,
+                                imported.WithoutAuthorCount,
+                                imported.MarkedAbsentCount,
+                                imported.RejectedCount,
+                                imported.Rejections.Select(rejection =>
+                                    new AdminIsbnNotFoundImportRejectionResponse(
+                                        rejection.RowNumber,
+                                        rejection.Isbn,
+                                        rejection.Reason)).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("ImportAdminIsbnNotFoundBooks")
                 .DisableAntiforgery()
                 .RequireAuthorization("Administration");
 

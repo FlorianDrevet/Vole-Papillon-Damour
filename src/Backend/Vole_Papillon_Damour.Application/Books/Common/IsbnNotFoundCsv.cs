@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Common;
 
@@ -68,6 +69,22 @@ internal static class IsbnNotFoundCsv
 
         var rows = dataRecords.Select(record => ToRow(record, columnIndexes)).ToArray();
         return new IsbnNotFoundCsvFile(rows);
+    }
+
+    internal static HashSet<Isbn13> GetValidIsbns(IReadOnlyList<IsbnNotFoundCsvRow> rows)
+    {
+        var isbns = new HashSet<Isbn13>();
+        foreach (var row in rows)
+        {
+            if (!row.IsCompletelyEmpty &&
+                row.HasExpectedColumnCount &&
+                Isbn13.TryCreate(row.Isbn, out var isbn13))
+            {
+                isbns.Add(isbn13);
+            }
+        }
+
+        return isbns;
     }
 
     private static Dictionary<string, int> ParseHeader(CsvRecord header)

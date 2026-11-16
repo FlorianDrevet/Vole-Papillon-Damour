@@ -44,6 +44,7 @@ public sealed class PreviewIsbnNotFoundImportQueryHandlerTests
         response.Value.WithoutAuthorCount.Should().Be(1);
         response.Value.IgnoredCount.Should().Be(1);
         response.Value.RejectedCount.Should().Be(1);
+        response.Value.ReadyIsbns.Should().BeEquivalentTo("9780306406157", "9782070363735");
         response.Value.Rejections.Should().ContainSingle()
             .Which.Reason.Should().Be("ISBN inconnu");
         isbn10Book.Title.Should().BeNull("preview must not write book metadata");
@@ -186,6 +187,23 @@ public sealed class PreviewIsbnNotFoundImportQueryHandlerTests
         tooManyRows.Errors.Single().Description.Should().Contain("5 000 lignes");
     }
 
+    [Fact]
+    public async Task Handle_RejectsCoverUrlsAboveTheDomainLengthLimit()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.RecordMetadataNotFound(Now);
+        await fixture.Context.SaveChangesAsync();
+        var longUrl = "https://example.com/" + new string('x', 2_050);
+        var csv = Csv(Row("9782070363735", "Titre valide", "cover-length", longUrl));
+
+        var result = await new PreviewIsbnNotFoundImportQueryHandler(fixture.Context).Handle(
+            new PreviewIsbnNotFoundImportQuery(Encoding.UTF8.GetBytes(csv)),
+            CancellationToken.None);
+
+        result.Value.Rejections.Single().Reason.Should().Contain("Couverture_URL");
+    }
+
     private static string Csv(params string[] rows) => string.Join("\r\n", new[] { Header }.Concat(rows));
 
     private static string Row(
@@ -217,6 +235,7 @@ public sealed class PreviewIsbnNotFoundImportQueryHandlerTests
                 "pages" => "Pages",
                 "edition" => "Edition",
                 "cover" => "Couverture_URL",
+                "cover-length" => "Couverture_URL",
                 _ => throw new ArgumentOutOfRangeException(nameof(field), field, null)
             };
             values[column] = value;
