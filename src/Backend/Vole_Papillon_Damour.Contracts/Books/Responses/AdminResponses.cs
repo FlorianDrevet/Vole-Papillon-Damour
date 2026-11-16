@@ -143,6 +143,19 @@ public sealed record AdminIsbnNotFoundBookResponse(
     int ResolveAttempts,
     DateTimeOffset? LastAttemptAt);
 
+public sealed record AdminIsbnNotFoundImportPreviewResponse(
+    int DataRowCount,
+    int ReadyCount,
+    int WithoutAuthorCount,
+    int IgnoredCount,
+    int RejectedCount,
+    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections);
+
+public sealed record AdminIsbnNotFoundImportRejectionResponse(
+    int RowNumber,
+    string Isbn,
+    string Reason);
+
 public sealed record AdminBookMetadataQueueItemResponse(
     string Isbn13,
     string MetadataStatus,

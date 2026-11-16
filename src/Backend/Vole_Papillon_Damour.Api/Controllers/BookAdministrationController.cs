@@ -289,6 +289,48 @@ public static class BookAdministrationController
                 .WithName("ExportAdminIsbnNotFoundBooks")
                 .RequireAuthorization("Administration");
 
+            endpoints.MapPost(
+                    "/books/admin/books/isbn-not-found/import/preview",
+                    async (
+                        [FromForm] PreviewIsbnNotFoundImportRequest request,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null || request.File.Length == 0)
+                        {
+                            return Results.BadRequest(new { error = "Un fichier CSV est requis." });
+                        }
+
+                        if (request.File.Length > PreviewIsbnNotFoundImportQuery.MaximumFileSizeBytes)
+                        {
+                            return Results.BadRequest(new { error = "Le fichier dépasse la limite de 2 Mo." });
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        using var memory = new MemoryStream((int)request.File.Length);
+                        await stream.CopyToAsync(memory, cancellationToken);
+                        var result = await mediator.Send(
+                            new PreviewIsbnNotFoundImportQuery(memory.ToArray()),
+                            cancellationToken);
+
+                        return result.Match<IResult>(
+                            preview => Results.Ok(new AdminIsbnNotFoundImportPreviewResponse(
+                                preview.DataRowCount,
+                                preview.ReadyCount,
+                                preview.WithoutAuthorCount,
+                                preview.IgnoredCount,
+                                preview.RejectedCount,
+                                preview.Rejections.Select(rejection =>
+                                    new AdminIsbnNotFoundImportRejectionResponse(
+                                        rejection.RowNumber,
+                                        rejection.Isbn,
+                                        rejection.Reason)).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("PreviewAdminIsbnNotFoundImport")
+                .DisableAntiforgery()
+                .RequireAuthorization("Administration");
+
             endpoints.MapGet(
                     "/books/admin/recommendations",
                     async (

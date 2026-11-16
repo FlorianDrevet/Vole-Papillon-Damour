@@ -7,6 +7,11 @@ public sealed class UploadAdminBookCoverRequest
     public IFormFile? File { get; set; }
 }
 
+public sealed class PreviewIsbnNotFoundImportRequest
+{
+    public IFormFile? File { get; set; }
+}
+
 public sealed record AddAdminBookRequest(
     string Isbn13,
     int QuantityAvailable,
