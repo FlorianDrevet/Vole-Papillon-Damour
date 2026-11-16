@@ -1412,7 +1412,8 @@ public static class BookAdministrationController
                 item.LastAttemptAt)).ToArray(),
             result.TotalCount,
             result.Page,
-            result.PageSize);
+            result.PageSize,
+            result.FailedCount);
 
     private static AdminBooksImportResponse ToResponse(AdminBooksImportResult result) =>
         new(

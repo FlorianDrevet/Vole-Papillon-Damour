@@ -68,7 +68,8 @@ public sealed record BookMetadataQueuePageResult(
     IReadOnlyList<BookMetadataQueueItemResult> Items,
     int TotalCount,
     int Page,
-    int PageSize);
+    int PageSize,
+    int FailedCount);
 
 public sealed record BookMetadataQueueItemResult(
     string Isbn13,

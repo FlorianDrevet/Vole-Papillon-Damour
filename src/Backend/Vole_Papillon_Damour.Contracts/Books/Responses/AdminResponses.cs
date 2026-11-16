@@ -126,7 +126,8 @@ public sealed record AdminBookMetadataQueuePageResponse(
     IReadOnlyList<AdminBookMetadataQueueItemResponse> Items,
     int TotalCount,
     int Page,
-    int PageSize);
+    int PageSize,
+    int FailedCount);
 
 public sealed record AdminBookMetadataQueueItemResponse(
     string Isbn13,
