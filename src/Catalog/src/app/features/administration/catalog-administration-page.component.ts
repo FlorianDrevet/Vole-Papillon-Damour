@@ -211,7 +211,8 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
     label: 'Le fonds de livres',
     items: [
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
-      {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
+      {id: 'isbn-queue', label: 'Analyse des ISBNs', icon: 'isbn'},
+      {id: 'isbn-not-found', label: 'ISBN non trouvés', icon: 'isbn'},
       {id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'},
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
       {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
@@ -319,7 +320,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     if (!counts) {
       return null;
     }
-
     const count = section === 'sessions'
       ? counts.openScanSessions
       : section === 'not-found'
@@ -327,13 +327,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         : section === 'manual-requests'
           ? counts.manualRequestsFound
           : section === 'catalogue'
-            ? counts.catalogueBooks
+            ? undefined
             : section === 'isbn-queue'
-              ? counts.isbnQueue
+              ? counts.isbnFailedCount
+              : section === 'isbn-not-found'
+                ? counts.isbnNotFoundCount
               : section === 'isbndb-absent'
                 ? counts.isbndbAbsentToComplete
                 : section === 'rare-books'
-                  ? counts.publishedRareBooks
+                  ? undefined
                   : undefined;
 
     return count === null || count === undefined || count <= 0 ? null : this.formatNumber(count);
@@ -356,6 +358,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly overview = this.overviewBlock.data;
   readonly isbndbStatus = this.isbndbStatusBlock.data;
   readonly isbndbAccessToken = signal('');
+  readonly isbnNotFoundAccessToken = signal('');
+  readonly isbnNotFoundRefreshVersion = signal(0);
+  readonly isbnNotFoundImportOpen = signal(false);
   readonly catalogueBooksPage = this.catalogueBlock.data;
   readonly isbnMetadataQueue = this.isbnMetadataQueueBlock.data;
   readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
@@ -441,7 +446,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly cataloguePageSize = 5;
   metadataQueuePage = 1;
   readonly metadataQueuePageSize = 50;
-  metadataQueueFilter: 'all' | 'pending' | 'failed' | 'not-found' = 'all';
+  metadataQueueFilter: 'all' | 'pending' | 'failed' = 'all';
   catalogueAddQuantity = 1;
   catalogueAddNote = 'Ajout depuis le catalogue';
 
@@ -692,6 +697,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'isbn-queue':
         await this.loadIsbnMetadataQueue();
         break;
+      case 'isbn-not-found':
+        await this.loadIsbnNotFoundWorkspace();
+        break;
       case 'isbndb-absent':
         await this.loadIsbndbAbsentWorkspace();
         break;
@@ -868,6 +876,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.loadSessions();
   }
 
+  async onIsbnNotFoundImportCompleted(): Promise<void> {
+    this.isbnNotFoundRefreshVersion.update(version => version + 1);
+    await this.loadOverview();
+  }
+
+  openIsbnNotFoundImportDialog(): void {
+    this.isbnNotFoundImportOpen.set(true);
+  }
+
   toggleMetadataGenre(genre: string): void {
     const current = this.metadataForm.genres;
     this.metadataForm.genres = current.includes(genre)
@@ -994,6 +1011,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async loadIsbnNotFoundWorkspace(): Promise<void> {
+    await this.run('isbn-not-found-access', async token => {
+      this.isbnNotFoundAccessToken.set(token);
+    });
+  }
+
   private metadataUpdateRequest(
     fields: CatalogAdminBookMetadataField[] = [
       'Title', 'Authors', 'Publisher', 'PublicationYear', 'PhysicalFormat', 'Language',
@@ -1019,7 +1042,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     };
   }
 
-  async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed' | 'not-found'): Promise<void> {
+  async setIsbnMetadataQueueFilter(filter: 'all' | 'pending' | 'failed'): Promise<void> {
     if (this.metadataQueueFilter === filter) {
       return;
     }
@@ -1470,7 +1493,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   ): Promise<void> {
     this.clearPendingBookCover();
     this.bookDetailReturnSection.set(returnSection);
-    if ((returnSection === 'isbn-queue' || returnSection === 'isbndb-absent') && this.activeSection() !== 'catalogue') {
+    if ((returnSection === 'isbn-queue' || returnSection === 'isbn-not-found' || returnSection === 'isbndb-absent') && this.activeSection() !== 'catalogue') {
       await this.router.navigate(['/administration', 'catalogue']);
     }
     this.activeSection.set('catalogue');
@@ -1514,16 +1537,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.selectedBook.set(null);
     const returnSection = this.bookDetailReturnSection();
     this.bookDetailReturnSection.set('catalogue');
-    if (returnSection === 'isbn-queue' || returnSection === 'isbndb-absent') {
+    if (returnSection === 'isbn-queue' || returnSection === 'isbn-not-found' || returnSection === 'isbndb-absent') {
       void this.selectSection(returnSection);
     }
   }
 
-  async retryIsbnMetadata(item: CatalogAdminBookMetadataQueueItem): Promise<void> {
+  async retryIsbnMetadata(
+    item: Pick<CatalogAdminBookMetadataQueueItem, 'isbn13'>,
+    returnSection: 'isbn-queue' | 'isbn-not-found' = 'isbn-queue',
+  ): Promise<void> {
     await this.run('isbn-metadata-retry', async token => {
       await firstValueFrom(this.api.retryBookMetadata(token, item.isbn13));
       this.showSuccess(`Un nouvel essai a été lancé pour l’ISBN ${item.isbn13}.`);
-      await this.loadIsbnMetadataQueuePage(token);
+      await this.refreshIsbnMetadataWorkspace(token, returnSection);
     });
   }
 
@@ -1579,7 +1605,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     );
   }
 
-  async deleteIsbnMetadataCandidate(item: CatalogAdminBookMetadataQueueItem): Promise<void> {
+  async deleteIsbnMetadataCandidate(
+    item: Pick<CatalogAdminBookMetadataQueueItem, 'isbn13'>,
+    returnSection: 'isbn-queue' | 'isbn-not-found' = 'isbn-queue',
+  ): Promise<void> {
     if (!this.confirmAction(
       `Retirer l’ISBN ${item.isbn13} de la file ? Le stock disponible sera annulé et l’historique conservé.`,
     )) {
@@ -1589,8 +1618,21 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.run('isbn-metadata-delete', async token => {
       await firstValueFrom(this.api.deleteBook(token, item.isbn13));
       this.showSuccess(`L’ISBN ${item.isbn13} a été retiré de la file d’analyse.`);
-      await this.loadIsbnMetadataQueuePage(token);
+      await this.refreshIsbnMetadataWorkspace(token, returnSection);
     });
+  }
+
+  private async refreshIsbnMetadataWorkspace(
+    token: string,
+    returnSection: 'isbn-queue' | 'isbn-not-found',
+  ): Promise<void> {
+    if (returnSection === 'isbn-queue') {
+      await this.loadIsbnMetadataQueuePage(token);
+      return;
+    }
+
+    this.overview.set(await firstValueFrom(this.api.getOverview(token, undefined, undefined, true)));
+    this.isbnNotFoundRefreshVersion.update(version => version + 1);
   }
 
   openBookNotFoundDialog(book: CatalogAdminBook, action: CatalogNotFoundCloseAction, event: Event): void {
@@ -3343,10 +3385,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   private async loadIsbnMetadataQueuePage(token: string): Promise<void> {
-    const metadataStatus: 'Pending' | 'Failed' | 'NotFound' | undefined = this.metadataQueueFilter === 'all'
+    const metadataStatus: 'Pending' | 'Failed' | undefined = this.metadataQueueFilter === 'all'
       ? undefined
-      : this.metadataQueueFilter === 'pending' ? 'Pending'
-        : this.metadataQueueFilter === 'failed' ? 'Failed' : 'NotFound';
+      : this.metadataQueueFilter === 'pending' ? 'Pending' : 'Failed';
 
     await this.readBlock(this.isbnMetadataQueueBlock, accessToken => firstValueFrom(this.api.getBookMetadataQueue(accessToken, {
       page: this.metadataQueuePage,

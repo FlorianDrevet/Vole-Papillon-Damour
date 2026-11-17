@@ -48,6 +48,8 @@ public sealed class GetIsbndbStatusQueryHandlerTests
             null);
         absent.MarkAbsentFromIsbndb(Now.AddDays(-2));
         fixture.Context.Books.Add(absent);
+        var absentWithoutTitle = await fixture.AddBookAsync("9782253004226", quantityAvailable: 0);
+        absentWithoutTitle.MarkAbsentFromIsbndb(Now.AddDays(-1));
         fixture.Context.BookIsbndbRecords.Add(BookIsbndbRecord.Create(
             absentIsbn,
             Now.AddDays(-2),

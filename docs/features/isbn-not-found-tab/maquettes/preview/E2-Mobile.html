@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E2 ISBN non trouvés mobile</title>
+<style>:root{--admin-paper:#f7fbfe;--admin-paper-2:#e9f4fb;--admin-white:#fff;--admin-ink:#072b45;--admin-slate:#4e6c84;--admin-muted:#6d8ba2;--admin-mist:#9dc2da;--admin-line:#d9e9f4;--admin-line-soft:#e2eef7;--admin-blue:#0c6ea6;--admin-blue-bright:#1497d6;--admin-cyan:#7fd8f5;--admin-orange:#f0801c;--admin-orange-dark:#dc6412;--admin-red:#b02a33}
+*{box-sizing:border-box}
+body{margin:0;background:var(--admin-paper);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;background:none;border:0;padding:0;color:inherit}
+.pg{font-family:'Libre Franklin',system-ui,sans-serif;color:var(--admin-ink);background:var(--admin-paper);overflow:hidden}
+.top{display:flex;align-items:center;gap:14px;height:85px;padding:0 32px;border-bottom:1px solid var(--admin-line)}
+.logo{width:42px;height:42px;border-radius:999px;background:linear-gradient(205deg,#7fd8f5,#1497d6 26%,#0c6ea6 52%,#062a44);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace}
+.brand{font:400 18px/1 'Newsreader',Georgia,serif}
+.tag{margin-left:8px;padding:6px 12px;border-radius:999px;background:var(--admin-ink);color:var(--admin-cyan);font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase}
+.lay{display:flex;align-items:stretch}
+.side{flex:0 0 296px;padding:30px 18px 38px;border-right:1px solid var(--admin-line);background:var(--admin-paper-2)}
+.sb-rule{display:block;width:38px;height:3px;margin:0 14px 12px;background:linear-gradient(90deg,var(--admin-blue-bright),var(--admin-orange))}
+.sb-k{display:block;padding:0 14px;color:var(--admin-blue);font:500 9.5px/1.2 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase}
+.sb-t{margin:6px 0 14px;padding:0 14px;font:500 32px/1 'Newsreader',Georgia,serif;letter-spacing:-.03em}
+.sb-s{display:inline-flex;height:24px;align-items:center;margin:0 14px 28px;padding:0 9px;border:1px solid #b9ddc6;border-radius:999px;background:#f2fbf5;color:#18703a;font:500 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+.ng+.ng{margin-top:28px}
+.nl{display:block;margin:0 0 9px;padding:0 14px;color:var(--admin-slate);font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:11px;height:42px;padding:0 14px;border-left:3px solid transparent;color:var(--admin-slate);font-size:13.5px}
+.ni.on{padding-left:11px;border-left-color:var(--admin-orange);background:#fff;color:var(--admin-ink);font-weight:600}
+.ic{flex:none;width:17px;height:17px;border:1.55px solid var(--admin-blue);border-radius:4px}
+.bd{margin-left:auto;min-width:22px;min-height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;border-radius:999px;background:#fce5cd;color:var(--admin-orange-dark);font:500 10px/1 'IBM Plex Mono',monospace}
+.main{flex:1 1 auto;min-width:0;padding:44px 64px 64px}
+.view{max-width:1190px;margin:0 auto}
+.hd{display:flex;flex-direction:column;gap:13px}
+.acc{display:block;width:56px;height:3px;border-radius:999px;background:linear-gradient(90deg,var(--admin-blue-bright),var(--admin-cyan) 50%,var(--admin-orange))}
+.kick,.sk{font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--admin-orange-dark)}
+h1{margin:0;font:500 40px/1.05 'Newsreader',Georgia,serif}
+h2{margin:6px 0 0;font:500 25px 'Newsreader',Georgia,serif}
+.intro{max-width:820px;margin:0;color:var(--admin-slate);font-size:15.5px;line-height:1.55}
+.sh{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-top:40px}
+.sh p{margin:6px 0 0;color:var(--admin-slate);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chip{min-height:36px;display:inline-flex;align-items:center;padding:0 15px;border:1px solid var(--admin-line);border-radius:999px;color:var(--admin-slate);font-size:12.5px}
+.chip.on{border-color:var(--admin-ink);background:var(--admin-ink);color:#fff}
+.fl{color:var(--admin-slate);font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-right:6px}
+.tb{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border:1px solid transparent;border-radius:999px;font:600 13.5px/1.1 'Libre Franklin',sans-serif;white-space:nowrap}
+.btn-o{border-color:var(--admin-mist);color:var(--admin-blue)}
+.btn-p{background:var(--admin-orange);color:#fff}
+.btn-x{opacity:.48;cursor:not-allowed}
+.lnk{color:var(--admin-blue);font-weight:600;font-size:14px}
+.dng{color:var(--admin-red);font-weight:600;font-size:13.5px}
+.row{display:flex;align-items:center;gap:24px;padding:19px 0;border-bottom:1px solid var(--admin-line-soft)}
+.rm{min-width:0;flex:1 1 420px}
+.tl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.isbn{font:600 15px 'IBM Plex Mono',monospace;letter-spacing:.04em}
+.pill{display:inline-flex;padding:4px 10px;border:1px solid var(--admin-line);border-radius:999px;color:var(--admin-blue);font:600 9px/1.15 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+.pill.pend{border-color:var(--admin-blue-bright)}
+.pill.fail{border-color:var(--admin-red);color:var(--admin-red)}
+.pill.nf{border-color:var(--admin-orange);color:var(--admin-orange-dark)}
+.rs{margin:7px 0 0;color:var(--admin-slate);font-size:14px}
+.dt{display:block;margin-top:7px;color:var(--admin-muted);font:10.5px/1.4 'IBM Plex Mono',monospace}
+.acts{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.emp{margin-top:20px;padding:34px 28px;border:1px dashed var(--admin-mist);border-radius:4px;text-align:center;background:#fff}
+.emp h2{font-size:22px;margin:0 0 6px}
+.emp p{margin:0;color:var(--admin-slate);font-size:14.5px}
+.st{margin:24px 0 0;padding:16px 18px;border:1px solid var(--admin-line);border-radius:4px;background:#fff;color:var(--admin-slate);font-size:14.5px}
+.st.er{border-color:rgba(176,42,51,.35);background:#fff7f7;color:var(--admin-red)}
+.pgr{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:26px;color:var(--admin-slate);font-size:13.5px}
+.pgr b{display:inline-flex;width:38px;height:38px;align-items:center;justify-content:center;border:1px solid var(--admin-line);border-radius:999px;color:var(--admin-blue);font-weight:400}
+.msel{display:block;padding:14px 24px;background:var(--admin-paper-2);border-bottom:1px solid var(--admin-line)}
+.msel .box{display:flex;align-items:center;justify-content:space-between;height:44px;margin-top:8px;padding:0 14px;border:1px solid var(--admin-mist);border-radius:4px;background:#fff;font-size:14px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.card{padding:20px;border:1px solid var(--admin-line);border-radius:4px;background:#fff}
+.lab{display:block;margin-bottom:10px;color:var(--admin-muted);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.pg .main{padding:28px 24px 40px}.pg h1{font-size:32px}.pg .row{flex-direction:column;align-items:flex-start;gap:14px}.pg .sh{margin-top:30px}.pg .tb .btn{flex:1 1 140px}</style>
+</head>
+<body>
+<div class="pg" style="width:390px;height:1300px">
+<div class="top" style="height:64px;padding:0 24px"><span class="logo" style="width:34px;height:34px">VPD</span><span class="brand" style="font-size:16px">Vole Papillon d'Amour</span></div>
+<label class="msel"><span class="lab" style="margin:0">Aller à une rubrique</span><span class="box"><span>ISBN non trouvés (214)</span><span aria-hidden="true">▾</span></span></label>
+<main class="main"><section class="view">
+<div class="hd"><span class="acc"></span><span class="kick">Le fonds de livres</span>
+<h1 id="admin-title" data-zone="E2-titre-mobile">ISBN non trouvés.</h1>
+<p class="intro" style="font-size:14.5px" data-zone="E2-intro-mobile">Aucune source (ISBNdb, BnF, Open Library, Google Books) ne connaît ces ISBN. Exportez la liste, faites-la compléter par un agent, puis réimportez le fichier : chaque ligne est vérifiée avant d’être enregistrée.</p></div>
+<div class="sh"><div><span class="sk">À compléter</span><h2 data-zone="E2-compteur-mobile">214 ISBN sans notice trouvée</h2></div></div>
+<div class="tb" data-zone="E2-barre-actions-mobile"><button class="btn btn-o" type="button" data-zone="E2-bouton-exporter-mobile">Exporter en CSV</button><button class="btn btn-p" type="button" data-zone="E2-bouton-importer-mobile">Importer un CSV</button><button class="lnk" type="button" aria-expanded="false" data-zone="E2-lien-format-mobile">Format du fichier ▾</button></div>
+<div role="list" style="margin-top:12px" data-zone="E2-liste-mobile">
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782070368228</span><span class="pill nf">Non trouvé</span></div><p class="rs">Aucune notice bibliographique trouvée pour cet ISBN.</p><span class="dt">Dernier essai · 12 nov. 2026 à 03:14 · 3 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Compléter →</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782253004226</span><span class="pill nf">Non trouvé</span></div><p class="rs">Aucune notice bibliographique trouvée pour cet ISBN.</p><span class="dt">Dernier essai · 12 nov. 2026 à 03:14 · 3 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Compléter →</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+<article class="row" role="listitem"><div class="rm" style="flex:none;width:100%"><div class="tl"><span class="isbn">9782070413119</span><span class="pill nf">Non trouvé</span></div><p class="rs">Aucune notice bibliographique trouvée pour cet ISBN.</p><span class="dt">Dernier essai · 11 nov. 2026 à 22:05 · 2 tentatives</span></div><div class="acts"><button class="btn btn-o" type="button">Compléter →</button><button class="btn btn-o" type="button">Réessayer</button><button class="dng" type="button">Supprimer</button></div></article>
+</div>
+<nav class="pgr" aria-label="Pages des ISBN non trouvés"><b>←</b><span>Page 1 / 5</span><b>→</b></nav>
+</section></main>
+</div>
+</body>
+</html>

@@ -58,7 +58,11 @@ public sealed class GetIsbndbStatusQueryHandler(
                     book.MetadataStatus != BookMetadataStatus.Discarded &&
                     book.RedirectedToIsbn13 == null &&
                     book.MetadataSource != BookMetadataSource.Isbndb),
-                AbsentToComplete = group.Count(book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null),
+                AbsentToComplete = group.Count(book =>
+                    book.IsAbsentFromIsbndb &&
+                    book.IsbndbCompletedAt == null &&
+                    book.Title != null &&
+                    book.Title.Trim() != string.Empty),
             })
             .SingleOrDefaultAsync(cancellationToken);
         var pendingTotal = bookCounts?.PendingTotal ?? 0;

@@ -39,7 +39,9 @@ public sealed record CatalogAdminOverviewResponse(
     int? DeadStockCount,
     DateTimeOffset? DeadStockComputedAt,
     int UndatedAnnouncementCount,
-    int IsbndbAbsentToCompleteCount = 0);
+    int IsbndbAbsentToCompleteCount = 0,
+    int IsbnNotFoundCount = 0,
+    int IsbnFailedCount = 0);
 
 public sealed record AdminNavigationCountsResponse(
     int? OpenScanSessions,
@@ -50,7 +52,9 @@ public sealed record AdminNavigationCountsResponse(
     int? CatalogueBooks,
     int? IsbnQueue,
     int? IsbndbAbsentToComplete,
-    int PublishedRareBooks);
+    int PublishedRareBooks,
+    int IsbnNotFoundCount = 0,
+    int IsbnFailedCount = 0);
 
 public sealed record AdminAnnouncementResponse(
     Guid Id,
@@ -126,7 +130,42 @@ public sealed record AdminBookMetadataQueuePageResponse(
     IReadOnlyList<AdminBookMetadataQueueItemResponse> Items,
     int TotalCount,
     int Page,
+    int PageSize,
+    int FailedCount);
+
+public sealed record AdminIsbnNotFoundPageResponse(
+    IReadOnlyList<AdminIsbnNotFoundBookResponse> Items,
+    int TotalCount,
+    int Page,
     int PageSize);
+
+public sealed record AdminIsbnNotFoundBookResponse(
+    string Isbn13,
+    string? FailureReason,
+    int ResolveAttempts,
+    DateTimeOffset? LastAttemptAt);
+
+public sealed record AdminIsbnNotFoundImportPreviewResponse(
+    int DataRowCount,
+    int ReadyCount,
+    int WithoutAuthorCount,
+    int IgnoredCount,
+    int RejectedCount,
+    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections,
+    IReadOnlyList<string> ReadyIsbns);
+
+public sealed record AdminIsbnNotFoundImportRejectionResponse(
+    int RowNumber,
+    string Isbn,
+    string Reason);
+
+public sealed record AdminIsbnNotFoundImportResponse(
+    int DataRowCount,
+    int ImportedCount,
+    int WithoutAuthorCount,
+    int MarkedAbsentCount,
+    int RejectedCount,
+    IReadOnlyList<AdminIsbnNotFoundImportRejectionResponse> Rejections);
 
 public sealed record AdminBookMetadataQueueItemResponse(
     string Isbn13,

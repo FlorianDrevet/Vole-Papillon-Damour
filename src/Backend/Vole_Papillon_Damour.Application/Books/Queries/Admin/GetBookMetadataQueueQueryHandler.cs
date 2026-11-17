@@ -26,13 +26,28 @@ public sealed class GetBookMetadataQueueQueryHandler(
                 $"Page must be positive and page size must be between 1 and {MaximumPageSize}.");
         }
 
+        if (query.MetadataStatus is { } requestedStatus &&
+            requestedStatus is not (BookMetadataStatus.Pending or BookMetadataStatus.Failed))
+        {
+            return Error.Validation(
+                "Book.InvalidAdminMetadataStatus",
+                "Metadata status must be Pending or Failed.");
+        }
+
         var generatedAt = dateTimeProvider.UtcNow;
         if (generatedAt.Kind != DateTimeKind.Utc)
         {
             return Error.Validation("Book.InvalidClock", "The administration clock must be expressed in UTC.");
         }
 
-        var queue = AdminQueryPredicates.MetadataQueue(dbContext.Books.AsNoTracking());
+        // Keep the overview navigation count on its existing predicate, while moving
+        // NotFound records out of the interactive analysis queue.
+        var queue = AdminQueryPredicates.MetadataQueue(dbContext.Books.AsNoTracking())
+            .Where(book => book.MetadataStatus != BookMetadataStatus.NotFound);
+
+        var failedCount = await dbContext.Books
+            .AsNoTracking()
+            .CountAsync(book => book.MetadataStatus == BookMetadataStatus.Failed, cancellationToken);
 
         if (query.MetadataStatus is { } metadataStatus)
         {
@@ -60,6 +75,7 @@ public sealed class GetBookMetadataQueueQueryHandler(
             items,
             totalCount,
             query.Page,
-            query.PageSize);
+            query.PageSize,
+            failedCount);
     }
 }

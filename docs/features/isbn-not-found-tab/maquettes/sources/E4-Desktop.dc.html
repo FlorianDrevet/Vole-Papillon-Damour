@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E4 Navigation desktop et états</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.wrap{display:flex;gap:56px;padding:40px}.col{width:296px}.cap{margin:0 0 14px;color:var(--admin-slate);font-size:13.5px;line-height:1.5}.col .side{border:1px solid var(--admin-line);flex:none;width:296px}.note{width:360px;padding:20px;border:1px solid var(--admin-line);border-radius:4px;background:#fff;font-size:14px;line-height:1.55;color:var(--admin-slate)}.note h3{margin:0 0 8px;font:500 20px 'Newsreader',Georgia,serif;color:var(--admin-ink)}</style>
+</helmet>
+<div class="pg" style="width:1100px;height:1000px">
+<div class="wrap">
+<div class="col"><span class="lab">Nominal</span><p class="cap">Pastilles de comptage visibles uniquement quand la valeur est supérieure à 0.</p>
+<aside class="side" aria-label="Navigation administration">
+<span class="sb-rule"></span><span class="sb-k">Administration</span><h2 class="sb-t">Bourse aux livres</h2><span class="sb-s">Espace sécurisé</span>
+<div class="ng"><span class="nl">Pendant la bourse</span>
+<div class="ni"><i class="ic"></i>Tableau de bord</div><div class="ni"><i class="ic"></i>Sessions de scan<span class="bd">2</span></div><div class="ni"><i class="ic"></i>Désengorgement</div><div class="ni"><i class="ic"></i>Livres introuvables<span class="bd">12</span></div><div class="ni"><i class="ic"></i>Demandes manuelles<span class="bd">3</span></div></div>
+<div class="ng"><span class="nl">Le fonds de livres</span>
+<div class="ni" data-zone="E4-entree-catalogue-sans-pastille"><i class="ic"></i>Catalogue</div>
+<div class="ni on" data-zone="E4-entree-analyse"><i class="ic"></i>Analyse des ISBNs<span class="bd" data-zone="E4-badge-analyse">3</span></div>
+<div class="ni" data-zone="E4-entree-non-trouves"><i class="ic"></i>ISBN non trouvés<span class="bd" data-zone="E4-badge-non-trouves">214</span></div>
+<div class="ni" data-zone="E4-entree-hors-isbndb"><i class="ic"></i>Livres hors ISBNdb<span class="bd" data-zone="E4-badge-hors-isbndb">47</span></div>
+<div class="ni" data-zone="E4-entree-livres-rares-sans-pastille"><i class="ic"></i>Livres rares</div><div class="ni"><i class="ic"></i>Statistiques</div></div>
+<div class="ng"><span class="nl">Réservé à l'administration</span>
+<div class="ni"><i class="ic"></i>Comptes &amp; rôles</div><div class="ni"><i class="ic"></i>E-mail avant la bourse</div><div class="ni"><i class="ic"></i>Paramètres</div></div>
+</aside></div>
+<div class="col"><span class="lab">Tous les compteurs à 0</span><p class="cap">Aucune pastille, y compris « 0 ».</p>
+<aside class="side" aria-label="Navigation administration — compteurs à zéro" data-zone="E4-etat-zero">
+<span class="sb-rule"></span><span class="sb-k">Administration</span><h2 class="sb-t">Bourse aux livres</h2><span class="sb-s">Espace sécurisé</span>
+<div class="ng"><span class="nl">Pendant la bourse</span>
+<div class="ni"><i class="ic"></i>Tableau de bord</div><div class="ni"><i class="ic"></i>Sessions de scan</div><div class="ni"><i class="ic"></i>Désengorgement</div><div class="ni"><i class="ic"></i>Livres introuvables</div><div class="ni"><i class="ic"></i>Demandes manuelles</div></div>
+<div class="ng"><span class="nl">Le fonds de livres</span>
+<div class="ni"><i class="ic"></i>Catalogue</div><div class="ni on"><i class="ic"></i>Analyse des ISBNs</div><div class="ni"><i class="ic"></i>ISBN non trouvés</div><div class="ni"><i class="ic"></i>Livres hors ISBNdb</div><div class="ni"><i class="ic"></i>Livres rares</div><div class="ni"><i class="ic"></i>Statistiques</div></div>
+<div class="ng"><span class="nl">Réservé à l'administration</span>
+<div class="ni"><i class="ic"></i>Comptes &amp; rôles</div><div class="ni"><i class="ic"></i>E-mail avant la bourse</div><div class="ni"><i class="ic"></i>Paramètres</div></div>
+</aside></div>
+<div class="note"><h3>Ce qui change</h3><p>« ISBN en cours d’analyse » devient « Analyse des ISBNs ». « ISBN non trouvés » s’insère juste après.</p><p>La pastille d’« Analyse des ISBNs » compte les échecs uniquement (ici 3), quel que soit le filtre de la page.</p><p>Catalogue et Livres rares n’ont plus de pastille.</p></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

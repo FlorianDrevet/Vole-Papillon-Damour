@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E5 Livres hors ISBNdb états</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:40px}.g .card{min-height:300px}.g .emp{margin-top:14px}.cmp{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}.cmp>div{flex:1 1 300px;padding:16px;border:1px solid var(--admin-line);border-radius:4px}</style>
+</helmet>
+<div class="pg" style="width:1100px;height:900px">
+<div class="g">
+<section class="card" data-zone="E5-vide-a-completer"><span class="lab">Filtre « À compléter » · aucun livre</span><div class="chips"><span class="chip on">À compléter · 0</span><span class="chip">Complétées · 231</span></div><div class="emp"><h2>Aucun livre à compléter</h2><p>Les livres qu’ISBNdb ne connaît pas apparaîtront ici.</p></div></section>
+<section class="card" data-zone="E5-vide-completees"><span class="lab">Filtre « Complétées » · aucun livre</span><div class="chips"><span class="chip">À compléter · 47</span><span class="chip on">Complétées · 0</span></div><div class="emp"><h2>Aucun livre marqué comme complété</h2><p>Les livres qu’ISBNdb ne connaît pas apparaîtront ici.</p></div></section>
+<section class="card"><span class="lab">Chargement</span><p class="st" style="margin-top:0" role="status" data-zone="E5-chargement">Chargement des livres hors ISBNdb…</p><span class="lab" style="margin-top:26px">Erreur de chargement</span><p class="st er" role="alert" style="margin-top:0" data-zone="E5-erreur">Impossible de charger les livres hors ISBNdb. Réessayez dans un instant.</p></section>
+<section class="card" data-zone="E5-sans-titre-inconnu"><span class="lab">Avant / après (RG-04)</span><div class="cmp"><div><strong>Avant</strong><p style="margin:8px 0 0;color:var(--admin-slate);font-size:13.5px"><span class="isbn" style="font-size:12px">9782070368228</span><br><em>Titre inconnu</em> · Auteur non renseigné</p></div><div><strong>Après</strong><p style="margin:8px 0 0;color:var(--admin-slate);font-size:13.5px">Cette ligne n’apparaît plus : l’ISBN est dans <em>ISBN non trouvés</em>. Seuls les livres avec un titre restent listés.</p></div></div></section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

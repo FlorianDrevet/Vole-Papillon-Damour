@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E5 Livres hors ISBNdb mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.pg .main{padding:28px 24px 40px}.pg h1{font-size:32px}.cov{display:inline-block;width:40px;height:58px;margin-right:14px;border:1px solid var(--admin-line-soft);background:repeating-linear-gradient(135deg,#e9f4fb 0 8px,#f7fbfe 8px 16px);flex:none}.bk{display:flex;align-items:center}.bk strong{display:block;font-size:14.5px}.ml{display:block;margin:12px 0 4px;color:var(--admin-muted);font:500 9.5px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase}.mf{display:inline-block;margin:0 6px 4px 0;padding:3px 8px;border-radius:999px;background:#fce5cd;color:var(--admin-orange-dark);font:500 10px 'IBM Plex Mono',monospace}.gc{padding:18px 0;border-bottom:1px solid var(--admin-line-soft);font-size:13.5px;color:var(--admin-slate)}.in{height:42px;display:flex;align-items:center;padding:0 16px;border:1px solid var(--admin-line);border-radius:999px;background:#fff;color:var(--admin-muted);font-size:14px}</style>
+</helmet>
+<div class="pg" style="width:390px;height:1300px">
+<div class="top" style="height:64px;padding:0 24px"><span class="logo" style="width:34px;height:34px">VPD</span><span class="brand" style="font-size:16px">Vole Papillon d'Amour</span></div>
+<label class="msel"><span class="lab" style="margin:0">Aller à une rubrique</span><span class="box"><span>Livres hors ISBNdb (47)</span><span aria-hidden="true">▾</span></span></label>
+<main class="main"><section class="view">
+<div class="hd"><span class="acc"></span><span class="kick">Le fonds de livres</span>
+<h1 id="admin-title">Livres hors ISBNdb.</h1>
+<p class="intro" style="font-size:14.5px">ISBNdb ne connaît pas ces livres : leur fiche vient de la BnF, d’Open Library ou de Google Books et il manque souvent des informations. Complétez-les, puis marquez-les complétées pour relancer les recommandations.</p></div>
+<div class="chips" role="group" aria-label="Filtrer les livres hors ISBNdb" style="margin-top:24px"><button class="chip on" type="button" aria-pressed="true" data-zone="E5-filtre-a-completer-mobile">À compléter · 47</button><button class="chip" type="button" aria-pressed="false" data-zone="E5-filtre-completees-mobile">Complétées · 231</button></div>
+<div style="margin-top:16px" data-zone="E5-recherche-mobile"><span style="display:block;margin-bottom:6px;color:var(--admin-slate);font-size:12.5px">Rechercher un livre</span><div class="in">ISBN, titre ou auteur…</div></div>
+<div data-zone="E5-liste-mobile" style="margin-top:12px">
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782070413119</span><strong>Le Petit Prince</strong><span>Antoine de Saint-Exupéry</span></div></div><span class="ml">Fiche de secours</span>BnF<span class="ml">Champs manquants</span><span class="mf">Résumé</span><span class="mf">Pages</span><span class="ml">En stock</span>2 exemplaires<div style="margin-top:14px"><button class="btn btn-o" type="button" style="width:100%">Compléter →</button></div></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782253004226</span><strong>La Gloire de mon père</strong><span>Marcel Pagnol</span></div></div><span class="ml">Fiche de secours</span>Open Library<span class="ml">Champs manquants</span><span class="mf">Couverture</span><span class="mf">Genre</span><span class="ml">En stock</span>1 exemplaire<div style="margin-top:14px"><button class="btn btn-o" type="button" style="width:100%">Compléter →</button></div></article>
+<article class="gc"><div class="bk"><i class="cov"></i><div><span class="isbn" style="font-size:12px">9782266071529</span><strong>Les Fourmis</strong><span>Bernard Werber</span></div></div><span class="ml">Fiche de secours</span>Google Books<span class="ml">Champs manquants</span><span class="mf">Éditeur</span><span class="ml">En stock</span>Aucun<div style="margin-top:14px"><button class="btn btn-o" type="button" style="width:100%">Compléter →</button></div></article>
+</div>
+<nav class="pgr" aria-label="Pages des livres hors ISBNdb"><b>←</b><span>Page 1 / 16</span><b>→</b></nav>
+</section></main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

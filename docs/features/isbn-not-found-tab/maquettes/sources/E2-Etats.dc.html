@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E2 ISBN non trouvés états</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:40px}.ct{width:100%;border-collapse:collapse;font-size:13px}.ct th{padding:8px 10px;border-bottom:1px solid var(--admin-line);text-align:left;color:var(--admin-muted);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase}.ct td{padding:8px 10px;border-bottom:1px solid var(--admin-line-soft);vertical-align:top}.ct td:first-child{font:500 12px 'IBM Plex Mono',monospace;white-space:nowrap}.g .emp{margin-top:14px}</style>
+</helmet>
+<div class="pg" style="width:1100px;height:1300px">
+<div class="g">
+<section class="card" style="grid-column:1 / -1" data-zone="E2-aide-format"><span class="lab">Aide « Format du fichier » dépliée</span>
+<div class="tb" style="margin:0 0 14px"><button class="btn btn-o" type="button">Exporter en CSV</button><button class="btn btn-p" type="button">Importer un CSV</button><button class="lnk" type="button" aria-expanded="true">Format du fichier ▴</button></div>
+<p style="margin:0 0 12px;color:var(--admin-slate);font-size:14px;line-height:1.5">CSV séparé par des points-virgules, UTF-8, première ligne = en-têtes. Ne modifiez ni l’ordre ni les noms des colonnes ni la colonne ISBN. Seul le titre est obligatoire ; laissez vide ce que vous ne savez pas. Sans auteur, la fiche sera enregistrée mais restera « à compléter » dans Livres hors ISBNdb.</p>
+<table class="ct"><tr><th>Colonne</th><th>Contenu attendu</th><th>Limite</th></tr>
+<tr><td>ISBN</td><td>Pré-rempli, ne pas modifier</td><td>—</td></tr>
+<tr><td>Titre</td><td>Titre du livre — obligatoire</td><td>500 caractères</td></tr>
+<tr><td>Auteurs</td><td>Auteur(s), séparés par une virgule</td><td>500 caractères</td></tr>
+<tr><td>Editeur</td><td>Maison d’édition</td><td>200 caractères</td></tr>
+<tr><td>Annee_publication</td><td>Année, nombre entier</td><td>1 à 9999</td></tr>
+<tr><td>Format</td><td>Poche, grand format…</td><td>50 caractères</td></tr>
+<tr><td>Langue</td><td>Code langue, ex. fr</td><td>10 caractères</td></tr>
+<tr><td>Genre_principal</td><td>Un genre</td><td>100 caractères</td></tr>
+<tr><td>Genres</td><td>Plusieurs genres séparés par « | »</td><td>100 caractères chacun</td></tr>
+<tr><td>Resume</td><td>Quatrième de couverture</td><td>20 000 caractères</td></tr>
+<tr><td>Pages</td><td>Nombre de pages, entier</td><td>1 à 100 000</td></tr>
+<tr><td>Edition</td><td>Mention d’édition</td><td>100 caractères</td></tr>
+<tr><td>Couverture_URL</td><td>Adresse web (https) de l’image</td><td>URL valide</td></tr></table></section>
+<section class="card" data-zone="E2-vide"><span class="lab">Liste vide</span><div class="tb" style="margin:0"><button class="btn btn-o btn-x" type="button" disabled data-zone="E2-export-desactive">Exporter en CSV</button><button class="btn btn-p" type="button">Importer un CSV</button></div><div class="emp"><h2>Aucun ISBN sans notice</h2><p>Les ISBN pour lesquels aucune source n’a trouvé de notice apparaîtront ici.</p></div></section>
+<section class="card"><span class="lab">Chargement</span><p class="st" style="margin-top:0" role="status" data-zone="E2-chargement">Chargement des ISBN non trouvés…</p><span class="lab" style="margin-top:26px">Erreur de chargement</span><p class="st er" role="alert" style="margin-top:0" data-zone="E2-erreur">Impossible de charger les ISBN non trouvés. Réessayez dans un instant.</p><span class="lab" style="margin-top:26px">Export en cours</span><p class="st" style="margin-top:0" role="status">Préparation du fichier… 214 ISBN.</p></section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -93,6 +93,32 @@ public sealed class GetIsbndbAbsentBooksQueryHandlerTests
             .Should().ContainSingle().Which.Should().Be("Robinsonades");
     }
 
+    [Fact]
+    public async Task Handle_ToCompleteExcludesTitlelessBooksAndKeepsTitledBooksWithoutAuthors()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var titleless = await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
+        titleless.MarkAbsentFromIsbndb(Now.AddDays(-1));
+        var titledWithoutAuthor = await fixture.AddBookAsync("9782253004226", quantityAvailable: 0);
+        titledWithoutAuthor.ApplyManualMetadata(
+            new BookMetadataPatch("Titre présent", null, null, null, null, null, null, null,
+                [BookMetadataField.Title]),
+            Now);
+        titledWithoutAuthor.MarkAbsentFromIsbndb(Now);
+        fixture.Context.Books.Update(titledWithoutAuthor);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await new GetIsbndbAbsentBooksQueryHandler(fixture.Context).Handle(
+            new GetIsbndbAbsentBooksQuery("to-complete", null, 1, 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(1);
+        result.Value.Items.Should().ContainSingle(item => item.Isbn13 == titledWithoutAuthor.Id.Value);
+        result.Value.Items.Single().MissingFields.Should().Contain("Authors");
+        result.Value.Items.Should().NotContain(item => item.Isbn13 == titleless.Id.Value);
+    }
+
     private static Book CreateAbsentBook(string isbn, DateTime firstSeenAt, string title, string authors, string source)
     {
         Isbn13.TryCreate(isbn, out var isbn13).Should().BeTrue();

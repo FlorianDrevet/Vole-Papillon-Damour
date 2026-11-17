@@ -56,6 +56,8 @@ import {ManualRequesterDetailComponent} from './manual-requests/manual-requester
 import {ManualRequestAddDialogComponent} from './manual-requests/manual-request-add-dialog.component';
 import {ManualRequestDecisionDialogComponent} from './manual-requests/manual-request-decision-dialog.component';
 import {IsbndbAbsentViewComponent} from './isbndb/isbndb-absent-view.component';
+import {IsbnNotFoundViewComponent} from './isbn-not-found/isbn-not-found-view.component';
+import {IsbnNotFoundImportDialogComponent} from './isbn-not-found/isbn-not-found-import-dialog.component';
 import {IsbndbStatusCardComponent} from './isbndb/isbndb-status-card.component';
 import {FairDigestAdminComponent} from './fair-digest/fair-digest-admin.component';
 
@@ -254,7 +256,8 @@ describe('CatalogAdministrationPageComponent', () => {
     routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
+      'getOverview', 'getNavigationCounts', 'getBooks', 'getBook', 'getBookMetadataQueue', 'getIsbnNotFoundBooks',
+      'previewIsbnNotFoundImport', 'importIsbnNotFound', 'retryBookMetadata',
       'getIsbndbStatus', 'getIsbndbAbsentBooks', 'setIsbndbCompletion', 'recheckIsbndbBook',
       'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook', 'permanentlyDeleteBook',
@@ -291,6 +294,9 @@ describe('CatalogAdministrationPageComponent', () => {
       deadStockCount: null,
       deadStockComputedAt: null,
       undatedAnnouncementCount: 0,
+      isbndbAbsentToCompleteCount: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
     } as CatalogAdminOverview));
     api.getNavigationCounts.and.returnValue(of({
       openScanSessions: 0,
@@ -300,11 +306,14 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     } as CatalogAdminNavigationCounts));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
-    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
+    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0} as CatalogAdminBookMetadataQueue));
+    api.getIsbnNotFoundBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5}));
     api.getIsbndbStatus.and.returnValue(of(isbndbStatus()));
     api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5} as CatalogAdminIsbndbAbsentBooksPage));
     api.setIsbndbCompletion.and.returnValue(of({isbn13: '9782070363735', isCompleted: true, completedAt: null, completedBy: null, changed: true}));
@@ -407,6 +416,8 @@ describe('CatalogAdministrationPageComponent', () => {
         CatalogAdministrationPageComponent,
         IsbndbStatusCardComponent,
         IsbndbAbsentViewComponent,
+        IsbnNotFoundViewComponent,
+        IsbnNotFoundImportDialogComponent,
         FairDigestAdminComponent,
         CatalogCoverDirective,
         AdminRareBooksComponent,
@@ -521,7 +532,8 @@ describe('CatalogAdministrationPageComponent', () => {
       'Livres introuvables',
       'Demandes manuelles',
       'Catalogue',
-      'ISBN en cours d’analyse',
+      'Analyse des ISBNs',
+      'ISBN non trouvés',
       'Livres hors ISBNdb',
       'Livres rares',
       'Statistiques',
@@ -557,6 +569,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -583,6 +597,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 1,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -607,6 +623,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 2,
       catalogueBooks: 84,
       isbnQueue: 7,
+      isbnFailedCount: 2,
+      isbnNotFoundCount: 5,
       isbndbAbsentToComplete: 4,
       publishedRareBooks: 12,
     }));
@@ -616,15 +634,23 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.activeSection()).toBe('overview');
-    expect(fixture.componentInstance.navBadge('catalogue')).toBe('84');
-    expect(fixture.componentInstance.navBadge('isbn-queue')).toBe('7');
+    expect(fixture.componentInstance.navBadge('catalogue')).toBeNull();
+    expect(fixture.componentInstance.navBadge('isbn-queue')).toBe('2');
+    expect(fixture.componentInstance.navBadge('isbn-not-found')).toBe('5');
     expect(fixture.componentInstance.navBadge('isbndb-absent')).toBe('4');
-    expect(fixture.componentInstance.navBadge('rare-books')).toBe('12');
+    expect(fixture.componentInstance.navBadge('rare-books')).toBeNull();
     expect(fixture.componentInstance.navBadge('sessions')).toBe('3');
     expect(fixture.componentInstance.navBadge('not-found')).toBe('2');
     expect(fixture.componentInstance.navBadge('manual-requests')).toBe('4');
-    expect(fixture.nativeElement.querySelector('a[href="/administration/catalogue"] .admin-nav-badge')?.textContent.trim()).toBe('84');
-    expect(fixture.nativeElement.querySelector('option[value="catalogue"]')?.textContent.trim()).toBe('Catalogue (84)');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/catalogue"] .admin-nav-badge')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/administration/isbn-queue"] .admin-nav-badge')?.textContent.trim()).toBe('2');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/isbn-not-found"] .admin-nav-badge')?.textContent.trim()).toBe('5');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/isbndb-absent"] .admin-nav-badge')?.textContent.trim()).toBe('4');
+    expect(fixture.nativeElement.querySelector('a[href="/administration/rare-books"] .admin-nav-badge')).toBeNull();
+    expect(fixture.nativeElement.querySelector('option[value="catalogue"]')?.textContent.trim()).toBe('Catalogue');
+    expect(fixture.nativeElement.querySelector('option[value="isbn-queue"]')?.textContent.trim()).toBe('Analyse des ISBNs (2)');
+    expect(fixture.nativeElement.querySelector('option[value="isbn-not-found"]')?.textContent.trim()).toBe('ISBN non trouvés (5)');
+    expect(fixture.nativeElement.querySelector('option[value="rare-books"]')?.textContent.trim()).toBe('Livres rares');
     expect(api.getNavigationCounts).toHaveBeenCalledOnceWith('access-token');
     expect(api.getOverview).toHaveBeenCalledOnceWith('access-token', undefined, undefined, true);
     expect(api.getIsbndbStatus).toHaveBeenCalledOnceWith('access-token');
@@ -884,10 +910,10 @@ describe('CatalogAdministrationPageComponent', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(api.getBookMetadataQueue).toHaveBeenCalledTimes(2);
-    newestQueue.next({generatedAt: 'newest-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    newestQueue.next({generatedAt: 'newest-queue', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0});
     newestQueue.complete();
     await newestQueueRequest;
-    staleQueue.next({generatedAt: 'stale-queue', items: [], totalCount: 0, page: 1, pageSize: 50});
+    staleQueue.next({generatedAt: 'stale-queue', items: [], totalCount: 0, page: 1, pageSize: 50, failedCount: 0});
     staleQueue.complete();
     await staleQueueRequest;
     expect(fixture.componentInstance.isbnMetadataQueue()?.generatedAt).toBe('newest-queue');
@@ -943,6 +969,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 2,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -976,6 +1004,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     }));
@@ -1017,6 +1047,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/manual-requests',
       '/administration/catalogue',
       '/administration/isbn-queue',
+      '/administration/isbn-not-found',
       '/administration/isbndb-absent',
       '/administration/rare-books',
       '/administration/statistics',
@@ -1076,18 +1107,45 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getDeadStock).not.toHaveBeenCalled();
   });
 
-  it('offers a separate navigation entry for ISBN that are still being analyzed', () => {
+  it('places ISBN not found immediately after ISBN analysis in navigation', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.navItems.filter(item => item.id === 'catalogue')).toEqual([
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
     ]);
-    expect(fixture.componentInstance.navItems.filter(item => item.id === 'isbn-queue')).toEqual([
-      {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
-    ]);
-    expect(fixture.componentInstance.navItems.filter(item => item.id === 'isbndb-absent')).toEqual([
-      {id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'},
-    ]);
+    const navItems = fixture.componentInstance.navItems;
+    const analysisIndex = navItems.findIndex(item => item.label === 'Analyse des ISBNs');
+    expect(analysisIndex).toBeGreaterThanOrEqual(0);
+    expect(navItems[analysisIndex + 1]?.label).toBe('ISBN non trouvés');
+    expect(navItems[analysisIndex + 2]).toEqual({id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'});
+  });
+
+  it('shows only nonzero badges and counts queue failures independent of its selected filter', () => {
+    const component = fixture.componentInstance;
+    component.metadataQueueFilter = 'pending';
+    component.isbnMetadataQueue.set({
+      generatedAt: '', items: [], totalCount: 7, page: 1, pageSize: 50, failedCount: 3,
+    });
+    component.navigationBadgeCounts.set({
+      openScanSessions: 0,
+      notFoundOpenTargets: 0,
+      notFoundOverdueTargets: 0,
+      manualRequestsFound: 0,
+      manualRequestsFoundOverdue: 0,
+      catalogueBooks: 84,
+      isbnQueue: 3,
+      isbnNotFoundCount: 2,
+      isbnFailedCount: 3,
+      isbndbAbsentToComplete: 0,
+      publishedRareBooks: 12,
+    });
+    const navBadge = component.navBadge as (section: string) => string | null;
+
+    expect(navBadge.call(component, 'isbn-queue')).toBe('3');
+    expect(navBadge.call(component, 'isbn-not-found')).toBe('2');
+    expect(navBadge.call(component, 'isbndb-absent')).toBeNull();
+    expect(navBadge.call(component, 'catalogue')).toBeNull();
+    expect(navBadge.call(component, 'rare-books')).toBeNull();
   });
 
   it('loads the ISBNdb absent-books workspace and opens the selected book from that list', async () => {
@@ -1182,6 +1240,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     });
@@ -1215,6 +1275,7 @@ describe('CatalogAdministrationPageComponent', () => {
       totalCount: 1,
       page: 1,
       pageSize: 50,
+      failedCount: 1,
     } as CatalogAdminBookMetadataQueue));
     fixture.detectChanges();
 
@@ -1222,6 +1283,9 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const row = fixture.nativeElement.querySelector('[data-testid="isbn-analysis-9782070363735"]') as HTMLElement;
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Analyse des ISBNs.');
+    expect(fixture.nativeElement.querySelector('.admin-intro')?.textContent).toContain('Les échecs affichent leur motif');
+    expect(fixture.nativeElement.querySelector('.admin-intro a[href="/administration/isbn-not-found"]')?.textContent).toContain('ISBN non trouvés →');
     expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 50});
     expect(row.textContent).toContain('9782070363735');
     expect(row.textContent).toContain('Échec');
@@ -1241,10 +1305,16 @@ describe('CatalogAdministrationPageComponent', () => {
       totalCount: 0,
       page: 1,
       pageSize: 50,
+      failedCount: 0,
     } as CatalogAdminBookMetadataQueue));
     fixture.detectChanges();
 
     await fixture.componentInstance.selectSection('isbn-queue');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.isbn-queue-filters .period-chip')).toHaveSize(3);
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-not-found"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN à vérifier');
+
     fixture.componentInstance.metadataQueuePage = 2;
     fixture.detectChanges();
     const failedFilter = fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-failed"]') as HTMLButtonElement;
@@ -1266,18 +1336,12 @@ describe('CatalogAdministrationPageComponent', () => {
       metadataStatus: 'Pending',
     });
 
-    const notFoundFilter = fixture.nativeElement.querySelector('[data-testid="isbn-queue-filter-not-found"]') as HTMLButtonElement | null;
-    expect(notFoundFilter).not.toBeNull();
-    await fixture.componentInstance.setIsbnMetadataQueueFilter('not-found');
-
-    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {
-      page: 1,
-      pageSize: 50,
-      metadataStatus: 'NotFound',
-    });
     fixture.detectChanges();
-    expect(notFoundFilter?.getAttribute('aria-pressed')).toBe('true');
-    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN sans notice');
+    expect(fixture.nativeElement.textContent).toContain('Aucun ISBN en cours');
+
+    await fixture.componentInstance.setIsbnMetadataQueueFilter('failed');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Aucun échec');
   });
 
   it('retries an ISBN from its analysis row and refreshes the queue', async () => {
@@ -1312,9 +1376,65 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.selectedBook()?.isbn13).toBe(book.isbn13);
-    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('ISBN en cours d’analyse');
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Analyse des ISBNs');
     expect(fixture.nativeElement.textContent).not.toContain('Titre à compléter');
     expect(fixture.nativeElement.querySelector('input[type="file"][accept*="image/jpeg"]')).not.toBeNull();
+  });
+
+  it('opens an ISBN not found from its tab and returns to that tab from the fiche', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const isbn13 = '9782070368228';
+    api.getBook.and.returnValue(of(catalogueBook({isbn13, title: null, metadataStatus: 'NotFound'})));
+    api.getIsbnNotFoundBooks.and.returnValue(of({
+      items: [{isbn13, failureReason: 'Aucune notice bibliographique trouvée pour cet ISBN.', resolveAttempts: 2, lastAttemptAt: null}],
+      totalCount: 1,
+      page: 1,
+      pageSize: 5,
+    }));
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    fixture.detectChanges();
+    fixture.componentInstance.activeSection.set('isbn-not-found');
+    fixture.componentInstance.isbnNotFoundAccessToken.set('access-token');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="isbn-not-found-open-book"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedBook()?.isbn13).toBe(isbn13);
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('ISBN non trouvés');
+
+    fixture.componentInstance.closeBookDetail();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('isbn-not-found');
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-view"]')).not.toBeNull();
+  });
+
+  it('opens and closes the CSV import dialog from ISBN non trouvés', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    fixture.componentInstance.activeSection.set('isbn-not-found');
+    fixture.componentInstance.isbnNotFoundAccessToken.set('access-token');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-view"]')).not.toBeNull();
+    const openDialog = spyOn(fixture.componentInstance, 'openIsbnNotFoundImportDialog').and.callThrough();
+    (fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import"]') as HTMLButtonElement).click();
+    expect(openDialog).toHaveBeenCalled();
+    expect(fixture.componentInstance.isbnNotFoundImportOpen()).toBeTrue();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import-dialog"]')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('[data-testid="isbn-import-cancel"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="isbn-not-found-import-dialog"]')).toBeNull();
   });
 
   it('previews a selected cover and uploads it separately from metadata', async () => {
@@ -1405,6 +1525,9 @@ describe('CatalogAdministrationPageComponent', () => {
       deadStockCount: 287,
       deadStockComputedAt: '2026-09-04T12:00:00Z',
       undatedAnnouncementCount: 7,
+      isbndbAbsentToCompleteCount: 4,
+      isbnNotFoundCount: 5,
+      isbnFailedCount: 2,
     } as CatalogAdminOverview));
 
     fixture.detectChanges();
@@ -1504,6 +1627,8 @@ describe('CatalogAdministrationPageComponent', () => {
       manualRequestsFoundOverdue: 0,
       catalogueBooks: 0,
       isbnQueue: 0,
+      isbnNotFoundCount: 0,
+      isbnFailedCount: 0,
       isbndbAbsentToComplete: 0,
       publishedRareBooks: 0,
     });

@@ -18,7 +18,9 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
         failed.RecordMetadataProviderFailure(
             ScanBookCommandHandlerTests.ReceivedAt,
             "Le fournisseur de notices est indisponible.");
-        var completed = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        var notFound = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        notFound.RecordMetadataNotFound(ScanBookCommandHandlerTests.ReceivedAt);
+        var completed = await fixture.AddBookAsync("9782253004226", quantityAvailable: 1);
         completed.ApplyManualMetadata(
             new BookMetadataPatch("Livre complet", null, null, null, null, null, null, null,
                 [BookMetadataField.Title]),
@@ -40,6 +42,54 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
             .Should().BeEquivalentTo(pending.Isbn13.Value, failed.Isbn13.Value);
         result.Value.Items.Single(item => item.Isbn13 == failed.Isbn13.Value)
             .FailureReason.Should().Be("Le fournisseur de notices est indisponible.");
+    }
+
+    [Fact]
+    public async Task Handle_ReportsFailureCountIndependentOfSelectedFilter()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var failed = await fixture.AddBookAsync("9782070408504", quantityAvailable: 1);
+        failed.RecordMetadataProviderFailure(
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "Le fournisseur de notices est indisponible.");
+        var anotherFailed = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        anotherFailed.RecordMetadataProviderFailure(
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "Aucune notice bibliographique exploitable.");
+        var discarded = await fixture.AddBookAsync("9782253006329", quantityAvailable: 1);
+        discarded.RecordMetadataProviderFailure(
+            ScanBookCommandHandlerTests.ReceivedAt,
+            "Notice non exploitable.");
+        discarded.DiscardMetadataCandidate(ScanBookCommandHandlerTests.ReceivedAt);
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetBookMetadataQueueQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetBookMetadataQueueQuery(MetadataStatus: BookMetadataStatus.Pending),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(1);
+        result.Value.FailedCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Handle_RejectsNotFoundAsAMetadataStatusFilter()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetBookMetadataQueueQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetBookMetadataQueueQuery(MetadataStatus: BookMetadataStatus.NotFound),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
     }
 
     [Fact]

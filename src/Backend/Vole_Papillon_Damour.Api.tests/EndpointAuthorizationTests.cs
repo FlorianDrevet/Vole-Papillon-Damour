@@ -284,15 +284,19 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
-    public void Book_metadata_queue_and_retry_require_administration_policy()
+    public void Book_metadata_queue_and_isbn_not_found_endpoints_require_administration_policy()
     {
         var endpoints = RegisteredEndpoints()
             .Where(endpoint => RouteOf(endpoint) is
                 "/books/admin/books/metadata-queue" or
+                "/books/admin/books/isbn-not-found" or
+                "/books/admin/books/isbn-not-found/export" or
+                "/books/admin/books/isbn-not-found/import/preview" or
+                "/books/admin/books/isbn-not-found/import" or
                 "/books/admin/books/{isbn13}/metadata/retry")
             .ToList();
 
-        endpoints.Should().HaveCount(2);
+        endpoints.Should().HaveCount(6);
         endpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
         endpoints.SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
             .Should().Contain(data => data.Policy == "Administration");

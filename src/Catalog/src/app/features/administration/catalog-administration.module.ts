@@ -18,6 +18,8 @@ import {ManualRequestDecisionDialogComponent} from './manual-requests/manual-req
 import {IsbndbAbsentViewComponent} from './isbndb/isbndb-absent-view.component';
 import {IsbndbStatusCardComponent} from './isbndb/isbndb-status-card.component';
 import {FairDigestAdminComponent} from './fair-digest/fair-digest-admin.component';
+import {IsbnNotFoundViewComponent} from './isbn-not-found/isbn-not-found-view.component';
+import {IsbnNotFoundImportDialogComponent} from './isbn-not-found/isbn-not-found-import-dialog.component';
 
 const routes: Routes = [
   {path: '', component: CatalogAdministrationPageComponent},
@@ -35,6 +37,8 @@ const routes: Routes = [
     ManualRequestAddDialogComponent,
     ManualRequestDecisionDialogComponent,
     IsbndbAbsentViewComponent,
+    IsbnNotFoundViewComponent,
+    IsbnNotFoundImportDialogComponent,
     IsbndbStatusCardComponent,
     FairDigestAdminComponent,
     NotFoundReportCloseDialogComponent,

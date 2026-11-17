@@ -29,6 +29,9 @@ import {
   CatalogManualRequesterDeletion,
   CatalogAdminIsbndbStatus,
   CatalogAdminIsbndbAbsentBooksPage,
+  CatalogAdminIsbnNotFoundImportPreview,
+  CatalogAdminIsbnNotFoundImportResult,
+  CatalogAdminIsbnNotFoundPage,
 } from './catalog.models';
 
 describe('CatalogAdminApiService', () => {
@@ -48,6 +51,85 @@ describe('CatalogAdminApiService', () => {
   });
 
   afterEach(() => http.verify());
+
+  it('loads the paged ISBN-not-found list', () => {
+    const response: CatalogAdminIsbnNotFoundPage = {
+      items: [{isbn13: '9782070363735', failureReason: 'Introuvable', resolveAttempts: 2, lastAttemptAt: null}],
+      totalCount: 1,
+      page: 2,
+      pageSize: 10,
+    };
+
+    service.getIsbnNotFoundBooks('access-token', {page: 2, pageSize: 10})
+      .subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/books/admin/books/isbn-not-found?page=2&pageSize=10`,
+    );
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('downloads all ISBN-not-found rows as a Blob', () => {
+    const response = new Blob(['ISBN;Titre'], {type: 'text/csv'});
+
+    service.exportIsbnNotFoundCsv('access-token').subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/isbn-not-found/export`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('previews a CSV file with multipart form data', () => {
+    const file = new File(['ISBN;Titre'], 'not-found.csv', {type: 'text/csv'});
+    const response: CatalogAdminIsbnNotFoundImportPreview = {
+      dataRowCount: 1,
+      readyCount: 1,
+      withoutAuthorCount: 0,
+      ignoredCount: 0,
+      rejectedCount: 0,
+      rejections: [],
+      readyIsbns: ['9782070363735'],
+    };
+
+    service.previewIsbnNotFoundImport('access-token', file).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/isbn-not-found/import/preview`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body instanceof FormData).toBeTrue();
+    const uploadedFile = (request.request.body as FormData).get('file') as File;
+    expect(uploadedFile.name).toBe(file.name);
+    expect(uploadedFile.size).toBe(file.size);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('confirms an import with the ISBNs ready from the preview', () => {
+    const file = new File(['ISBN;Titre'], 'not-found.csv', {type: 'text/csv'});
+    const response: CatalogAdminIsbnNotFoundImportResult = {
+      dataRowCount: 1,
+      importedCount: 1,
+      withoutAuthorCount: 0,
+      markedAbsentCount: 1,
+      rejectedCount: 0,
+      rejections: [],
+    };
+
+    service.importIsbnNotFound('access-token', file, ['9782070363735'])
+      .subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(`${environment.apiUrl}/books/admin/books/isbn-not-found/import`);
+    expect(request.request.method).toBe('POST');
+    const uploadedFile = (request.request.body as FormData).get('file') as File;
+    expect(uploadedFile.name).toBe(file.name);
+    expect(uploadedFile.size).toBe(file.size);
+    expect((request.request.body as FormData).getAll('readyIsbns')).toEqual(['9782070363735']);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
 
   it('sends the admin token and the typed dead-stock filters', () => {
     const response: CatalogDeadStockResponse = {

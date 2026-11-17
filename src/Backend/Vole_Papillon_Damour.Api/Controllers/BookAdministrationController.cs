@@ -11,6 +11,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.CancelBookAlerts;
 using Vole_Papillon_Damour.Application.Books.Commands.DeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.PermanentlyDeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ForceBookAlerts;
+using Vole_Papillon_Damour.Application.Books.Commands.ImportIsbnNotFound;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
 using Vole_Papillon_Damour.Application.Books.Commands.UploadBookCover;
@@ -249,6 +250,138 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("GetAdminBookMetadataQueue")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/books/isbn-not-found",
+                    async (
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetIsbnNotFoundQuery(page ?? 1, pageSize ?? 50),
+                            cancellationToken);
+                        return result.Match(
+                            value => Results.Ok(new AdminIsbnNotFoundPageResponse(
+                                value.Items.Select(item => new AdminIsbnNotFoundBookResponse(
+                                    item.Isbn13,
+                                    item.FailureReason,
+                                    item.ResolveAttempts,
+                                    item.LastAttemptAt)).ToArray(),
+                                value.TotalCount,
+                                value.Page,
+                                value.PageSize)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminIsbnNotFoundBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/books/isbn-not-found/export",
+                    async (IMediator mediator, CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(new ExportIsbnNotFoundQuery(), cancellationToken);
+                        return result.Match<IResult>(
+                            file => Results.File(file.Content, "text/csv; charset=utf-8", file.FileName),
+                            error => error.Result());
+                    })
+                .WithName("ExportAdminIsbnNotFoundBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/books/isbn-not-found/import/preview",
+                    async (
+                        [FromForm] PreviewIsbnNotFoundImportRequest request,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null || request.File.Length == 0)
+                        {
+                            return Results.BadRequest(new { error = "Un fichier CSV est requis." });
+                        }
+
+                        if (request.File.Length > PreviewIsbnNotFoundImportQuery.MaximumFileSizeBytes)
+                        {
+                            return Results.BadRequest(new { error = "Le fichier dépasse la limite de 2 Mo." });
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        using var memory = new MemoryStream((int)request.File.Length);
+                        await stream.CopyToAsync(memory, cancellationToken);
+                        var result = await mediator.Send(
+                            new PreviewIsbnNotFoundImportQuery(memory.ToArray()),
+                            cancellationToken);
+
+                        return result.Match<IResult>(
+                            preview => Results.Ok(new AdminIsbnNotFoundImportPreviewResponse(
+                                preview.DataRowCount,
+                                preview.ReadyCount,
+                                preview.WithoutAuthorCount,
+                                preview.IgnoredCount,
+                                preview.RejectedCount,
+                                preview.Rejections.Select(rejection =>
+                                    new AdminIsbnNotFoundImportRejectionResponse(
+                                        rejection.RowNumber,
+                                        rejection.Isbn,
+                                        rejection.Reason)).ToArray(),
+                                preview.ReadyIsbns)),
+                            error => error.Result());
+                    })
+                .WithName("PreviewAdminIsbnNotFoundImport")
+                .DisableAntiforgery()
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/books/isbn-not-found/import",
+                    async (
+                        [FromForm] ImportIsbnNotFoundRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null || request.File.Length == 0)
+                        {
+                            return Results.BadRequest(new { error = "Un fichier CSV est requis." });
+                        }
+
+                        if (request.File.Length > PreviewIsbnNotFoundImportQuery.MaximumFileSizeBytes)
+                        {
+                            return Results.BadRequest(new { error = "Le fichier dépasse la limite de 2 Mo." });
+                        }
+
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        using var memory = new MemoryStream((int)request.File.Length);
+                        await stream.CopyToAsync(memory, cancellationToken);
+                        var result = await mediator.Send(
+                            new ImportIsbnNotFoundCommand(
+                                memory.ToArray(),
+                                request.ReadyIsbns ?? [],
+                                administratorId),
+                            cancellationToken);
+
+                        return result.Match<IResult>(
+                            imported => Results.Ok(new AdminIsbnNotFoundImportResponse(
+                                imported.DataRowCount,
+                                imported.ImportedCount,
+                                imported.WithoutAuthorCount,
+                                imported.MarkedAbsentCount,
+                                imported.RejectedCount,
+                                imported.Rejections.Select(rejection =>
+                                    new AdminIsbnNotFoundImportRejectionResponse(
+                                        rejection.RowNumber,
+                                        rejection.Isbn,
+                                        rejection.Reason)).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("ImportAdminIsbnNotFoundBooks")
+                .DisableAntiforgery()
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
@@ -1375,7 +1508,9 @@ public static class BookAdministrationController
             result.DeadStockCount,
             result.DeadStockComputedAt,
             result.UndatedAnnouncementCount,
-            result.IsbndbAbsentToCompleteCount);
+            result.IsbndbAbsentToCompleteCount,
+            result.IsbnNotFoundCount,
+            result.IsbnFailedCount);
 
     private static AdminNavigationCountsResponse ToResponse(AdminNavigationCountsResult result) =>
         new(
@@ -1387,7 +1522,9 @@ public static class BookAdministrationController
             result.CatalogueBooks,
             result.IsbnQueue,
             result.IsbndbAbsentToComplete,
-            result.PublishedRareBooks);
+            result.PublishedRareBooks,
+            result.IsbnNotFoundCount,
+            result.IsbnFailedCount);
 
     private static AdminPeriodMetricsResponse ToResponse(AdminPeriodMetricsResult result) =>
         new(result.From, result.To, result.ScannedCount, result.KeptCount, result.RejectedCount,
@@ -1412,7 +1549,8 @@ public static class BookAdministrationController
                 item.LastAttemptAt)).ToArray(),
             result.TotalCount,
             result.Page,
-            result.PageSize);
+            result.PageSize,
+            result.FailedCount);
 
     private static AdminBooksImportResponse ToResponse(AdminBooksImportResult result) =>
         new(

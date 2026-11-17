@@ -50,6 +50,10 @@ def export(src: Path, dest: Path, url: str, title: str) -> list:
             shutil.rmtree(dest / sub)
         (dest / sub).mkdir(parents=True)
 
+    # base.css (variables --admin-* et classes communes) est lié dans la tête de chaque
+    # board ; il est intégré en ligne pour que chaque aperçu soit stylé sans dépendance.
+    base_css = (src / "base.css").read_text(encoding="utf-8") if (src / "base.css").exists() else ""
+
     for name in canvas.get("order") or sorted(canvas["boards"]):
         board = canvas["boards"][name]
         source = (src / name).read_text(encoding="utf-8")
@@ -61,11 +65,12 @@ def export(src: Path, dest: Path, url: str, title: str) -> list:
         if not body:
             sys.exit(f"{name} : structure <x-dc><helmet>…</helmet>…</x-dc> attendue")
         body = re.sub(r'href="([A-Za-z0-9_-]+)\.dc\.html"', r'href="\1.html"', body.group(1))
+        base_style = f"<style>{base_css}</style>" if base_css else ""
         (dest / "preview" / f"{stem}.html").write_text(
             "<!doctype html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n"
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
             f"<title>{page_title.group(1).strip() if page_title else stem}</title>\n"
-            f"{helmet.group(1).strip() if helmet else ''}\n</head>\n<body>\n{body.strip()}\n</body>\n</html>\n",
+            f"{base_style}\n{helmet.group(1).strip() if helmet else ''}\n</head>\n<body>\n{body.strip()}\n</body>\n</html>\n",
             encoding="utf-8",
         )
         zones = sorted(set(re.findall(r'data-zone="([^"]+)"', body)), key=zone_key)
@@ -73,6 +78,8 @@ def export(src: Path, dest: Path, url: str, title: str) -> list:
             (stem, board.get("title", stem), board.get("w"), board.get("h"), zones)
         )
     shutil.copy(src / "canvas.json", dest / "sources" / "canvas.json")
+    if base_css:
+        shutil.copy(src / "base.css", dest / "sources" / "base.css")
 
     notes = [n for n in canvas.get("notes", {}).values() if not n.get("kind")]
     parts = [

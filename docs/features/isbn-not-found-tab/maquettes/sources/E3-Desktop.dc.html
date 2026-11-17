@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E3 Import CSV aperçu desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.scrim{position:relative;height:900px;background:rgba(4,29,48,.55)}.dlg{position:absolute;left:340px;top:60px;width:760px;padding:32px;border-radius:6px;background:#fff;box-shadow:0 24px 60px rgba(4,29,48,.35)}.dlg h2{margin:0 0 6px;font-size:26px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.stat{padding:14px;border:1px solid var(--admin-line);border-radius:4px}.stat b{display:block;font:500 30px/1 'Newsreader',Georgia,serif}.stat span{display:block;margin-top:6px;color:var(--admin-slate);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase}.ct{width:100%;border-collapse:collapse;font-size:13px}.ct th{padding:8px 10px;border-bottom:1px solid var(--admin-line);text-align:left;color:var(--admin-muted);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase}.ct td{padding:8px 10px;border-bottom:1px solid var(--admin-line-soft)}.ft{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}</style>
+</helmet>
+<div class="pg" style="width:1440px;height:900px">
+<div class="scrim">
+<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="imp-t">
+<span class="sk">Import CSV · étape 1 sur 2</span>
+<h2 id="imp-t" data-zone="E3-titre">Vérifier le fichier avant d’enregistrer</h2>
+<p class="rs" data-zone="E3-nom-fichier" style="margin:0"><span class="mono" style="font-size:13px">isbn-non-trouves-2026-11-15-complete.csv</span> · 250 lignes lues · <button class="lnk" type="button" style="font-size:13px">Choisir un autre fichier</button></p>
+<div class="stats" data-zone="E3-synthese">
+<div class="stat" data-zone="E3-stat-pretes"><b style="color:#18703a">228</b><span>Fiches prêtes</span></div>
+<div class="stat" data-zone="E3-stat-sans-auteur"><b style="color:var(--admin-orange-dark)">6</b><span>Sans auteur · restent à compléter</span></div>
+<div class="stat" data-zone="E3-stat-ignorees"><b style="color:var(--admin-slate)">12</b><span>Ignorées · lignes vides</span></div>
+<div class="stat" data-zone="E3-stat-rejetees"><b style="color:var(--admin-red)">10</b><span>Rejetées</span></div></div>
+<p class="rs" style="margin:0 0 10px"><strong>10 lignes rejetées</strong> ne seront pas enregistrées. Corrigez le fichier puis redéposez-le : les 228 fiches prêtes peuvent déjà être enregistrées.</p>
+<table class="ct" data-zone="E3-table-rejets"><tr><th>Ligne</th><th>ISBN</th><th>Motif</th></tr>
+<tr><td>14</td><td class="mono">9782070368229</td><td>ISBN invalide</td></tr>
+<tr><td>37</td><td class="mono">9782253004226</td><td>Colonne « Annee_publication » : « abc » n’est pas une année</td></tr>
+<tr><td>52</td><td class="mono">9782070413119</td><td>Titre manquant</td></tr>
+<tr><td>88</td><td class="mono">9782266071529</td><td>Livre déjà doté d’une notice</td></tr>
+<tr><td>141</td><td class="mono">9782290349281</td><td>ISBN en double dans le fichier</td></tr>
+<tr><td>203</td><td class="mono">9782743617257</td><td>ISBN inconnu</td></tr></table>
+<p class="dt">+ 4 autres lignes rejetées</p>
+<div class="ft"><button class="btn btn-o" type="button" data-zone="E3-bouton-annuler">Annuler</button><button class="btn btn-p" type="button" data-zone="E3-bouton-enregistrer">Enregistrer 228 fiches</button></div>
+</div></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

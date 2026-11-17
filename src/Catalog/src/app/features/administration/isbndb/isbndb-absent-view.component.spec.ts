@@ -113,6 +113,33 @@ describe('IsbndbAbsentViewComponent', () => {
     }));
   });
 
+  it('does not show the fallback label for a titleless record', async () => {
+    api.getIsbndbAbsentBooks.and.returnValue(of({
+      ...page,
+      items: [{...page.items[0], title: null}],
+      totalCount: 1,
+    }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Titre inconnu');
+  });
+
+  it('shows the completed empty state with the backend counter', async () => {
+    api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await fixture.componentInstance.selectFilter('completed');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.isbndb-absent-filters')?.textContent).toContain('Complétées · 0');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Aucun livre marqué comme complété');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Les livres qu’ISBNdb ne connaît pas apparaîtront ici.',
+    );
+  });
+
   it('shows the specified empty state', async () => {
     api.getIsbndbAbsentBooks.and.returnValue(of({items: [], totalCount: 0, page: 1, pageSize: 5}));
     fixture.detectChanges();

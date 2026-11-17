@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E3 Import CSV états</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>body{margin:0}.g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:40px}.g .card{min-height:420px;padding:28px}.g h3{margin:6px 0 10px;font:500 22px 'Newsreader',Georgia,serif}.drop{display:flex;flex-direction:column;align-items:center;gap:10px;padding:34px 20px;border:2px dashed var(--admin-mist);border-radius:6px;background:var(--admin-paper);text-align:center;color:var(--admin-slate);font-size:14.5px}.bar{height:8px;margin:18px 0 8px;border-radius:999px;background:var(--admin-line)}.bar i{display:block;width:64%;height:100%;border-radius:999px;background:var(--admin-blue-bright)}.ft{display:flex;justify-content:flex-end;gap:12px;margin-top:22px}.sum{margin:14px 0 0;padding:0;list-style:none;font-size:14.5px;line-height:1.9}</style>
+</helmet>
+<div class="pg" style="width:1180px;height:1500px">
+<div class="g">
+<section class="card" data-zone="E3-zone-depot"><span class="sk">Import CSV · étape 1 sur 2</span><h3>Déposer le fichier complété</h3><div class="drop"><strong>Glissez le fichier ici</strong><span>ou</span><button class="btn btn-o" type="button">Choisir un fichier .csv</button><span class="mono" style="font-size:11px">5 000 lignes et 2 Mo maximum</span></div><div class="ft"><button class="btn btn-o" type="button">Annuler</button></div></section>
+<section class="card" data-zone="E3-erreur-fichier"><span class="sk">Fichier refusé</span><h3>Le fichier ne peut pas être lu</h3><p class="st er" role="alert" style="margin:0">Colonnes manquantes : « Titre », « Couverture_URL ». Colonne inconnue : « Titre_livre ». Exportez à nouveau le fichier depuis la liste et complétez ses colonnes sans les renommer.</p><div class="ft"><button class="btn btn-o" type="button">Choisir un autre fichier</button><button class="btn btn-o" type="button">Annuler</button></div></section>
+<section class="card" data-zone="E3-aucune-valide"><span class="sk">Aperçu · aucune fiche prête</span><h3>Aucune ligne à enregistrer</h3><p class="st" style="margin:0">250 lignes lues : 0 prête, 250 ignorées (colonnes vides). Faites compléter le fichier par l’agent avant de le déposer.</p><div class="ft"><button class="btn btn-o" type="button">Choisir un autre fichier</button><button class="btn btn-p btn-x" type="button" disabled>Enregistrer 0 fiche</button></div></section>
+<section class="card" data-zone="E3-progression"><span class="sk">Enregistrement · étape 2 sur 2</span><h3>Enregistrement des fiches…</h3><div class="bar" role="progressbar" aria-valuenow="146" aria-valuemin="0" aria-valuemax="228" aria-label="Enregistrement des fiches"><i></i></div><p class="rs" style="margin:0">146 fiches sur 228 enregistrées. Ne fermez pas cette page.</p><div class="ft"><button class="btn btn-o btn-x" type="button" disabled>Annuler</button></div></section>
+<section class="card" data-zone="E3-resume"><span class="sk">Import terminé</span><h3>224 fiches enregistrées</h3><ul class="sum"><li><strong>218</strong> marquées « complétées » dans Livres hors ISBNdb</li><li><strong>6</strong> sans auteur, restées « à compléter »</li><li><strong>12</strong> lignes ignorées (colonnes vides)</li><li><strong style="color:var(--admin-red)">14</strong> lignes rejetées dont 4 modifiées depuis l’aperçu : <button class="lnk" type="button">voir le détail</button></li></ul><div class="ft"><button class="btn btn-p" type="button">Fermer</button></div></section>
+<section class="card" data-zone="E3-erreur-enregistrement"><span class="sk">Enregistrement interrompu</span><h3>L’import n’a pas pu se terminer</h3><p class="st er" role="alert" style="margin:0">Une erreur est survenue après 146 fiches. Ces fiches sont enregistrées ; relancez l’import avec le même fichier : les lignes déjà traitées seront rejetées comme « livre déjà doté d’une notice », sans doublon.</p><div class="ft"><button class="btn btn-o" type="button">Fermer</button><button class="btn btn-p" type="button">Choisir à nouveau le fichier</button></div></section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

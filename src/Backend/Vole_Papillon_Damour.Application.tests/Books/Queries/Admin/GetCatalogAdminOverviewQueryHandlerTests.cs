@@ -178,6 +178,40 @@ public sealed class GetCatalogAdminOverviewQueryHandlerTests
         sqlCapture.Commands.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Handle_ReportsIndependentIsbnQueueCounts()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var notFound = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        notFound.RecordMetadataNotFound(Now);
+        var failed = await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
+        failed.RecordMetadataProviderFailure(Now, "Fournisseur indisponible.");
+        var titlelessAbsent = await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
+        titlelessAbsent.MarkAbsentFromIsbndb(Now);
+        var titledAbsent = await fixture.AddBookAsync("9782253004226", quantityAvailable: 0);
+        titledAbsent.ApplyManualMetadata(
+            new BookMetadataPatch("Livre complété", "Un auteur", null, null, null, null, null, null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            Now);
+        titledAbsent.MarkAbsentFromIsbndb(Now);
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        using var cacheServices = CreateHybridCacheProvider();
+        var handler = new GetCatalogAdminOverviewQueryHandler(
+            fixture.Context,
+            clock,
+            cacheServices.GetRequiredService<HybridCache>());
+
+        var result = await handler.Handle(new GetCatalogAdminOverviewQuery(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.IsbndbAbsentToCompleteCount.Should().Be(1);
+        result.Value.IsbnNotFoundCount.Should().Be(1);
+        result.Value.IsbnFailedCount.Should().Be(1);
+    }
+
     private static void AddMovement(
         ScanBookFixture fixture,
         Book book,

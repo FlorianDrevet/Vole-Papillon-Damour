@@ -29,5 +29,9 @@ public static class AdminQueryPredicates
             book.RedirectedToIsbn13 == null);
 
     public static IQueryable<Book> IsbndbAbsentToComplete(IQueryable<Book> books) =>
-        books.Where(book => book.IsAbsentFromIsbndb && book.IsbndbCompletedAt == null);
+        books.Where(book =>
+            book.IsAbsentFromIsbndb &&
+            book.IsbndbCompletedAt == null &&
+            book.Title != null &&
+            book.Title.Trim() != string.Empty);
 }
