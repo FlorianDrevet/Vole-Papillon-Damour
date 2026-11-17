@@ -148,10 +148,14 @@ internal sealed class ManualRequestFixture : IAsyncDisposable
         return request;
     }
 
-    public async Task<ManualBookRequest> AddEditionRequestAsync(Guid requesterId, string isbn, DateTime? requestedAt = null)
+    public async Task<ManualBookRequest> AddEditionRequestAsync(
+        Guid requesterId,
+        string isbn,
+        DateTime? requestedAt = null,
+        string title = "Le Petit Prince")
     {
         var request = ManualBookRequest.CreateEdition(
-            Guid.NewGuid(), requesterId, ParseIsbn(isbn), "Le Petit Prince", null, null, null, requestedAt ?? _now);
+            Guid.NewGuid(), requesterId, ParseIsbn(isbn), title, null, null, null, requestedAt ?? _now);
         Context.ManualBookRequests.Add(request);
         await Context.SaveChangesAsync();
         return request;

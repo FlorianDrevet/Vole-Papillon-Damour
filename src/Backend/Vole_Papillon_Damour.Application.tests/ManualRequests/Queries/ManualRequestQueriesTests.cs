@@ -69,6 +69,73 @@ public sealed class ManualRequestQueriesTests
     }
 
     [Fact]
+    public async Task Queue_PagesFilteredRequestsAndCountsEveryTab()
+    {
+        await using var fixture = await ManualRequestFixture.CreateAsync();
+        var now = ManualRequestFixture.DefaultNow;
+        var requester = await fixture.AddRequesterAsync();
+        string[] isbns = ["9782070363735", "9783140464079", "9791036377426", "9780306406157", "9780132350884"];
+        var searching = new List<ManualBookRequest>();
+        for (var index = 0; index < isbns.Length; index++)
+        {
+            searching.Add(await fixture.AddEditionRequestAsync(requester.Id, isbns[index], now.AddDays(-10 + index)));
+        }
+
+        var found = await fixture.AddEditionRequestAsync(requester.Id, "9780306406157", now.AddDays(-20));
+        MarkFound(found, now.AddDays(-1));
+        await fixture.Context.SaveChangesAsync();
+        var handler = new GetManualRequestQueueQueryHandler(fixture.Context, fixture.CreateClock());
+
+        var secondPage = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Searching, null, 2, 2),
+            CancellationToken.None);
+
+        secondPage.IsError.Should().BeFalse();
+        secondPage.Value.Items.Select(item => item.RequestId).Should().Equal(searching[2].Id, searching[3].Id);
+        secondPage.Value.TotalCount.Should().Be(5);
+        secondPage.Value.SearchingCount.Should().Be(5);
+        secondPage.Value.FoundCount.Should().Be(1);
+        secondPage.Value.ClosedCount.Should().Be(0);
+        secondPage.Value.Page.Should().Be(2);
+        secondPage.Value.PageSize.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Queue_SearchTreatsLikeWildcardsAsLiteralsAndIgnoresCase()
+    {
+        await using var fixture = await ManualRequestFixture.CreateAsync();
+        var now = ManualRequestFixture.DefaultNow;
+        var requester = await fixture.AddRequesterAsync("Durand", "Alice", "0612345678");
+        var underscore = await fixture.AddEditionRequestAsync(
+            requester.Id, "9782070363735", now.AddDays(-3), "Tout_va bien");
+        var percent = await fixture.AddEditionRequestAsync(
+            requester.Id, "9783140464079", now.AddDays(-2), "A 50% off");
+        var other = await fixture.AddEditionRequestAsync(
+            requester.Id, "9791036377426", now.AddDays(-1), "Autre livre");
+        await fixture.Context.SaveChangesAsync();
+        var handler = new GetManualRequestQueueQueryHandler(fixture.Context, fixture.CreateClock());
+
+        var underscoreSearch = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Searching, "_", 1, 20),
+            CancellationToken.None);
+        var percentSearch = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Searching, "%", 1, 20),
+            CancellationToken.None);
+        var nameSearch = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Searching, "DURAND", 1, 20),
+            CancellationToken.None);
+
+        underscoreSearch.IsError.Should().BeFalse();
+        underscoreSearch.Value.Items.Select(item => item.RequestId).Should().Equal(underscore.Id);
+        underscoreSearch.Value.TotalCount.Should().Be(1);
+        percentSearch.IsError.Should().BeFalse();
+        percentSearch.Value.Items.Select(item => item.RequestId).Should().Equal(percent.Id);
+        nameSearch.IsError.Should().BeFalse();
+        nameSearch.Value.Items.Select(item => item.RequestId).Should().Equal(underscore.Id, percent.Id, other.Id);
+        nameSearch.Value.TotalCount.Should().Be(3);
+    }
+
+    [Fact]
     public async Task FoundQueue_ReportsErasedRequesterAndRequesterDetailWithoutContact()
     {
         await using var fixture = await ManualRequestFixture.CreateAsync();
