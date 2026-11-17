@@ -64,21 +64,23 @@ public sealed class GetAdminFairsEvolutionQueryHandler(
             .ToList();
 
         var fairIds = fairs.Select(fair => fair.Id).ToArray();
-        var sales = await dbContext.BookMovements
-            .AsNoTracking()
-            .Where(movement =>
-                movement.Type == BookMovementType.Sale &&
-                movement.AssoEventsId != null &&
-                fairIds.Contains(movement.AssoEventsId!))
-            .ToListAsync(cancellationToken);
+        // The sold quantity per fair is aggregated in SQL: one row per fair comes back, not every sale.
+        var soldByFair = (await dbContext.BookMovements
+                .AsNoTracking()
+                .Where(movement =>
+                    movement.Type == BookMovementType.Sale &&
+                    movement.AssoEventsId != null &&
+                    fairIds.Contains(movement.AssoEventsId!))
+                .GroupBy(movement => movement.AssoEventsId)
+                .Select(group => new SoldByFairRow(group.Key, group.Sum(movement => Math.Abs(movement.Quantity))))
+                .ToListAsync(cancellationToken))
+            .ToDictionary(row => row.FairId!, row => row.SoldQuantity);
 
         var entries = new List<AdminFairEvolutionEntryResult>(fairs.Count);
         AdminFairEvolutionEntryResult? previous = null;
         foreach (var fair in fairs)
         {
-            var soldQuantity = sales
-                .Where(sale => sale.AssoEventsId == fair.Id)
-                .Sum(sale => Math.Abs(sale.Quantity));
+            var soldQuantity = soldByFair.GetValueOrDefault(fair.Id);
             var revenue = fair.BookRevenue;
             var averageBasket = revenue is not null && soldQuantity > 0
                 ? revenue.Value / soldQuantity
@@ -166,4 +168,6 @@ public sealed class GetAdminFairsEvolutionQueryHandler(
 
     private static bool IsInPeriod(DateTimeOffset value, DateTimeOffset? from, DateTimeOffset? to) =>
         (from is null || value >= from.Value) && (to is null || value < to.Value);
+
+    private sealed record SoldByFairRow(AssoEventsId? FairId, int SoldQuantity);
 }

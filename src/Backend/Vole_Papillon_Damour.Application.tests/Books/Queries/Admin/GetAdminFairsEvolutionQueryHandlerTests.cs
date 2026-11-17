@@ -61,6 +61,43 @@ public sealed class GetAdminFairsEvolutionQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_sums_absolute_sale_quantities_per_fair_and_ignores_other_movements()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var emptyFair = await fixture.AddFairAsync(
+            new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var book = await fixture.AddBookAsync("9782070363735", 0);
+        var occurredAt = new DateTime(2025, 3, 1, 10, 0, 0, DateTimeKind.Utc);
+        fixture.Context.BookMovements.Add(AddMovement(book, BookMovementType.Sale, occurredAt, fair.Id, quantity: -10));
+        fixture.Context.BookMovements.Add(AddMovement(book, BookMovementType.Sale, occurredAt, fair.Id, quantity: -5));
+        fixture.Context.BookMovements.Add(AddMovement(book, BookMovementType.Sale, occurredAt, fair.Id, quantity: 3));
+        fixture.Context.BookMovements.Add(AddMovement(book, BookMovementType.DirectEntry, occurredAt, fair.Id, quantity: 7));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminFairsEvolutionQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(new GetAdminFairsEvolutionQuery(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Fairs.Should().HaveCount(2);
+        result.Value.Fairs[0].FairId.Should().Be(fair.Id.Value);
+        result.Value.Fairs[0].SoldQuantity.Should().Be(18);
+        result.Value.Fairs[1].FairId.Should().Be(emptyFair.Id.Value);
+        result.Value.Fairs[1].SoldQuantity.Should().Be(0);
+        result.Value.TotalSoldQuantity.Should().Be(18);
+    }
+
+    [Fact]
     public async Task Handle_restricts_to_the_selected_fair_and_keeps_its_variation()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
