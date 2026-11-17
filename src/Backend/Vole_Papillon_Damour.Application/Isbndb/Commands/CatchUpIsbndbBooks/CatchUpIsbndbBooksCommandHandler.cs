@@ -273,7 +273,12 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 return null;
             }
 
-            var lookups = new Dictionary<Isbn13, IsbndbLookup>();
+            // One bulk lookup per page, as in ProcessCandidatesAsync. The lookups are reused
+            // across save retries, so a concurrency conflict never repeats ISBNdb calls.
+            var lookups = await lookupService.LookupManyAsync(
+                staleIds,
+                IsbndbUsage.CatchUp,
+                cancellationToken);
             for (var attempt = 0; ; attempt++)
             {
                 var books = await LoadBooksAsync(staleIds, cancellationToken);
@@ -291,11 +296,8 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                     cancellationToken.ThrowIfCancellationRequested();
                     if (!lookups.TryGetValue(isbn13, out var lookup))
                     {
-                        lookup = await lookupService.LookupAsync(
-                            isbn13,
-                            IsbndbUsage.CatchUp,
-                            cancellationToken);
-                        lookups.Add(isbn13, lookup);
+                        stopReason = IsbndbCatchUpStopReason.Unavailable;
+                        break;
                     }
 
                     if (lookup is IsbndbLookup.QuotaExhausted)
