@@ -22,6 +22,7 @@ public sealed class IsbndbClient(
     ILogger<IsbndbClient> logger) : IIsbndbClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly TimeSpan MaxRetryAfterDelay = TimeSpan.FromSeconds(2);
     private readonly IsbndbOptions _options = options.Value;
 
     public async Task<IsbndbLookup> GetBookAsync(
@@ -299,7 +300,7 @@ public sealed class IsbndbClient(
 
                 if (response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    if (retry < maxRetries)
+                    if (retry < maxRetries && !ServerRequestsLongerThanCap(response.Headers.RetryAfter, responseAt))
                     {
                         var delay = RetryDelay(response.Headers.RetryAfter, retry, responseAt);
                         await Task.Delay(delay, timeProvider, cancellationToken);
@@ -368,9 +369,25 @@ public sealed class IsbndbClient(
 
     private static TimeSpan RetryDelay(RetryConditionHeaderValue? retryAfter, int retry, DateTime now)
     {
+        if (TryGetRetryAfterDelay(retryAfter, now, out var requestedDelay))
+        {
+            return requestedDelay;
+        }
+
+        var seconds = Math.Pow(2, Math.Min(retry, 20));
+        return TimeSpan.FromSeconds(seconds);
+    }
+
+    private static bool ServerRequestsLongerThanCap(RetryConditionHeaderValue? retryAfter, DateTime now) =>
+        TryGetRetryAfterDelay(retryAfter, now, out var requestedDelay) &&
+        requestedDelay > MaxRetryAfterDelay;
+
+    private static bool TryGetRetryAfterDelay(RetryConditionHeaderValue? retryAfter, DateTime now, out TimeSpan delay)
+    {
         if (retryAfter?.Delta is { } delta && delta > TimeSpan.Zero)
         {
-            return delta;
+            delay = delta;
+            return true;
         }
 
         if (retryAfter?.Date is { } retryAt)
@@ -378,12 +395,13 @@ public sealed class IsbndbClient(
             var untilRetry = retryAt.UtcDateTime - now;
             if (untilRetry > TimeSpan.Zero)
             {
-                return untilRetry;
+                delay = untilRetry;
+                return true;
             }
         }
 
-        var seconds = Math.Pow(2, Math.Min(retry, 20));
-        return TimeSpan.FromSeconds(seconds);
+        delay = TimeSpan.Zero;
+        return false;
     }
 
     private static bool TryReadSingleBook(string json, out IsbndbBook book)
