@@ -43,7 +43,7 @@ app.get('/sitemap.xml', async (_req, res, next) => {
 });
 
 // Fichiers de build Angular avec empreinte (ex. main-OGMYI5D6.js, chunk-Ca_BxwXn.js).
-const HASHED_BUILD_FILE = /-[A-Za-z0-9_]{8}\.(?:js|css|woff2?)$/;
+const HASHED_BUILD_FILE = /-[A-Za-z0-9_-]{8}\.(?:js|css|woff2?)$/;
 
 app.use(express.static(browserDistFolder, {
   index: false,
