@@ -1185,6 +1185,26 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.Entries.Should().ContainSingle();
         result.Value.Entries[0].UrlPath.Should().Contain("9782070408504");
     }
+
+    [Fact]
+    public async Task GetPublicCatalogSitemap_DoesNotSelectHeavyBookColumns()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Livre complet", "Auteur");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSitemapHandler().Handle(
+            new GetPublicCatalogSitemapQuery(),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("RawPayload", StringComparison.Ordinal) ||
+            command.Contains("Summary", StringComparison.Ordinal) ||
+            command.Contains("ManuallyEditedFields", StringComparison.Ordinal));
+    }
 }
 
 internal sealed class PublicCatalogFixture : IAsyncDisposable
