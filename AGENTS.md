@@ -50,6 +50,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 | `angular-patterns` | Angular application patterns | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 | `delivery-workflow` | Mandatory worktree, branch, validation and PR delivery workflow | `.github/skills/delivery-workflow/SKILL.md` |
+| `perf-guardrails` | Absolute performance rules (server-side pagination/filtering, EF reads, indexes, timeouts, images…) plus paid/infra recommendations the user accepts or declines | `.github/skills/perf-guardrails/SKILL.md` |
 | `implement-handoff` | Execute a validated design handoff (`docs/features/<slug>/HANDOFF.md`): plan, TDD, visual check against mockups, PR | `.agents/skills/implement-handoff/SKILL.md` |
 | `book-data-reset` | Safely reset deployed book data while retaining two users and preserving events/news | `.agents/skills/book-data-reset/SKILL.md` |
 | `vpd-prod-backup` | Export the production Azure SQL database and Blob containers to a dated Desktop folder; restore guidance | `.agents/skills/vpd-prod-backup/SKILL.md` |
@@ -65,6 +66,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 - Write tests before executable production changes.
 - Update thematic memory after non-trivial work.
 - Validate the touched application surface locally because no CI pipeline file is currently present.
+- Apply [`perf-guardrails`](.github/skills/perf-guardrails/SKILL.md) §A to every list/table/search screen, list endpoint, EF query, import/export, image and outbound call. Pagination, filtering and sorting are **always server-side**. Paid or infrastructure options (Redis, CDN, bigger SQL tier…) are only proposed in one line (§B) and never implemented without the user's yes.
 
 ## Mandatory delivery workflow
 

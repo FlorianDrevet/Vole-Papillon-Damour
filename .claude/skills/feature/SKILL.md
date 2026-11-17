@@ -56,6 +56,9 @@ Utilise **superpowers:brainstorming**, avec ces surcharges (elles priment sur le
   ouvertes. Si la feature étend un module de `docs/` (ex. `docs/bourse-aux-livres/`),
   lis ses specs et reprends sa numérotation de règles (`RG-xx`).
 - Lis `NEXT.md` et les specs voisines avant de poser les questions.
+- Pour chaque écran de liste ou de recherche, écris dans « Contraintes » : pagination,
+  filtres, tri et recherche **côté serveur** (`.github/skills/perf-guardrails/SKILL.md` §A1),
+  volume attendu, état de chargement. Toute reco payante (§B) se pose en question ouverte.
 - **Ne pas enchaîner sur writing-plans** à la fin du brainstorming : la phase suivante est
   la maquette.
 - Commit : `docs(<slug>): spécification fonctionnelle`.
@@ -116,6 +119,9 @@ Utilise **superpowers:writing-plans**, avec ces surcharges :
 - Chaque tâche qui touche une interface contient une ligne
   `**Maquette :** preview/<Page>.html — zones E1-…, E1-…` et reprend les libellés mot pour
   mot. Chaque tâche indique le test à écrire d'abord et son message de commit.
+- Toute tâche qui crée une liste, une requête, un import/export ou un appel sortant cite
+  les règles `perf-guardrails` §A qui s'y appliquent (pagination serveur, index dans la
+  même migration, timeout…) et le test correspondant.
 - Une zone volontairement non implémentée va dans une section « Zones non implémentées »,
   avec la raison.
 - Si le plan contient du code non trivial, compile-le et teste-le dans le scratchpad
