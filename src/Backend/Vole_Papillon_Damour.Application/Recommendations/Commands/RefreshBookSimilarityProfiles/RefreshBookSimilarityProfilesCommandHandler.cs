@@ -36,6 +36,7 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
         var bookQuery = dbContext.Books
             .AsNoTracking()
             .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
+        string? requestedProfileIsbn = null;
         if (request.Isbn13 is { } requestedIsbn13)
         {
             if (!Isbn13.TryCreate(requestedIsbn13, out var isbn13))
@@ -44,13 +45,19 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
             }
 
             bookQuery = bookQuery.Where(book => book.Id == isbn13);
+            requestedProfileIsbn = isbn13.Value;
         }
 
         var books = await bookQuery
             .Select(book => new { Isbn13 = book.Id, book.UpdatedAt, book.IsIsbndbSourced })
             .ToListAsync(cancellationToken);
-        var profileStatuses = await dbContext.BookSimilarityProfiles
-            .AsNoTracking()
+        var profileStatusQuery = dbContext.BookSimilarityProfiles.AsNoTracking();
+        if (requestedProfileIsbn is not null)
+        {
+            profileStatusQuery = profileStatusQuery.Where(profile => profile.Isbn13 == requestedProfileIsbn);
+        }
+
+        var profileStatuses = await profileStatusQuery
             .Select(profile => new { profile.Isbn13, profile.NoticeFetchedAt })
             .ToDictionaryAsync(profile => profile.Isbn13, cancellationToken);
 
