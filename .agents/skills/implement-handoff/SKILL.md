@@ -19,6 +19,10 @@ qui est propre à la feature ; ce skill donne les règles communes.
    handoff liste, **dans l'ordre**.
 3. Ouvre `docs/features/<slug>/maquettes/preview/index.html` : il donne la liste des
    écrans et de leurs zones `data-zone`.
+4. Lis `.github/skills/perf-guardrails/SKILL.md` : ses règles §A (pagination, filtre, tri
+   et recherche côté serveur, index, timeouts…) s'appliquent sans dérogation, et sa
+   vérification §E alimente la section « Validation » de la PR. Une reco §B (payante) ne
+   s'implémente jamais sans l'accord de l'utilisateur.
 
 ## 2. Exécution du plan
 
