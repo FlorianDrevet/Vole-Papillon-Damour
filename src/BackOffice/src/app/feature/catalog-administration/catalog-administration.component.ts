@@ -61,10 +61,14 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly selectedSession = signal<AdminScanSession | null>(null);
   protected readonly sessionToForceClose = signal<AdminScanSession | null>(null);
   protected readonly sessionTotal = signal(0);
+  protected readonly sessionPage = signal(1);
   protected readonly alerts = signal<any[]>([]);
+  protected readonly alertTotal = signal(0);
+  protected readonly alertPage = signal(1);
   protected readonly members = signal<any[]>([]);
   protected readonly selectedMember = signal<AdminMemberDetail | null>(null);
   protected readonly memberTotal = signal(0);
+  protected readonly memberPage = signal(1);
   protected readonly accounts = signal<AdminAccount[]>([]);
   protected readonly passwordResetDisclosure = signal<{email: string | null; temporaryPassword: string} | null>(null);
   protected readonly accountTotal = signal(0);
@@ -388,7 +392,12 @@ export class CatalogAdministrationComponent implements OnInit {
     this.load(() => this.facade.getSessions(filters), value => {
       this.sessions.set(value.sessions);
       this.sessionTotal.set(value.totalCount);
+      this.sessionPage.set(value.page);
     });
+  }
+
+  protected isLastSessionPage(): boolean {
+    return this.sessionPage() * 25 >= this.sessionTotal();
   }
 
   protected selectSession(sessionId: string): void {
@@ -417,7 +426,7 @@ export class CatalogAdministrationComponent implements OnInit {
       'La session a été clôturée d’office et les alertes ont été mises en file.',
       () => {
         this.selectedSession.set(null);
-        this.loadSessions();
+        this.loadSessions(this.sessionPage());
       },
     );
   }
@@ -464,24 +473,37 @@ export class CatalogAdministrationComponent implements OnInit {
     this.save(() => this.facade.forceSessionAlerts(session.id), 'Les alertes ont été forcées.', () => this.selectSession(session.id));
   }
 
-  protected loadAlerts(): void {
-    this.load(() => this.facade.getAlerts({status: this.alertStatus || undefined, page: 1, pageSize: 50}), value => this.alerts.set(value.alerts));
+  protected loadAlerts(page = 1): void {
+    this.load(() => this.facade.getAlerts({status: this.alertStatus || undefined, page, pageSize: 50}), value => {
+      this.alerts.set(value.alerts);
+      this.alertTotal.set(value.totalCount);
+      this.alertPage.set(value.page);
+    });
+  }
+
+  protected isLastAlertPage(): boolean {
+    return this.alertPage() * 50 >= this.alertTotal();
   }
 
   protected cancelAlert(id: string): void {
-    this.save(() => this.facade.cancelAlert(id), 'L’alerte a été annulée.', () => this.loadAlerts());
+    this.save(() => this.facade.cancelAlert(id), 'L’alerte a été annulée.', () => this.loadAlerts(this.alertPage()));
   }
 
   protected forceAlert(id: string): void {
     if (!window.confirm('Forcer l’envoi de cette alerte ?')) { return; }
-    this.save(() => this.facade.forceAlert(id), 'L’alerte a été remise en file.', () => this.loadAlerts());
+    this.save(() => this.facade.forceAlert(id), 'L’alerte a été remise en file.', () => this.loadAlerts(this.alertPage()));
   }
 
-  protected loadMembers(): void {
-    this.load(() => this.facade.getMembers(this.memberSearch.trim() || undefined, this.memberAlertStatus || undefined), value => {
+  protected loadMembers(page = 1): void {
+    this.load(() => this.facade.getMembers(this.memberSearch.trim() || undefined, this.memberAlertStatus || undefined, page), value => {
       this.members.set(value.members);
       this.memberTotal.set(value.totalCount);
+      this.memberPage.set(value.page);
     });
+  }
+
+  protected isLastMemberPage(): boolean {
+    return this.memberPage() * 50 >= this.memberTotal();
   }
 
   protected selectMember(memberId: string): void {
@@ -494,7 +516,7 @@ export class CatalogAdministrationComponent implements OnInit {
     const blocked = member.member.alertStatus !== 'Blocked';
     this.save(() => blocked ? this.facade.blockMember(member.member.id) : this.facade.unblockMember(member.member.id), blocked ? 'Les alertes du membre ont été bloquées.' : 'Les alertes du membre sont de nouveau actives.', () => {
       this.selectMember(member.member.id);
-      this.loadMembers();
+      this.loadMembers(this.memberPage());
     });
   }
 
@@ -503,7 +525,7 @@ export class CatalogAdministrationComponent implements OnInit {
     if (!member || !window.confirm('Demander la suppression de ce compte et de ses données membre ?')) { return; }
     this.save(() => this.facade.deleteMember(member.member.id), 'La demande de suppression a été enregistrée.', () => {
       this.selectedMember.set(null);
-      this.loadMembers();
+      this.loadMembers(this.memberPage());
     });
   }
 
