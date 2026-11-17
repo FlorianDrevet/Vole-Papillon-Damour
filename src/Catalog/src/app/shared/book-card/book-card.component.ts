@@ -5,9 +5,16 @@ import {
   CatalogNeighborReason,
   neighborReasonLabels,
 } from '../../core/catalog.models';
+import {CatalogCoverSize} from '../catalog-cover-url';
 import {publicBookPath} from '../catalog-url';
 
 export type BookCardVariant = 'default' | 'grid' | 'list' | 'home' | 'square';
+
+/** Couverture de la carte liste (94x136 CSS, 76x110 sous 520 px) : 1x puis 2x. */
+const LIST_COVER_SIZES: readonly CatalogCoverSize[] = [
+  {width: 240, height: 360},
+  {width: 480, height: 720},
+];
 
 @Component({
   selector: 'app-book-card',
@@ -25,6 +32,7 @@ export class BookCardComponent {
   @Input() recommendationText: string | null = null;
 
   coverFailed = false;
+  readonly listCoverSizes = LIST_COVER_SIZES;
 
   bookPath(): string {
     return publicBookPath(this.book);

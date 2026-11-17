@@ -1,6 +1,25 @@
-import {catalogCoverUrl} from './catalog-cover-url';
+import {catalogCoverSrcset, catalogCoverUrl} from './catalog-cover-url';
 
 describe('catalogCoverUrl', () => {
+  it('requests the card size only when a size is given', () => {
+    expect(
+      catalogCoverUrl('https://covers.openlibrary.org/b/id/123-L.jpg', {width: 240, height: 360}),
+    ).toBe(
+      'https://livres.volepapillondamour.fr/cdn-cgi/image/width=240,height=360,fit=scale-down,quality=80,format=auto/https://covers.openlibrary.org/b/id/123-L.jpg',
+    );
+  });
+
+  it('builds a width-described srcset from the requested card sizes', () => {
+    expect(
+      catalogCoverSrcset('https://covers.openlibrary.org/b/id/123-L.jpg', [
+        {width: 240, height: 360},
+        {width: 480, height: 720},
+      ]),
+    ).toBe(
+      'https://livres.volepapillondamour.fr/cdn-cgi/image/width=240,height=360,fit=scale-down,quality=80,format=auto/https://covers.openlibrary.org/b/id/123-L.jpg 240w, https://livres.volepapillondamour.fr/cdn-cgi/image/width=480,height=720,fit=scale-down,quality=80,format=auto/https://covers.openlibrary.org/b/id/123-L.jpg 480w',
+    );
+    expect(catalogCoverSrcset(null, [{width: 240, height: 360}])).toBeNull();
+  });
   it('normalizes and routes BnF covers through one bounded transformation', () => {
     const original = 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1';
 
