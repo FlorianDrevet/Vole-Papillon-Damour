@@ -1,6 +1,5 @@
 import {Component, computed, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {MatDialog} from "@angular/material/dialog";
-import {groupBy} from 'lodash';
 
 import {ActualityModel} from "../../shared/models/actuality.model";
 import {AxiosService} from "../../shared/services/axios.service";
@@ -133,9 +132,14 @@ export class ActualitiesComponent implements OnInit {
   }
 
   private groupByMonth(actualities: ActualityModel[]): ActualityMonth[] {
-    const grouped = groupBy(actualities, actuality =>
-      new Date(actuality.date).toLocaleString('fr-FR', {month: 'long', year: 'numeric'}),
-    );
+    const grouped = actualities.reduce<Record<string, ActualityModel[]>>((acc, actuality) => {
+      const key = new Date(actuality.date).toLocaleString('fr-FR', {month: 'long', year: 'numeric'});
+      if (!Object.prototype.hasOwnProperty.call(acc, key)) {
+        acc[key] = [];
+      }
+      acc[key].push(actuality);
+      return acc;
+    }, {});
 
     return Object.entries(grouped)
       .map(([key, monthActualities]) => {
