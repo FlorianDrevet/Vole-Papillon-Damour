@@ -32,7 +32,7 @@
       @for (item of current.items; track item.isbn13) {
         <article class="isbndb-absent-card" data-testid="isbndb-absent-book">
           <div class="isbndb-absent-book-identity">
-            @if (item.coverUrl) {<img class="isbndb-absent-cover" [src]="item.coverUrl" alt="">} @else {<span class="isbndb-absent-cover book-cover-placeholder" aria-hidden="true"></span>}
+            @if (item.coverUrl) {<img class="isbndb-absent-cover" [src]="item.coverUrl" alt="" loading="lazy" decoding="async">} @else {<span class="isbndb-absent-cover book-cover-placeholder" aria-hidden="true"></span>}
             <div>
               <span class="isbn-label">{{ item.isbn13 }}</span>
               @if (item.title) {<strong>{{ item.title }}</strong>}
