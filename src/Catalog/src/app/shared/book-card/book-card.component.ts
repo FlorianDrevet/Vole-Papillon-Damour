@@ -16,6 +16,12 @@ const LIST_COVER_SIZES: readonly CatalogCoverSize[] = [
   {width: 480, height: 720},
 ];
 
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'Europe/Paris',
+});
+
 @Component({
   selector: 'app-book-card',
   standalone: false,
@@ -85,11 +91,7 @@ export class BookCardComponent {
   }
 
   formatShortDate(value: string): string {
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      timeZone: 'Europe/Paris',
-    }).format(new Date(value)).replace('.', '');
+    return SHORT_DATE_FORMATTER.format(new Date(value)).replace('.', '');
   }
 
   onCoverError(): void {
