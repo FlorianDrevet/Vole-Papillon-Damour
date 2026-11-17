@@ -51,6 +51,32 @@ public sealed class MemberIdentityServiceNameClaimsTests
     }
 
     [Fact]
+    public async Task EnsureAsync_WhenGraphSynchronizationTimesOut_KeepsTheLocalIdentityAvailable()
+    {
+        await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WatchlistFeatureTestFixture.Now);
+        var directory = Substitute.For<IEntraUserDirectory>();
+        directory.UpdateDisplayNameAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new TaskCanceledException("Graph request timed out.")));
+        var service = new MemberIdentityService(fixture.Context, clock, directory);
+
+        var action = () => service.EnsureAsync(
+            Guid.Parse("8d12cf6e-958f-4f68-a6f3-914d7bba8cf4"),
+            "camille@example.test",
+            "Camille",
+            "De La Tour",
+            CancellationToken.None);
+
+        await action.Should().NotThrowAsync();
+        var user = fixture.Context.Users.Single();
+        user.Name!.FirstName.Should().Be("Camille");
+    }
+
+    [Fact]
     public async Task EnsureAsync_WhenGraphSynchronizationFails_KeepsTheLocalIdentityAvailable()
     {
         await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();

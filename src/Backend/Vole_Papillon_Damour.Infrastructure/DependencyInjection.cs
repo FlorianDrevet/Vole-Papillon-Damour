@@ -111,7 +111,11 @@ public static class DependencyInjection
         services.AddSingleton<IFairDigestEmailRenderer, FairDigestEmailRenderer>();
         services.AddSingleton<IFairDigestEmailSender, FairDigestEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
-        services.AddHttpClient<EntraGraphUserDirectory>();
+        services.AddHttpClient<EntraGraphUserDirectory>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<EntraGraphOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(Math.Max(1, options.TimeoutMilliseconds));
+        });
         services.AddScoped<IEntraUserDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.AddScoped<IEntraAccountDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.AddScoped<IEntraAccountPasswordResetDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());

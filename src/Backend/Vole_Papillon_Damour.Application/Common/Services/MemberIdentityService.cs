@@ -164,7 +164,7 @@ public sealed class MemberIdentityService(
                 displayName,
                 cancellationToken);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger?.LogWarning(
                 exception,
