@@ -29,6 +29,9 @@ import {CatalogAdminFacadeService} from '../../shared/facades/catalog-admin.faca
 
 type AdminTab = 'overview' | 'books' | 'recommendations' | 'fairs' | 'sessions' | 'alerts' | 'members' | 'accounts' | 'settings';
 
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('fr-FR', {dateStyle: 'medium', timeStyle: 'short'});
+const NUMBER_FORMATTER = new Intl.NumberFormat('fr-FR');
+
 @Component({
   selector: 'app-catalog-administration',
   templateUrl: './catalog-administration.component.html',
@@ -655,11 +658,11 @@ export class CatalogAdministrationComponent implements OnInit {
 
   protected formatDate(value: string | null | undefined): string {
     if (!value) { return '—'; }
-    return new Intl.DateTimeFormat('fr-FR', {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(value));
+    return DATE_TIME_FORMATTER.format(new Date(value));
   }
 
   protected formatNumber(value: number | null | undefined): string {
-    return new Intl.NumberFormat('fr-FR').format(value ?? 0);
+    return NUMBER_FORMATTER.format(value ?? 0);
   }
 
   protected isLastBookPage(): boolean {
