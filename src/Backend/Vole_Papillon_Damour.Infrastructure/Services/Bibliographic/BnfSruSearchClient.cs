@@ -11,6 +11,7 @@ public sealed class BnfSruSearchClient(
     IOptions<BibliographicOptions> options) : IBnfSruSearchClient
 {
     private const string Source = "BnF";
+    private const int MaxCoverValidationConcurrency = 4;
 
     private readonly BibliographicOptions _options = options.Value;
 
@@ -75,8 +76,20 @@ public sealed class BnfSruSearchClient(
         IReadOnlyList<BookReferenceSearchItem> items,
         CancellationToken cancellationToken)
     {
+        using var coverValidationSlots = new SemaphoreSlim(MaxCoverValidationConcurrency);
         var covers = await Task.WhenAll(
-            items.Select(item => ResolveCoverAsync(item.Isbn13, cancellationToken)));
+            items.Select(async item =>
+            {
+                await coverValidationSlots.WaitAsync(cancellationToken);
+                try
+                {
+                    return await ResolveCoverAsync(item.Isbn13, cancellationToken);
+                }
+                finally
+                {
+                    coverValidationSlots.Release();
+                }
+            }));
 
         return items
             .Zip(covers, (item, coverUrl) => coverUrl is null ? item : item with { CoverUrl = coverUrl })

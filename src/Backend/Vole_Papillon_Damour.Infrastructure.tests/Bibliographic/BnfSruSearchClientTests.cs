@@ -148,6 +148,54 @@ public sealed class BnfSruSearchClientTests
         result[0].PublicationYear.Should().Be(1998);
     }
 
+    [Fact]
+    public async Task SearchAsync_WhenManyCoversAreChecked_LimitsCoverValidationConcurrency()
+    {
+        var isbns = Enumerable.Range(1, 12).Select(Isbn13WithValidCheckDigit).ToArray();
+        var handler = new ConcurrencyTrackingHandler(CreateSearchResponse(isbns));
+        var client = new BnfSruSearchClient(
+            new HttpClient(handler),
+            Options.Create(new BibliographicOptions
+            {
+                BnfSruEndpoint = "https://bnf.example.test/api/SRU"
+            }));
+
+        var result = await client.SearchAsync("Livre", 1, 20, CancellationToken.None);
+
+        result.Select(item => item.Isbn13).Should().Equal(isbns);
+        result.Should().OnlyContain(item => item.CoverUrl != null);
+        handler.MaxConcurrentCoverRequests.Should().BeLessThanOrEqualTo(4);
+    }
+
+    private static string Isbn13WithValidCheckDigit(int index)
+    {
+        var digits = "978207036" + index.ToString("D3", System.Globalization.CultureInfo.InvariantCulture);
+        var sum = 0;
+        for (var position = 0; position < 12; position++)
+        {
+            sum += (digits[position] - '0') * (position % 2 == 0 ? 1 : 3);
+        }
+
+        return digits + ((10 - sum % 10) % 10).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static string CreateSearchResponse(IReadOnlyList<string> isbns)
+    {
+        var records = string.Concat(isbns.Select((isbn, index) => $"""
+            <srw:record><srw:recordData><mxc:record>
+              <mxc:datafield tag="010"><mxc:subfield code="a">{isbn}</mxc:subfield></mxc:datafield>
+              <mxc:datafield tag="200"><mxc:subfield code="a">Livre {index + 1}</mxc:subfield></mxc:datafield>
+            </mxc:record></srw:recordData></srw:record>
+            """));
+
+        return $"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:mxc="http://www.bnf.fr/namespaces/marcxchange/">
+              <srw:records>{records}</srw:records>
+            </srw:searchRetrieveResponse>
+            """;
+    }
+
     private static HttpResponseMessage CoverResponse()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -232,6 +280,46 @@ public sealed class BnfSruSearchClientTests
           </srw:records>
         </srw:searchRetrieveResponse>
         """;
+
+    private sealed class ConcurrencyTrackingHandler(string searchResponse) : HttpMessageHandler
+    {
+        private readonly object _gate = new();
+        private int _inFlightCoverRequests;
+
+        public int MaxConcurrentCoverRequests { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (request.RequestUri?.Host != "openapi.bnf.fr")
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(searchResponse)
+                };
+            }
+
+            lock (_gate)
+            {
+                _inFlightCoverRequests++;
+                MaxConcurrentCoverRequests = Math.Max(MaxConcurrentCoverRequests, _inFlightCoverRequests);
+            }
+
+            try
+            {
+                await Task.Delay(20, cancellationToken);
+                return CoverResponse();
+            }
+            finally
+            {
+                lock (_gate)
+                {
+                    _inFlightCoverRequests--;
+                }
+            }
+        }
+    }
 
     private sealed class StubHttpMessageHandler(
         Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler
