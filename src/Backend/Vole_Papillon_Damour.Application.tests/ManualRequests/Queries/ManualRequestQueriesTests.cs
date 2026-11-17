@@ -215,6 +215,79 @@ public sealed class ManualRequestQueriesTests
     }
 
     [Fact]
+    public async Task Queues_ResolveStockWatchersAndReleasePlanPerRequest()
+    {
+        await using var fixture = await ManualRequestFixture.CreateAsync();
+        var now = ManualRequestFixture.DefaultNow;
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(now.AddDays(7)),
+            new DateTimeOffset(now.AddDays(8)));
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 2, workId: ManualRequestFixture.DefaultWorkId);
+        await fixture.AddBookAsync("9783140464079", quantityAvailable: 1, workId: ManualRequestFixture.DefaultWorkId);
+        await fixture.AddAnnouncementAsync("9783140464079", fair.Id, quantity: 3);
+        var requester = await fixture.AddRequesterAsync();
+        var workSearch = await fixture.AddWorkRequestAsync(requester.Id);
+        var editionSearch = await fixture.AddEditionRequestAsync(requester.Id, "9791036377426", now.AddDays(-1));
+        var workFound = await fixture.AddWorkRequestAsync(requester.Id);
+        var scanSession = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
+        workFound.MarkFoundByScan(
+            ManualRequestFixture.ParseIsbn("9782070363735"),
+            scanSession.Id,
+            BookMovementId.CreateUnique(),
+            scanSession.VolunteerId,
+            now.AddDays(-15));
+        var editionFound = await fixture.AddEditionRequestAsync(requester.Id, "9780306406157", now.AddDays(-30));
+        editionFound.MarkFoundFromStock(
+            ManualRequestFixture.ParseIsbn("9780306406157"),
+            fair.Id,
+            scanSession.Id,
+            BookMovementId.CreateUnique(),
+            ManualRequestFixture.AdministratorId,
+            now.AddDays(-2));
+        var availableSession = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var scanAvailable = await fixture.AddEditionRequestAsync(requester.Id, "9780132350884", now.AddDays(-40));
+        scanAvailable.MarkFoundByScan(
+            ManualRequestFixture.ParseIsbn("9780132350884"),
+            availableSession.Id,
+            BookMovementId.CreateUnique(),
+            availableSession.VolunteerId,
+            now.AddDays(-1));
+        await fixture.AddWatcherAsync(WatchlistItemScope.Work, workId: ManualRequestFixture.DefaultWorkId);
+        await fixture.AddWatcherAsync(WatchlistItemScope.Edition, isbn: "9782070363735");
+        await fixture.AddWatcherAsync(WatchlistItemScope.Edition, isbn: "9780306406157");
+        await fixture.AddWatcherAsync(WatchlistItemScope.Edition, isbn: "9780306406157", suspended: true);
+        await fixture.Context.SaveChangesAsync();
+        var handler = new GetManualRequestQueueQueryHandler(fixture.Context, fixture.CreateClock());
+
+        var searching = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Searching, null, 1, 20),
+            CancellationToken.None);
+        var found = await handler.Handle(
+            new GetManualRequestQueueQuery(ManualRequestTab.Found, null, 1, 20),
+            CancellationToken.None);
+
+        searching.IsError.Should().BeFalse();
+        searching.Value.Items.Select(item => item.RequestId).Should().Equal(editionSearch.Id, workSearch.Id);
+        var workItem = searching.Value.Items.Single(item => item.RequestId == workSearch.Id);
+        workItem.QuantityAvailable.Should().Be(3);
+        workItem.QuantityAnnounced.Should().Be(3);
+        var editionItem = searching.Value.Items.Single(item => item.RequestId == editionSearch.Id);
+        editionItem.QuantityAvailable.Should().Be(0);
+        editionItem.QuantityAnnounced.Should().Be(0);
+        found.IsError.Should().BeFalse();
+        found.Value.Items.Select(item => item.RequestId).Should().Equal(workFound.Id, editionFound.Id, scanAvailable.Id);
+        found.Value.Items[0].WatcherCount.Should().Be(2);
+        found.Value.Items[0].ReleaseMode.Should().Be(ManualRequestReleaseMode.NextFair);
+        found.Value.Items[0].ReleaseFairStart.Should().Be(fair.DateStart);
+        found.Value.Items[1].WatcherCount.Should().Be(1);
+        found.Value.Items[1].ReleaseMode.Should().Be(ManualRequestReleaseMode.NextFair);
+        found.Value.Items[1].ReleaseFairStart.Should().Be(fair.DateStart);
+        found.Value.Items[2].WatcherCount.Should().Be(0);
+        found.Value.Items[2].ReleaseMode.Should().Be(ManualRequestReleaseMode.AvailableNow);
+        found.Value.Items[2].ReleaseFairStart.Should().BeNull();
+    }
+
+    [Fact]
     public async Task StockQuery_ReturnsAvailableAndAnnouncedQuantities()
     {
         await using var fixture = await ManualRequestFixture.CreateAsync();
