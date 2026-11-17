@@ -65,6 +65,7 @@ public sealed class BookNotFoundReportConfiguration : IEntityTypeConfiguration<B
             .HasDatabaseName("IX_BookNotFoundReports_Status_RareBookId");
         builder.HasIndex(report => new { report.UserId, report.ReportedAt })
             .HasDatabaseName("IX_BookNotFoundReports_UserId_ReportedAt");
+        builder.HasIndex(report => new { report.Status, report.ClosedAt });
         builder.HasIndex(report => new { report.UserId, report.Isbn13 })
             .IsUnique()
             .HasDatabaseName("UX_BookNotFoundReports_OpenPerMemberEdition")
