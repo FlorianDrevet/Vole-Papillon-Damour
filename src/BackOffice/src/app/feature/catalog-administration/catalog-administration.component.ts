@@ -681,6 +681,7 @@ export class CatalogAdministrationComponent implements OnInit {
     after: (value: T) => void,
     describeError: (error: unknown) => string = error => this.readError(error),
   ): void {
+    if (this.isSaving()) { return; }
     this.isSaving.set(true);
     this.clearMessages();
     request()
