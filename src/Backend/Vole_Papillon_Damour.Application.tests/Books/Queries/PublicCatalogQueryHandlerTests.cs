@@ -808,6 +808,24 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_WhenAnnouncementIsUndated_KeepsItInNextBookFairScope()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var undatedBook = fixture.AddBook("9782070408504", "Livre annoncé sans date", "Auteur");
+        fixture.AddBook("9782070363735", "Livre non annoncé", "Auteur");
+        fixture.AddAnnouncement(undatedBook, quantity: 1);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.NextBookFair,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Livre annoncé sans date");
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenIncludeExhaustedIsRequested_AddsExhaustedBooksToNextFairScope()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
