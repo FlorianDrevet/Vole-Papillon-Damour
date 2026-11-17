@@ -22,7 +22,7 @@
     </div>
   }
 
-  <img [src]="actuality().urlPrincipalImage" [alt]="actuality().title" class="h-44 w-full rounded-sm object-cover">
+  <img [src]="actuality().urlPrincipalImage" [alt]="actuality().title" loading="lazy" decoding="async" class="h-44 w-full rounded-sm object-cover">
   <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ actuality().date | date:'d MMM yyyy' }}</span>
   <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ actuality().title }}</h3>
   <p #article class="article-box text-sm leading-relaxed text-slate-2">{{ actuality().article }}</p>
