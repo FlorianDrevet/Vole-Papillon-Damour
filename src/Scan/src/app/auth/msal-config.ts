@@ -50,5 +50,6 @@ export const msalInterceptorConfig: MsalInterceptorConfiguration = {
     // endpoints need an explicit wildcard to receive the API access token.
     [`${environment.apiUrl}/scan/*`, [environment.entra.apiScope]],
     [`${environment.apiUrl}/rare-books/*`, [environment.entra.apiScope]],
+    [`${environment.apiUrl}/books/*`, [environment.entra.apiScope]],
   ]),
 };

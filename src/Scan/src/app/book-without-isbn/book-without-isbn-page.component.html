@@ -1,0 +1,83 @@
+<main class="book-without-isbn" aria-labelledby="book-without-isbn-title">
+  <header class="page-head">
+    <a routerLink="/accueil" class="back-link">Retour à l'accueil</a>
+    <h1 id="book-without-isbn-title">Ajouter un livre sans ISBN</h1>
+  </header>
+
+  <ng-container *ngIf="created === null; else createdView">
+    <div class="kind-choice" role="group" aria-label="Type de livre" data-zone="E2-type-livre">
+      <button type="button" [class.active]="kind === 'ordinary'" [disabled]="!canCreateOrdinary" (click)="chooseKind('ordinary')">
+        Livre ordinaire
+      </button>
+      <button type="button" [class.active]="kind === 'rare'" [disabled]="!canCreateRare" (click)="chooseKind('rare')">
+        Livre rare
+      </button>
+    </div>
+
+    <form *ngIf="kind === 'ordinary'; else rareForm" class="form" data-zone="E2-formulaire-ordinaire" (ngSubmit)="submit()" novalidate>
+      <label>Titre *<input name="title" [(ngModel)]="ordinary.title" required maxlength="500"></label>
+      <label>Auteur<input name="authors" [(ngModel)]="ordinary.authors" maxlength="500"></label>
+      <label>Éditeur<input name="publisher" [(ngModel)]="ordinary.publisher" maxlength="200"></label>
+      <label>Année<input name="publicationYear" inputmode="numeric" [(ngModel)]="ordinary.publicationYear"></label>
+      <label>Format<input name="physicalFormat" [(ngModel)]="ordinary.physicalFormat" maxlength="50"></label>
+      <label>Langue<input name="language" [(ngModel)]="ordinary.language" maxlength="10"></label>
+      <label>Genre<input name="genre" [(ngModel)]="ordinary.genre" maxlength="100"></label>
+      <label>Édition<input name="edition" [(ngModel)]="ordinary.edition" maxlength="100"></label>
+      <label>Pages<input name="pages" inputmode="numeric" [(ngModel)]="ordinary.pages"></label>
+      <label>Résumé<textarea name="summary" [(ngModel)]="ordinary.summary" maxlength="20000"></textarea></label>
+      <label>Quantité *<input name="quantity" inputmode="numeric" [(ngModel)]="ordinary.quantity" required></label>
+    </form>
+
+    <ng-template #rareForm>
+      <form class="form" data-zone="E2-formulaire-rare" (ngSubmit)="submit()" novalidate>
+        <label>Titre *<input name="rareTitle" [(ngModel)]="rare.title" required maxlength="500"></label>
+        <label>Auteur<input name="rareAuthor" [(ngModel)]="rare.authorMention" maxlength="200"></label>
+        <label>Éditeur<input name="rarePublisher" [(ngModel)]="rare.publisher" maxlength="200"></label>
+        <label>Année<input name="rareYear" inputmode="numeric" [(ngModel)]="rare.publicationYear"></label>
+        <label>Prix ferme *<input name="rarePrice" inputmode="decimal" [(ngModel)]="rare.price" required></label>
+        <label>État *
+          <select name="rareCondition" [(ngModel)]="rare.condition">
+            <option *ngFor="let condition of conditions" [value]="condition.value">{{ condition.label }}</option>
+          </select>
+        </label>
+        <label>Description<textarea name="rareDescription" [(ngModel)]="rare.publicDescription" maxlength="2000"></textarea></label>
+      </form>
+    </ng-template>
+
+    <section class="photos" data-zone="E2-photos" aria-label="Photos du livre">
+      <label class="photo-picker">
+        Photos ({{ photos.length }}/{{ maxPhotos }})
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="addPhotos($event)">
+      </label>
+      <ul *ngIf="photos.length > 0" class="photo-list">
+        <li *ngFor="let photo of photos; let index = index">
+          <span>{{ photo.name }}</span>
+          <button type="button" (click)="removePhoto(index)" aria-label="Retirer la photo">Retirer</button>
+        </li>
+      </ul>
+      <p *ngIf="photoError" class="error" role="alert">{{ photoError }}</p>
+    </section>
+
+    <p *ngIf="error" class="error" role="alert" data-zone="E2-erreur">{{ error }}</p>
+    <button type="button" class="primary" data-zone="E2-bouton-creer" [disabled]="busy" (click)="submit()">
+      {{ busy ? 'Création…' : 'Créer la fiche' }}
+    </button>
+  </ng-container>
+
+  <ng-template #createdView>
+    <section class="created" data-zone="E3-fiche-creee" aria-live="polite">
+      <h2>Fiche créée</h2>
+      <svg *ngIf="bars.length > 0" class="barcode" data-zone="E3-code-barres" [attr.viewBox]="'0 0 ' + moduleCount + ' 60'" role="img" [attr.aria-label]="'Code-barres ' + created?.code">
+        <rect *ngFor="let bar of bars" [attr.x]="bar.x" [attr.width]="bar.width" y="0" height="60"></rect>
+      </svg>
+      <p class="digits" data-zone="E3-code-chiffres">{{ created?.code }}</p>
+      <p *ngIf="created?.price" class="price" data-zone="E3-prix">Prix ferme : {{ created?.price }}</p>
+      <p *ngIf="photoError" class="error" role="alert">{{ photoError }}</p>
+      <div class="actions">
+        <button type="button" class="primary" data-zone="E3-bouton-imprimer" (click)="printLabel()">Imprimer l'étiquette</button>
+        <button type="button" data-zone="E3-bouton-plus-tard" (click)="later()">Plus tard</button>
+        <button type="button" data-zone="E3-bouton-autre" (click)="createAnother()">Ajouter un autre livre</button>
+      </div>
+    </section>
+  </ng-template>
+</main>

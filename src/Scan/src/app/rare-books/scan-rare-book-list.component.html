@@ -79,6 +79,7 @@
         <span *ngIf="book.authorMention" class="rare-card-author">{{ book.authorMention }}</span>
         <span class="rare-card-meta">{{ book.publicationYear || 'année à préciser' }}</span>
         <span class="rare-card-price">{{ priceLabel(book) }} · {{ photoLabel(book) }}</span>
+        <span *ngIf="book.isbn13" class="rare-card-print" role="link" tabindex="0" data-zone="E5-liste-imprimer" (click)="$event.stopPropagation(); printLabel(book)" (keydown.enter)="$event.stopPropagation(); printLabel(book)">Imprimer l'étiquette</span>
         <span *ngIf="book.syncStatus !== 'Synced'" class="rare-card-pending">À synchroniser</span>
       </span>
       <span class="rare-card-arrow" aria-hidden="true">

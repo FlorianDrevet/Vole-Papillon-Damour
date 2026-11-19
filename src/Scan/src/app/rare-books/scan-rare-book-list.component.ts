@@ -82,6 +82,16 @@ export class ScanRareBookListComponent implements OnInit {
     return book.status === 'Published' ? 'Photo publiée' : 'Photo brouillon';
   }
 
+  // E5 : impression de l'étiquette d'une fiche rare, avec son prix ferme (RG-179).
+  printLabel(book: ScanRareBook): void {
+    if (!book.isbn13) {
+      return;
+    }
+
+    const queryParams = book.price > 0 ? {code: book.isbn13, price: `${book.price.toFixed(2)} €`} : {code: book.isbn13};
+    void this.router.navigate(['/etiquette'], {queryParams});
+  }
+
   priceLabel(book: ScanRareBook): string {
     return book.price > 0 ? `${book.price.toLocaleString('fr-FR')} €` : 'prix à fixer';
   }

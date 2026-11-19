@@ -1,3 +1,5 @@
+import {isInternalCode} from '../label-printer/ean13';
+
 export function normalizeIsbn(input: string | null | undefined): string | null {
   if (!input?.trim()) {
     return null;
@@ -42,4 +44,15 @@ function isbn13CheckDigit(firstTwelveDigits: string): number {
   }
 
   return (10 - (sum % 10)) % 10;
+}
+
+// ISBN-13 normalisé, ou code interne valide (RG-170, RG-172). Null sinon.
+export function normalizeBookCode(input: string | null | undefined): string | null {
+  const isbn13 = normalizeIsbn(input);
+  if (isbn13 !== null) {
+    return isbn13;
+  }
+
+  const digits = (input ?? '').replace(/[\s-]/g, '');
+  return isInternalCode(digits) ? digits : null;
 }

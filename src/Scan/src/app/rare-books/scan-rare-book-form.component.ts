@@ -79,11 +79,22 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
     this.step = 'candidate';
   }
 
+  // RG-180 : un livre sans ISBN ne se crée pas hors ligne. Le parcours est la création en ligne.
   startNoIsbn(): void {
-    this.error = null;
-    this.candidate = null;
-    this.form = {...emptyDraft(), title: 'Livre à renseigner'};
-    this.step = 'identify';
+    void this.router.navigateByUrl('/sans-isbn');
+  }
+
+  // E5 : impression de l'étiquette de la fiche, avec son prix ferme (RG-179).
+  printLabel(): void {
+    const code = this.book?.isbn13;
+    if (!code) {
+      return;
+    }
+
+    const queryParams = this.book && this.book.price > 0
+      ? {code, price: `${this.book.price.toFixed(2)} €`}
+      : {code};
+    void this.router.navigate(['/etiquette'], {queryParams});
   }
 
   async lookupCandidate(): Promise<void> {

@@ -9,7 +9,11 @@
     <p class="rare-flow-title">{{ step === 'choice' ? 'NOUVEAU LIVRE RARE' : 'LIVRES RARES' }}</p>
   </header>
 
-  <nav *ngIf="step === 'identify' || step === 'describe' || step === 'photos'" class="rare-stepper" aria-label="Étapes de la fiche">
+  <div *ngIf="book?.isbn13" class="rare-print" data-zone="E5-fiche-imprimer">
+  <button type="button" class="rare-secondary" data-zone="E5-bouton-imprimer-etiquette" (click)="printLabel()">Imprimer l'étiquette</button>
+</div>
+
+<nav *ngIf="step === 'identify' || step === 'describe' || step === 'photos'" class="rare-stepper" aria-label="Étapes de la fiche">
     <div class="rare-stepper-labels">
       <span>ÉTAPE {{ step === 'identify' ? '1' : step === 'describe' ? '2' : '3' }} SUR 3</span>
       <span>{{ stepLabel(step) }}</span>

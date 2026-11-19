@@ -23,6 +23,7 @@ import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.compon
 import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
 import {LabelPrinterPageComponent} from './label-printer/label-printer-page.component';
 import {LabelPreviewComponent} from './label-printer/label-preview.component';
+import {BookWithoutIsbnPageComponent} from './book-without-isbn/book-without-isbn-page.component';
 import {LABEL_PRINTER, SimulatedLabelPrinter} from './label-printer/label-printer';
 import {scanRoutes} from './scan-routing';
 import {
@@ -48,6 +49,7 @@ import {environment} from '../environments/environment';
     ScanRareBookListComponent,
     LabelPrinterPageComponent,
     LabelPreviewComponent,
+    BookWithoutIsbnPageComponent,
   ],
   imports: [
     BrowserModule,

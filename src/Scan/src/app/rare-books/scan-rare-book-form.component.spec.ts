@@ -39,7 +39,7 @@ describe('ScanRareBookFormComponent', () => {
       providers: [
         {provide: ScanRareBookService, useValue: rareBooks},
         {provide: BookMetadataService, useValue: metadata},
-        {provide: Router, useValue: jasmine.createSpyObj<Router>('Router', ['navigate'])},
+        {provide: Router, useValue: jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl'])},
         {provide: ActivatedRoute, useValue: {snapshot: {paramMap: {get: () => null}}}},
       ],
     });
@@ -63,40 +63,15 @@ describe('ScanRareBookFormComponent', () => {
     expect(rareBooks.createDraft).not.toHaveBeenCalled();
   });
 
-  it('creates a Draft before a photo is queued and keeps the price display-only', async () => {
+  it('sends a book without ISBN to the online-only creation page, never to the offline queue (RG-180)', () => {
+    const router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    router.navigateByUrl.and.resolveTo(true);
+
     component.startNoIsbn();
-    const draft = {
-      clientId: 'client-1',
-      serverId: null,
-      clientGestureId: 'client-1',
-      isbn13: null,
-      title: 'Les Fables',
-      authorMention: null,
-      publisher: null,
-      publicationYear: null,
-      price: 60,
-      condition: 'GoodWithFlaws',
-      publicDescription: null,
-      status: 'Draft' as const,
-      isSold: false,
-      thumbnail: null,
-      updatedAt: '2026-09-17T10:00:00.000Z',
-      rowVersion: null,
-      syncStatus: 'PendingCreate' as const,
-      lastError: null,
-    };
-    rareBooks.createDraft.and.resolveTo(draft);
 
-    await component.saveAndContinue();
-
-    expect(rareBooks.createDraft).toHaveBeenCalledWith(jasmine.objectContaining({
-      title: 'Livre à renseigner',
-      price: 0,
-    }));
-    expect(component.book?.status).toBe('Draft');
-    expect(component.step).toBe('describe');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/sans-isbn');
+    expect(rareBooks.createDraft).not.toHaveBeenCalled();
   });
-
   it('presents the new-book choice with the two mockup paths', () => {
     expect(fixture.nativeElement.querySelector('.rare-flow-header')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Ce livre a-t-il un code-barres');
