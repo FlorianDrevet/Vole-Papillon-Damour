@@ -1373,6 +1373,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Status", "ClosedAt");
+
                     b.HasIndex("Status", "Isbn13")
                         .HasDatabaseName("IX_BookNotFoundReports_Status_Isbn13");
 
@@ -1843,6 +1845,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("Status");
+
                     b.HasIndex("TargetAssoEventsId");
 
                     b.HasIndex("VolunteerId")
@@ -2118,9 +2124,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MemberId");
+
                     b.HasIndex("RareBookId");
 
                     b.HasIndex("ScanSessionId");
+
+                    b.HasIndex("Kind", "DueAt");
 
                     b.HasIndex("Status", "DueAt");
 

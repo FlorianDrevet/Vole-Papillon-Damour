@@ -78,5 +78,7 @@ public sealed class ScanSessionConfiguration : IEntityTypeConfiguration<ScanSess
         builder.HasIndex(session => session.VolunteerId)
             .IsUnique()
             .HasFilter("[Status] = 0");
+        builder.HasIndex(session => session.StartedAt);
+        builder.HasIndex(session => session.Status);
     }
 }

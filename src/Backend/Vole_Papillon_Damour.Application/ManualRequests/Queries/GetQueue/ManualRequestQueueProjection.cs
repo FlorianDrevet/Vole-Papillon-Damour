@@ -46,6 +46,17 @@ internal static class ManualRequestQueueProjection
                 .Where(book => foundIsbns.Contains(book.Id))
                 .ToDictionaryAsync(book => book.Id, cancellationToken);
 
+        // One batch lookup per data kind for the whole page, instead of one round trip per item.
+        var searchingRequests = requests.Where(request => request.Status == ManualBookRequestStatus.Searching).ToArray();
+        var foundRequests = requests.Where(request => request.Status == ManualBookRequestStatus.Found).ToArray();
+        var stocks = await ManualRequestStock.GetManyAsync(dbContext, searchingRequests, cancellationToken);
+        var watcherKeys = foundRequests
+            .Where(request => request.FoundIsbn13 is not null)
+            .Select(request => (request.Id, request.FoundIsbn13!.Value, request.WorkId))
+            .ToArray();
+        var watcherCounts = await ManualRequestWatchers.CountManyAsync(dbContext, watcherKeys, cancellationToken);
+        var releasePlans = await ManualRequestRelease.PlanManyAsync(dbContext, foundRequests, now, cancellationToken);
+
         var items = new List<ManualRequestQueueItem>(requests.Count);
         foreach (var request in requests)
         {
@@ -59,31 +70,14 @@ internal static class ManualRequestQueueProjection
 
             if (request.Status == ManualBookRequestStatus.Searching)
             {
-                var stock = await ManualRequestStock.GetAsync(
-                    dbContext,
-                    request.Scope,
-                    request.WorkId,
-                    request.Isbn13,
-                    cancellationToken);
+                var stock = stocks[request.Id];
                 quantityAvailable = stock.QuantityAvailable;
                 quantityAnnounced = stock.QuantityAnnounced;
             }
             else if (request.Status == ManualBookRequestStatus.Found)
             {
-                if (request.FoundIsbn13 is { } foundIsbn)
-                {
-                    watcherCount = await ManualRequestWatchers.CountAsync(
-                        dbContext,
-                        foundIsbn,
-                        request.WorkId,
-                        cancellationToken);
-                }
-
-                var release = await ManualRequestRelease.PlanAsync(
-                    dbContext,
-                    request,
-                    now,
-                    cancellationToken);
+                watcherCount = watcherCounts.GetValueOrDefault(request.Id);
+                var release = releasePlans[request.Id];
                 releaseMode = release.Mode;
                 releaseFairStart = release.FairStart;
             }

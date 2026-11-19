@@ -11,6 +11,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -35,34 +36,76 @@ internal static class ManualRequestRelease
         DateTime now,
         CancellationToken ct)
     {
+        var plans = await PlanManyAsync(db, [request], now, ct);
+        return plans[request.Id];
+    }
+
+    /// <summary>
+    /// Batch variant of <see cref="PlanAsync"/>: at most one query for the scan sessions and one for
+    /// the candidate fairs, whatever the number of requests. Same decision rules as <see cref="PlanAsync"/>.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<Guid, ManualRequestReleasePlan>> PlanManyAsync(
+        IProjectDbContext db,
+        IReadOnlyCollection<ManualBookRequest> requests,
+        DateTime now,
+        CancellationToken ct)
+    {
+        var sessionIds = requests
+            .Where(request => request.FoundOrigin == ManualBookRequestFoundOrigin.Scan &&
+                              request.FoundScanSessionId is not null)
+            .Select(request => request.FoundScanSessionId!)
+            .Distinct()
+            .ToArray();
+        var sessions = sessionIds.Length == 0
+            ? new Dictionary<ScanSessionId, ScanSession>()
+            : await db.ScanSessions
+                .AsNoTracking()
+                .Where(session => sessionIds.Contains(session.Id))
+                .ToDictionaryAsync(session => session.Id, ct);
+
+        var fairIds = requests
+            .Select(request => CandidateFairId(request, sessions))
+            .Where(fairId => fairId is not null)
+            .Select(fairId => fairId!)
+            .Distinct()
+            .ToArray();
+        var fairs = fairIds.Length == 0
+            ? new Dictionary<AssoEventsId, AssoEvents>()
+            : await db.AssoEvents
+                .AsNoTracking()
+                .WhereActiveBookFair()
+                .Where(fair => fairIds.Contains(fair.Id))
+                .ToDictionaryAsync(fair => fair.Id, ct);
+
+        var plans = new Dictionary<Guid, ManualRequestReleasePlan>(requests.Count);
+        foreach (var request in requests)
+        {
+            var fairId = CandidateFairId(request, sessions);
+            plans[request.Id] = fairId is { } candidate &&
+                                fairs.TryGetValue(candidate, out var fair) &&
+                                IsFutureFair(fair, now)
+                ? ForFair(fair)
+                : AvailableNow();
+        }
+
+        return plans;
+    }
+
+    private static AssoEventsId? CandidateFairId(
+        ManualBookRequest request,
+        IReadOnlyDictionary<ScanSessionId, ScanSession> sessions)
+    {
         if (request.FoundOrigin == ManualBookRequestFoundOrigin.Scan && request.FoundScanSessionId is { } sessionId)
         {
-            var session = await db.ScanSessions
-                .AsNoTracking()
-                .SingleOrDefaultAsync(candidate => candidate.Id == sessionId, ct);
-            if (session is { Mode: ScanMode.NextFair, TargetAssoEventsId: { } sessionFairId })
-            {
-                var fair = await FindFutureActiveFairAsync(db, sessionFairId, now, ct);
-                if (fair is not null)
-                {
-                    return ForFair(fair);
-                }
-            }
-
-            return AvailableNow();
+            return sessions.TryGetValue(sessionId, out var session) &&
+                   session is { Mode: ScanMode.NextFair, TargetAssoEventsId: { } sessionFairId }
+                ? sessionFairId
+                : null;
         }
 
-        if (request.FoundOrigin == ManualBookRequestFoundOrigin.StockAnnounced &&
-            request.PickedFromFairId is { } pickedFairId)
-        {
-            var fair = await FindFutureActiveFairAsync(db, pickedFairId, now, ct);
-            if (fair is not null)
-            {
-                return ForFair(fair);
-            }
-        }
-
-        return AvailableNow();
+        return request.FoundOrigin == ManualBookRequestFoundOrigin.StockAnnounced
+            ? request.PickedFromFairId
+            : null;
     }
 
     public static async Task<ErrorOr<BookMovementId>> ReleaseAsync(
@@ -152,23 +195,8 @@ internal static class ManualRequestRelease
         return movementId;
     }
 
-    private static async Task<AssoEvents?> FindFutureActiveFairAsync(
-        IProjectDbContext db,
-        AssoEventsId fairId,
-        DateTime now,
-        CancellationToken ct)
-    {
-        var fair = await db.AssoEvents
-            .AsNoTracking()
-            .WhereActiveBookFair()
-            .SingleOrDefaultAsync(candidate => candidate.Id == fairId, ct);
-        if (fair is null || (fair.DateEnd ?? fair.DateStart) <= new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc)))
-        {
-            return null;
-        }
-
-        return fair;
-    }
+    private static bool IsFutureFair(AssoEvents fair, DateTime now) =>
+        (fair.DateEnd ?? fair.DateStart) > new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc));
 
     private static ManualRequestReleasePlan AvailableNow() =>
         new(ManualRequestReleaseMode.AvailableNow, null, null);

@@ -237,6 +237,110 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
     }
 
     [Fact]
+    public async Task CancelSession_ReversesSeveralKeptEntriesOfTheSameBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        for (var scan = 0; scan < 2; scan++)
+        {
+            await fixture.CreateHandler().Handle(
+                new ScanBookCommand(
+                    session.Id,
+                    "9782070363735",
+                    Kept: true,
+                    OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
+                    ClientGestureId: Guid.NewGuid(),
+                    VolunteerId: session.VolunteerId),
+                CancellationToken.None);
+        }
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new CancelScanSessionCommandHandler(fixture.Context, clock, fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new CancelScanSessionCommand(session.Id, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AffectedMovementCount.Should().Be(2);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+        (await fixture.Context.ScanSessions.SingleAsync()).Status.Should().Be(ScanSessionStatus.Resumed);
+    }
+
+    [Fact]
+    public async Task CancelSession_WhenAKeptEntryWasConsumed_ReturnsConflictAndKeepsTheSessionOpen()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        for (var scan = 0; scan < 2; scan++)
+        {
+            await fixture.CreateHandler().Handle(
+                new ScanBookCommand(
+                    session.Id,
+                    "9782070363735",
+                    Kept: true,
+                    OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
+                    ClientGestureId: Guid.NewGuid(),
+                    VolunteerId: session.VolunteerId),
+                CancellationToken.None);
+        }
+
+        var book = await fixture.Context.Books.SingleAsync();
+        book.ApplyQuantityCorrection(0, ScanBookCommandHandlerTests.ReceivedAt);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new CancelScanSessionCommandHandler(fixture.Context, clock, fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new CancelScanSessionCommand(session.Id, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.SessionMovementAlreadyConsumed");
+        (await fixture.Context.ScanSessions.SingleAsync()).Status.Should().Be(ScanSessionStatus.InProgress);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task CancelSession_ReversesAKeptEntryOnTheCanonicalBookOfARedirectedIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var canonical = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        var redirected = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        redirected.RedirectTo(canonical.Id);
+        fixture.Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            redirected.Id,
+            BookMovementType.DirectEntry,
+            1,
+            ScanBookCommandHandlerTests.ClientScanAt,
+            ScanBookCommandHandlerTests.ClientScanAt,
+            clockSuspect: false,
+            session.Id,
+            session.VolunteerId,
+            null,
+            note: null,
+            clientGestureId: Guid.NewGuid(),
+            reversalOfMovementId: null));
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new CancelScanSessionCommandHandler(fixture.Context, clock, fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new CancelScanSessionCommand(session.Id, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AffectedMovementCount.Should().Be(1);
+        (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id))
+            .QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
     public async Task ForceClose_UsesTheSessionOwnerForTheSharedCloseHandlerAndStoresAdminForced()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
