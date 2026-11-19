@@ -310,7 +310,7 @@ internal sealed class WatchlistFeatureTestDbContext(
         modelBuilder.Entity<RareBook>(builder =>
         {
             builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn.HasValue ? isbn.Value.Value : null,
                     value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);

@@ -130,7 +130,7 @@ public sealed class BookMetadataEnrichmentBackgroundServiceTests
 
         await sender.Received(1).Send(
             Arg.Is<EnrichPendingBooksCommand>(command =>
-                command.Isbn13s != null && command.Isbn13s.SequenceEqual(new[] { isbn13 }) &&
+                command.Isbn13s != null && command.Isbn13s.SequenceEqual(new BookCode[] { isbn13 }) &&
                 command.Usage == IsbndbUsage.Favorites && command.ForceFallback),
             Arg.Any<CancellationToken>());
     }

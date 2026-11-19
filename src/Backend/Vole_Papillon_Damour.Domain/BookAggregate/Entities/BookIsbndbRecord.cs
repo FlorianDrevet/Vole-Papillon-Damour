@@ -5,7 +5,7 @@ namespace Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 
 public sealed class BookIsbndbRecord
 {
-    public Isbn13 Isbn13 { get; init; }
+    public BookCode Isbn13 { get; init; }
     public string? TitleLong { get; init; }
     public string? Isbn10 { get; init; }
     public string? Publisher { get; init; }

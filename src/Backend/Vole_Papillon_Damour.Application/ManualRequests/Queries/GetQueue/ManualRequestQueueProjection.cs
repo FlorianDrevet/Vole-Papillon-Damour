@@ -82,7 +82,11 @@ internal static class ManualRequestQueueProjection
                 releaseFairStart = release.FairStart;
             }
 
-            foundBooks.TryGetValue(request.FoundIsbn13 ?? default, out var foundBook);
+            Book? foundBook = null;
+            if (request.FoundIsbn13 is { } foundIsbn13)
+            {
+                foundBooks.TryGetValue((BookCode)foundIsbn13, out foundBook);
+            }
             items.Add(new ManualRequestQueueItem(
                 request.Id,
                 request.RequesterId,

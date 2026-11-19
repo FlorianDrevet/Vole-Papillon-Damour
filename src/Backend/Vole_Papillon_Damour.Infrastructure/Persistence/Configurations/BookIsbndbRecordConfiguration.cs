@@ -18,7 +18,7 @@ public sealed class BookIsbndbRecordConfiguration : IEntityTypeConfiguration<Boo
             .ValueGeneratedNever()
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(record => record.TitleLong).HasColumnType("nvarchar(max)");
         builder.Property(record => record.Isbn10)

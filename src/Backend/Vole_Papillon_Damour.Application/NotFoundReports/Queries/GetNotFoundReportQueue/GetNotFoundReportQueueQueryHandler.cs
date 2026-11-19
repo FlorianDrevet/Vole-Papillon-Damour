@@ -241,7 +241,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
             .ToListAsync(cancellationToken);
     }
 
-    private static string TargetKey(Isbn13? isbn13, RareBookId? rareBookId) =>
+    private static string TargetKey(BookCode? isbn13, RareBookId? rareBookId) =>
         isbn13 is { } edition
             ? $"edition:{edition.Value}"
             : $"rare:{rareBookId!.Value:D}";
@@ -278,7 +278,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
     private sealed class QueueTargetProjection
     {
         public string Kind { get; init; } = string.Empty;
-        public Isbn13? Isbn13 { get; init; }
+        public BookCode? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public string Title { get; init; } = string.Empty;
         public string? Authors { get; init; }
@@ -295,7 +295,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
 
     private sealed class QueueCommentProjection
     {
-        public Isbn13? Isbn13 { get; init; }
+        public BookCode? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public string Text { get; init; } = string.Empty;
         public DateTime ReportedAt { get; init; }

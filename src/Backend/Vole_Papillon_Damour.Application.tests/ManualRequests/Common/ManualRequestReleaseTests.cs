@@ -247,7 +247,7 @@ public sealed class ManualRequestReleaseTests
         result.IsError.Should().BeFalse();
         (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id.AsIsbn13())).QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == redirected.Id)).QuantityAvailable.Should().Be(0);
-        fixture.Context.BookMovements.Local.Single(candidate => candidate.Id == result.Value).Isbn13.Should().Be(canonical.Id.AsIsbn13());
+        fixture.Context.BookMovements.Local.Single(candidate => candidate.Id == result.Value).Isbn13.Should().Be(canonical.Id);
     }
 
     private static async Task<ManualBookRequest> CreateRequestAsync(

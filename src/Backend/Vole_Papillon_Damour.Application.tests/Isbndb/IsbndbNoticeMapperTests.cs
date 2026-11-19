@@ -149,7 +149,7 @@ public sealed class IsbndbNoticeMapperTests
 
         var record = IsbndbNoticeMapper.ToRecord(book, fetchedAt);
 
-        record.Isbn13.Should().Be(isbn13);
+        record.Isbn13.Should().Be((BookCode)isbn13);
         record.TitleLong.Should().Be("Les Misérables, tome 1");
         record.HeightValue.Should().Be(18.5m);
         record.HeightUnit.Should().Be("cm");

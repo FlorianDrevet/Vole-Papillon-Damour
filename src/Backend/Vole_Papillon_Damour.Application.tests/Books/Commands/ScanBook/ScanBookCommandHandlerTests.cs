@@ -134,7 +134,7 @@ public sealed class ScanBookCommandHandlerTests
             .QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(book => book.Id == source.Id))
             .QuantityAvailable.Should().Be(0);
-        (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id.AsIsbn13());
+        (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id);
     }
 
     [Fact]
@@ -1082,7 +1082,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Entity<RareBook>(builder =>
         {
             builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn.HasValue ? isbn.Value.Value : null,
                     value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);

@@ -36,8 +36,8 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
 
         builder.Property(book => book.Title)
             .HasMaxLength(300)

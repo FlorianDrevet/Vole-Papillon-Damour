@@ -12,7 +12,7 @@ namespace Vole_Papillon_Damour.Domain.RareBookAggregate;
 public sealed class RareBook : AggregateRoot<RareBookId>
 {
     public RareBookSlug Slug { get; private set; } = null!;
-    public Isbn13? Isbn13 { get; private set; }
+    public BookCode? Isbn13 { get; private set; }
     public string Title { get; private set; } = null!;
     public string? AuthorMention { get; private set; }
     public string? Publisher { get; private set; }

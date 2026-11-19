@@ -41,7 +41,7 @@ public sealed class FavoriteReferenceServiceTests
         var result = await service.EnsureAsync(isbn, FavoriteOrigin.Anonymous, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.CanonicalIsbn13.Should().Be(isbn);
+        result.Value.CanonicalIsbn13.Should().Be((BookCode)isbn);
         result.Value.Created.Should().BeFalse();
         queue.DidNotReceiveWithAnyArgs().Enqueue(default);
         await recommendations.DidNotReceiveWithAnyArgs().EnqueueBooksAsync(default!, default);
@@ -65,7 +65,7 @@ public sealed class FavoriteReferenceServiceTests
         var result = await service.EnsureAsync(requestedIsbn, FavoriteOrigin.Member, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.CanonicalIsbn13.Should().Be(canonicalIsbn);
+        result.Value.CanonicalIsbn13.Should().Be((BookCode)canonicalIsbn);
         result.Value.Created.Should().BeFalse();
         (await fixture.Context.Books.CountAsync()).Should().Be(2);
         queue.DidNotReceiveWithAnyArgs().Enqueue(default);
@@ -83,7 +83,7 @@ public sealed class FavoriteReferenceServiceTests
         var result = await service.EnsureAsync(isbn, FavoriteOrigin.Anonymous, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.CanonicalIsbn13.Should().Be(isbn);
+        result.Value.CanonicalIsbn13.Should().Be((BookCode)isbn);
         result.Value.Created.Should().BeTrue();
         var book = await fixture.Context.Books.SingleAsync();
         book.IsFavoriteReference.Should().BeTrue();

@@ -14,7 +14,7 @@ public sealed class BookNotFoundReport : Entity<Guid>
     public const int ClosureNoteMaxLength = 500;
 
     public UserId? UserId { get; private set; }
-    public Isbn13? Isbn13 { get; private set; }
+    public BookCode? Isbn13 { get; private set; }
     public RareBookId? RareBookId { get; private set; }
     public string? Comment { get; private set; }
     public NotFoundReportStatus Status { get; private set; } = NotFoundReportStatus.Open;

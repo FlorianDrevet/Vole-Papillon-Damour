@@ -24,8 +24,8 @@ public sealed class BookNotFoundReportConfiguration : IEntityTypeConfiguration<B
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
         builder.Property(report => report.RareBookId)
             .HasConversion(
                 rareBookId => rareBookId == null ? (Guid?)null : rareBookId.Value,

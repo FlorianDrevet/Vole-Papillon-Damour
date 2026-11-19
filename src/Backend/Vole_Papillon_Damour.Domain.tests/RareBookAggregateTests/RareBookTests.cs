@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using FluentAssertions;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -34,7 +35,7 @@ public sealed class RareBookTests
             isbn13: isbn);
 
         rareBook.Id.Value.Should().NotBeEmpty();
-        rareBook.Isbn13.Should().Be(isbn);
+        rareBook.Isbn13.Should().Be((BookCode?)isbn);
         rareBook.Title.Should().Be("Les Fables de la Fontaine");
         rareBook.Slug.Value.Should().Be("les-fables-de-la-fontaine-gustave-dore-1868");
         rareBook.Status.Should().Be(RareBookStatus.Draft);
