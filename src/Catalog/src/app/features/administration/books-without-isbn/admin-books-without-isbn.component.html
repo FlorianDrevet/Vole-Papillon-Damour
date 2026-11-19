@@ -1,0 +1,117 @@
+<section class="books-without-isbn" aria-labelledby="books-without-isbn-title" data-testid="books-without-isbn">
+  <header class="section-head">
+    <div>
+      <h2 id="books-without-isbn-title">Livres sans ISBN</h2>
+      <p class="section-help">Ouvrages sans ISBN créés sur la plateforme. Chaque fiche porte son code-barres interne.</p>
+    </div>
+    <button type="button" class="primary" data-testid="books-without-isbn-add" (click)="openForm()">Ajouter un livre sans ISBN</button>
+  </header>
+
+  @if (formOpen()) {
+    <section class="form-panel" data-testid="books-without-isbn-form" aria-label="Nouveau livre sans ISBN">
+      @if (created(); as done) {
+        <div class="created" role="status" data-testid="books-without-isbn-created">
+          <h3>Fiche créée</h3>
+          <svg class="barcode" [attr.viewBox]="'0 0 ' + moduleCount + ' 60'" role="img" [attr.aria-label]="'Code-barres ' + done.code">
+            @for (bar of barsFor(done.code); track $index) {
+              <rect [attr.x]="bar.x" [attr.width]="bar.width" y="0" height="60"></rect>
+            }
+          </svg>
+          <p class="digits">{{ done.code }}</p>
+          @if (photoError()) {
+            <p class="error" role="alert">{{ photoError() }}</p>
+          }
+          <button type="button" (click)="openForm()">Ajouter un autre livre</button>
+          <button type="button" (click)="closeForm()">Fermer</button>
+        </div>
+      } @else {
+        <form class="form-grid" (ngSubmit)="submit()" novalidate>
+          <label>Titre *<input name="title" [(ngModel)]="form.title" required maxlength="500"></label>
+          <label>Auteur<input name="authors" [(ngModel)]="form.authors" maxlength="500"></label>
+          <label>Éditeur<input name="publisher" [(ngModel)]="form.publisher" maxlength="200"></label>
+          <label>Année<input name="publicationYear" inputmode="numeric" [(ngModel)]="form.publicationYear"></label>
+          <label>Format<input name="physicalFormat" [(ngModel)]="form.physicalFormat" maxlength="50"></label>
+          <label>Langue<input name="language" [(ngModel)]="form.language" maxlength="10"></label>
+          <label>Genre<input name="genre" [(ngModel)]="form.genre" maxlength="100"></label>
+          <label>Édition<input name="edition" [(ngModel)]="form.edition" maxlength="100"></label>
+          <label>Pages<input name="pages" inputmode="numeric" [(ngModel)]="form.pages"></label>
+          <label>Quantité *<input name="quantity" inputmode="numeric" [(ngModel)]="form.quantity" required></label>
+          <label class="wide">Résumé<textarea name="summary" [(ngModel)]="form.summary" maxlength="20000"></textarea></label>
+        </form>
+
+        <section class="photos" aria-label="Photos du livre" data-testid="books-without-isbn-photos">
+          <label class="photo-picker">
+            Photos ({{ photos.length }}/{{ maxPhotos }})
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="addPhotos($event)">
+          </label>
+          @if (photos.length > 0) {
+            <ul class="photo-list">
+              @for (photo of photos; track $index) {
+                <li>
+                  <span>{{ photo.name }}</span>
+                  <button type="button" (click)="removePhoto($index)" aria-label="Retirer la photo">Retirer</button>
+                </li>
+              }
+            </ul>
+          }
+          @if (photoError()) {
+            <p class="error" role="alert">{{ photoError() }}</p>
+          }
+        </section>
+
+        @if (formError()) {
+          <p class="error" role="alert" data-testid="books-without-isbn-form-error">{{ formError() }}</p>
+        }
+        <div class="actions">
+          <button type="button" class="primary" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Création…' : 'Créer la fiche' }}</button>
+          <button type="button" (click)="closeForm()">Annuler</button>
+        </div>
+      }
+    </section>
+  }
+
+  <form class="search-row" role="search" (ngSubmit)="submitSearch()">
+    <input name="search" type="search" aria-label="Rechercher un livre sans ISBN" placeholder="Titre, auteur ou code" [(ngModel)]="search">
+    <button type="submit">Rechercher</button>
+  </form>
+
+  @if (error()) {
+    <p class="error" role="alert" data-testid="books-without-isbn-error">{{ error() }}</p>
+  } @else if (loading() && !page()) {
+    <p class="section-help" role="status">Chargement des livres sans ISBN…</p>
+  } @else if (page(); as current) {
+    @if (current.items.length === 0) {
+      <p class="section-help" data-testid="books-without-isbn-empty">Aucun livre sans ISBN pour le moment.</p>
+    } @else {
+      <ul class="book-list" data-testid="books-without-isbn-list">
+        @for (item of current.items; track item.code) {
+          <li class="book-row">
+            @if (firstPhotoUrl(item); as photoUrl) {
+              <img class="thumb" [src]="photoUrl" alt="" loading="lazy">
+            } @else {
+              <span class="thumb thumb-empty" aria-hidden="true">Sans photo</span>
+            }
+            <div class="book-main">
+              <strong>{{ item.title || 'Titre à renseigner' }}</strong>
+              @if (item.authors) {
+                <span>{{ item.authors }}</span>
+              }
+              <svg class="barcode-small" [attr.viewBox]="'0 0 ' + moduleCount + ' 60'" role="img" [attr.aria-label]="'Code-barres ' + item.code">
+                @for (bar of barsFor(item.code); track $index) {
+                  <rect [attr.x]="bar.x" [attr.width]="bar.width" y="0" height="60"></rect>
+                }
+              </svg>
+              <span class="digits">{{ item.code }}</span>
+            </div>
+            <span class="quantity">Quantité : {{ item.quantityAvailable }}</span>
+          </li>
+        }
+      </ul>
+      <nav class="pager" aria-label="Pages des livres sans ISBN">
+        <button type="button" [disabled]="pageNumber() <= 1 || loading()" (click)="goToPage(pageNumber() - 1)">Précédent</button>
+        <span>Page {{ pageNumber() }} sur {{ totalPages() }}</span>
+        <button type="button" [disabled]="pageNumber() >= totalPages() || loading()" (click)="goToPage(pageNumber() + 1)">Suivant</button>
+      </nav>
+    }
+  }
+</section>

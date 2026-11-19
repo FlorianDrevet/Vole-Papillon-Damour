@@ -33,7 +33,11 @@
           <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
         }
       </div>
-      <p class="cover-caption">Image de couverture indicative · l’édition est identifiée par son ISBN.</p>
+      @if (item.isInternalCode) {
+        <p class="cover-caption">Photo fournie par la bourse · ce livre n’a pas d’ISBN.</p>
+      } @else {
+        <p class="cover-caption">Image de couverture indicative · l’édition est identifiée par son ISBN.</p>
+      }
       @if (item.workId) {
         <a class="work-link cover-work-link" [routerLink]="['/oeuvre', item.workId]">Voir les autres éditions de cette œuvre →</a>
       }
@@ -55,7 +59,11 @@
           @if (item.publicationYear) { <span>{{ item.publicationYear }}</span> }
           <span aria-hidden="true">·</span>
         }
-        <span class="detail-isbn">ISBN {{ item.isbn13 }}</span>
+        @if (item.isInternalCode) {
+          <span class="detail-no-isbn">Livre sans ISBN</span>
+        } @else {
+          <span class="detail-isbn">ISBN {{ item.isbn13 }}</span>
+        }
       </p>
       @if (genreTags(item.genre).length) {
         <ul class="detail-genres" aria-label="Genres du livre">

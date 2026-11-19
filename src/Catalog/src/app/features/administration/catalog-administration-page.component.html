@@ -856,6 +856,10 @@
             <app-admin-rare-books (navigationCountsChanged)="refreshNavigationBadgeCounts()"></app-admin-rare-books>
           }
 
+          @case ('books-without-isbn') {
+            <app-admin-books-without-isbn></app-admin-books-without-isbn>
+          }
+
           @case ('isbn-not-found') {
             <app-isbn-not-found-view
               [accessToken]="isbnNotFoundAccessToken()"

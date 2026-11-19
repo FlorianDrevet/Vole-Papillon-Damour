@@ -9,6 +9,7 @@ import {CatalogAdministrationPageComponent} from './catalog-administration-page.
 import {AdminRareBookFormComponent} from './rare-books/admin-rare-book-form.component';
 import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.component';
 import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
+import {AdminBooksWithoutIsbnComponent} from './books-without-isbn/admin-books-without-isbn.component';
 import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-report-close-dialog.component';
 import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
 import {ManualRequestsViewComponent} from './manual-requests/manual-requests-view.component';
@@ -29,6 +30,7 @@ const routes: Routes = [
   declarations: [
     CatalogAdministrationPageComponent,
     AdminRareBooksComponent,
+    AdminBooksWithoutIsbnComponent,
     AdminRareBookFormComponent,
     AdminRareBookPhotosComponent,
     NotFoundReportsViewComponent,

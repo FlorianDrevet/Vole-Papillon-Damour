@@ -178,6 +178,7 @@ type CatalogAdminNavIcon =
   | 'catalogue'
   | 'isbn'
   | 'rare-books'
+  | 'books-without-isbn'
   | 'statistics'
   | 'accounts'
   | 'mail'
@@ -215,6 +216,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
       {id: 'isbn-not-found', label: 'ISBN non trouvés', icon: 'isbn'},
       {id: 'isbndb-absent', label: 'Livres hors ISBNdb', icon: 'isbn'},
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
+      {id: 'books-without-isbn', label: 'Livres sans ISBN', icon: 'catalogue'},
       {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
     ],
   },
@@ -704,6 +706,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         await this.loadIsbndbAbsentWorkspace();
         break;
       case 'rare-books':
+        break;
+      case 'books-without-isbn':
         break;
       case 'statistics':
         await this.loadStatisticsTab();
