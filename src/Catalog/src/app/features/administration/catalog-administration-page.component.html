@@ -449,7 +449,7 @@
                         <div class="metadata-editor">
                           <div class="cover-column">
                             @if (bookCoverPreviewUrl(book); as coverUrl) {
-                              <img class="book-cover" [catalogCover]="coverUrl" [alt]="'Couverture de ' + (book.title || book.isbn13)">
+                              <img class="book-cover" [catalogCover]="coverUrl" [alt]="'Couverture de ' + (book.title || book.isbn13)" loading="lazy" decoding="async">
                             } @else {
                               <span class="book-cover book-cover-placeholder" aria-hidden="true"></span>
                             }
@@ -556,7 +556,7 @@
                   <div class="catalogue-book-list" data-testid="catalogue-book-list" [class.catalogue-book-list-refreshing]="catalogueBlock.refreshing()" [attr.aria-busy]="catalogueLoading() ? 'true' : null">
                     @for (book of page.books; track book.isbn13) {
                       <article class="catalogue-book-row" [class.catalogue-book-hidden]="book.isHidden" [class.catalogue-book-redirected]="!!book.redirectedToIsbn13">
-                        @if (book.coverUrl) {<img class="catalogue-book-cover" [src]="book.coverUrl" alt="">} @else {<span class="catalogue-book-cover book-cover-placeholder" aria-hidden="true"></span>}
+                        @if (book.coverUrl) {<img class="catalogue-book-cover" [src]="book.coverUrl" alt="" loading="lazy" decoding="async">} @else {<span class="catalogue-book-cover book-cover-placeholder" aria-hidden="true"></span>}
                         <div class="catalogue-book-identity"><span class="isbn-label">{{ book.isbn13 }}</span><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span><div class="catalogue-book-tags"><span>{{ book.metadataStatus }}</span>@if (book.isRare) {<span>Rare</span>}@if (book.isHidden) {<span>Masqué</span>}@if (book.redirectedToIsbn13) {<span>Redirigée vers {{ book.redirectedToIsbn13 }}</span>}</div></div>
                         <div class="catalogue-book-stock"><span>Disponible</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong><small>{{ formatNumber(book.quantityAnnounced) }} annoncé{{ book.quantityAnnounced > 1 ? 's' : '' }}</small></div>
                         <div class="catalogue-book-actions"><div class="catalogue-stepper" aria-label="Modifier la quantité disponible"><button class="catalogue-stepper-button catalogue-stepper-decrease" type="button" [disabled]="isActionPending('catalogue-quantity') || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="catalogue-stepper-button catalogue-stepper-increase" type="button" [disabled]="isActionPending('catalogue-quantity') || !!book.redirectedToIsbn13" [attr.data-testid]="'catalogue-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustCatalogueQuantity(book, 'increase')">+</button></div><button class="button button-outline catalogue-book-detail" type="button" (click)="openBook(book.isbn13)">Détails</button></div>
@@ -772,7 +772,7 @@
                     <div class="catalogue-reference-heading"><div><span class="section-kicker">Référentiel externe</span><h3>{{ catalogueReferenceResults().length }} références trouvées</h3></div><span>À ajouter après vérification</span></div>
                     @for (reference of catalogueReferenceResults(); track reference.isbn13 || reference.workId || reference.title) {
                       <article class="catalogue-reference-row" [class.catalogue-reference-selected]="catalogueAddCandidate()?.isbn13 === reference.isbn13">
-                        @if (reference.coverUrl) {<img class="catalogue-reference-cover" [src]="reference.coverUrl" alt="">} @else {<span class="catalogue-reference-cover book-cover-placeholder" aria-hidden="true"></span>}
+                        @if (reference.coverUrl) {<img class="catalogue-reference-cover" [src]="reference.coverUrl" alt="" loading="lazy" decoding="async">} @else {<span class="catalogue-reference-cover book-cover-placeholder" aria-hidden="true"></span>}
                         <div class="catalogue-reference-copy"><strong>{{ reference.title || 'Titre à compléter' }}</strong><span>{{ reference.authors || 'Auteur non renseigné' }}{{ reference.publisher ? ' · ' + reference.publisher : '' }}{{ reference.publicationYear ? ' · ' + reference.publicationYear : '' }}</span><small>{{ reference.isbn13 ? 'ISBN ' + reference.isbn13 : 'ISBN non renseigné' }} · {{ reference.source }}</small></div>
                         <button class="button button-outline" data-testid="catalogue-use-reference" type="button" [disabled]="!reference.isbn13" (click)="selectCatalogueCandidate(reference)">{{ reference.isbn13 ? 'Sélectionner ce livre' : 'ISBN manquant' }}</button>
                       </article>
@@ -1448,7 +1448,7 @@
         <div class="catalogue-confirmation-body">
           <div class="catalogue-confirmation-book">
             @if (confirmation.book.coverUrl) {
-              <img class="catalogue-confirmation-cover" [src]="confirmation.book.coverUrl" alt="">
+              <img class="catalogue-confirmation-cover" [src]="confirmation.book.coverUrl" alt="" loading="lazy" decoding="async">
             } @else {
               <span class="catalogue-confirmation-cover book-cover-placeholder" aria-hidden="true"></span>
             }

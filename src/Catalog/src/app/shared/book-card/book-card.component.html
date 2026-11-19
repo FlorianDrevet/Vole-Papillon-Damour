@@ -13,6 +13,9 @@
     @if (book.coverUrl && !coverFailed) {
       <img
         [catalogCover]="book.coverUrl"
+        [catalogCoverSize]="variant === 'list' ? listCoverSizes[0] : null"
+        [catalogCoverSrcset]="variant === 'list' ? listCoverSizes : null"
+        [attr.sizes]="variant === 'list' ? '(max-width: 520px) 76px, 94px' : null"
         [alt]="book.title ? 'Couverture de ' + book.title : 'Couverture du livre'"
         loading="lazy"
         (catalogCoverFailed)="onCoverError()">
