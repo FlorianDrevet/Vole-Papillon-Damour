@@ -249,7 +249,7 @@ internal sealed class WatchlistFeatureTestDbContext(
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Isbn13);
+            builder.Ignore(book => book.Code.AsIsbn13());
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));

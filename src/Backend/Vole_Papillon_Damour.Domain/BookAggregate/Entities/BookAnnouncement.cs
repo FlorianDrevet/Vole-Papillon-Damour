@@ -8,7 +8,8 @@ namespace Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 
 public sealed class BookAnnouncement : Entity<BookAnnouncementId>
 {
-    public Isbn13 Isbn13 { get; private set; }
+    // Identifiant du livre : ISBN-13 ou code interne (RG-170). Le nom de colonne est conservé.
+    public BookCode Isbn13 { get; private set; }
     public AssoEventsId? AssoEventsId { get; private set; }
     public int Quantity { get; private set; }
     public BookAnnouncementStatus Status { get; private set; }
@@ -19,7 +20,7 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
 
     private BookAnnouncement(
         BookAnnouncementId id,
-        Isbn13 isbn13,
+        BookCode isbn13,
         AssoEventsId? assoEventsId,
         int quantity,
         DateTime createdAt,
@@ -43,7 +44,7 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
 
     public static BookAnnouncement Create(
         BookAnnouncementId id,
-        Isbn13 isbn13,
+        BookCode isbn13,
         AssoEventsId? assoEventsId,
         int quantity,
         DateTime createdAt,
@@ -131,7 +132,7 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         return true;
     }
 
-    private static void EnsureIsbn(Isbn13 isbn13)
+    private static void EnsureIsbn(BookCode isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))
         {

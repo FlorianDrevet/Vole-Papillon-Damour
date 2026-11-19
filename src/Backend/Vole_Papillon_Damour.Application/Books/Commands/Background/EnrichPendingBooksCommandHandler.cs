@@ -161,7 +161,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (!command.ForceFallback && isbndbLookupService is not null && candidates.Count > 0)
         {
             isbndbLookups = await isbndbLookupService.LookupManyAsync(
-                candidates,
+                candidates.Where(code => code.IsIsbn).Select(code => code.AsIsbn13()).ToList(),
                 command.Usage,
                 cancellationToken);
         }
@@ -172,8 +172,9 @@ public sealed class EnrichPendingBooksCommandHandler(
         var coverUpdatedCount = 0;
         var genreUpdatedCount = 0;
         var bibliographicDetailsUpdatedCount = 0;
-        foreach (var isbn13 in candidates)
+        foreach (var candidateCode in candidates.Where(code => code.IsIsbn))
         {
+            var isbn13 = candidateCode.AsIsbn13();
             var prefetchedLookup = command.ForceFallback
                 ? new IsbndbLookup.QuotaExhausted(null)
                 : isbndbLookups is not null && isbndbLookups.TryGetValue(isbn13, out var lookup)

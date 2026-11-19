@@ -12,7 +12,8 @@ public sealed class WatchlistItem : Entity<Guid>
     public UserId UserId { get; private set; } = null!;
     public WatchlistItemScope Scope { get; private set; }
     public string? WorkId { get; private set; }
-    public Isbn13? Isbn13 { get; private set; }
+    // Édition suivie : ISBN-13 ou code interne (RG-182).
+    public BookCode? Isbn13 { get; private set; }
     public RareBookId? RareBookId { get; private set; }
     public string? Title { get; private set; }
     public string? Authors { get; private set; }
@@ -26,7 +27,7 @@ public sealed class WatchlistItem : Entity<Guid>
         UserId userId,
         WatchlistItemScope scope,
         string? workId,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         RareBookId? rareBookId,
         DateTime addedAt,
         string? title,
@@ -94,7 +95,7 @@ public sealed class WatchlistItem : Entity<Guid>
     public static WatchlistItem CreateEdition(
         Guid id,
         UserId userId,
-        Isbn13 isbn13,
+        BookCode isbn13,
         DateTime addedAt,
         string? title = null,
         string? authors = null,
@@ -180,7 +181,7 @@ public sealed class WatchlistItem : Entity<Guid>
             return false;
         }
 
-        var changed = Isbn13 != canonicalIsbn13 || WorkId is not null;
+        var changed = Isbn13 != (BookCode)canonicalIsbn13 || WorkId is not null;
         Isbn13 = canonicalIsbn13;
         WorkId = null;
         return changed;

@@ -19,7 +19,7 @@ public sealed class GetSimilarBooksQueryHandler(
         GetSimilarBooksQuery query,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(query.Isbn13, out var isbn13))
+        if (!BookCode.TryCreate(query.Isbn13, out var isbn13))
         {
             return DomainErrors.Book.InvalidIsbn(query.Isbn13);
         }
@@ -61,9 +61,9 @@ public sealed class GetSimilarBooksQueryHandler(
         }
 
         var candidateIsbns = neighbors
-            .Select(neighbor => Isbn13.TryCreate(neighbor.NeighborIsbn13, out var candidate)
+            .Select(neighbor => BookCode.TryCreate(neighbor.NeighborIsbn13, out var candidate)
                 ? candidate
-                : (Isbn13?)null)
+                : (BookCode?)null)
             .Where(candidate => candidate.HasValue)
             .Select(candidate => candidate!.Value)
             .Distinct()

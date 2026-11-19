@@ -9,11 +9,16 @@ using WorkKeyValue = Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.Work
 
 namespace Vole_Papillon_Damour.Domain.BookAggregate;
 
-public sealed class Book : AggregateRoot<Isbn13>
+public sealed class Book : AggregateRoot<BookCode>
 {
     private readonly List<BookGenre> _genres = [];
 
-    public Isbn13 Isbn13 => Id;
+    // Identité du livre : ISBN-13 ou code interne (RG-170).
+    public BookCode Code => Id;
+
+    // Vrai pour un livre sans ISBN (code interne, RG-170). Persisté : les traitements externes
+    // (ISBNdb, enrichissement) filtrent dessus côté base. Pour l'ISBN, voir Code.TryGetIsbn13.
+    public bool IsInternalCode { get; private set; }
     public Isbn13? RedirectedToIsbn13 { get; private set; }
     public string? WorkId { get; private set; }
     public string? Title { get; private set; }
@@ -61,24 +66,36 @@ public sealed class Book : AggregateRoot<Isbn13>
     public DateTime UpdatedAt { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
 
-    private Book(Isbn13 isbn13, DateTime firstSeenAt) : base(isbn13)
+    private Book(BookCode code, DateTime firstSeenAt) : base(code)
     {
         var utcFirstSeenAt = DomainTime.RequireUtc(firstSeenAt, nameof(firstSeenAt));
-        EnsureIsbn(isbn13);
+        EnsureCode(code);
 
+        IsInternalCode = code.IsInternal;
         MetadataStatus = BookMetadataStatus.Pending;
         FirstSeenAt = utcFirstSeenAt;
         UpdatedAt = utcFirstSeenAt;
     }
 
-    public static Book Create(Isbn13 isbn13, DateTime firstSeenAt)
+    public static Book Create(BookCode code, DateTime firstSeenAt)
     {
-        return new Book(isbn13, firstSeenAt);
+        return new Book(code, firstSeenAt);
     }
 
-    public static Book CreateFavoriteReference(Isbn13 isbn13, DateTime firstSeenAt)
+    // Livre sans ISBN (RG-170) : identifié par un code interne déjà attribué par la plateforme.
+    public static Book CreateWithInternalCode(BookCode code, DateTime firstSeenAt)
     {
-        var book = Create(isbn13, firstSeenAt);
+        if (!code.IsInternal)
+        {
+            throw new ArgumentException("A book without ISBN requires an internal code.", nameof(code));
+        }
+
+        return new Book(code, firstSeenAt);
+    }
+
+    public static Book CreateFavoriteReference(BookCode code, DateTime firstSeenAt)
+    {
+        var book = Create(code, firstSeenAt);
         book.IsFavoriteReference = true;
         return book;
     }
@@ -691,6 +708,14 @@ public sealed class Book : AggregateRoot<Isbn13>
         if (string.IsNullOrWhiteSpace(isbn13.Value))
         {
             throw new ArgumentException("A valid ISBN-13 is required.", nameof(isbn13));
+        }
+    }
+
+    private static void EnsureCode(BookCode code)
+    {
+        if (string.IsNullOrWhiteSpace(code.Value))
+        {
+            throw new ArgumentException("A valid book code is required.", nameof(code));
         }
     }
 

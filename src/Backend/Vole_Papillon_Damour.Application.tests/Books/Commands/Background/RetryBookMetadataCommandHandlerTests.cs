@@ -27,7 +27,7 @@ public sealed class RetryBookMetadataCommandHandlerTests
         var handler = new RetryBookMetadataCommandHandler(fixture.Context, clock, queue);
 
         var result = await handler.Handle(
-            new RetryBookMetadataCommand(book.Isbn13.Value, AdministratorId),
+            new RetryBookMetadataCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -35,6 +35,6 @@ public sealed class RetryBookMetadataCommandHandlerTests
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
         persisted.LastAttemptAt.Should().BeNull();
         persisted.MetadataFailureReason.Should().BeNull();
-        queue.Received(1).Enqueue(book.Isbn13);
+        queue.Received(1).Enqueue(book.Code.AsIsbn13());
     }
 }

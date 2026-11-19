@@ -89,7 +89,7 @@ public sealed class GetClosedNotFoundReportsQueryHandler(
             .ToList();
 
         var editionIds = pageClosures.Where(closure => closure.Isbn13.HasValue)
-            .Select(closure => closure.Isbn13!.Value)
+            .Select(closure => (BookCode)closure.Isbn13!)
             .Distinct()
             .ToArray();
         List<Book> books = editionIds.Length == 0

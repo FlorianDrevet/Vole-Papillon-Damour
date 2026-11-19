@@ -127,7 +127,7 @@ public sealed class ReportNotFoundCommandHandler(
                 .AsNoTracking()
                 .SingleOrDefaultAsync(book => book.Id == selectedIsbn, cancellationToken);
             var canonicalIsbn = selectedBook?.RedirectedToIsbn13 ?? selectedIsbn;
-            return new NotFoundReportTarget(canonicalIsbn, null);
+            return new NotFoundReportTarget(canonicalIsbn.TryGetIsbn13(out var reportIsbn) ? reportIsbn : null, null);
         }
 
         return selectionItem.RareBookId is { } rareBookId

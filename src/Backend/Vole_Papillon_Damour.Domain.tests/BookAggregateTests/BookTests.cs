@@ -15,7 +15,7 @@ public sealed class BookTests
 
         var book = Book.Create(isbn, FirstSeenAt);
 
-        book.Id.Should().Be(isbn);
+        book.Id.Should().Be((BookCode)isbn);
         book.QuantityAvailable.Should().Be(0);
         book.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
         book.FirstSeenAt.Should().Be(FirstSeenAt);

@@ -71,9 +71,9 @@ internal static class IsbnNotFoundCsv
         return new IsbnNotFoundCsvFile(rows);
     }
 
-    internal static HashSet<Isbn13> GetValidIsbns(IReadOnlyList<IsbnNotFoundCsvRow> rows)
+    internal static HashSet<BookCode> GetValidIsbns(IReadOnlyList<IsbnNotFoundCsvRow> rows)
     {
-        var isbns = new HashSet<Isbn13>();
+        var isbns = new HashSet<BookCode>();
         foreach (var row in rows)
         {
             if (!row.IsCompletelyEmpty &&

@@ -201,7 +201,7 @@ public sealed class ReassignSessionModeCommandHandlerTests
             AdministratorId,
             ScanBookCommandHandlerTests.ClientScanAt.AddMinutes(-1)));
         request.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             movement.Id,
             session.VolunteerId,

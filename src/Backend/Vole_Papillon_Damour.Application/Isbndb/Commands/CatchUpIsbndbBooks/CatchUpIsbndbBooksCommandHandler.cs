@@ -159,7 +159,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
             }
 
             var lookups = await lookupService.LookupManyAsync(
-                candidateIds,
+                candidateIds.Select(id => id.AsIsbn13()).ToList(),
                 IsbndbUsage.CatchUp,
                 cancellationToken);
             for (var attempt = 0; ; attempt++)
@@ -177,7 +177,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 foreach (var isbn13 in candidateIds)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (!lookups.TryGetValue(isbn13, out var lookup))
+                    if (!lookups.TryGetValue(isbn13.AsIsbn13(), out var lookup))
                     {
                         stopReason ??= IsbndbCatchUpStopReason.Unavailable;
                         continue;
@@ -195,7 +195,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                         continue;
                     }
 
-                    if (!books.TryGetValue(isbn13, out var book))
+                    if (!books.TryGetValue((BookCode)isbn13, out var book))
                     {
                         continue;
                     }
@@ -215,7 +215,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                             await ApplyIsbndbNoticeAsync(
                                 book,
                                 found.Book,
-                                existingRecordIds.Contains(isbn13),
+                                existingRecordIds.Contains(isbn13.AsIsbn13()),
                                 queueItems,
                                 cancellationToken);
                             pageCounts.Filled++;
@@ -276,7 +276,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
             // One bulk lookup per page, as in ProcessCandidatesAsync. The lookups are reused
             // across save retries, so a concurrency conflict never repeats ISBNdb calls.
             var lookups = await lookupService.LookupManyAsync(
-                staleIds,
+                staleIds.Select(id => id.AsIsbn13()).ToList(),
                 IsbndbUsage.CatchUp,
                 cancellationToken);
             for (var attempt = 0; ; attempt++)
@@ -294,7 +294,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                 foreach (var isbn13 in staleIds)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (!lookups.TryGetValue(isbn13, out var lookup))
+                    if (!lookups.TryGetValue(isbn13.AsIsbn13(), out var lookup))
                     {
                         stopReason = IsbndbCatchUpStopReason.Unavailable;
                         break;
@@ -312,7 +312,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                         break;
                     }
 
-                    if (!books.TryGetValue(isbn13, out var book))
+                    if (!books.TryGetValue((BookCode)isbn13, out var book))
                     {
                         continue;
                     }
@@ -331,7 +331,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                             await ApplyIsbndbNoticeAsync(
                                 book,
                                 found.Book,
-                                existingRecordIds.Contains(isbn13),
+                                existingRecordIds.Contains(isbn13.AsIsbn13()),
                                 queueItems,
                                 cancellationToken);
                             pageCounts.Filled++;
@@ -389,7 +389,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
 
         if (book.WorkId is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.WorkId))
         {
-            var workId = await ResolveWorkIdSafelyAsync(book.Id, cancellationToken);
+            var workId = await ResolveWorkIdSafelyAsync(book.Id.AsIsbn13(), cancellationToken);
             if (!string.IsNullOrWhiteSpace(workId))
             {
                 patch = patch with
@@ -464,7 +464,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
         }
     }
 
-    private async Task<List<Isbn13>> GetCandidateIdsAsync(int pageSize, CancellationToken cancellationToken)
+    private async Task<List<BookCode>> GetCandidateIdsAsync(int pageSize, CancellationToken cancellationToken)
     {
         var query = CandidateQuery();
         return await OrderByPriority(query)
@@ -474,7 +474,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
             .ToListAsync(cancellationToken);
     }
 
-    private async Task<List<Isbn13>> GetStaleAbsentIdsAsync(
+    private async Task<List<BookCode>> GetStaleAbsentIdsAsync(
         int pageSize,
         DateTime cutoff,
         CancellationToken cancellationToken)
@@ -526,8 +526,8 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
                   request.Status == ManualBookRequestStatus.Found))))
         .ThenByDescending(book => book.FirstSeenAt);
 
-    private async Task<Dictionary<Isbn13, Book>> LoadBooksAsync(
-        IReadOnlyList<Isbn13> isbn13s,
+    private async Task<Dictionary<BookCode, Book>> LoadBooksAsync(
+        IReadOnlyList<BookCode> isbn13s,
         CancellationToken cancellationToken) => await dbContext.Books
             .Include(book => book.Genres)
             .Where(book => isbn13s.Contains(book.Id))

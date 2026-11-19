@@ -105,11 +105,11 @@ public sealed class ImportIsbnNotFoundCommandHandler(
             rejections);
     }
 
-    private async Task<Dictionary<Isbn13, Book>> LoadBooksAsync(
+    private async Task<Dictionary<BookCode, Book>> LoadBooksAsync(
         IReadOnlyList<IsbnNotFoundCsvRow> rows,
         CancellationToken cancellationToken)
     {
-        var booksByIsbn = new Dictionary<Isbn13, Book>();
+        var booksByIsbn = new Dictionary<BookCode, Book>();
         foreach (var batch in IsbnNotFoundCsv.GetValidIsbns(rows).Chunk(1_000))
         {
             var books = await dbContext.Books

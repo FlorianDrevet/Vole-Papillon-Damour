@@ -48,8 +48,8 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
         var result = await handler.Handle(CreateCommand(batchSize: 1), CancellationToken.None);
 
         result.Absent.Should().Be(3);
-        lookups.BulkCalls.SelectMany(call => call).Should().Equal(stock.Id, watched.Id, newest.Id);
-        (await fixture.Context.Books.SingleAsync(book => book.Id == watched.Id)).WorkKey.Should().Be("GERMINAL|ZOLA");
+        lookups.BulkCalls.SelectMany(call => call).Should().Equal(stock.Id.AsIsbn13(), watched.Id.AsIsbn13(), newest.Id.AsIsbn13());
+        (await fixture.Context.Books.SingleAsync(book => book.Id == watched.Id.AsIsbn13())).WorkKey.Should().Be("GERMINAL|ZOLA");
         (await fixture.Context.IsbndbCatchUpRuns.SingleAsync()).StopReason.Should().Be(IsbndbCatchUpStopReason.Completed);
     }
 

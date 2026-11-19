@@ -76,7 +76,7 @@ public sealed class GetDeadStockQueryHandlerTests
             "Déjà vendu",
             firstAvailableAt: Now.AddMonths(-12),
             quantityAvailable: 5);
-        fixture.AddSaleMovement(book.Id, Now.AddMonths(-3));
+        fixture.AddSaleMovement(book.Id.AsIsbn13(), Now.AddMonths(-3));
         await fixture.SaveAsync();
 
         var result = await fixture.CreateHandler().Handle(
@@ -101,7 +101,7 @@ public sealed class GetDeadStockQueryHandlerTests
             "Fiche absorbée",
             firstAvailableAt: Now.AddMonths(-12),
             quantityAvailable: 8);
-        redirected.RedirectTo(canonical.Id);
+        redirected.RedirectTo(canonical.Id.AsIsbn13());
         await fixture.SaveAsync();
 
         var result = await fixture.CreateHandler().Handle(
@@ -109,7 +109,7 @@ public sealed class GetDeadStockQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Books.Should().ContainSingle(book => book.Isbn13 == canonical.Id.Value);
+        result.Value.Books.Should().ContainSingle(book => book.Isbn13 == canonical.Id.AsIsbn13().Value);
     }
 
     [Theory]
@@ -287,7 +287,7 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.Ignore(book => book.Isbn13);
+            builder.Ignore(book => book.Code.AsIsbn13());
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,

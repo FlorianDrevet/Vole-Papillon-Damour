@@ -141,7 +141,7 @@ public sealed class UpdateBookMetadataCommandHandlerTests
         result.IsError.Should().BeFalse();
         var genres = await fixture.Context.Set<BookGenre>()
             .AsNoTracking()
-            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Where(genre => genre.BookIsbn13 == book.Code.AsIsbn13())
             .Select(genre => genre.Name)
             .ToArrayAsync();
         genres.Should().Equal("Conte");

@@ -17,7 +17,7 @@ public sealed class AnonymousFavoriteCountConfiguration : IEntityTypeConfigurati
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .ValueGeneratedNever()
-            .HasConversion(isbn13 => isbn13.Value, value => BookPersistenceConversions.ParseIsbn13(value));
+            .HasConversion(isbn13 => isbn13.Value, value => BookPersistenceConversions.ParseBookCode(value));
         builder.Property(count => count.Count)
             .HasDefaultValue(0)
             .IsRequired();

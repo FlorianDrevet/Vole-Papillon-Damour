@@ -119,7 +119,7 @@ internal static class ManualRequestStock
             .ToArray();
         var editionIsbns = requests
             .Where(request => request.Scope == ManualBookRequestScope.Edition && request.Isbn13 is not null)
-            .Select(request => request.Isbn13!.Value)
+            .Select(request => (BookCode)request.Isbn13!.Value)
             .Distinct()
             .ToArray();
         var books = workIds.Length == 0 && editionIsbns.Length == 0
@@ -136,7 +136,7 @@ internal static class ManualRequestStock
         var booksByIsbn = books.ToLookup(book => book.Isbn13);
 
         // Per request: its available quantity and the ISBNs whose announcements count toward it.
-        var scopes = new Dictionary<Guid, (int QuantityAvailable, Isbn13[] Isbns)>(requests.Count);
+        var scopes = new Dictionary<Guid, (int QuantityAvailable, BookCode[] Isbns)>(requests.Count);
         foreach (var request in requests)
         {
             if (request.Scope == ManualBookRequestScope.Work && !string.IsNullOrWhiteSpace(request.WorkId))
@@ -147,8 +147,8 @@ internal static class ManualRequestStock
             else if (request.Scope == ManualBookRequestScope.Edition && request.Isbn13 is { } editionIsbn)
             {
                 // An edition request still targets its ISBN when the book has no row yet (see GetAsync).
-                var editionBooks = booksByIsbn[editionIsbn].ToArray();
-                scopes[request.Id] = (editionBooks.Sum(book => book.QuantityAvailable), [editionIsbn]);
+                var editionBooks = booksByIsbn[(BookCode)editionIsbn].ToArray();
+                scopes[request.Id] = (editionBooks.Sum(book => book.QuantityAvailable), [(BookCode)editionIsbn]);
             }
             else
             {
@@ -211,9 +211,9 @@ internal static class ManualRequestStock
         return snapshots;
     }
 
-    private sealed record BookStockRow(Isbn13 Isbn13, string? WorkId, int QuantityAvailable);
+    private sealed record BookStockRow(BookCode Isbn13, string? WorkId, int QuantityAvailable);
 
-    private sealed record AnnouncementStockRow(Isbn13 Isbn13, int Quantity, AssoEventsId? AssoEventsId);
+    private sealed record AnnouncementStockRow(BookCode Isbn13, int Quantity, AssoEventsId? AssoEventsId);
 
     private sealed record FairOpeningRow(AssoEventsId FairId, DateTimeOffset DateStart, DateTimeOffset? HourOpenDoors);
 }

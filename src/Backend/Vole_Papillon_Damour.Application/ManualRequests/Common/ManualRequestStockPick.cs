@@ -81,7 +81,7 @@ internal static class ManualRequestStockPick
 
         var movement = BookMovement.Create(
             BookMovementId.CreateUnique(),
-            announcement.Isbn13,
+            announcement.Isbn13.AsIsbn13(),
             BookMovementType.Correction,
             quantity: -1,
             occurredAt: now,
@@ -94,7 +94,7 @@ internal static class ManualRequestStockPick
             clientGestureId: null);
         db.BookMovements.Add(movement);
         request.MarkFoundFromStock(
-            announcement.Isbn13,
+            announcement.Isbn13.AsIsbn13(),
             fairId,
             announcement.ScanSessionId,
             movement.Id,
@@ -126,7 +126,7 @@ internal static class ManualRequestStockPick
         }
 
         var currentIsbn = requestedIsbn;
-        var visited = new HashSet<Isbn13>();
+        var visited = new HashSet<BookCode>();
         while (visited.Add(currentIsbn))
         {
             var currentBook = await db.Books

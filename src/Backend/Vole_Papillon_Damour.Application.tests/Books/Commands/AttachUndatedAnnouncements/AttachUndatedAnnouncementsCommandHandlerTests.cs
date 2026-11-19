@@ -31,21 +31,21 @@ public sealed class AttachUndatedAnnouncementsCommandHandlerTests
         fixture.Context.BookAnnouncements.AddRange(
             BookAnnouncement.Create(
                 BookAnnouncementId.CreateUnique(),
-                firstBook.Isbn13,
+                firstBook.Code.AsIsbn13(),
                 assoEventsId: null,
                 1,
                 ScanBookCommandHandlerTests.ClientScanAt,
                 sourceSession.Id),
             BookAnnouncement.Create(
                 BookAnnouncementId.CreateUnique(),
-                secondBook.Isbn13,
+                secondBook.Code.AsIsbn13(),
                 assoEventsId: null,
                 1,
                 ScanBookCommandHandlerTests.ClientScanAt,
                 sourceSession.Id),
             BookAnnouncement.Create(
                 BookAnnouncementId.CreateUnique(),
-                firstBook.Isbn13,
+                firstBook.Code.AsIsbn13(),
                 datedFair.Id,
                 1,
                 ScanBookCommandHandlerTests.ClientScanAt,
@@ -53,7 +53,7 @@ public sealed class AttachUndatedAnnouncementsCommandHandlerTests
         await fixture.Context.SaveChangesAsync();
         var cancelled = BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            secondBook.Isbn13,
+            secondBook.Code.AsIsbn13(),
             assoEventsId: null,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,

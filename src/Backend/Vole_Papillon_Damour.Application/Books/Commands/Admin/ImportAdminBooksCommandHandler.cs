@@ -75,8 +75,9 @@ public sealed class ImportAdminBooksCommandHandler(
             System.Data.IsolationLevel.Serializable,
             cancellationToken);
 
+        var uniqueCodes = uniqueIsbns.Select(isbn => (BookCode)isbn).ToArray();
         var existingIsbns = await dbContext.Books
-            .Where(book => uniqueIsbns.Contains(book.Id))
+            .Where(book => uniqueCodes.Contains(book.Id))
             .Select(book => book.Id)
             .ToListAsync(cancellationToken);
         var knownIsbns = existingIsbns.ToHashSet();

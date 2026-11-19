@@ -223,7 +223,7 @@ public sealed class RegisterSaleCommandHandler(
     }
 
     private Task<bool> IsRareBookAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return dbContext.RareBooks

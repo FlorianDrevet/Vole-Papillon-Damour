@@ -343,6 +343,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsInternalCode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsIsbndbSourced")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -460,8 +465,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("IsFavoriteReference")
                         .HasDatabaseName("IX_Books_IsFavoriteReference")
                         .HasFilter("[IsFavoriteReference] = 1");
-
-                    b.HasIndex("RedirectedToIsbn13");
 
                     b.HasIndex("RowVersion");
 
@@ -2284,14 +2287,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Book", b =>
-                {
-                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
-                        .WithMany()
-                        .HasForeignKey("RedirectedToIsbn13")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookAnnouncement", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
@@ -2317,15 +2312,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
                         .WithMany("Genres")
                         .HasForeignKey("BookIsbn13")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", b =>
-                {
-                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
-                        .WithOne()
-                        .HasForeignKey("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", "Isbn13")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

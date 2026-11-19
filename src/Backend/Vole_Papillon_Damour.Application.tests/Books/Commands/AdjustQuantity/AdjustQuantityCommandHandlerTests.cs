@@ -17,14 +17,14 @@ public sealed class AdjustQuantityCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null,
+            Guid.NewGuid(), UserId.CreateUnique(), book.Code.AsIsbn13(), null,
             ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
 
         var result = await fixture.CreateAdjustQuantityHandler().Handle(
             new AdjustQuantityCommand(
-                book.Isbn13.Value,
+                book.Code.Value,
                 QuantityAvailable: 0,
                 "Comptage après la bourse",
                 UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
@@ -44,7 +44,7 @@ public sealed class AdjustQuantityCommandHandlerTests
 
         var result = await handler.Handle(
             new AdjustQuantityCommand(
-                book.Isbn13.Value,
+                book.Code.Value,
                 QuantityAvailable: 1,
                 "Comptage après la bourse",
                 UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
@@ -76,7 +76,7 @@ public sealed class AdjustQuantityCommandHandlerTests
 
         var result = await handler.Handle(
             new AdjustQuantityCommand(
-                book.Isbn13.Value,
+                book.Code.Value,
                 QuantityAvailable: 2,
                 "Comptage sans écart",
                 UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),

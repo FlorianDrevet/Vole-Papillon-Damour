@@ -51,7 +51,7 @@ public sealed class FairDigestContentService(
             schedule.PreviousFairEndsAtUtc?.UtcDateTime ?? DateTime.MinValue,
             cancellationToken);
         var parsedArrivalIsbns = arrivalIsbns
-            .Select(value => Isbn13.TryCreate(value, out var isbn13) ? isbn13 : (Isbn13?)null)
+            .Select(value => BookCode.TryCreate(value, out var code) ? code : (BookCode?)null)
             .Where(isbn13 => isbn13.HasValue)
             .Select(isbn13 => isbn13!.Value)
             .ToArray();
@@ -279,7 +279,7 @@ public sealed class FairDigestContentService(
         var selectionIsbns = await dbContext.MemberSelectionItems
             .AsNoTracking()
             .Where(item => item.UserId == member.Id && item.Isbn13 != null)
-            .Select(item => item.Isbn13!.Value)
+            .Select(item => (BookCode)item.Isbn13!)
             .ToListAsync(cancellationToken);
         var watchlistEntries = await dbContext.WatchlistItems
             .AsNoTracking()
@@ -292,7 +292,7 @@ public sealed class FairDigestContentService(
             .Concat(selectionIsbns)
             .Concat(watchlistEntries
                 .Where(item => item.Scope == WatchlistItemScope.Edition && item.Isbn13 != null)
-                .Select(item => item.Isbn13!.Value))
+                .Select(item => (BookCode)item.Isbn13!))
             .Select(isbn => isbn.Value)
             .ToHashSet(StringComparer.Ordinal);
         var excludedWorkIds = watchlistEntries
@@ -318,7 +318,7 @@ public sealed class FairDigestContentService(
     private static string GroupKey(string? workId, string isbn) =>
         string.IsNullOrWhiteSpace(workId) ? $"isbn:{isbn}" : $"work:{workId}";
 
-    private static Isbn13 ParseIsbn(string value)
+    private static BookCode ParseIsbn(string value)
     {
         if (!Isbn13.TryCreate(value, out var isbn13))
         {
@@ -336,7 +336,7 @@ public sealed class FairDigestContentService(
     };
 
     private sealed record BookInventorySnapshot(
-        Isbn13 Isbn13,
+        BookCode Isbn13,
         string? WorkId,
         int QuantityAvailable,
         int SalesCount);

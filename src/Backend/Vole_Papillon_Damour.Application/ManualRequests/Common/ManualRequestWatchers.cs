@@ -39,7 +39,7 @@ internal static class ManualRequestWatchers
             return counts;
         }
 
-        Isbn13?[] isbns = items.Select(key => (Isbn13?)key.Isbn13).Distinct().ToArray();
+        BookCode?[] isbns = items.Select(key => (BookCode?)key.Isbn13).Distinct().ToArray();
         var workIds = items
             .Where(key => key.WorkId is not null)
             .Select(key => key.WorkId!)

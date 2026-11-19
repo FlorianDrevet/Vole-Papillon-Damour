@@ -20,7 +20,7 @@ public sealed class MemberFavoriteBookConfiguration : IEntityTypeConfiguration<M
             .IsUnicode(false)
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value))
+                value => BookPersistenceConversions.ParseBookCode(value))
             .IsRequired();
         builder.Property(favorite => favorite.AddedAt)
             .HasColumnType("datetime2")

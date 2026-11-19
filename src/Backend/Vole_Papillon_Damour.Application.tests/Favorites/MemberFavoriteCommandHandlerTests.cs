@@ -123,7 +123,7 @@ public sealed class MemberFavoriteCommandHandlerTests
         result.Value.Total.Should().Be(3);
         (await fixture.Context.MemberFavoriteBooks.CountAsync()).Should().Be(3);
         (await fixture.Context.AnonymousFavoriteCounts.SingleAsync()).Count.Should().Be(0);
-        (await fixture.Context.Books.Where(book => new[] { firstNew, secondNew }.Contains(book.Id))
+        (await fixture.Context.Books.Where(book => new BookCode[] { firstNew, secondNew }.Contains(book.Id))
             .AllAsync(book => book.UpdatedAt > Now)).Should().BeTrue();
     }
 

@@ -15,7 +15,8 @@ public sealed class CheckoutPassageLine : Entity<Guid>
     public Guid CheckoutPassageId { get; private set; }
     public BookMovementId? SaleMovementId { get; private set; }
     public RareBookId? RareBookId { get; private set; }
-    public Isbn13? Isbn13 { get; private set; }
+    // Livre vendu : ISBN-13 ou code interne (RG-170). Null pour un livre rare sans ISBN.
+    public BookCode? Isbn13 { get; private set; }
     public string? RequestedIsbn13 { get; private set; }
     public int Quantity { get; private set; }
     public string Title { get; private set; } = string.Empty;
@@ -32,7 +33,7 @@ public sealed class CheckoutPassageLine : Entity<Guid>
         Guid checkoutPassageId,
         BookMovementId? saleMovementId,
         RareBookId? rareBookId,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         string? requestedIsbn13,
         int quantity,
         string title,
@@ -87,13 +88,13 @@ public sealed class CheckoutPassageLine : Entity<Guid>
             normalizedRequestedIsbn = requestedIsbn.Value;
         }
 
-        var title = string.IsNullOrWhiteSpace(book.Title) ? $"ISBN {book.Isbn13.Value}" : book.Title;
+        var title = string.IsNullOrWhiteSpace(book.Title) ? $"ISBN {book.Code.Value}" : book.Title;
         return new CheckoutPassageLine(
             id,
             passageId,
             movement.Id,
             null,
-            book.Isbn13,
+            book.Code,
             normalizedRequestedIsbn,
             Math.Abs(movement.Quantity),
             title,
@@ -118,7 +119,7 @@ public sealed class CheckoutPassageLine : Entity<Guid>
             passageId,
             null,
             rareBook.Id,
-            rareBook.Isbn13,
+            rareBook.Isbn13 is { } rareIsbn13 ? (BookCode)rareIsbn13 : null,
             null,
             1,
             rareBook.Title,

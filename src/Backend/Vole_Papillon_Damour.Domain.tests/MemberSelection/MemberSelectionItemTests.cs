@@ -20,7 +20,7 @@ public sealed class MemberSelectionItemTests
         var item = MemberSelectionItem.CreateForEdition(Guid.NewGuid(), Member, isbn, AddedAt);
 
         item.Status.Should().Be(MemberSelectionStatus.ToTake);
-        item.Isbn13.Should().Be(isbn);
+        item.Isbn13.Should().Be((BookCode)isbn);
         item.RareBookId.Should().BeNull();
         item.AddedAt.Should().Be(AddedAt);
         item.StatusChangedAt.Should().Be(AddedAt);

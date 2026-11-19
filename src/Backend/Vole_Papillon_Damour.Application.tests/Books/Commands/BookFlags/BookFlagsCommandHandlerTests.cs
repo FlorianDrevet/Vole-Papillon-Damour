@@ -17,7 +17,7 @@ public sealed class BookFlagsCommandHandlerTests
 
         var result = await handler.Handle(
             new HideBookCommand(
-                book.Isbn13.Value,
+                book.Code.Value,
                 Hidden: true,
                 UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
             CancellationToken.None);

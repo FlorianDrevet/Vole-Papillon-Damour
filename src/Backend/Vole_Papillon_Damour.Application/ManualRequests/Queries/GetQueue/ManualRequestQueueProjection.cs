@@ -36,11 +36,11 @@ internal static class ManualRequestQueueProjection
 
         var foundIsbns = requests
             .Where(request => request.FoundIsbn13 is not null)
-            .Select(request => request.FoundIsbn13!.Value)
+            .Select(request => (BookCode)request.FoundIsbn13!)
             .Distinct()
             .ToArray();
         var foundBooks = foundIsbns.Length == 0
-            ? new Dictionary<Isbn13, Book>()
+            ? new Dictionary<BookCode, Book>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Where(book => foundIsbns.Contains(book.Id))

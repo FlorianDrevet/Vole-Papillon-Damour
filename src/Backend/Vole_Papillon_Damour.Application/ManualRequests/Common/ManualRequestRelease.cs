@@ -121,7 +121,7 @@ internal static class ManualRequestRelease
         }
 
         var canonicalIsbn = foundIsbn;
-        var seen = new HashSet<Isbn13>();
+        var seen = new HashSet<BookCode>();
         Book? book = null;
         while (seen.Add(canonicalIsbn))
         {

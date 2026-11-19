@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -58,7 +59,7 @@ public sealed class GetMyWatchlistQueryHandler(
 
         var isbnValues = items
             .Where(item => item.Isbn13 is not null)
-            .Select(item => item.Isbn13!.Value)
+            .Select(item => (BookCode)item.Isbn13!)
             .ToHashSet();
         var workIds = items
             .Where(item => item.WorkId is not null)

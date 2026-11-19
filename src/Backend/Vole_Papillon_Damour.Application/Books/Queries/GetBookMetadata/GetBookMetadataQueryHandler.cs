@@ -61,7 +61,7 @@ public sealed class GetBookMetadataQueryHandler(
         }
 
         return new BookMetadataResult(
-            book.Isbn13.Value,
+            book.Code.Value,
             book.Title,
             book.Authors,
             book.Publisher,

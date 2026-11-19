@@ -43,29 +43,29 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         fixture.Context.MemberSelectionItems.Add(MemberSelectionItem.CreateForEdition(
             Guid.NewGuid(),
             memberId,
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             ScanBookCommandHandlerTests.ReceivedAt));
         fixture.Context.WatchlistItems.Add(WatchlistItem.CreateEdition(
             Guid.NewGuid(),
             memberId,
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             ScanBookCommandHandlerTests.ReceivedAt,
             title: "Le Petit Prince"));
         fixture.Context.BookNotFoundReports.Add(BookNotFoundReport.CreateForEdition(
             Guid.NewGuid(),
             memberId,
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             comment: null,
             ScanBookCommandHandlerTests.ReceivedAt));
         fixture.Context.UserAlertHistories.Add(UserAlertHistory.Create(
             Guid.NewGuid(),
             memberId,
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             ScanBookCommandHandlerTests.ReceivedAt));
-        fixture.Context.BookSimilarityProfiles.Add(BookSimilarityProfile.Create(book.Isbn13.Value));
+        fixture.Context.BookSimilarityProfiles.Add(BookSimilarityProfile.Create(book.Code.Value));
         fixture.Context.BookNeighbors.Add(new BookNeighbor(
             Guid.Parse("00000000-0000-0000-0000-000000000101"),
-            book.Isbn13.Value,
+            book.Code.Value,
             rank: 1,
             neighborIsbn13: "9782070408504",
             score: 0.8f,
@@ -74,14 +74,14 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
             Guid.Parse("00000000-0000-0000-0000-000000000102"),
             "9782070408504",
             rank: 1,
-            neighborIsbn13: book.Isbn13.Value,
+            neighborIsbn13: book.Code.Value,
             score: 0.8f,
             NeighborReason.SameAuthor));
         await fixture.Context.SaveChangesAsync();
         var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
 
         var result = await handler.Handle(
-            new PermanentlyDeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new PermanentlyDeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -105,7 +105,7 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
 
         var result = await handler.Handle(
-            new PermanentlyDeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new PermanentlyDeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -125,7 +125,7 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
 
         var result = await handler.Handle(
-            new PermanentlyDeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new PermanentlyDeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -141,7 +141,7 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         fixture.Context.BookAnnouncements.Add(BookAnnouncement.Create(
             Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             null,
             1,
             ScanBookCommandHandlerTests.ReceivedAt,
@@ -150,7 +150,7 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
 
         var result = await handler.Handle(
-            new PermanentlyDeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new PermanentlyDeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -164,12 +164,12 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var canonicalBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var sourceBook = await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
-        sourceBook.RedirectTo(canonicalBook.Isbn13);
+        sourceBook.RedirectTo(canonicalBook.Code.AsIsbn13());
         await fixture.Context.SaveChangesAsync();
         var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
 
         var result = await handler.Handle(
-            new PermanentlyDeleteBookCommand(canonicalBook.Isbn13.Value, AdministratorId),
+            new PermanentlyDeleteBookCommand(canonicalBook.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -185,7 +185,7 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
     {
         return BookMovement.Create(
             BookMovementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             type,
             type == BookMovementType.Sale ? -1 : 1,
             ScanBookCommandHandlerTests.ClientScanAt,

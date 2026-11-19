@@ -150,7 +150,7 @@ internal static class AdminQueryProjection
 }
 
 internal sealed record AdminBookQueryProjection(
-    Isbn13 Id,
+    BookCode Id,
     string? WorkId,
     string? Title,
     string? Authors,

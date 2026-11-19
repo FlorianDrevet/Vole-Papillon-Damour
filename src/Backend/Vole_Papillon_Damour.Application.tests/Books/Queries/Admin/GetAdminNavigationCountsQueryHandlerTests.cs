@@ -118,9 +118,9 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
         await fixture.AddSessionAsync(ScanMode.AvailableNow);
 
         var editionReport = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), VolunteerId, catalogueBook.Id, "Edition", Now.AddDays(-8));
+            Guid.NewGuid(), VolunteerId, catalogueBook.Id.AsIsbn13(), "Edition", Now.AddDays(-8));
         var recentEditionReport = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), catalogueBook.Id, "Edition récente", Now.AddDays(-1));
+            Guid.NewGuid(), UserId.CreateUnique(), catalogueBook.Id.AsIsbn13(), "Edition récente", Now.AddDays(-1));
         var rareReport = BookNotFoundReport.CreateForRareBook(
             Guid.NewGuid(), VolunteerId, publishedRareBook.Id, "Rare", Now.AddDays(-9));
         fixture.Context.BookNotFoundReports.AddRange(editionReport, recentEditionReport, rareReport);
@@ -130,10 +130,10 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
             requesterId, "Martin", "Jeanne", "0612345678", true, VolunteerId, Now));
         var oldRequest = ManualBookRequest.CreateWork(
             Guid.NewGuid(), requesterId, "OL123W", "Le Petit Prince", null, null, null, Now.AddDays(-20));
-        oldRequest.MarkFoundFromStock(catalogueBook.Id, null, null, BookMovementId.CreateUnique(), VolunteerId, Now.AddDays(-15));
+        oldRequest.MarkFoundFromStock(catalogueBook.Id.AsIsbn13(), null, null, BookMovementId.CreateUnique(), VolunteerId, Now.AddDays(-15));
         var recentRequest = ManualBookRequest.CreateWork(
             Guid.NewGuid(), requesterId, "OL456W", "Autre livre", null, null, null, Now.AddDays(-2));
-        recentRequest.MarkFoundFromStock(catalogueBook.Id, null, null, BookMovementId.CreateUnique(), VolunteerId, Now.AddDays(-1));
+        recentRequest.MarkFoundFromStock(catalogueBook.Id.AsIsbn13(), null, null, BookMovementId.CreateUnique(), VolunteerId, Now.AddDays(-1));
         fixture.Context.ManualBookRequests.AddRange(oldRequest, recentRequest);
         await fixture.Context.SaveChangesAsync();
 

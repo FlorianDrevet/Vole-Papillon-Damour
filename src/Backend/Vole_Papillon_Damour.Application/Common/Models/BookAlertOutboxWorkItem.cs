@@ -4,7 +4,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 namespace Vole_Papillon_Damour.Application.Common.Models;
 
 public sealed record BookAlertOutboxItem(
-    Isbn13 Isbn13,
+    BookCode Isbn13,
     string? WorkId,
     string? Title,
     string? Authors,

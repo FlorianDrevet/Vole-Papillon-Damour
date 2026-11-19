@@ -222,7 +222,7 @@ public sealed class CancelScanSessionCommandHandler(
             .ToDictionaryAsync(candidate => candidate.HoldMovementId!, cancellationToken);
     }
 
-    private async Task<Dictionary<Isbn13, Book>> LoadBooksAsync(
+    private async Task<Dictionary<BookCode, Book>> LoadBooksAsync(
         IReadOnlyCollection<BookMovement> movements,
         CancellationToken cancellationToken)
     {
@@ -232,15 +232,15 @@ public sealed class CancelScanSessionCommandHandler(
             .Distinct()
             .ToArray();
         var books = isbns.Length == 0
-            ? new Dictionary<Isbn13, Book>()
+            ? new Dictionary<BookCode, Book>()
             : await dbContext.Books
                 .Where(book => isbns.Contains(book.Id))
                 .ToDictionaryAsync(book => book.Id, cancellationToken);
 
         // A redirected book resolves to its canonical book: one more batch, only for those targets.
         var canonicalIsbns = books.Values
-            .Where(book => book.RedirectedToIsbn13 is { } canonical && !books.ContainsKey(canonical))
-            .Select(book => book.RedirectedToIsbn13!.Value)
+            .Where(book => book.RedirectedToIsbn13 is { } canonical && !books.ContainsKey((BookCode)canonical))
+            .Select(book => (BookCode)book.RedirectedToIsbn13!)
             .Distinct()
             .ToArray();
         if (canonicalIsbns.Length > 0)
@@ -257,7 +257,7 @@ public sealed class CancelScanSessionCommandHandler(
         return books;
     }
 
-    private async Task<ILookup<(Isbn13 Isbn13, Guid? ClientGestureId), BookAnnouncement>> LoadAnnouncementsAsync(
+    private async Task<ILookup<(BookCode Isbn13, Guid? ClientGestureId), BookAnnouncement>> LoadAnnouncementsAsync(
         ScanSessionId sessionId,
         IReadOnlyCollection<BookMovement> movements,
         CancellationToken cancellationToken)
@@ -279,7 +279,7 @@ public sealed class CancelScanSessionCommandHandler(
         return announcements.ToLookup(announcement => (announcement.Isbn13, announcement.ClientGestureId));
     }
 
-    private static Book? ResolveBook(IReadOnlyDictionary<Isbn13, Book> booksByIsbn, Isbn13 isbn13)
+    private static Book? ResolveBook(IReadOnlyDictionary<BookCode, Book> booksByIsbn, BookCode isbn13)
     {
         if (!booksByIsbn.TryGetValue(isbn13, out var book))
         {
@@ -287,7 +287,7 @@ public sealed class CancelScanSessionCommandHandler(
         }
 
         return book.RedirectedToIsbn13 is { } canonicalIsbn13
-            ? booksByIsbn.GetValueOrDefault(canonicalIsbn13)
+            ? booksByIsbn.GetValueOrDefault((BookCode)canonicalIsbn13)
             : book;
     }
 }

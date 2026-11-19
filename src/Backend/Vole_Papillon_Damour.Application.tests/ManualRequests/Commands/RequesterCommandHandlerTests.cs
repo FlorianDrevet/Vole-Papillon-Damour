@@ -135,13 +135,13 @@ public sealed class RequesterCommandHandlerTests
         var book = await fixture.AddBookAsync("9782070612758");
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         found.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             BookMovementId.CreateUnique(),
             ManualRequestFixture.VolunteerId,
             ManualRequestFixture.DefaultNow);
         given.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             BookMovementId.CreateUnique(),
             ManualRequestFixture.VolunteerId,

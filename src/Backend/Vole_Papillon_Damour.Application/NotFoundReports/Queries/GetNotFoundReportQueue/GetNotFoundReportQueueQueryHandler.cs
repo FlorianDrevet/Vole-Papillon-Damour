@@ -58,7 +58,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
                 PublicationYear = null,
                 CoverUrl = null,
                 Genre = dbContext.Books.AsNoTracking()
-                    .Where(book => (Isbn13?)book.Id == reports.Key)
+                    .Where(book => (BookCode?)book.Id == reports.Key)
                     .Select(book => book.Genre)
                     .FirstOrDefault(),
                 QuantityAvailable = 0,
@@ -135,7 +135,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
 
         var pageEditionIds = pageTargets
             .Where(target => target.Isbn13.HasValue)
-            .Select(target => target.Isbn13!.Value)
+            .Select(target => (BookCode)target.Isbn13!)
             .Distinct()
             .ToArray();
         List<Book> books = pageEditionIds.Length == 0
@@ -214,7 +214,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
         CancellationToken cancellationToken)
     {
         var editionIds = targets.Where(target => target.Isbn13.HasValue)
-            .Select(target => target.Isbn13!.Value)
+            .Select(target => (BookCode)target.Isbn13!)
             .Distinct()
             .ToArray();
         var rareBookIds = targets.Where(target => target.RareBookId is not null)

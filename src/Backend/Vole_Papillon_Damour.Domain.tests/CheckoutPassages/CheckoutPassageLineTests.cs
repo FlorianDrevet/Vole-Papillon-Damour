@@ -112,7 +112,7 @@ internal static class TestMovements
 {
     private static readonly DateTime Now = new(2026, 3, 14, 15, 0, 0, DateTimeKind.Utc);
 
-    public static Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement Sale(Isbn13 isbn, int quantity)
+    public static Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement Sale(BookCode isbn, int quantity)
     {
         return Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement.Create(
             Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects.BookMovementId.CreateUnique(),

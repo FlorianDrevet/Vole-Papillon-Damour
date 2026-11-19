@@ -71,16 +71,16 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
                 .ToListAsync(cancellationToken);
         var pageBooksByIsbn = pageBooks.ToDictionary(book => book.Id);
         var recordSubjects = isbn13s.Length == 0
-            ? new Dictionary<Isbn13, string?>()
+            ? new Dictionary<BookCode, string?>()
             : await dbContext.BookIsbndbRecords.AsNoTracking()
                 .Where(record => isbn13s.Contains(record.Isbn13))
                 .Select(record => new { record.Isbn13, record.Subjects })
-                .ToDictionaryAsync(record => record.Isbn13, record => record.Subjects, cancellationToken);
+                .ToDictionaryAsync(record => (BookCode)record.Isbn13, record => record.Subjects, cancellationToken);
         var fallbackPayloadIsbns = isbn13s
             .Where(isbn => IsbndbSubjectReader.Read(recordSubjects.GetValueOrDefault(isbn), null).Count == 0)
             .ToArray();
         var fallbackPayloads = fallbackPayloadIsbns.Length == 0
-            ? new Dictionary<Isbn13, string?>()
+            ? new Dictionary<BookCode, string?>()
             : await dbContext.Books.AsNoTracking()
                 .Where(book => fallbackPayloadIsbns.Contains(book.Id))
                 .Select(book => new { book.Id, book.RawPayload })
@@ -133,7 +133,7 @@ public sealed class GetIsbndbAbsentBooksQueryHandler(IProjectDbContext dbContext
     }
 
     private sealed record IsbndbAbsentBookProjection(
-        Isbn13 Id,
+        BookCode Id,
         string? Title,
         string? Authors,
         string? CoverUrl,

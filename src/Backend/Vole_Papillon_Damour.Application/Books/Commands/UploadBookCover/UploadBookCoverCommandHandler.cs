@@ -76,7 +76,7 @@ public sealed class UploadBookCoverCommandHandler(
         }
 
         var previousCoverUrl = book.CoverUrl;
-        var blobName = $"{book.Isbn13.Value}/{Guid.NewGuid():N}{imageType.Value.Extension}";
+        var blobName = $"{book.Code.Value}/{Guid.NewGuid():N}{imageType.Value.Extension}";
         var blobUri = await blobService.UploadBookCoverAsync(
             blobName,
             command.Stream,
@@ -105,22 +105,22 @@ public sealed class UploadBookCoverCommandHandler(
         }
         catch (Exception exception)
         {
-            await TryDeleteBlobAsync(blobUri.ToString(), book.Isbn13.Value, "failed cover update");
+            await TryDeleteBlobAsync(blobUri.ToString(), book.Code.Value, "failed cover update");
             logger.LogWarning(
                 exception,
                 "Could not save the uploaded cover for book {Isbn13}; the new blob was removed when possible.",
-                book.Isbn13.Value);
+                book.Code.Value);
             throw;
         }
 
         if (!string.IsNullOrWhiteSpace(previousCoverUrl) &&
             !string.Equals(previousCoverUrl, blobUri.ToString(), StringComparison.Ordinal))
         {
-            await TryDeleteBlobAsync(previousCoverUrl, book.Isbn13.Value, "replaced cover");
+            await TryDeleteBlobAsync(previousCoverUrl, book.Code.Value, "replaced cover");
         }
 
         return new UploadBookCoverResult(
-            book.Isbn13.Value,
+            book.Code.Value,
             blobUri,
             book.MetadataStatus,
             book.ManuallyEditedFields,

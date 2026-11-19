@@ -231,7 +231,7 @@ public sealed class AddRequestCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var request = await fixture.AddEditionRequestAsync(requester.Id, Isbn);
         request.MarkFoundByScan(
-            book.Id, session.Id, BookMovementId.CreateUnique(), ManualRequestFixture.VolunteerId,
+            book.Id.AsIsbn13(), session.Id, BookMovementId.CreateUnique(), ManualRequestFixture.VolunteerId,
             ManualRequestFixture.DefaultNow);
         await fixture.Context.SaveChangesAsync();
         var handler = new PickManualRequestFromStockCommandHandler(fixture.Context, fixture.CreateClock());

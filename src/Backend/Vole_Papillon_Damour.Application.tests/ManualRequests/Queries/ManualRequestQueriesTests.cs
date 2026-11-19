@@ -193,7 +193,7 @@ public sealed class ManualRequestQueriesTests
         var request = await fixture.AddWorkRequestAsync(requester.Id);
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
         request.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             BookMovementId.CreateUnique(),
             session.VolunteerId,

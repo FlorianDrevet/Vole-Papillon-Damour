@@ -24,13 +24,13 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null,
+            Guid.NewGuid(), UserId.CreateUnique(), book.Code.AsIsbn13(), null,
             ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
 
         var result = await fixture.CreateRegisterSaleHandler().Handle(
-            CreateCommand(book.Isbn13.Value), CancellationToken.None);
+            CreateCommand(book.Code.Value), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         (await fixture.Context.BookNotFoundReports.SingleAsync()).Status
@@ -43,13 +43,13 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 2);
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null,
+            Guid.NewGuid(), UserId.CreateUnique(), book.Code.AsIsbn13(), null,
             ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
 
         var result = await fixture.CreateRegisterSaleHandler().Handle(
-            CreateCommand(book.Isbn13.Value), CancellationToken.None);
+            CreateCommand(book.Code.Value), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         (await fixture.Context.BookNotFoundReports.SingleAsync()).Status
@@ -63,7 +63,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
 
         await fixture.CreateRegisterSaleHandler().Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         (await fixture.Context.CheckoutPassages.CountAsync()).Should().Be(0);
@@ -76,7 +76,7 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var passageId = Guid.NewGuid();
-        var command = CreateCommand(book.Isbn13.Value) with { CheckoutPassageId = passageId };
+        var command = CreateCommand(book.Code.Value) with { CheckoutPassageId = passageId };
 
         var result = await fixture.CreateRegisterSaleHandler().Handle(command, CancellationToken.None);
 
@@ -99,11 +99,11 @@ public sealed class RegisterSaleCommandHandlerTests
         var handler = fixture.CreateRegisterSaleHandler();
 
         var result = await handler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Isbn13.Should().Be(book.Isbn13.Value);
+        result.Value.Isbn13.Should().Be(book.Code.Value);
         result.Value.Quantity.Should().Be(1);
         result.Value.QuantityAvailable.Should().Be(0);
         result.Value.SalesCount.Should().Be(1);
@@ -117,7 +117,7 @@ public sealed class RegisterSaleCommandHandlerTests
         movement.Type.Should().Be(BookMovementType.Sale);
         movement.Quantity.Should().Be(-1);
         movement.AssoEventsId.Should().Be(fair.Id);
-        movement.VolunteerId.Should().Be(CreateCommand(book.Isbn13.Value).VolunteerId);
+        movement.VolunteerId.Should().Be(CreateCommand(book.Code.Value).VolunteerId);
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.NextFair);
         var announcement = BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             assoEventsId: null,
             quantity: 1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -143,7 +143,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var handler = fixture.CreateRegisterSaleHandler();
 
         var result = await handler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -159,7 +159,7 @@ public sealed class RegisterSaleCommandHandlerTests
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
-        var command = CreateCommand(book.Isbn13.Value);
+        var command = CreateCommand(book.Code.Value);
         var handler = fixture.CreateRegisterSaleHandler();
 
         var firstResult = await handler.Handle(command, CancellationToken.None);
@@ -178,7 +178,7 @@ public sealed class RegisterSaleCommandHandlerTests
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
-        var command = CreateCommand(book.Isbn13.Value);
+        var command = CreateCommand(book.Code.Value);
         fixture.Context.ThrowDbUpdateExceptionAfterCommitOnNextSave = true;
 
         var result = await fixture.CreateRegisterSaleHandler().Handle(
@@ -200,7 +200,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var handler = fixture.CreateRegisterSaleHandler();
 
         var result = await handler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -225,7 +225,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var handler = fixture.CreateRegisterSaleHandler();
 
         var result = await handler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -253,7 +253,7 @@ public sealed class RegisterSaleCommandHandlerTests
         var handler = fixture.CreateRegisterSaleHandler();
 
         var result = await handler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -269,7 +269,7 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var command = CreateCommand(
-            book.Isbn13.Value,
+            book.Code.Value,
             occurredAt: ScanBookCommandHandlerTests.ReceivedAt.AddMinutes(1));
         var handler = fixture.CreateRegisterSaleHandler();
 
@@ -293,7 +293,7 @@ public sealed class RegisterSaleCommandHandlerTests
             DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
             DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
         var passageId = Guid.NewGuid();
-        var saleCommand = CreateCommand(book.Isbn13.Value) with { CheckoutPassageId = passageId };
+        var saleCommand = CreateCommand(book.Code.Value) with { CheckoutPassageId = passageId };
         var sale = await fixture.CreateRegisterSaleHandler().Handle(saleCommand, default);
 
         await fixture.CreateVoidSaleHandler().Handle(
@@ -319,7 +319,7 @@ public sealed class RegisterSaleCommandHandlerTests
             DateTimeOffset.Parse("2026-09-04T00:00:00+02:00"),
             DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
             DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
-        var saleCommand = CreateCommand(book.Isbn13.Value);
+        var saleCommand = CreateCommand(book.Code.Value);
         var sale = await fixture.CreateRegisterSaleHandler().Handle(saleCommand, default);
 
         await fixture.CreateVoidSaleHandler().Handle(
@@ -345,7 +345,7 @@ public sealed class RegisterSaleCommandHandlerTests
             DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
             DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
         var registerHandler = fixture.CreateRegisterSaleHandler();
-        var saleCommand = CreateCommand(book.Isbn13.Value);
+        var saleCommand = CreateCommand(book.Code.Value);
         var saleResult = await registerHandler.Handle(saleCommand, CancellationToken.None);
         var voidHandler = fixture.CreateVoidSaleHandler();
 
@@ -386,12 +386,12 @@ public sealed class RegisterSaleCommandHandlerTests
             DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
         var registerHandler = fixture.CreateRegisterSaleHandler();
         var saleResult = await registerHandler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
         var voidCommand = new VoidSaleCommand(
             saleResult.Value.SaleMovementId,
             ScanBookCommandHandlerTests.ClientScanAt,
-            CreateCommand(book.Isbn13.Value).VolunteerId,
+            CreateCommand(book.Code.Value).VolunteerId,
             Guid.NewGuid());
         var voidHandler = fixture.CreateVoidSaleHandler();
 
@@ -418,7 +418,7 @@ public sealed class RegisterSaleCommandHandlerTests
             DateTimeOffset.Parse("2026-09-03T19:30:00+02:00"));
         var registerHandler = fixture.CreateRegisterSaleHandler();
         var saleResult = await registerHandler.Handle(
-            CreateCommand(book.Isbn13.Value),
+            CreateCommand(book.Code.Value),
             CancellationToken.None);
         saleResult.Value.AssoEventsId.Should().Be(fair.Id);
         fixture.SetReceivedAt(new DateTime(2026, 9, 3, 17, 31, 0, DateTimeKind.Utc));
@@ -428,7 +428,7 @@ public sealed class RegisterSaleCommandHandlerTests
             new VoidSaleCommand(
                 saleResult.Value.SaleMovementId,
                 new DateTime(2026, 9, 3, 17, 1, 0, DateTimeKind.Utc),
-                CreateCommand(book.Isbn13.Value).VolunteerId,
+                CreateCommand(book.Code.Value).VolunteerId,
                 Guid.NewGuid()),
             CancellationToken.None);
 

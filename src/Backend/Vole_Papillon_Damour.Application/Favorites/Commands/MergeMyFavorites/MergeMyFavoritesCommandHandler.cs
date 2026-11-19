@@ -59,7 +59,7 @@ public sealed class MergeMyFavoritesCommandHandler(
         var selected = candidates.Take(availableSlots).ToArray();
         var skipped = candidates.Length - selected.Length;
         var favoritesToAdd = new List<MemberFavoriteBook>(selected.Length);
-        var canonicalIsbns = new HashSet<Isbn13>();
+        var canonicalIsbns = new HashSet<BookCode>();
 
         foreach (var item in selected)
         {

@@ -130,7 +130,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
 
         var bookIsbns = scanMovements.Select(movement => movement.Isbn13).Distinct().ToArray();
         var books = bookIsbns.Length == 0
-            ? new Dictionary<Isbn13, StatisticsBookProjection>()
+            ? new Dictionary<BookCode, StatisticsBookProjection>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Where(book => bookIsbns.Contains(book.Id))
@@ -202,7 +202,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
         IReadOnlyCollection<StatisticsAdminScanSessionProjection> sessions,
         IReadOnlyCollection<StatisticsBookMovementProjection> scanMovements,
         IReadOnlyCollection<EffectiveSale> sales,
-        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books,
+        IReadOnlyDictionary<BookCode, StatisticsBookProjection> books,
         IReadOnlyDictionary<UserId, StatisticsVolunteerNameProjection> volunteers)
     {
         var volunteerSessions = sessions
@@ -322,7 +322,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
 
     private static IReadOnlyList<AdminVolunteerGenreResult> BuildDominantGenres(
         IReadOnlyCollection<StatisticsBookMovementProjection> scanMovements,
-        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
+        IReadOnlyDictionary<BookCode, StatisticsBookProjection> books)
     {
         return scanMovements
             .Where(IsKeptScan)
@@ -336,7 +336,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
 
     private static string? BuildDominantGenre(
         IReadOnlyCollection<StatisticsBookMovementProjection> keptScans,
-        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
+        IReadOnlyDictionary<BookCode, StatisticsBookProjection> books)
     {
         return keptScans
             .GroupBy(movement => GetGenre(movement, books), StringComparer.OrdinalIgnoreCase)
@@ -348,7 +348,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
 
     private static string GetGenre(
         StatisticsBookMovementProjection movement,
-        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books) =>
+        IReadOnlyDictionary<BookCode, StatisticsBookProjection> books) =>
         books.TryGetValue(movement.Isbn13, out var book) && !string.IsNullOrWhiteSpace(book.Genre)
             ? book.Genre!
             : "Sans genre";

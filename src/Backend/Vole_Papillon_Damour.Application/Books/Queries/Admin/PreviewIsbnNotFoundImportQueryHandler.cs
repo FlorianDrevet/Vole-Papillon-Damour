@@ -43,13 +43,13 @@ public sealed class PreviewIsbnNotFoundImportQueryHandler(IProjectDbContext dbCo
             validation.ReadyRows.Select(ready => ready.Isbn13.Value).ToArray());
     }
 
-    internal static async Task<Dictionary<Isbn13, BookMetadataStatus>> LoadBookStatusesAsync(
+    internal static async Task<Dictionary<BookCode, BookMetadataStatus>> LoadBookStatusesAsync(
         IProjectDbContext dbContext,
         IReadOnlyList<IsbnNotFoundCsvRow> rows,
         CancellationToken cancellationToken)
     {
         var isbns = IsbnNotFoundCsv.GetValidIsbns(rows);
-        var statuses = new Dictionary<Isbn13, BookMetadataStatus>();
+        var statuses = new Dictionary<BookCode, BookMetadataStatus>();
         foreach (var batch in isbns.Chunk(1_000))
         {
             var books = await dbContext.Books

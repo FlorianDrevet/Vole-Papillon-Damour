@@ -44,7 +44,7 @@ public sealed class BookMetadataEnrichmentBackgroundService(
                     var result = await sender.Send(
                         new EnrichPendingBooksCommand(
                             BatchSize: isbns.Length,
-                            Isbn13s: isbns,
+                            Isbn13s: isbns.Select(isbn => (BookCode)isbn).ToArray(),
                             Usage: group.Key.Usage,
                             ForceFallback: group.Key.ForceFallback),
                         stoppingToken);

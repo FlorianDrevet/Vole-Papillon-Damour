@@ -31,7 +31,7 @@ public sealed class BookAnnouncementConfiguration : IEntityTypeConfiguration<Boo
             .IsRequired()
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(announcement => announcement.AssoEventsId)
             .HasConversion(

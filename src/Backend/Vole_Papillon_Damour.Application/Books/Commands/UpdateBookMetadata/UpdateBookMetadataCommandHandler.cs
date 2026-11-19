@@ -114,7 +114,7 @@ public sealed class UpdateBookMetadataCommandHandler(
         }
 
         return new UpdateBookMetadataResult(
-            book.Isbn13.Value,
+            book.Code.Value,
             book.MetadataStatus,
             book.MetadataSource!.Value,
             book.ManuallyEditedFields,

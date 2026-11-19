@@ -23,9 +23,29 @@ internal static class BookPersistenceConversions
         throw new InvalidOperationException($"The database contains an invalid ISBN-13 value: '{value}'.");
     }
 
+    public static BookCode ParseBookCode(string value)
+    {
+        if (BookCode.TryCreate(value, out var code))
+        {
+            return code;
+        }
+
+        throw new InvalidOperationException($"Stored book code '{value}' is not a valid ISBN-13 or internal code.");
+    }
+
     public static Isbn13? ParseNullableIsbn13(string? value)
     {
         return value is null ? null : ParseIsbn13(value);
+    }
+
+    public static BookCode? ParseNullableBookCode(string? value)
+    {
+        return value is null ? null : ParseBookCode(value);
+    }
+
+    public static string? SerializeNullableBookCode(BookCode? value)
+    {
+        return value?.Value;
     }
 
     public static string? SerializeNullableIsbn13(Isbn13? value)

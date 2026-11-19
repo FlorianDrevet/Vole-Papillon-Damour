@@ -152,7 +152,7 @@ public static class FavoriteCountReader
             ? $"isbn:{seed.Isbn13}"
             : $"work:{seed.WorkId}";
 
-    private static Isbn13 ParseIsbn(string value)
+    private static BookCode ParseIsbn(string value)
     {
         if (!Isbn13.TryCreate(value, out var isbn13))
         {

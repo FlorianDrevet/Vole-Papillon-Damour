@@ -1556,7 +1556,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.Ignore(book => book.Isbn13);
+            builder.Ignore(book => book.Code.AsIsbn13());
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,

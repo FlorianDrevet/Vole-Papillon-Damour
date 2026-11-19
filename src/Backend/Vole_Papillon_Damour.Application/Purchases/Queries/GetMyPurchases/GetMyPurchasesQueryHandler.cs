@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using System.Globalization;
 using System.Text;
 using ErrorOr;
@@ -83,7 +84,7 @@ public sealed class GetMyPurchasesQueryHandler(
 
         var editionIsbns = lines
             .Where(line => line.Isbn13 is not null && line.RareBookId is null)
-            .Select(line => line.Isbn13!.Value)
+            .Select(line => (BookCode)line.Isbn13!)
             .ToHashSet();
         var rareBookIds = lines
             .Where(line => line.RareBookId is not null)

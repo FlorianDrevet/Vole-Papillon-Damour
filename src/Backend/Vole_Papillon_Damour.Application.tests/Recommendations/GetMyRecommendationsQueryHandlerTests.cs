@@ -168,7 +168,7 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         hidden.UpdateCatalogVisibility(true, Now);
         var canonical = await fixture.AddCatalogBookAsync(canonicalIsbn, "Cible canonique", available: true);
         var redirected = await fixture.AddCatalogBookAsync(redirectedIsbn, "Fusionné", available: true);
-        redirected.RedirectTo(canonical.Id);
+        redirected.RedirectTo(canonical.Id.AsIsbn13());
         await fixture.Context.SaveChangesAsync();
         await fixture.AddAssociatedPassageAsync(member, Now, RecentSeed);
         await fixture.AddFavoriteAsync(member, RecentSeed);

@@ -252,7 +252,10 @@ public sealed class ScanBookCommandHandler(
 
             if (book.MetadataStatus == BookMetadataStatus.Pending)
             {
-                metadataEnrichmentQueue?.Enqueue(book.Id);
+                if (book.Id.IsIsbn)
+                {
+                    metadataEnrichmentQueue?.Enqueue(book.Id.AsIsbn13());
+                }
             }
 
             var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
@@ -362,7 +365,7 @@ public sealed class ScanBookCommandHandler(
     }
 
     private async Task<int> GetQuantityAnnouncedAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return await dbContext.BookAnnouncements
@@ -374,7 +377,7 @@ public sealed class ScanBookCommandHandler(
     }
 
     private Task<bool> IsRareBookAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return dbContext.RareBooks

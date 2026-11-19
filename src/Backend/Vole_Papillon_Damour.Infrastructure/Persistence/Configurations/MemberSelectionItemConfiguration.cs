@@ -26,8 +26,8 @@ public sealed class MemberSelectionItemConfiguration : IEntityTypeConfiguration<
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
         builder.Property(item => item.RareBookId)
             .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                 rareBookId => rareBookId == null ? null : rareBookId.Value,

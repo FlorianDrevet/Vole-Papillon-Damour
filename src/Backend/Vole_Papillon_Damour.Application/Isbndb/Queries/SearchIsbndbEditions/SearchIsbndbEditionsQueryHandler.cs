@@ -119,9 +119,9 @@ public sealed class SearchIsbndbEditionsQueryHandler : IRequestHandler<SearchIsb
             mapped.Add((isbn13, Map(book, isbn13)));
         }
 
-        var isbn13s = mapped.Select(item => item.Isbn13).Distinct().ToArray();
+        var isbn13s = mapped.Select(item => (BookCode)item.Isbn13).Distinct().ToArray();
         var visibleIsbns = isbn13s.Length == 0
-            ? new HashSet<Isbn13>()
+            ? new HashSet<BookCode>()
             : (await PublicCatalogBookVisibility.FilterPublicCatalogBooks(
                     _dbContext.Books.AsNoTracking(),
                     await PublicCatalogBookVisibility.GetInProgressScanIsbnsAsync(

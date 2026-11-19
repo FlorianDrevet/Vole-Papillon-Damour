@@ -10,7 +10,7 @@ namespace Vole_Papillon_Damour.Application.Books.Common;
 /// </summary>
 public static class PublicBookPath
 {
-    public static string For(Isbn13 isbn13, string? title, string? authors)
+    public static string For(BookCode isbn13, string? title, string? authors)
     {
         return $"/livres/{Slugify(title, authors)}-{isbn13.Value}";
     }

@@ -119,7 +119,7 @@ public sealed class ScanBookCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var source = Book.Create(ParseIsbn("9782070363735"), ScanBookCommandHandlerTests.SessionStartedAt);
         var canonical = Book.Create(ParseIsbn("9783140464079"), ScanBookCommandHandlerTests.SessionStartedAt);
-        source.RedirectTo(canonical.Id);
+        source.RedirectTo(canonical.Id.AsIsbn13());
         fixture.Context.Books.AddRange(source, canonical);
         await fixture.Context.SaveChangesAsync();
         var handler = fixture.CreateHandler();
@@ -130,11 +130,11 @@ public sealed class ScanBookCommandHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Isbn13.Should().Be("9783140464079");
-        (await fixture.Context.Books.SingleAsync(book => book.Id == canonical.Id))
+        (await fixture.Context.Books.SingleAsync(book => book.Id == canonical.Id.AsIsbn13()))
             .QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(book => book.Id == source.Id))
             .QuantityAvailable.Should().Be(0);
-        (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id);
+        (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id.AsIsbn13());
     }
 
     [Fact]
@@ -610,7 +610,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
             userId,
             authorMention: book.Authors,
             condition: RareBookCondition.AsNew,
-            isbn13: book.Id);
+            isbn13: book.Id.AsIsbn13());
         if (published)
         {
             rareBook.Publish(userId, ScanBookCommandHandlerTests.ClientScanAt);
@@ -892,7 +892,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Isbn13);
+            builder.Ignore(book => book.Code.AsIsbn13());
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
