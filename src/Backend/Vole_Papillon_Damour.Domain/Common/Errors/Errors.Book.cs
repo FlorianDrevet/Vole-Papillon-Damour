@@ -6,6 +6,11 @@ public static partial class Errors
 {
     public static class Book
     {
+        // RG-172 : un code interne inconnu est refusé, jamais créé comme une fiche.
+        public static Error UnknownInternalCode(string code) => Error.Validation(
+            code: "Book.UnknownInternalCode",
+            description: $"Le code interne {code} ne correspond à aucune fiche.");
+
         public static Error InvalidIsbn(string input) => Error.Validation(
             code: "Book.InvalidIsbn",
             description: $"'{input}' is not a valid ISBN-10 or ISBN-13.");

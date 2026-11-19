@@ -21,7 +21,7 @@ public sealed class GetPublicBookQueryHandler(
         GetPublicBookQuery query,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(query.Isbn13, out var isbn13))
+        if (!BookCode.TryCreate(query.Isbn13, out var isbn13))
         {
             return DomainErrors.Book.InvalidIsbn(query.Isbn13);
         }

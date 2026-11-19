@@ -8,7 +8,7 @@ public sealed record SelectionItemAddedResult(Guid Id, bool AlreadyPresent);
 
 public sealed record MergeSelectionResult(int Added, int AlreadyPresent, IReadOnlyList<string> Rejected);
 
-public sealed record SelectionTarget(Isbn13? Isbn13, RareBookId? RareBookId);
+public sealed record SelectionTarget(BookCode? Isbn13, RareBookId? RareBookId);
 
 public enum SelectionAvailability
 {

@@ -8,7 +8,7 @@ namespace Vole_Papillon_Damour.Application.NotFoundReports.Common;
 
 public sealed class NotFoundReportLapser(IProjectDbContext dbContext) : INotFoundReportLapser
 {
-    public async Task LapseIfUnavailableAsync(Isbn13 isbn13, DateTime at, CancellationToken ct)
+    public async Task LapseIfUnavailableAsync(BookCode isbn13, DateTime at, CancellationToken ct)
     {
         var book = await dbContext.Books
             .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, ct);

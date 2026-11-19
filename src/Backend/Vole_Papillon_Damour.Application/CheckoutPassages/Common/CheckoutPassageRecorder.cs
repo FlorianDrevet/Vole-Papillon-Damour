@@ -177,6 +177,6 @@ public sealed class CheckoutPassageRecorder(
              || item.Isbn13.Value.Value == line.RequestedIsbn13))
         || (item.RareBookId is not null && item.RareBookId == line.RareBookId);
 
-    private static Isbn13? ParseRequestedIsbn(string? value) =>
-        Isbn13.TryCreate(value, out var isbn) ? isbn : null;
+    private static BookCode? ParseRequestedIsbn(string? value) =>
+        BookCode.TryCreate(value, out var isbn) ? isbn : null;
 }

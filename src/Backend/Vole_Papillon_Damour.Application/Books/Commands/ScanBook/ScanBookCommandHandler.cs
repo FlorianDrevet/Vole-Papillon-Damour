@@ -39,7 +39,7 @@ public sealed class ScanBookCommandHandler(
         ScanBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -169,13 +169,19 @@ public sealed class ScanBookCommandHandler(
 
             if (book is null)
             {
+                if (!isbn13.IsIsbn)
+                {
+                    return Errors.Book.UnknownInternalCode(isbn13.Value);
+                }
+
                 book = Book.Create(isbn13, receivedAt);
                 dbContext.Books.Add(book);
             }
 
             var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
             var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
-            var heldRequest = command.Kept
+            // Une demande manuelle porte sur un ISBN : un code interne ne peut pas la satisfaire.
+            var heldRequest = command.Kept && isbn13.IsIsbn
                 ? await ManualRequestMatcher.FindOldestSearchingAsync(
                     dbContext, isbn13, resolvedWorkId ?? book.WorkId, cancellationToken)
                 : null;
@@ -241,7 +247,7 @@ public sealed class ScanBookCommandHandler(
             dbContext.BookMovements.Add(movement);
 
             heldRequest?.MarkFoundByScan(
-                isbn13,
+                isbn13.AsIsbn13(), // heldRequest n'existe que pour un ISBN (garde ci-dessus)
                 session.Id,
                 movement.Id,
                 session.VolunteerId,
