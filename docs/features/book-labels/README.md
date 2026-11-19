@@ -11,7 +11,7 @@
 
 - Worktree : `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-labels`
 - Branche : `feat/book-labels`
-- Canvas Claude Design : à ajouter en phase 2
+- Canvas Claude Design : https://claude.ai/artifact/AEzgNYCDYr9KuxomHmk3Nx (en relecture, pas encore exporté)
 
 ## Statut
 
