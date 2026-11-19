@@ -18,6 +18,8 @@ describe('scan routing', () => {
       'consulter',
       'statistiques',
       'livres-rares',
+      'imprimante',
+      'etiquette',
       'livres-rares/nouveau',
       'livres-rares/:id',
     ]));

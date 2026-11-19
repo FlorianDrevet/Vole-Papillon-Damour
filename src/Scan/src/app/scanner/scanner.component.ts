@@ -719,6 +719,25 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.metadata?.isbn13 ?? this.activeBook?.isbn13 ?? this.isbnInput;
   }
 
+  // ISBN-13 réimprimable depuis le résultat (RG-175) : aucun mouvement n'est créé.
+  get reprintableIsbn(): string | null {
+    return normalizeIsbn(this.activeIsbn);
+  }
+
+  get canReprintIsbnLabel(): boolean {
+    return this.canSort && this.reprintableIsbn !== null;
+  }
+
+  reprintIsbnLabel(): void {
+    const isbn = this.reprintableIsbn;
+    if (isbn === null || !this.router) {
+      return;
+    }
+
+    this.stopCamera();
+    void this.router.navigateByUrl(`/etiquette?isbn=${encodeURIComponent(isbn)}`);
+  }
+
   get activeVerdictKey(): 'ManualRequest' | 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
     if (this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found') {
       return 'ManualRequest';
@@ -1387,6 +1406,17 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.selectedRareBook = null;
     this.cashMessage = null;
     this.refreshView();
+  }
+
+  openLabelPrinter(): void {
+    if (this.authAvailable && !this.canSort && !this.canManageRareBooks) {
+      return;
+    }
+
+    this.stopCamera();
+    if (this.router) {
+      void this.router.navigateByUrl('/imprimante');
+    }
   }
 
   openRareBooks(): void {
