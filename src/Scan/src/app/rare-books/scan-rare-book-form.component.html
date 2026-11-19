@@ -10,7 +10,7 @@
   </header>
 
   <div *ngIf="book?.isbn13" class="rare-print" data-zone="E5-fiche-imprimer">
-  <button type="button" class="rare-secondary" data-zone="E5-bouton-imprimer-etiquette" (click)="printLabel()">Imprimer l'étiquette</button>
+  <button type="button" class="rare-secondary" data-zone="E5-bouton-imprimer" (click)="printLabel()">Imprimer l'étiquette</button>
 </div>
 
 <nav *ngIf="step === 'identify' || step === 'describe' || step === 'photos'" class="rare-stepper" aria-label="Étapes de la fiche">

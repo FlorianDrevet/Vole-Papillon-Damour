@@ -58,7 +58,7 @@
             <span>Livres rares</span>
           </button>
 
-          <button *ngIf="canSort || canManageRareBooks" type="button" class="home-mode home-mode-printer" data-zone="E1-entree-sans-isbn" (click)="openBookWithoutIsbn()">
+          <button *ngIf="canSort || canManageRareBooks" type="button" class="home-mode home-mode-printer" data-zone="E1-entree-ajouter-sans-isbn" (click)="openBookWithoutIsbn()">
             <span>Ajouter un livre sans ISBN</span>
           </button>
           <button *ngIf="canSort || canManageRareBooks" type="button" class="home-mode home-mode-printer" data-zone="E1-entree-imprimante" (click)="openLabelPrinter()">

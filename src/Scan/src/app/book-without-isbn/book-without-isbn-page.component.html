@@ -5,7 +5,7 @@
   </header>
 
   <ng-container *ngIf="created === null; else createdView">
-    <div class="kind-choice" role="group" aria-label="Type de livre" data-zone="E2-type-livre">
+    <div class="kind-choice" role="group" aria-label="Type de livre" data-zone="E2-bascule-type">
       <button type="button" [class.active]="kind === 'ordinary'" [disabled]="!canCreateOrdinary" (click)="chooseKind('ordinary')">
         Livre ordinaire
       </button>
@@ -15,17 +15,17 @@
     </div>
 
     <form *ngIf="kind === 'ordinary'; else rareForm" class="form" data-zone="E2-formulaire-ordinaire" (ngSubmit)="submit()" novalidate>
-      <label>Titre *<input name="title" [(ngModel)]="ordinary.title" required maxlength="500"></label>
-      <label>Auteur<input name="authors" [(ngModel)]="ordinary.authors" maxlength="500"></label>
-      <label>Éditeur<input name="publisher" [(ngModel)]="ordinary.publisher" maxlength="200"></label>
-      <label>Année<input name="publicationYear" inputmode="numeric" [(ngModel)]="ordinary.publicationYear"></label>
+      <label data-zone="E2-champ-titre">Titre *<input name="title" [(ngModel)]="ordinary.title" required maxlength="500"></label>
+      <label data-zone="E2-champ-auteur">Auteur<input name="authors" [(ngModel)]="ordinary.authors" maxlength="500"></label>
+      <label data-zone="E2-champ-editeur">Éditeur<input name="publisher" [(ngModel)]="ordinary.publisher" maxlength="200"></label>
+      <label data-zone="E2-champ-annee">Année<input name="publicationYear" inputmode="numeric" [(ngModel)]="ordinary.publicationYear"></label>
       <label>Format<input name="physicalFormat" [(ngModel)]="ordinary.physicalFormat" maxlength="50"></label>
       <label>Langue<input name="language" [(ngModel)]="ordinary.language" maxlength="10"></label>
       <label>Genre<input name="genre" [(ngModel)]="ordinary.genre" maxlength="100"></label>
       <label>Édition<input name="edition" [(ngModel)]="ordinary.edition" maxlength="100"></label>
       <label>Pages<input name="pages" inputmode="numeric" [(ngModel)]="ordinary.pages"></label>
       <label>Résumé<textarea name="summary" [(ngModel)]="ordinary.summary" maxlength="20000"></textarea></label>
-      <label>Quantité *<input name="quantity" inputmode="numeric" [(ngModel)]="ordinary.quantity" required></label>
+      <label data-zone="E2-champ-quantite">Quantité *<input name="quantity" inputmode="numeric" [(ngModel)]="ordinary.quantity" required></label>
     </form>
 
     <ng-template #rareForm>
@@ -35,7 +35,7 @@
         <label>Éditeur<input name="rarePublisher" [(ngModel)]="rare.publisher" maxlength="200"></label>
         <label>Année<input name="rareYear" inputmode="numeric" [(ngModel)]="rare.publicationYear"></label>
         <label>Prix ferme *<input name="rarePrice" inputmode="decimal" [(ngModel)]="rare.price" required></label>
-        <label>État *
+        <label data-zone="E2-champ-etat">État *
           <select name="rareCondition" [(ngModel)]="rare.condition">
             <option *ngFor="let condition of conditions" [value]="condition.value">{{ condition.label }}</option>
           </select>
@@ -58,6 +58,7 @@
       <p *ngIf="photoError" class="error" role="alert">{{ photoError }}</p>
     </section>
 
+    <p data-zone="E2-message-connexion" class="online-note">Création en ligne uniquement : aucune fiche sans ISBN hors connexion.</p>
     <p *ngIf="error" class="error" role="alert" data-zone="E2-erreur">{{ error }}</p>
     <button type="button" class="primary" data-zone="E2-bouton-creer" [disabled]="busy" (click)="submit()">
       {{ busy ? 'Création…' : 'Créer la fiche' }}

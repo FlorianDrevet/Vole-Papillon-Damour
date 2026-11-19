@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E6-Imprimante</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</head>
+<body>
+<div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="flex: none; height: 3px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></div>
+
+  <div style="flex: none; display: flex; flex-direction: column; gap: 10px; padding: 30px 24px 26px; background: #ffffff; border-bottom: 1px solid #e2eef7;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Matériel</span>
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 500; line-height: 1.08; color: #072b45;">Imprimante d'étiquettes</span>
+  </div>
+
+  <div data-zone="E6-bandeau-simulation" style="flex: none; display: flex; align-items: center; gap: 11px; padding: 14px 22px; background: #fdf1e4; border-left: 4px solid #dc6412;">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#b4520a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: none;">
+      <path d="M12 3.8 21 19.5H3z"></path>
+      <path d="M12 10v4.2M12 16.8h.01"></path>
+    </svg>
+    <span style="font-size: 14px; line-height: 1.4; color: #6b3608;">Simulation — rien n'est imprimé</span>
+  </div>
+
+  <div style="flex: none; display: flex; flex-direction: column; gap: 14px; padding: 22px 20px;">
+
+    <div data-zone="E6-etat" style="display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">État</span>
+      <span style="font-size: 21px; font-weight: 700; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; color: #072b45;">Non connectée</span>
+      <span style="font-size: 15px; line-height: 1.4; color: #4e6c84;">Aucune étiqueteuse liée à cet appareil.</span>
+    </div>
+
+    <div data-zone="E6-appareil" style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 24px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Appareil</span>
+      <span style="font-size: 15px; font-weight: 600; color: #072b45;">T50M Pro</span>
+    </div>
+
+  </div>
+
+  <div style="flex: 1 1 auto; background: #f7fbfe;"></div>
+
+  <div style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 26px; background: #ffffff; border-top: 1px solid #d9e9f4;">
+    <div data-zone="E6-bouton-connecter" style="display: flex; align-items: center; justify-content: center; height: 60px; border-radius: 999px; background: #f0801c;">
+      <span style="font-size: 17px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #ffffff;">Connecter</span>
+    </div>
+    <div data-zone="E6-bouton-tester" style="display: flex; align-items: center; justify-content: center; height: 52px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff;">
+      <span style="font-size: 16px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #0c6ea6;">Tester (étiquette d'essai)</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
