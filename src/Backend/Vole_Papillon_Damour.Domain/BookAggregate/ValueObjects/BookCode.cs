@@ -73,6 +73,24 @@ public readonly record struct BookCode
         return new BookCode(value, isInternal: true);
     }
 
+    // Plus grand numéro de séquence représentable : 11 chiffres après le préfixe 2.
+    public const long MaximumInternalSequenceNumber = 99_999_999_999L;
+
+    // Construit le code interne du numéro de séquence donné : préfixe 2, numéro sur 11 chiffres,
+    // clé de contrôle EAN-13. Un numéro n'est jamais réémis (RG-171) : c'est le rôle du compteur.
+    public static BookCode CreateInternalFromSequence(long sequenceNumber)
+    {
+        if (sequenceNumber is < 1 or > MaximumInternalSequenceNumber)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(sequenceNumber),
+                sequenceNumber,
+                "The internal book code sequence number is out of range.");
+        }
+
+        var body = InternalPrefix + sequenceNumber.ToString("D11", System.Globalization.CultureInfo.InvariantCulture);
+        return CreateInternal(body + CalculateCheckDigit(body));
+    }
     // Le code est-il un code interne (préfixe 2xx, clé de contrôle valide) ?
     public static bool IsValidInternalCode(string? value)
     {

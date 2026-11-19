@@ -54,6 +54,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
     public DbSet<EmailBounceEvent> EmailBounceEvents => Set<EmailBounceEvent>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();

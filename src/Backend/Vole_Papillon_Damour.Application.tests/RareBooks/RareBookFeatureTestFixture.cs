@@ -186,6 +186,7 @@ internal sealed class RareBookFeatureTestDbContext(
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => throw new NotSupportedException();
+    DbSet<InternalBookCodeSequence> IProjectDbContext.InternalBookCodeSequences => throw new NotSupportedException();
     DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();

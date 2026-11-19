@@ -808,6 +808,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     }
 
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
     public DbSet<IsbndbQuotaState> IsbndbQuotaStates => Set<IsbndbQuotaState>();
     public DbSet<IsbndbDailyUsage> IsbndbDailyUsages => Set<IsbndbDailyUsage>();

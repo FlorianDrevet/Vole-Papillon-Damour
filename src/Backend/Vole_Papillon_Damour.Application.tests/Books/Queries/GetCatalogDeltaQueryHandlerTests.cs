@@ -843,6 +843,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<Watchlist> Watchlists => Set<Watchlist>();

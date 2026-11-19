@@ -380,6 +380,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     public DbSet<MemberGenreFavorite> MemberGenreFavorites => Set<MemberGenreFavorite>();
     public DbSet<MemberFavoriteBook> MemberFavoriteBooks => Set<MemberFavoriteBook>();
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();

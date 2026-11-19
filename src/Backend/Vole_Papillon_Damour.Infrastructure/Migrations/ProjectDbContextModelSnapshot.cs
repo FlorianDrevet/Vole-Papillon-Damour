@@ -707,6 +707,27 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("BookIsbndbRecords", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.InternalBookCodeSequence", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<long>("LastIssuedNumber")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InternalBookCodeSequences", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            LastIssuedNumber = 0L
+                        });
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
                 {
                     b.Property<Guid>("Id")

@@ -18,6 +18,20 @@ public sealed class ImportIsbnNotFoundRequest
     public IReadOnlyList<string>? ReadyIsbns { get; set; }
 }
 
+/// Livre ordinaire sans ISBN : la plateforme attribue le code interne (RG-170).
+public sealed record CreateBookWithoutIsbnRequest(
+    string Title,
+    int QuantityAvailable,
+    string? Authors = null,
+    string? Publisher = null,
+    int? PublicationYear = null,
+    string? PhysicalFormat = null,
+    string? Language = null,
+    string? Genre = null,
+    string? Summary = null,
+    string? Edition = null,
+    int? Pages = null);
+
 public sealed record AddAdminBookRequest(
     string Isbn13,
     int QuantityAvailable,

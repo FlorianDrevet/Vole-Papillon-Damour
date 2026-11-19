@@ -135,6 +135,7 @@ internal sealed class WatchlistFeatureTestDbContext(
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();

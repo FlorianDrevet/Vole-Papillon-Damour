@@ -39,6 +39,7 @@ public interface IProjectDbContext
     DbSet<AssoEvents> AssoEvents { get; }
     DbSet<Order> Orders { get; }
     DbSet<Book> Books { get; }
+    DbSet<InternalBookCodeSequence> InternalBookCodeSequences { get; }
     DbSet<BookIsbndbRecord> BookIsbndbRecords => throw new NotSupportedException();
     DbSet<IsbndbQuotaState> IsbndbQuotaStates => throw new NotSupportedException();
     DbSet<IsbndbDailyUsage> IsbndbDailyUsages => throw new NotSupportedException();

@@ -515,6 +515,40 @@ public static class BookAdministrationController
                     })
                 .WithName("AddAdminBook")
                 .RequireAuthorization("Administration");
+            endpoints.MapPost(
+                    "/books/admin/books/without-isbn",
+                    async (
+                        CreateBookWithoutIsbnRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new CreateBookWithoutIsbnCommand(
+                                request.Title,
+                                request.QuantityAvailable,
+                                userId,
+                                request.Authors,
+                                request.Publisher,
+                                request.PublicationYear,
+                                request.PhysicalFormat,
+                                request.Language,
+                                request.Genre,
+                                request.Summary,
+                                request.Edition,
+                                request.Pages),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(ToResponse(operation)),
+                            error => error.Result());
+                    })
+                .WithName("CreateAdminBookWithoutIsbn")
+                .RequireAuthorization("Administration");
 
             endpoints.MapPost(
                     "/books/admin/books/import",

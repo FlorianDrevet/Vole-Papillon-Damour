@@ -263,6 +263,7 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
