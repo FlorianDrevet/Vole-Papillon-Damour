@@ -52,6 +52,7 @@ public sealed class EnrichPendingBooksCommandHandler(
 
         var candidateQuery = dbContext.Books
             .AsNoTracking()
+            .Where(book => !book.IsInternalCode)
             .Where(book =>
                 (book.MetadataStatus == BookMetadataStatus.Pending &&
                  (book.LastAttemptAt == null ||

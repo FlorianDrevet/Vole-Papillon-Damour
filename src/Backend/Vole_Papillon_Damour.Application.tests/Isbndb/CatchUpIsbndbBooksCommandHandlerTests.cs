@@ -54,6 +54,23 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NeverSendsInternalCodesToIsbndb()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var isbnBook = CreateResolvedBook("9782070409228", Now.AddDays(-1), "Livre", "Auteur");
+        var internalBook = Book.CreateWithInternalCode(BookCode.CreateInternal("2000000000008"), Now.AddDays(-2));
+        fixture.Context.Books.AddRange(isbnBook, internalBook);
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+
+        var lookups = new RecordingLookupService(_ => new IsbndbLookup.NotFound());
+        var handler = CreateHandler(fixture, lookups);
+
+        await handler.Handle(CreateCommand(batchSize: 10), CancellationToken.None);
+
+        lookups.BulkCalls.SelectMany(call => call).Should().Equal(isbnBook.Id.AsIsbn13());
+    }
+    [Fact]
     public async Task Handle_WhenQuotaIsExhaustedOnSecondPage_PersistsFirstPageAndStops()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

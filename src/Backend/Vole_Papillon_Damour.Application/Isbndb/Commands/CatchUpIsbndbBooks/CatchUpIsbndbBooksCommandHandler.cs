@@ -480,7 +480,8 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
         CancellationToken cancellationToken)
     {
         var query = dbContext.Books
-            .Where(book => book.IsAbsentFromIsbndb &&
+            .Where(book => !book.IsInternalCode &&
+                           book.IsAbsentFromIsbndb &&
                            book.IsbndbCompletedAt == null &&
                            book.IsbndbCheckedAt != null &&
                            book.IsbndbCheckedAt < cutoff);
@@ -493,6 +494,7 @@ public sealed class CatchUpIsbndbBooksCommandHandler(
 
     private IQueryable<Book> CandidateQuery() => dbContext.Books
         .Where(book =>
+            !book.IsInternalCode &&
             !book.IsIsbndbSourced &&
             !book.IsAbsentFromIsbndb &&
             book.MetadataStatus != BookMetadataStatus.Discarded &&
