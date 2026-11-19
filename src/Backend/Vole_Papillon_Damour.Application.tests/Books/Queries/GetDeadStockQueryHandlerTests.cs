@@ -248,6 +248,10 @@ internal sealed class DeadStockFixture : IAsyncDisposable
         await connection.DisposeAsync();
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -286,8 +290,7 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
             builder.Property(book => book.Id)
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.Ignore(book => book.Code.AsIsbn13());
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
@@ -306,7 +309,7 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookMovementId.Create(value));
             builder.Property(movement => movement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(movement => movement.Type).HasConversion<byte>();
             builder.Ignore(movement => movement.ScanSessionId);
             builder.Ignore(movement => movement.VolunteerId);
@@ -326,6 +329,10 @@ internal sealed class DeadStockTestDbContext(DbContextOptions<DeadStockTestDbCon
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {

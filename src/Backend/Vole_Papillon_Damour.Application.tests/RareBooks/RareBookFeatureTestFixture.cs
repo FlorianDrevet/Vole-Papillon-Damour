@@ -228,16 +228,16 @@ internal sealed class RareBookFeatureTestDbContext(
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

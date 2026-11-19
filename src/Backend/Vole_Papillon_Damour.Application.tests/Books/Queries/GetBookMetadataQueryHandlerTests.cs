@@ -262,10 +262,9 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Code.AsIsbn13());
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
@@ -279,6 +278,10 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
             builder.Property(book => book.CoverSource).HasConversion<byte?>();
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {

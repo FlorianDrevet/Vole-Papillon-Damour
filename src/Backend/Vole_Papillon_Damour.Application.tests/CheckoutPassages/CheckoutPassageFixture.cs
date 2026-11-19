@@ -362,6 +362,10 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         clientGestureId: gestureId,
         checkoutPassageId: passageId);
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
         ? isbn
         : throw new InvalidOperationException($"Invalid test ISBN: {value}");
@@ -463,7 +467,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookMovementId.Create(value));
             builder.Property(movement => movement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(movement => movement.Type).HasConversion<byte>();
             builder.Property(movement => movement.ScanSessionId).HasConversion(new ValueConverter<
                 Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects.ScanSessionId?, Guid?>(
@@ -501,7 +505,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
             builder.Property(announcement => announcement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(announcement => announcement.AssoEventsId)
                 .HasConversion(
                     id => id == null ? (Guid?)null : id.Value,
@@ -536,6 +540,10 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
             builder.Ignore(assoEvent => assoEvent.BingoNumeros);
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
         ? isbn

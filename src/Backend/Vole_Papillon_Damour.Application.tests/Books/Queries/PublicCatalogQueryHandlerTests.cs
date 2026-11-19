@@ -1555,8 +1555,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
             builder.Property(book => book.Id)
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.Ignore(book => book.Code.AsIsbn13());
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
@@ -1577,7 +1576,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
         {
             builder.HasKey(genre => new {genre.BookIsbn13, genre.Name});
             builder.Property(genre => genre.BookIsbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>
@@ -1587,7 +1586,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
             builder.Property(announcement => announcement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(announcement => announcement.AssoEventsId)
                 .HasConversion(
                     id => id == null ? (Guid?)null : id.Value,
@@ -1639,7 +1638,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookMovementId.Create(value));
             builder.Property(movement => movement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(movement => movement.ScanSessionId)
                 .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -1690,16 +1689,16 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,
@@ -1743,6 +1742,10 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
         modelBuilder.ApplyConfiguration(new BookNeighborConfiguration());
         modelBuilder.ApplyConfiguration(new RecommendationGenerationConfiguration());
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {
