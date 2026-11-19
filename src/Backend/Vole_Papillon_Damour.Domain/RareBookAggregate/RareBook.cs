@@ -50,7 +50,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         int slugCollisionSuffix,
         Guid? clientGestureId) : base(id)
     {
@@ -87,7 +87,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13 = null,
+        BookCode? isbn13 = null,
         int slugCollisionSuffix = 1,
         Guid? clientGestureId = null)
     {
@@ -117,7 +117,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         int? publicationYear = null,
         RareBookCondition? condition = null,
         string? publicDescription = null,
-        Isbn13? isbn13 = null,
+        BookCode? isbn13 = null,
         int slugCollisionSuffix = 1,
         Guid? clientGestureId = null)
     {
@@ -146,7 +146,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime updatedAt,
         UserId updatedBy,
-        Isbn13? isbn13 = null)
+        BookCode? isbn13 = null)
     {
         var normalizedTitle = NormalizeOptional(title, 300, nameof(title)) ?? string.Empty;
         var normalizedAuthorMention = NormalizeOptional(authorMention, 300, nameof(authorMention));
@@ -435,7 +435,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         }
     }
 
-    private static Isbn13? ValidateIsbn(Isbn13? isbn13)
+    private static BookCode? ValidateIsbn(BookCode? isbn13)
     {
         if (isbn13 is { } value && string.IsNullOrWhiteSpace(value.Value))
         {

@@ -245,6 +245,7 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
         modelBuilder.Ignore<Product>();

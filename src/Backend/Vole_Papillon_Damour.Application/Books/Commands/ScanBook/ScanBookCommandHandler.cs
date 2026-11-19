@@ -171,7 +171,12 @@ public sealed class ScanBookCommandHandler(
             {
                 if (!isbn13.IsIsbn)
                 {
-                    return Errors.Book.UnknownInternalCode(isbn13.Value);
+                    var isRareCode = await dbContext.RareBooks
+                        .AsNoTracking()
+                        .AnyAsync(rare => rare.Isbn13 == isbn13, cancellationToken);
+                    return isRareCode
+                        ? Error.Validation("Book.RareBookCode", "Ce code désigne un livre rare : il se gère depuis la vente des livres rares.")
+                        : Errors.Book.UnknownInternalCode(isbn13.Value);
                 }
 
                 book = Book.Create(isbn13, receivedAt);

@@ -707,6 +707,51 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("BookIsbndbRecords", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("BlobUri")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("BookIsbn13")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookIsbn13", "Position")
+                        .HasDatabaseName("IX_BookPhotos_BookIsbn13_Position");
+
+                    b.ToTable("BookPhotos", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.InternalBookCodeSequence", b =>
                 {
                     b.Property<int>("Id")
@@ -2337,6 +2382,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookPhoto", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("BookIsbn13")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
@@ -2640,6 +2694,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Book", b =>
                 {
                     b.Navigation("Genres");
+
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>

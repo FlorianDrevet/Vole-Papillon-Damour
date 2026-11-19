@@ -70,6 +70,12 @@ internal static class ManualRequestStockPick
             return Errors.ManualRequest.NothingInStock();
         }
 
+        // Une demande manuelle porte sur un ISBN : une annonce à code interne ne la satisfait jamais.
+        if (!announcement.Isbn13.IsIsbn)
+        {
+            return Errors.ManualRequest.NothingInStock();
+        }
+
         if (announcement.Quantity > 1)
         {
             announcement.ApplyQuantityCorrection(announcement.Quantity - 1);

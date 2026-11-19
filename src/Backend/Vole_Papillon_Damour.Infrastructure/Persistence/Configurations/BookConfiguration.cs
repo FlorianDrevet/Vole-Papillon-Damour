@@ -197,5 +197,13 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(book => book.Genres)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(book => book.Photos)
+            .WithOne()
+            .HasForeignKey(photo => photo.BookIsbn13)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(book => book.Photos)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

@@ -852,6 +852,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
         modelBuilder.ApplyConfiguration(new AdminDashboardSnapshotConfiguration());
         modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());

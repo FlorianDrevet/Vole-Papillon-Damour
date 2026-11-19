@@ -206,8 +206,15 @@ public sealed class SearchCatalogQueryHandler(
         var projectedBooksByIsbn = projectedPageBooks.ToDictionary(
             book => book.Isbn13,
             StringComparer.Ordinal);
+        var photoCovers = await BookPhotoCovers.FirstPhotoUrlsAsync(
+            dbContext,
+            pageIsbns.Where(isbn => isbn.IsInternal).ToArray(),
+            cancellationToken);
         var pageBooks = pageIsbns
-            .Select(isbn => projectedBooksByIsbn[isbn.Value])
+            .Select(isbn => projectedBooksByIsbn[isbn.Value] is { CoverUrl: null } uncovered &&
+                            photoCovers.TryGetValue(isbn.Value, out var photoUrl)
+                ? uncovered with { CoverUrl = photoUrl }
+                : projectedBooksByIsbn[isbn.Value])
             .ToArray();
 
         int? totalCount;

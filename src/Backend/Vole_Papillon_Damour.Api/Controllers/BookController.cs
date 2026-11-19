@@ -1,3 +1,6 @@
+using Vole_Papillon_Damour.Application.Books.Commands.BookPhotos.DeleteBookPhoto;
+using Vole_Papillon_Damour.Application.Books.Commands.BookPhotos.AddBookPhoto;
+using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using System.Security.Claims;
 using System.Globalization;
 using System.Text;
@@ -745,7 +748,107 @@ public static class BookController
                     })
                 .WithName("CloseScanSession")
                 .RequireAuthorization("Tri");
-        });
+
+            endpoints.MapPost(
+                    "/books/without-isbn",
+                    async (
+                        CreateBookWithoutIsbnRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new CreateBookWithoutIsbnCommand(
+                                request.Title,
+                                request.QuantityAvailable,
+                                userId,
+                                request.Authors,
+                                request.Publisher,
+                                request.PublicationYear,
+                                request.PhysicalFormat,
+                                request.Language,
+                                request.Genre,
+                                request.Summary,
+                                request.Edition,
+                                request.Pages),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(new CreatedBookWithoutIsbnResponse(
+                                operation.Isbn13,
+                                operation.QuantityAvailable)),
+                            error => error.Result());
+                    })
+                .WithName("CreateBookWithoutIsbn")
+                .RequireAuthorization("TriOrAdmin");
+
+            endpoints.MapPost(
+                    "/books/{code}/photos",
+                    async (
+                        string code,
+                        [FromForm] AddBookPhotoRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null)
+                        {
+                            return Results.BadRequest(new { error = "A photo file is required." });
+                        }
+
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        var result = await mediator.Send(
+                            new AddBookPhotoCommand(
+                                code,
+                                stream,
+                                request.File.FileName,
+                                request.File.ContentType,
+                                request.File.Length,
+                                userId),
+                            cancellationToken);
+                        return result.Match(
+                            photo => Results.Ok(new BookPhotoResponse(
+                                photo.Id,
+                                photo.Url,
+                                photo.Position,
+                                photo.ContentType)),
+                            error => error.Result());
+                    })
+                .WithName("AddBookPhoto")
+                .RequireAuthorization("TriOrAdmin");
+
+            endpoints.MapDelete(
+                    "/books/{code}/photos/{photoId:guid}",
+                    async (
+                        string code,
+                        Guid photoId,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new DeleteBookPhotoCommand(code, photoId, userId),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("DeleteBookPhoto")
+                .RequireAuthorization("TriOrAdmin");        });
     }
 
     private static bool TryGetUserId(ClaimsPrincipal principal, out UserId userId)

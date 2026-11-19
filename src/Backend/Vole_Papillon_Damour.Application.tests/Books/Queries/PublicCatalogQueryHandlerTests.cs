@@ -1573,6 +1573,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Entity<BookGenre>(builder =>
         {
             builder.HasKey(genre => new {genre.BookIsbn13, genre.Name});

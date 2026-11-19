@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Application.Books.Queries.GetBooksWithoutIsbn;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -550,6 +551,43 @@ public static class BookAdministrationController
                 .WithName("CreateAdminBookWithoutIsbn")
                 .RequireAuthorization("Administration");
 
+            endpoints.MapGet(
+                    "/books/admin/without-isbn",
+                    async (
+                        int? page,
+                        int? pageSize,
+                        string? search,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetBooksWithoutIsbnQuery(page ?? 1, pageSize ?? 50, search),
+                            cancellationToken);
+                        return result.Match(
+                            pageResult => Results.Ok(new BookWithoutIsbnPageResponse(
+                                pageResult.TotalCount,
+                                pageResult.Page,
+                                pageResult.PageSize,
+                                pageResult.Items
+                                    .Select(item => new BookWithoutIsbnItemResponse(
+                                        item.Code,
+                                        item.Title,
+                                        item.Authors,
+                                        item.Publisher,
+                                        item.QuantityAvailable,
+                                        item.FirstSeenAt,
+                                        item.Photos
+                                            .Select(photo => new BookPhotoResponse(
+                                                photo.Id,
+                                                photo.Url,
+                                                photo.Position,
+                                                photo.ContentType))
+                                            .ToArray()))
+                                    .ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminBooksWithoutIsbn")
+                .RequireAuthorization("Administration");
             endpoints.MapPost(
                     "/books/admin/books/import",
                     async (

@@ -338,6 +338,7 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
         modelBuilder.Ignore<User>();
         modelBuilder.ApplyConfiguration(new BookConfiguration());
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.ManuallyEditedFields).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.RowVersion)

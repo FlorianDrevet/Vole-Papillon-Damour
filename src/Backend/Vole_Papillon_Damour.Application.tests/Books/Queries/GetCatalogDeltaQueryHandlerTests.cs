@@ -892,6 +892,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
         modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());

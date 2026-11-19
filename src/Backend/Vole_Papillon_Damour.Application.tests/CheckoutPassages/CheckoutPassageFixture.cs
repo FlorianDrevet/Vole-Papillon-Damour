@@ -440,6 +440,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
         modelBuilder.ApplyConfiguration(new BookConfiguration());
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new MemberGenreFavoriteConfiguration());
         modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());
         modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");

@@ -52,15 +52,7 @@ public sealed class CreateBookWithoutIsbnCommandHandler(
             IsolationLevel.Serializable,
             cancellationToken);
 
-        var sequence = await dbContext.InternalBookCodeSequences
-            .SingleOrDefaultAsync(cancellationToken);
-        if (sequence is null)
-        {
-            sequence = InternalBookCodeSequence.Create();
-            dbContext.InternalBookCodeSequences.Add(sequence);
-        }
-
-        var code = sequence.IssueNext();
+        var code = await InternalBookCodeIssuer.IssueAsync(dbContext, cancellationToken);
         var book = Book.CreateWithInternalCode(code, addedAt);
         try
         {

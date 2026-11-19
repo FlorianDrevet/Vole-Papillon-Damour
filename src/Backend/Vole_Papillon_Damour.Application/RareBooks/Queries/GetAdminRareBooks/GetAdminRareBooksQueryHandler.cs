@@ -73,7 +73,7 @@ public sealed class GetAdminRareBooksQueryHandler(
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLikePattern(search)}%";
-            var hasIsbnSearch = Isbn13.TryCreate(search, out var isbnSearch);
+            var hasIsbnSearch = BookCode.TryCreate(search, out var isbnSearch);
             booksQuery = booksQuery.Where(book =>
                 EF.Functions.Like(book.Title, pattern, "\\") ||
                 EF.Functions.Like(book.AuthorMention ?? string.Empty, pattern, "\\") ||

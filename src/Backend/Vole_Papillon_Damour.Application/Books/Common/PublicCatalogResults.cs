@@ -35,7 +35,8 @@ public sealed record PublicCatalogBookResult(
     string? RareBookSlug = null,
     Guid? RareBookId = null,
     string? Summary = null,
-    IReadOnlyList<string>? Genres = null);
+    IReadOnlyList<string>? Genres = null,
+    bool IsInternalCode = false);
 
 public sealed record PublicCatalogGenreFacetResult(string Name, int BookCount);
 

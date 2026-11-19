@@ -30,7 +30,39 @@ public sealed class Book : AggregateRoot<BookCode>
     public string? Summary { get; private set; }
     public string? Genre { get; private set; }
     public IReadOnlyCollection<BookGenre> Genres => _genres;
-    public int? Pages { get; private set; }
+
+    private readonly List<BookPhoto> _photos = [];
+
+    public IReadOnlyCollection<BookPhoto> Photos => _photos;
+
+    // Photos d'un livre sans ISBN (Q11) : seules les fiches à code interne en reçoivent.
+    public void AddPhoto(BookPhoto photo, DateTime at)
+    {
+        ArgumentNullException.ThrowIfNull(photo);
+        if (!IsInternalCode)
+        {
+            throw new InvalidOperationException("Only books without ISBN accept platform photos.");
+        }
+
+        if (_photos.Count >= BookPhoto.MaximumPerBook)
+        {
+            throw new InvalidOperationException($"A book accepts at most {BookPhoto.MaximumPerBook} photos.");
+        }
+
+        _photos.Add(photo);
+        UpdatedAt = at;
+    }
+
+    public bool RemovePhoto(Guid photoId, DateTime at)
+    {
+        if (_photos.RemoveAll(photo => photo.Id == photoId) == 0)
+        {
+            return false;
+        }
+
+        UpdatedAt = at;
+        return true;
+    }    public int? Pages { get; private set; }
     public string? Edition { get; private set; }
     public string? WorkKey { get; private set; }
 

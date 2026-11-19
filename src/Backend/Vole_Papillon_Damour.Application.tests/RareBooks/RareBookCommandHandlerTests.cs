@@ -14,6 +14,7 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.RestoreRareBookAvailab
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UnpublishRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCaption;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
@@ -37,6 +38,20 @@ public sealed class RareBookCommandHandlerTests
         (await fixture.Context.RareBooks.CountAsync()).Should().Be(1);
     }
 
+    [Fact]
+    public async Task Create_without_isbn_gives_the_rare_copy_its_own_internal_code()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(fixture.CreateCommand(isbn13: null), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13.Should().NotBeNull();
+        stored.Isbn13!.Value.IsInternal.Should().BeTrue();
+        BookCode.IsValidInternalCode(stored.Isbn13.Value.Value).Should().BeTrue();
+    }
     [Fact]
     public async Task Create_rejects_an_isbn_already_used_by_another_rare_book()
     {
