@@ -72,6 +72,24 @@ public sealed class RefreshBookSimilarityProfilesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenIsbnIsSpecified_IgnoresProfileStatusesOfOtherBooks()
+    {
+        await using var fixture = await RecommendationProfileFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", Now.AddDays(-20));
+        await fixture.AddProfileAsync("9782070363735", Now.AddDays(-1));
+        await fixture.AddBookAsync("9783140464079", Now.AddDays(-20));
+        var reader = new CapturingNoticeReader(_ => Edition("9782070363735"));
+        var handler = CreateHandler(fixture.Context, reader, enabled: true);
+
+        var result = await handler.Handle(
+            new RefreshBookSimilarityProfilesCommand("9782070363735"),
+            CancellationToken.None);
+
+        result.Should().Be(new RefreshBookSimilarityProfilesResult(0, 0, 0));
+        reader.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Handle_RefreshesProfilesOlderThanNinetyDaysOrTheirBook()
     {
         await using var fixture = await RecommendationProfileFixture.CreateAsync();

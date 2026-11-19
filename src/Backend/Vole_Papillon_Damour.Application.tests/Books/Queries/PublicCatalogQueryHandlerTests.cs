@@ -808,6 +808,24 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_WhenAnnouncementIsUndated_KeepsItInNextBookFairScope()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var undatedBook = fixture.AddBook("9782070408504", "Livre annoncé sans date", "Auteur");
+        fixture.AddBook("9782070363735", "Livre non annoncé", "Auteur");
+        fixture.AddAnnouncement(undatedBook, quantity: 1);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.NextBookFair,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Livre annoncé sans date");
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenIncludeExhaustedIsRequested_AddsExhaustedBooksToNextFairScope()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -1166,6 +1184,26 @@ public sealed class PublicCatalogQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Entries.Should().ContainSingle();
         result.Value.Entries[0].UrlPath.Should().Contain("9782070408504");
+    }
+
+    [Fact]
+    public async Task GetPublicCatalogSitemap_DoesNotSelectHeavyBookColumns()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Livre complet", "Auteur");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSitemapHandler().Handle(
+            new GetPublicCatalogSitemapQuery(),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("RawPayload", StringComparison.Ordinal) ||
+            command.Contains("Summary", StringComparison.Ordinal) ||
+            command.Contains("ManuallyEditedFields", StringComparison.Ordinal));
     }
 }
 

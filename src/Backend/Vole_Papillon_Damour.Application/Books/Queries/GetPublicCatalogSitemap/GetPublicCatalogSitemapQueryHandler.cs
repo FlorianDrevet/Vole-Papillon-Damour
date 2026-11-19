@@ -32,12 +32,14 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
                 dbContext.Books.AsNoTracking(),
                 inProgressScanIsbns)
             .OrderBy(book => book.Id)
+            .Select(book => new { book.Id, book.Title, book.Authors, book.UpdatedAt })
             .ToListAsync(cancellationToken);
 
         var rareBooks = await dbContext.RareBooks
             .AsNoTracking()
             .Where(book => book.Status == RareBookStatus.Published)
             .OrderBy(book => book.Id)
+            .Select(book => new { book.Id, book.UpdatedAt })
             .ToListAsync(cancellationToken);
 
         return new PublicCatalogSitemapResult(

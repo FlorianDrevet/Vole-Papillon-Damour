@@ -72,6 +72,23 @@ public sealed class MemberIdentityService(
         }
 
         var externalIdValue = externalId.ToString();
+        var existingUser = await dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.ExternalId == externalIdValue, cancellationToken);
+        if (existingUser is not null && CanSkipSynchronization(existingUser, email, name, seenAt))
+        {
+            // Nothing to write: keep the Entra displayName sync exactly as on the full path.
+            if (name is not null)
+            {
+                await TrySynchronizeDisplayNameAsync(
+                    externalIdValue,
+                    FormatDisplayName(name),
+                    cancellationToken);
+            }
+
+            return existingUser;
+        }
+
         var executionStrategy = dbContext.Database.CreateExecutionStrategy();
         User? user = null;
         var synchronizeDisplayName = false;
@@ -116,6 +133,19 @@ public sealed class MemberIdentityService(
         }
 
         return user ?? throw new InvalidOperationException("The member identity was not persisted.");
+    }
+
+    private static bool CanSkipSynchronization(User user, string email, Name? name, DateTime seenAt)
+    {
+        var sameName = name is null ||
+                       (user.Name is not null &&
+                        string.Equals(user.Name.FirstName, name.FirstName, StringComparison.Ordinal) &&
+                        string.Equals(user.Name.LastName, name.LastName, StringComparison.Ordinal));
+
+        return user.AnonymizedAt is null &&
+               string.Equals(user.Email, email.Trim(), StringComparison.Ordinal) &&
+               sameName &&
+               user.LastSeenAt > seenAt.AddHours(-1);
     }
 
     private static Name? ParseDisplayName(string? displayName)
@@ -164,7 +194,7 @@ public sealed class MemberIdentityService(
                 displayName,
                 cancellationToken);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger?.LogWarning(
                 exception,

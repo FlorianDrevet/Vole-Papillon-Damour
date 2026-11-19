@@ -103,16 +103,15 @@ public sealed class SearchCatalogQueryHandler(
                 book.Genres.Any(bookGenre => bookGenre.Name == EF.Constant(genre)));
         }
 
-        var activeAnnouncementIsbns = Array.Empty<Isbn13>();
-        var needsActiveAnnouncementIsbns =
+        // Active announcements are a correlated subquery in the book predicates, so the
+        // ISBN list is never materialized. Only the (small) list of book fair ids is loaded.
+        IQueryable<BookAnnouncement>? activeAnnouncements = null;
+        var needsActiveAnnouncements =
             query.Availability == PublicCatalogAvailabilityFilter.NextBookFair ||
             (query.Availability == PublicCatalogAvailabilityFilter.All && !query.IncludeExhausted) ||
             (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow && query.IncludeExhausted);
-        if (needsActiveAnnouncementIsbns)
+        if (needsActiveAnnouncements)
         {
-            // Keep the availability predicate in SQL while resolving announcement
-            // identifiers separately. Correlating the value-object foreign keys
-            // directly is not translated consistently across providers.
             var bookFairIds = await dbContext.AssoEvents
                 .AsNoTracking()
                 .Where(assoEvent =>
@@ -121,15 +120,12 @@ public sealed class SearchCatalogQueryHandler(
                 .Select(assoEvent => assoEvent.Id)
                 .ToArrayAsync(cancellationToken);
 
-            activeAnnouncementIsbns = await dbContext.BookAnnouncements
+            activeAnnouncements = dbContext.BookAnnouncements
                 .AsNoTracking()
                 .Where(announcement =>
                     announcement.Status == BookAnnouncementStatus.Announced &&
                     (announcement.AssoEventsId == null ||
-                     bookFairIds.Contains(announcement.AssoEventsId!)))
-                .Select(announcement => announcement.Isbn13)
-                .Distinct()
-                .ToArrayAsync(cancellationToken);
+                     bookFairIds.Contains(announcement.AssoEventsId!)));
         }
 
         if (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow)
@@ -137,21 +133,25 @@ public sealed class SearchCatalogQueryHandler(
             filteredBooksQuery = query.IncludeExhausted
                 ? filteredBooksQuery.Where(book =>
                     book.QuantityAvailable > 0 ||
-                    (book.QuantityAvailable <= 0 && !activeAnnouncementIsbns.Contains(book.Id)))
+                    (book.QuantityAvailable <= 0 &&
+                     !activeAnnouncements!.Any(announcement => announcement.Isbn13 == book.Id)))
                 : filteredBooksQuery.Where(book => book.QuantityAvailable > 0);
         }
         else if (query.Availability == PublicCatalogAvailabilityFilter.NextBookFair)
         {
             filteredBooksQuery = query.IncludeExhausted
                 ? filteredBooksQuery.Where(book =>
-                    activeAnnouncementIsbns.Contains(book.Id) ||
-                    (book.QuantityAvailable <= 0 && !activeAnnouncementIsbns.Contains(book.Id)))
-                : filteredBooksQuery.Where(book => activeAnnouncementIsbns.Contains(book.Id));
+                    activeAnnouncements!.Any(announcement => announcement.Isbn13 == book.Id) ||
+                    (book.QuantityAvailable <= 0 &&
+                     !activeAnnouncements!.Any(announcement => announcement.Isbn13 == book.Id)))
+                : filteredBooksQuery.Where(book =>
+                    activeAnnouncements!.Any(announcement => announcement.Isbn13 == book.Id));
         }
         else if (!query.IncludeExhausted)
         {
             filteredBooksQuery = filteredBooksQuery.Where(book =>
-                book.QuantityAvailable > 0 || activeAnnouncementIsbns.Contains(book.Id));
+                book.QuantityAvailable > 0 ||
+                activeAnnouncements!.Any(announcement => announcement.Isbn13 == book.Id));
         }
 
         if (query.RareOnly)

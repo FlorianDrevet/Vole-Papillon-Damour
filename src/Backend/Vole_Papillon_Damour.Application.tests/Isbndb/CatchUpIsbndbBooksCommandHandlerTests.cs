@@ -233,9 +233,44 @@ public sealed class CatchUpIsbndbBooksCommandHandlerTests
         var result = await handler.Handle(CreateCommand(), CancellationToken.None);
 
         result.Rechecked.Should().Be(1);
-        lookups.SingleCalls.Should().Equal(staleIsbn);
+        lookups.SingleCalls.Should().BeEmpty();
+        lookups.BulkCalls.SelectMany(call => call).Should().Equal(staleIsbn);
         (await fixture.Context.Books.SingleAsync(book => book.Id == staleIsbn)).IsbndbCheckedAt.Should().Be(Now);
         (await fixture.Context.Books.SingleAsync(book => book.Id == completedIsbn)).IsbndbCheckedAt.Should().Be(Now.AddDays(-31));
+    }
+
+    [Fact]
+    public async Task Handle_WhenRecheckQuotaIsExhaustedMidPage_StopsBeforeLaterBooks()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        Isbn13.TryCreate("9782070363735", out var firstIsbn).Should().BeTrue();
+        Isbn13.TryCreate("9782070409228", out var secondIsbn).Should().BeTrue();
+        fixture.Context.Books.AddRange(CreateStaleAbsentBook(firstIsbn), CreateStaleAbsentBook(secondIsbn));
+        await fixture.Context.SaveChangesAsync();
+
+        var lookups = new RecordingLookupService(
+            _ => new IsbndbLookup.NotFound(),
+            _ => new IsbndbLookup.QuotaExhausted(Now.AddDays(1)));
+        var handler = CreateHandler(fixture, lookups);
+
+        var result = await handler.Handle(CreateCommand(), CancellationToken.None);
+
+        result.StopReason.Should().Be(IsbndbCatchUpStopReason.QuotaExhausted);
+        result.Rechecked.Should().Be(1);
+        (await fixture.Context.Books.AsNoTracking().CountAsync(book => book.IsbndbCheckedAt == Now)).Should().Be(1);
+    }
+
+    private static Book CreateStaleAbsentBook(Isbn13 isbn13)
+    {
+        var book = Book.Create(isbn13, Now.AddDays(-60));
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch("Livre absent", "Auteur", null, null, null, null, null, null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            BookMetadataSource.Bnf,
+            Now.AddDays(-60),
+            null);
+        book.MarkAbsentFromIsbndb(Now.AddDays(-31));
+        return book;
     }
 
     [Fact]

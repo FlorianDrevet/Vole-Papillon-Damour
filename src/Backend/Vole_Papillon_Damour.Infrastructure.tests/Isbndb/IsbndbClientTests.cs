@@ -186,6 +186,33 @@ public sealed class IsbndbClientTests
     }
 
     [Fact]
+    public async Task GetBookAsync_WhenRetryAfterExceedsTwoSeconds_DoesNotWaitOrRetry()
+    {
+        var quotaGuard = CreateQuotaGuard();
+        var responseCount = 0;
+        using var httpClient = CreateHttpClient(_ =>
+        {
+            responseCount++;
+            var response = JsonResponse(HttpStatusCode.TooManyRequests, "{}");
+            response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(30));
+            return response;
+        });
+        using var limiter = CreateUnlimitedLimiter();
+        var timeProvider = new ImmediateDelayTimeProvider(Now);
+        var client = CreateClient(httpClient, quotaGuard, limiter, Options(ApiKey), timeProvider);
+
+        var result = await client.GetBookAsync(
+            ParseIsbn13("9782070363735"),
+            IsbndbUsage.Scan,
+            CancellationToken.None);
+
+        result.Should().BeOfType<IsbndbLookup.Unavailable>();
+        responseCount.Should().Be(1);
+        timeProvider.Delays.Should().BeEmpty();
+        await quotaGuard.Received(1).RecordFailureAsync(Arg.Any<string>(), Now, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task GetBookAsync_WhenQuotaHeadersArePresent_ObservesTheDailyQuota()
     {
         var quotaGuard = CreateQuotaGuard();

@@ -9,4 +9,5 @@ public sealed class EntraGraphOptions
     public string ApiClientId { get; set; } = string.Empty;
     public string ClientId { get; set; } = string.Empty;
     public string ClientSecret { get; set; } = string.Empty;
+    public int TimeoutMilliseconds { get; set; } = 5_000;
 }
