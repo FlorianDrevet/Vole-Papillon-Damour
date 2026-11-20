@@ -365,6 +365,23 @@ describe('CatalogBookDetailPageComponent', () => {
       .toBe('https://livres.volepapillondamour.fr/cdn-cgi/image/width=660,height=990,fit=scale-down,quality=80,format=auto/https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
   });
 
+  it('leaves the ISBN out of the structured data for an internal code (RG-181)', async () => {
+    const document = TestBed.inject(DOCUMENT);
+    api.getBook.and.returnValue(of({...book, isbn13: '2000000000015', isInternalCode: true}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    try {
+      const structuredData = JSON.parse(document.head.querySelector('#catalog-book-jsonld')?.textContent ?? '{}');
+      expect(structuredData.name).toBe('Livre à surveiller');
+      expect(structuredData.isbn).toBeUndefined();
+    } finally {
+      document.head.querySelector('link[data-catalog-book-seo]')?.remove();
+      document.head.querySelector('#catalog-book-jsonld')?.remove();
+    }
+  });
+
   it('removes book-specific SEO nodes when the detail page is destroyed', async () => {
     const document = TestBed.inject(DOCUMENT);
 

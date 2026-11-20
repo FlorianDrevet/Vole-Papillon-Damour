@@ -278,7 +278,8 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
       '@context': 'https://schema.org',
       '@type': 'Book',
       name: bookTitle,
-      isbn: book.isbn13,
+      // RG-181 : un code interne n'est pas un ISBN, il n'est pas publié comme tel.
+      ...(book.isInternalCode ? {} : {isbn: book.isbn13}),
       ...(book.authors ? {author: { '@type': 'Person', name: book.authors }} : {}),
       ...(book.publisher ? {publisher: { '@type': 'Organization', name: book.publisher }} : {}),
       ...(book.publicationYear ? {datePublished: String(book.publicationYear)} : {}),
