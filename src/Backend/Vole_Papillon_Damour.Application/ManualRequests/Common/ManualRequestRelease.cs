@@ -120,7 +120,7 @@ internal static class ManualRequestRelease
             return Error.Validation("ManualRequest.FoundBookRequired", "A found request must identify its book before release.");
         }
 
-        var canonicalIsbn = foundIsbn;
+        BookCode canonicalIsbn = foundIsbn;
         var seen = new HashSet<BookCode>();
         Book? book = null;
         while (seen.Add(canonicalIsbn))

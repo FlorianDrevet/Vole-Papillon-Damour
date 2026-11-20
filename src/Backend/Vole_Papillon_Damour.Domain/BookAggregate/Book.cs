@@ -19,7 +19,9 @@ public sealed class Book : AggregateRoot<BookCode>
     // Vrai pour un livre sans ISBN (code interne, RG-170). Persisté : les traitements externes
     // (ISBNdb, enrichissement) filtrent dessus côté base. Pour l'ISBN, voir Code.TryGetIsbn13.
     public bool IsInternalCode { get; private set; }
-    public Isbn13? RedirectedToIsbn13 { get; private set; }
+    // Cible d'une redirection : toujours un ISBN (RedirectTo ne prend qu'un Isbn13). Typée BookCode pour que la
+    // clé étrangère vers Books.Isbn13 soit déclarable dans le modèle EF (même type que la clé).
+    public BookCode? RedirectedToIsbn13 { get; private set; }
     public string? WorkId { get; private set; }
     public string? Title { get; private set; }
     public string? Authors { get; private set; }

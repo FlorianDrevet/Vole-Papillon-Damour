@@ -26,6 +26,28 @@ namespace Vole_Papillon_Damour.Infrastructure.tests.Persistence;
 
 public sealed class ProjectDbContextModelTests
 {
+    // Parité modèle / base : ces contraintes existent en base depuis les migrations d'origine. Le modèle doit les
+    // déclarer avec leur nom et leur action, sinon EF les croit absentes et propose de les recréer.
+    [Fact]
+    public void Model_DeclaresTheBookForeignKeysAndIndexThatExistInTheDatabase()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var redirect = model.FindEntityType(typeof(Book))!.GetForeignKeys()
+            .Single(foreignKey => foreignKey.GetConstraintName() == "FK_Books_Books_RedirectedToIsbn13");
+        redirect.PrincipalEntityType.ClrType.Should().Be(typeof(Book));
+        redirect.DeleteBehavior.Should().Be(DeleteBehavior.Restrict);
+
+        var isbndb = model.FindEntityType(typeof(BookIsbndbRecord))!.GetForeignKeys()
+            .Single(foreignKey => foreignKey.GetConstraintName() == "FK_BookIsbndbRecords_Books_Isbn13");
+        isbndb.PrincipalEntityType.ClrType.Should().Be(typeof(Book));
+        isbndb.DeleteBehavior.Should().Be(DeleteBehavior.Cascade);
+
+        model.FindEntityType(typeof(Book))!.GetIndexes()
+            .Should().Contain(index => index.GetDatabaseName() == "IX_Books_RedirectedToIsbn13");
+    }
+
     [Fact]
     public void Model_MapsBookExchangeTablesAndConcurrencyFields()
     {

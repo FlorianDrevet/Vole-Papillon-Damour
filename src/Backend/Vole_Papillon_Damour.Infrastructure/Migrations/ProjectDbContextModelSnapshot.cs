@@ -470,6 +470,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_Books_IsFavoriteReference")
                         .HasFilter("[IsFavoriteReference] = 1");
 
+                    b.HasIndex("RedirectedToIsbn13")
+                        .HasDatabaseName("IX_Books_RedirectedToIsbn13");
+
                     b.HasIndex("RowVersion");
 
                     b.HasIndex("Title")
@@ -2350,6 +2353,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Book", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithMany()
+                        .HasForeignKey("RedirectedToIsbn13")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Books_Books_RedirectedToIsbn13");
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookAnnouncement", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
@@ -2377,6 +2389,16 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasForeignKey("BookIsbn13")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithOne()
+                        .HasForeignKey("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", "Isbn13")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_BookIsbndbRecords_Books_Isbn13");
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookPhoto", b =>

@@ -166,7 +166,7 @@ internal sealed record AdminBookQueryProjection(
     int SalesCount,
     int RejectionCount,
     bool IsHiddenFromCatalog,
-    Isbn13? RedirectedToIsbn13,
+    BookCode? RedirectedToIsbn13,
     string? CoverUrl,
     DateTime FirstSeenAt,
     DateTime? LastAvailableAt,

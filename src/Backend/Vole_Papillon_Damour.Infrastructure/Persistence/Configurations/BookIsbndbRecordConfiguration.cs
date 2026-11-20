@@ -60,9 +60,12 @@ public sealed class BookIsbndbRecordConfiguration : IEntityTypeConfiguration<Boo
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
             .IsRequired();
 
-        // La relation vers Book (suppression en cascade) reste une contrainte en base. Elle n'est plus
-        // déclarée dans le modèle EF : la clé primaire de Book est un BookCode, et EF exige des types identiques.
-        // La migration conserve la contrainte existante.
+        // Les notices ISBNdb suivent la fiche : suppression en cascade.
+        builder.HasOne<Book>()
+            .WithOne()
+            .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+            .HasConstraintName("FK_BookIsbndbRecords_Books_Isbn13")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureMeasurement(PropertyBuilder<decimal?> property)

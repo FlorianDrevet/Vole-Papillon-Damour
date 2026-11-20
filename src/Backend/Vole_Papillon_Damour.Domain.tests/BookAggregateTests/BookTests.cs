@@ -59,7 +59,7 @@ public sealed class BookTests
 
         source.RedirectTo(canonical);
 
-        source.RedirectedToIsbn13.Should().Be(canonical);
+        source.RedirectedToIsbn13.Should().Be((BookCode)canonical);
     }
 
     [Fact]

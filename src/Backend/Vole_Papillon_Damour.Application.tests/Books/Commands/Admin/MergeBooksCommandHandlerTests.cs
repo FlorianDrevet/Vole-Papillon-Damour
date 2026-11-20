@@ -30,7 +30,7 @@ public sealed class MergeBooksCommandHandlerTests
         result.IsError.Should().BeFalse();
         var source = await fixture.Context.Books
             .SingleAsync(book => book.Id == BookCode.CreateInternal("2000000000015"));
-        source.RedirectedToIsbn13.Should().Be(target.Id.AsIsbn13());
+        source.RedirectedToIsbn13.Should().Be(target.Id);
     }
 
     [Fact]

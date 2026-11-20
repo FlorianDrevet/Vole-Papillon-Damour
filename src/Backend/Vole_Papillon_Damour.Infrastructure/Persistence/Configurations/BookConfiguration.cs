@@ -30,8 +30,8 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
 
         builder.Property(book => book.WorkId).HasMaxLength(64);
         builder.Property(book => book.Title)
@@ -186,10 +186,15 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .HasFilter(publicCatalogFilter)
             .HasDatabaseName("IX_Books_PublicCatalog_Search");
 
-        // La redirection (RedirectedToIsbn13, ISBN seul) reste une colonne avec sa contrainte de clé
-        // étrangère en base. Elle n'est plus déclarée dans le modèle EF : la clé primaire est désormais
-        // un BookCode (ISBN ou code interne), et EF exige des types identiques pour cette relation.
-        // La migration conserve la contrainte existante.
+        // Une redirection pointe vers une autre fiche (ISBN). Suppression restreinte : une fiche redirigée
+        // ne disparaît pas tant qu'une autre fiche la désigne.
+        builder.HasOne<Book>()
+            .WithMany()
+            .HasForeignKey(book => book.RedirectedToIsbn13)
+            .HasConstraintName("FK_Books_Books_RedirectedToIsbn13")
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(book => book.RedirectedToIsbn13)
+            .HasDatabaseName("IX_Books_RedirectedToIsbn13");
 
         builder.HasMany(book => book.Genres)
             .WithOne()

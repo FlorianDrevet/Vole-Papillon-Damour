@@ -189,9 +189,10 @@ public sealed class IsbndbPersistenceTests
             index.GetFilter() == "[IsIsbndbSourced] = 0");
 
         var record = context.Model.FindEntityType(typeof(BookIsbndbRecord))!;
-        // Pas de clé étrangère dans le modèle : la clé de Book est un BookCode, et EF exige des types identiques.
-        // La contrainte vers Book (suppression en cascade) reste appliquée par la migration.
-        record.GetForeignKeys().Should().BeEmpty();
+        // La contrainte vers Book (suppression en cascade) est déclarée dans le modèle, comme en base.
+        record.GetForeignKeys().Should().ContainSingle(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(Book) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
     }
 
     private static async Task<SqliteConnection> OpenConnectionAsync()

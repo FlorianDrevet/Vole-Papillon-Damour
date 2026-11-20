@@ -333,8 +333,8 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
                 .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseIsbn(value));
             builder.Property(book => book.IsbndbCompletedBy)
                 .HasConversion(new ValueConverter<UserId?, Guid?>(
                     userId => userId == null ? null : userId.Value,

@@ -1009,8 +1009,8 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseIsbn(value));
             builder.Property(book => book.IsbndbCompletedBy)
                 .HasConversion(
                     (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
