@@ -63,6 +63,15 @@ describe('ScanRareBookFormComponent', () => {
     expect(rareBooks.createDraft).not.toHaveBeenCalled();
   });
 
+  it('keeps the printed internal code of a rare book when the identifier is confirmed by hand (RG-172, RG-174)', () => {
+    component.form = {...component.form, isbn13: '2000000000015'};
+
+    component.startIsbn();
+    component.useManualEntry();
+
+    expect(component.form.isbn13).toBe('2000000000015');
+  });
+
   it('sends a book without ISBN to the online-only creation page, never to the offline queue (RG-180)', () => {
     const router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     router.navigateByUrl.and.resolveTo(true);

@@ -51,6 +51,18 @@ public sealed class UpdateRareBookCommandHandler(
             return Errors.RareBook.ConcurrencyConflict(command.RareBookId.Value);
         }
 
+        // Le code interne déjà imprimé sur l'étiquette ne doit pas disparaître : une requête qui
+        // n'en donne pas le conserve, et un autre code interne n'est jamais accepté (RG-171).
+        if (rareBook.Isbn13 is { IsInternal: true } printedInternalCode)
+        {
+            isbn13 ??= printedInternalCode;
+        }
+
+        if (isbn13 is { IsInternal: true } requestedInternalCode && requestedInternalCode != rareBook.Isbn13)
+        {
+            return Errors.RareBook.InvalidIsbn(requestedInternalCode.Value);
+        }
+
         if (isbn13 is not null && await dbContext.RareBooks
                 .AsNoTracking()
                 .AnyAsync(book => book.Id != command.RareBookId && book.Isbn13 == isbn13, cancellationToken))

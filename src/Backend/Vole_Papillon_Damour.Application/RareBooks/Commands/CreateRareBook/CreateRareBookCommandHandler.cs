@@ -61,6 +61,12 @@ public sealed class CreateRareBookCommandHandler(
             return parseError.Value;
         }
 
+        // Un code interne n'est attribué que par la plateforme (RG-171, RG-173) : le client ne peut pas le choisir.
+        if (isbn13 is { IsInternal: true } requestedInternalCode)
+        {
+            return Errors.RareBook.InvalidIsbn(requestedInternalCode.Value);
+        }
+
         if (isbn13 is not null && await dbContext.RareBooks
                 .AsNoTracking()
                 .AnyAsync(book => book.Isbn13 == isbn13, cancellationToken))

@@ -4,7 +4,7 @@ import {firstValueFrom} from 'rxjs';
 
 import {BookMetadata} from '../scanner/book-metadata.model';
 import {BookMetadataService} from '../scanner/book-metadata.service';
-import {normalizeIsbn} from '../scanner/isbn.util';
+import {normalizeBookCode, normalizeIsbn} from '../scanner/isbn.util';
 import {
   ScanRareBook,
   ScanRareBookDraftInput,
@@ -134,8 +134,9 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
+  // Un code interne déjà imprimé (RG-172, RG-174) reste valide : il ne doit pas être effacé ici.
   useManualEntry(): void {
-    this.form = {...this.form, isbn13: normalizeIsbn(this.isbn)};
+    this.form = {...this.form, isbn13: normalizeBookCode(this.isbn)};
     this.step = 'identify';
     this.error = null;
   }

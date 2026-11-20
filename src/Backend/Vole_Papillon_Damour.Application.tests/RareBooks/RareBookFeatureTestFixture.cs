@@ -111,10 +111,10 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
         bool published = false,
         string? isbn13 = null)
     {
-        Isbn13? parsedIsbn13 = null;
+        BookCode? parsedIsbn13 = null;
         if (!string.IsNullOrWhiteSpace(isbn13))
         {
-            if (!Isbn13.TryCreate(isbn13, out var parsed))
+            if (!BookCode.TryCreate(isbn13, out var parsed))
             {
                 throw new ArgumentException("The test ISBN is invalid.", nameof(isbn13));
             }
