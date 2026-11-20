@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.VoidSale;
 using Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
@@ -135,6 +136,54 @@ public sealed class ScanBookCommandHandlerTests
         (await fixture.Context.Books.SingleAsync(book => book.Id == source.Id))
             .QuantityAvailable.Should().Be(0);
         (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id);
+    }
+
+    [Fact]
+    public async Task Handle_AfterAnIsbnIsAddedToAnInternalCodeFiche_BothCodesResolveToTheSameIsbnFiche()
+    {
+        // RG-174 : l'étiquette collée (code interne) et l'ISBN désignent la même fiche, qui porte le stock.
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var internalFiche = Book.CreateWithInternalCode(BookCode.CreateInternal("2000000000015"), SessionStartedAt);
+        internalFiche.ApplyManualMetadata(
+            new BookMetadataPatch(
+                Title: "Atlas du Maroc",
+                Authors: null,
+                Publisher: null,
+                PublicationYear: null,
+                PhysicalFormat: null,
+                Language: null,
+                Genre: null,
+                CoverUrl: null,
+                Fields: [BookMetadataField.Title]),
+            SessionStartedAt);
+        internalFiche.RecordAvailableEntry(ClientScanAt, 2);
+        fixture.Context.Books.Add(internalFiche);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ReceivedAt);
+        var addIsbn = new AddIsbnToBookWithoutIsbnCommandHandler(
+            fixture.Context,
+            clock,
+            new NotFoundReportLapser(fixture.Context));
+        var added = await addIsbn.Handle(
+            new AddIsbnToBookWithoutIsbnCommand("2000000000015", "9782070363735", UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
+            CancellationToken.None);
+        added.IsError.Should().BeFalse();
+
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var handler = fixture.CreateHandler();
+
+        var byInternalCode = await handler.Handle(CreateCommand(session, "2000000000015", kept: true), CancellationToken.None);
+        var byIsbn = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+
+        byInternalCode.IsError.Should().BeFalse();
+        byInternalCode.Value.Isbn13.Should().Be("9782070363735");
+        byIsbn.IsError.Should().BeFalse();
+        byIsbn.Value.Isbn13.Should().Be("9782070363735");
+        (await fixture.Context.Books.SingleAsync(book => book.Id == BookCode.CreateInternal("2000000000015")))
+            .QuantityAvailable.Should().Be(0);
+        (await fixture.Context.Books.SingleAsync(book => book.Id == ParseIsbn("9782070363735")))
+            .QuantityAvailable.Should().Be(4);
     }
 
     [Fact]

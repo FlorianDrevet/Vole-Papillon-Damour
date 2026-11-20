@@ -867,6 +867,31 @@ public static class BookAdministrationController
                 .WithName("MergeAdminBooks")
                 .RequireAuthorization("Administration");
 
+            // RG-174 : ajoute un ISBN à une fiche à code interne. Le code interne reste valide.
+            endpoints.MapPost(
+                    "/books/admin/books/{internalCode}/add-isbn",
+                    async (
+                        string internalCode,
+                        AddIsbnToBookRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new AddIsbnToBookWithoutIsbnCommand(internalCode, request.Isbn13, userId),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(ToResponse(operation)),
+                            error => error.Result());
+                    })
+                .WithName("AddIsbnToAdminBookWithoutIsbn")
+                .RequireAuthorization("Administration");
+
             endpoints.MapDelete(
                     "/books/admin/books/{isbn13}/permanent",
                     async (

@@ -72,6 +72,8 @@ public sealed record CorrectAnnouncementQuantityRequest(int Quantity, string Not
 
 public sealed record MergeBooksRequest(string TargetIsbn13, string Note);
 
+public sealed record AddIsbnToBookRequest(string Isbn13);
+
 public sealed record SetBookFairRevenueRequest(decimal? Revenue);
 
 public sealed record ReassignAdminSessionRequest(string Mode, Guid? TargetAssoEventsId);

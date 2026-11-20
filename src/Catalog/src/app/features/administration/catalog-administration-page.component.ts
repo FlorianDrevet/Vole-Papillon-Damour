@@ -91,6 +91,8 @@ import {toDeadStockCsv} from './dead-stock-export';
 import {NotFoundCloseConfirmation} from './not-found-reports/not-found-report-close-dialog.component';
 import {buildFairsEvolutionView, toFairsEvolutionCsv} from './fairs-evolution-view';
 import {capitalizeFrench} from './statistics-format';
+import {parseIsbnToAdd} from './add-isbn-to-book';
+import {isInternalCode} from '../../shared/barcode/ean13';
 import {
   DEFAULT_VOLUNTEER_SORT,
   VOLUNTEER_COLUMNS,
@@ -116,10 +118,15 @@ const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
 const ISBN_APPLICATION_IMPORT_BATCH_SIZE = 100;
 const MAX_BOOK_COVER_SIZE_BYTES = 8 * 1024 * 1024;
 const SUPPORTED_BOOK_COVER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ADD_ISBN_ERROR_MESSAGES = {
+  empty: 'Saisissez un ISBN-13 ou un ISBN-10.',
+  invalid: 'ISBN invalide : vérifiez les chiffres (ISBN-10 ou ISBN-13).',
+  internal: 'Ce numéro est un code interne, pas un ISBN.',
+} as const;
 const ADMIN_MUTATION_ACTIONS = new Set([
   'add-catalogue-book', 'catalogue-quantity', 'isbn-metadata-retry', 'isbndb-completion',
   'isbndb-recheck', 'isbn-metadata-delete', 'book-not-found-close', 'book-cover-upload', 'metadata',
-  'quantity', 'withdraw', 'announcement', 'visibility', 'merge', 'permanent-delete-book', 'revenue',
+  'quantity', 'withdraw', 'announcement', 'visibility', 'merge', 'add-isbn', 'permanent-delete-book', 'revenue',
   'remove-movement', 'reassign-session', 'cancel-session', 'cancel-session-alerts', 'force-session-alerts',
   'cancel-alert', 'force-alert', 'checkout-passage-dissociate', 'create-account', 'account-roles',
   'account-status', 'member-alert-status', 'delete-member', 'save-settings',
@@ -512,6 +519,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   withdrawalNote = '';
   mergeTargetIsbn13 = '';
   mergeNote = '';
+  addIsbnValue = '';
   announcementQuantities: Record<string, number> = {};
   announcementNote = '';
 
@@ -1517,6 +1525,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.withdrawalNote = '';
     this.mergeTargetIsbn13 = '';
     this.mergeNote = '';
+    this.addIsbnValue = '';
     this.announcementQuantities = Object.fromEntries(
       book.announcements.map(announcement => [announcement.id, announcement.quantity]),
     );
@@ -1950,6 +1959,32 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         note: this.mergeNote.trim(),
       }));
       this.showSuccess('Le livre source est redirigé vers le livre canonique.');
+      this.selectedBook.set(null);
+      await this.loadCatalogue();
+    });
+  }
+
+  isInternalCodeBook(book: CatalogAdminBook): boolean {
+    return isInternalCode(book.isbn13);
+  }
+
+  // RG-174 : l'ISBN s'ajoute à une fiche à code interne ; le code interne reste valide (étiquettes collées).
+  async addIsbn(book: CatalogAdminBook): Promise<void> {
+    const parsed = parseIsbnToAdd(this.addIsbnValue);
+    if (!parsed.valid) {
+      this.showError(ADD_ISBN_ERROR_MESSAGES[parsed.reason]);
+      return;
+    }
+
+    if (!this.confirmAction(
+      `Ajouter l'ISBN ${parsed.isbn13} à ${book.isbn13} ? Le code interne reste valide : les deux codes désigneront la même fiche.`,
+    )) {
+      return;
+    }
+
+    await this.run('add-isbn', async token => {
+      await firstValueFrom(this.api.addIsbn(token, book.isbn13, {isbn13: parsed.isbn13}));
+      this.showSuccess(`L'ISBN ${parsed.isbn13} est ajouté : le code interne et l'ISBN désignent la même fiche.`);
       this.selectedBook.set(null);
       await this.loadCatalogue();
     });

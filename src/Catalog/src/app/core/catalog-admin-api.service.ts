@@ -515,6 +515,14 @@ export class CatalogAdminApiService {
     );
   }
 
+  addIsbn(accessToken: string, internalCode: string, request: {isbn13: string}): Observable<CatalogAdminOperation> {
+    return this.http.post<CatalogAdminOperation>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(internalCode)}/add-isbn`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
   deleteBook(accessToken: string, isbn13: string): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}`,
