@@ -91,7 +91,7 @@ import {toDeadStockCsv} from './dead-stock-export';
 import {NotFoundCloseConfirmation} from './not-found-reports/not-found-report-close-dialog.component';
 import {buildFairsEvolutionView, toFairsEvolutionCsv} from './fairs-evolution-view';
 import {capitalizeFrench} from './statistics-format';
-import {parseIsbnToAdd} from './add-isbn-to-book';
+import {parseIsbnToAdd} from '../../shared/barcode/isbn-input';
 import {isInternalCode} from '../../shared/barcode/ean13';
 import {
   DEFAULT_VOLUNTEER_SORT,

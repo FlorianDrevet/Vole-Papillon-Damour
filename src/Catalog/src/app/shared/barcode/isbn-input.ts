@@ -1,4 +1,4 @@
-import {ean13CheckDigit, isEan13} from '../../shared/barcode/ean13';
+import {ean13CheckDigit, isEan13} from './ean13';
 
 // Saisie de l'ISBN ajouté à une fiche à code interne (RG-174). Accepte un ISBN-13 ou un ISBN-10, converti en
 // ISBN-13 ; un code interne (préfixe 2) n'est pas un ISBN et est refusé.

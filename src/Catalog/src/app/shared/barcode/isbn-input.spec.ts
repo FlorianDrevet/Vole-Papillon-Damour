@@ -1,4 +1,4 @@
-import {parseIsbnToAdd} from './add-isbn-to-book';
+import {parseIsbnToAdd} from './isbn-input';
 
 describe('parseIsbnToAdd (RG-174)', () => {
   it('convertit un ISBN-10 valide en ISBN-13', () => {
