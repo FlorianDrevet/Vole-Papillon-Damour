@@ -1,4 +1,3 @@
-using System.Data;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -48,9 +47,9 @@ public sealed class CreateBookWithoutIsbnCommandHandler(
 
         var fields = BuildProvidedFields(command);
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable,
-            cancellationToken);
+        // Pas de SERIALIZABLE : deux créations qui lisent le même compteur se disputeraient des verrous
+        // partagés puis en interblocage (erreur 1205). Le jeton de concurrence du compteur suffit.
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var code = await InternalBookCodeIssuer.IssueAsync(dbContext, cancellationToken);
         var book = Book.CreateWithInternalCode(code, addedAt);
@@ -98,9 +97,11 @@ public sealed class CreateBookWithoutIsbnCommandHandler(
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateException)
         {
-            // Deux créations simultanées ont lu le même compteur : aucune des deux n'est enregistrée.
+            // Conflit résiduel sur le compteur : une création concurrente a pris le numéro (jeton de
+            // concurrence) ou l'a déjà attribué, ou l'interblocage a fait échouer l'écriture. Aucune
+            // des deux n'est enregistrée : la création se réessaie.
             return Error.Conflict(
                 "Book.InternalCodeConflict",
                 "La création a été concurrente d'une autre. Réessayez.");

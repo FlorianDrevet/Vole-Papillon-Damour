@@ -83,6 +83,25 @@ public sealed class CreateBookWithoutIsbnCommandHandlerTests
         (await fixture.Context.Books.CountAsync()).Should().Be(0);
     }
 
+    [Fact]
+    public async Task Handle_ReturnsConflictWhenTheNextInternalCodeIsAlreadyTaken()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        // Le compteur est en retard sur la base : le numéro suivant appartient déjà à une fiche.
+        fixture.Context.Books.Add(Book.CreateWithInternalCode(BookCode.CreateInternalFromSequence(1), Now));
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+        var handler = CreateHandler(fixture);
+
+        var result = await handler.Handle(
+            new CreateBookWithoutIsbnCommand("Titre", 1, Volunteer),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.InternalCodeConflict");
+        (await fixture.Context.Books.CountAsync()).Should().Be(1);
+    }
+
     private static CreateBookWithoutIsbnCommandHandler CreateHandler(ScanBookFixture fixture)
     {
         var clock = Substitute.For<IDateTimeProvider>();
