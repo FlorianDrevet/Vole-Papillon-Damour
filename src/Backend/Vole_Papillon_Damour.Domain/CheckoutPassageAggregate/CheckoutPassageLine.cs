@@ -80,12 +80,12 @@ public sealed class CheckoutPassageLine : Entity<Guid>
         string? normalizedRequestedIsbn = null;
         if (!string.IsNullOrWhiteSpace(requestedIsbn13))
         {
-            if (!BookAggregate.ValueObjects.Isbn13.TryCreate(requestedIsbn13, out var requestedIsbn))
+            if (!BookCode.TryCreate(requestedIsbn13, out var requestedCode))
             {
-                throw new ArgumentException("The requested ISBN-13 is invalid.", nameof(requestedIsbn13));
+                throw new ArgumentException("The requested book code is invalid.", nameof(requestedIsbn13));
             }
 
-            normalizedRequestedIsbn = requestedIsbn.Value;
+            normalizedRequestedIsbn = requestedCode.Value;
         }
 
         var title = string.IsNullOrWhiteSpace(book.Title) ? $"ISBN {book.Code.Value}" : book.Title;

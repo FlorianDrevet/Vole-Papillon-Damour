@@ -87,6 +87,26 @@ public sealed class RegisterSaleCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenInternalCodeIsSoldInsidePassage_RecordsPurchaseLineWithTheCode()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = Book.CreateWithInternalCode(
+            BookCode.CreateInternal("2000000000015"),
+            ScanBookCommandHandlerTests.ClientScanAt);
+        book.RecordAvailableEntry(ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        var command = CreateCommand(book.Id.Value) with { CheckoutPassageId = Guid.NewGuid() };
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var line = await fixture.Context.CheckoutPassageLines.SingleAsync();
+        line.RequestedIsbn13.Should().Be("2000000000015");
+        line.Isbn13.Should().Be(book.Id);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookIsAvailable_AttachesSaleToTheSingleOpenFair()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

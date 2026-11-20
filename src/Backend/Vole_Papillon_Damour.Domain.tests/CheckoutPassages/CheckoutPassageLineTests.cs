@@ -44,6 +44,22 @@ public sealed class CheckoutPassageLineTests
     }
 
     [Fact]
+    public void ForOrdinarySale_AcceptsInternalCodeAsRequestedCode()
+    {
+        var book = Book.CreateWithInternalCode(BookCode.CreateInternal("2000000000015"), Now);
+
+        var line = CheckoutPassageLine.ForOrdinarySale(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            TestMovements.Sale(book.Id, -1),
+            book,
+            "2000000000015");
+
+        line.RequestedIsbn13.Should().Be("2000000000015");
+        line.Isbn13.Should().Be(book.Id);
+    }
+
+    [Fact]
     public void ForRareSale_SnapshotsRareBookAndFair()
     {
         var owner = UserId.CreateUnique();
