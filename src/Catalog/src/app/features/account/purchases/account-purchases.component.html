@@ -40,13 +40,13 @@
                     }
                     <p class="purchase-details">
                       @if (line.physicalFormat) { <span>{{ line.physicalFormat }}</span> }
-                      @if (line.isbn13) { <span>ISBN {{ line.isbn13 }}</span> }
+                      @if (line.isbn13) { <span>{{ isInternalCodeLine(line) ? 'Code ' : 'ISBN ' }}{{ line.isbn13 }}</span> }
                       @if (line.quantity > 1) { <span>Quantité : {{ line.quantity }}</span> }
                     </p>
                   </div>
                   @if (line.state === 'Cancelled') {
                     <span class="purchase-cancelled-badge">Annulée</span>
-                  } @else if (line.isbn13) {
+                  } @else if (line.isbn13 && !isInternalCodeLine(line)) {
                     <button
                       type="button"
                       class="purchase-favorite-button"
