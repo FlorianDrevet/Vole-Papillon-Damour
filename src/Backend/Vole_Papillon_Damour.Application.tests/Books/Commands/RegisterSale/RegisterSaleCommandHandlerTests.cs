@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
@@ -104,6 +105,44 @@ public sealed class RegisterSaleCommandHandlerTests
         var line = await fixture.Context.CheckoutPassageLines.SingleAsync();
         line.RequestedIsbn13.Should().Be("2000000000015");
         line.Isbn13.Should().Be(book.Id);
+    }
+
+    [Fact]
+    public async Task Handle_WhenInternalCodeIsUnknown_RefusesSaleWithoutCreatingBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(
+            CreateCommand("2000000000015"), CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.UnknownInternalCode");
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_WhenInternalCodeBelongsToRareBook_RefusesSaleWithoutCreatingBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var userId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var rareBook = RareBook.Create(
+            "Livre rare",
+            25m,
+            ScanBookCommandHandlerTests.ClientScanAt,
+            userId,
+            isbn13: BookCode.CreateInternal("2000000000015"));
+        rareBook.Publish(userId, ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.RareBooks.Add(rareBook);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(
+            CreateCommand("2000000000015"), CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.RareBookCode");
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(0);
     }
 
     [Fact]

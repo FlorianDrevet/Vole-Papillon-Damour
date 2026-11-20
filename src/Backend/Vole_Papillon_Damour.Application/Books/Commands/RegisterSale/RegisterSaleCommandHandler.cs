@@ -103,6 +103,16 @@ public sealed class RegisterSaleCommandHandler(
 
             if (book is null)
             {
+                if (!isbn13.IsIsbn)
+                {
+                    var isRareCode = await dbContext.RareBooks
+                        .AsNoTracking()
+                        .AnyAsync(rare => rare.Isbn13 == isbn13, cancellationToken);
+                    return isRareCode
+                        ? Error.Validation("Book.RareBookCode", "Ce code désigne un livre rare : il se gère depuis la vente des livres rares.")
+                        : Errors.Book.UnknownInternalCode(isbn13.Value);
+                }
+
                 book = Book.Create(isbn13, receivedAt);
                 dbContext.Books.Add(book);
             }
