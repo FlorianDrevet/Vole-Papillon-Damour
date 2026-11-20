@@ -518,6 +518,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.ToTable("Books", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Books_IsInternalCode_MatchesCode", "([IsInternalCode] = 1 AND [Isbn13] LIKE '2%') OR ([IsInternalCode] = 0 AND [Isbn13] NOT LIKE '2%')");
+
                             t.HasCheckConstraint("CK_Books_NoSelfRedirect", "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]");
                         });
                 });

@@ -10,9 +10,16 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 {
     public void Configure(EntityTypeBuilder<Book> builder)
     {
-        builder.ToTable("Books", table => table.HasCheckConstraint(
-            "CK_Books_NoSelfRedirect",
-            "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]"));
+        builder.ToTable("Books", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Books_NoSelfRedirect",
+                "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]");
+            // Le drapeau reflète la clé : un code interne (préfixe 2) pour un livre sans ISBN, un ISBN sinon (RG-170).
+            table.HasCheckConstraint(
+                "CK_Books_IsInternalCode_MatchesCode",
+                "([IsInternalCode] = 1 AND [Isbn13] LIKE '2%') OR ([IsInternalCode] = 0 AND [Isbn13] NOT LIKE '2%')");
+        });
         builder.HasKey(book => book.Id);
         builder.Property(book => book.IsInternalCode).HasDefaultValue(false);
         builder.Ignore(book => book.IsDefinitiveForRecommendation);
