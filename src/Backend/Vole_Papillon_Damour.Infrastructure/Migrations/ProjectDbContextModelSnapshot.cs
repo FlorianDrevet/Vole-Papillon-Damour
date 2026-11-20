@@ -1592,6 +1592,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("InternalCode")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
                     b.Property<bool>("IsSold")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -1660,6 +1664,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("InternalCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RareBooks_InternalCode")
+                        .HasFilter("[InternalCode] IS NOT NULL");
+
                     b.HasIndex("Isbn13")
                         .IsUnique()
                         .HasFilter("[Isbn13] IS NOT NULL");
@@ -1675,7 +1684,12 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("Status", "IsSold", "Price");
 
-                    b.ToTable("RareBooks", (string)null);
+                    b.ToTable("RareBooks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RareBooks_InternalCode_IsInternal", "[InternalCode] IS NULL OR [InternalCode] LIKE '2%'");
+
+                            t.HasCheckConstraint("CK_RareBooks_Isbn13_IsNotInternal", "[Isbn13] IS NULL OR [Isbn13] NOT LIKE '2%'");
+                        });
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor", b =>

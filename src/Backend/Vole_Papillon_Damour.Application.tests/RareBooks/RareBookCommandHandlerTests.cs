@@ -48,9 +48,10 @@ public sealed class RareBookCommandHandlerTests
 
         result.IsError.Should().BeFalse();
         var stored = await fixture.Context.RareBooks.SingleAsync();
-        stored.Isbn13.Should().NotBeNull();
-        stored.Isbn13!.Value.IsInternal.Should().BeTrue();
-        BookCode.IsValidInternalCode(stored.Isbn13.Value.Value).Should().BeTrue();
+        stored.Isbn13.Should().BeNull();
+        stored.InternalCode.Should().NotBeNull();
+        stored.InternalCode!.Value.IsInternal.Should().BeTrue();
+        BookCode.IsValidInternalCode(stored.InternalCode.Value.Value).Should().BeTrue();
     }
 
     [Fact]
@@ -119,24 +120,46 @@ public sealed class RareBookCommandHandlerTests
     }
 
     [Fact]
-    public async Task Update_without_isbn_keeps_the_internal_code_already_printed()
+    public async Task Update_without_isbn_keeps_the_internal_code_of_the_copy()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
-        var book = await fixture.AddRareBookAsync("Livre sans ISBN", isbn13: "2000000000015");
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
 
         var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
             .Handle(fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        (await fixture.Context.RareBooks.SingleAsync()).Isbn13.Should()
-            .Be(BookCode.CreateInternal("2000000000015"));
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13.Should().BeNull();
+        stored.InternalCode.Should().Be(BookCode.CreateInternal("2000000000015"));
     }
 
     [Fact]
-    public async Task Update_accepts_the_internal_code_sent_back_unchanged_by_the_form()
+    public async Task Update_adds_an_isbn_and_the_internal_code_stays_on_the_label()
+    {
+        // RG-174 : un exemplaire rare sans ISBN, complété d'un ISBN, se résout par les deux codes.
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
+        var command = fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()) with
+        {
+            Isbn13 = "9780306406157",
+        };
+
+        var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13!.Value.Value.Should().Be("9780306406157");
+        stored.InternalCode.Should().Be(BookCode.CreateInternal("2000000000015"));
+        result.Value.InternalCode.Should().Be("2000000000015");
+    }
+
+    [Fact]
+    public async Task Update_refuses_an_internal_code_sent_as_the_isbn()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
-        var book = await fixture.AddRareBookAsync("Livre sans ISBN", isbn13: "2000000000015");
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
         var command = fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()) with
         {
             Isbn13 = "2000000000015",
@@ -145,9 +168,9 @@ public sealed class RareBookCommandHandlerTests
         var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
             .Handle(command, CancellationToken.None);
 
-        result.IsError.Should().BeFalse();
-        (await fixture.Context.RareBooks.SingleAsync()).Isbn13.Should()
-            .Be(BookCode.CreateInternal("2000000000015"));
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("RareBook.InvalidIsbn");
+        (await fixture.Context.RareBooks.SingleAsync()).Isbn13.Should().BeNull();
     }
 
     [Fact]

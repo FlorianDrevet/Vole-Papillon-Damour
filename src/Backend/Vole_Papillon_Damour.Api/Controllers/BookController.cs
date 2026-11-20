@@ -907,6 +907,7 @@ public static class BookController
                 .Select(book => new ScanCatalogRareBookResponse(
                     book.Id,
                     book.Isbn13,
+                    book.InternalCode,
                     book.Title,
                     book.AuthorMention,
                     book.Price,

@@ -1472,6 +1472,8 @@ export interface CatalogAdminRareBook {
   id: string;
   slug: string;
   isbn13: string | null;
+  // Code interne de l'exemplaire, gardé sur l'étiquette même après l'ajout d'un ISBN (RG-174).
+  internalCode?: string | null;
   title: string;
   authorMention: string | null;
   publisher: string | null;

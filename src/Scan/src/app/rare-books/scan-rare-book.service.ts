@@ -344,6 +344,7 @@ function fromServerResponse(response: ScanRareBookResponse, clientId: string): S
     serverId: response.id,
     clientGestureId: clientId,
     isbn13: response.isbn13,
+    internalCode: response.internalCode ?? null,
     title: response.title,
     authorMention: response.authorMention,
     publisher: response.publisher,

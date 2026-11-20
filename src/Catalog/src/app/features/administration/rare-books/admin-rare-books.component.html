@@ -41,7 +41,7 @@
           <article class="rare-book-row" [class.rare-book-row-sold]="book.isSold" role="row">
             <div class="rare-book-main" role="cell">
               @if (book.photos[0]; as thumbnail) {<img [src]="thumbnail.blobUri" [alt]="'Vignette de ' + book.title">} @else {<span class="rare-book-placeholder" aria-hidden="true">∅</span>}
-              <div><strong>{{ book.title || 'Titre à compléter' }}</strong><span>{{ book.authorMention || 'Auteur ou mention non renseigné' }}</span><small>{{ book.isbn13 || 'sans ISBN' }}</small></div>
+              <div><strong>{{ book.title || 'Titre à compléter' }}</strong><span>{{ book.authorMention || 'Auteur ou mention non renseigné' }}</span><small>{{ book.isbn13 || (book.internalCode ? 'code ' + book.internalCode : 'sans ISBN') }}{{ book.isbn13 && book.internalCode ? ' · code ' + book.internalCode : '' }}</small></div>
             </div>
             <div class="rare-book-price" role="cell">{{ formatMoney(book.price) }}</div>
             <div class="rare-book-state" role="cell"><span class="rare-status-pill" [class.rare-status-published]="book.status === 'Published'">{{ statusLabel(book.status) }}</span><small [class.rare-sold-text]="book.isSold">{{ availabilityLabel(book) }}</small></div>

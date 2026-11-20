@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
@@ -216,6 +217,11 @@ internal sealed class ManualRequestTestDbContext(DbContextOptions<ProjectDbConte
             .Property(book => book.RowVersion)
             .ValueGeneratedNever()
             .IsConcurrencyToken(false);
+        modelBuilder.Entity<RareBook>()
+            .Property(book => book.InternalCode)
+            .HasConversion(new ValueConverter<BookCode?, string?>(
+                code => code.HasValue ? code.Value.Value : null,
+                value => value == null ? null : BookCode.CreateInternal(value)));
         modelBuilder.Entity<RareBook>()
             .Property(book => book.RowVersion)
             .ValueGeneratedNever()

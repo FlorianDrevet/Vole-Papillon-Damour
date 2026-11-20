@@ -119,7 +119,7 @@ public sealed class CheckoutPassageLine : Entity<Guid>
             passageId,
             null,
             rareBook.Id,
-            rareBook.Isbn13 is { } rareIsbn13 ? (BookCode)rareIsbn13 : null,
+            rareBook.LabelCode,
             null,
             1,
             rareBook.Title,

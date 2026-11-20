@@ -51,14 +51,9 @@ public sealed class UpdateRareBookCommandHandler(
             return Errors.RareBook.ConcurrencyConflict(command.RareBookId.Value);
         }
 
-        // Le code interne déjà imprimé sur l'étiquette ne doit pas disparaître : une requête qui
-        // n'en donne pas le conserve, et un autre code interne n'est jamais accepté (RG-171).
-        if (rareBook.Isbn13 is { IsInternal: true } printedInternalCode)
-        {
-            isbn13 ??= printedInternalCode;
-        }
-
-        if (isbn13 is { IsInternal: true } requestedInternalCode && requestedInternalCode != rareBook.Isbn13)
+        // Le code interne (RG-173) est attribué à la création et n'est jamais modifié ici : l'ISBN, lui, ne
+        // peut pas être un code interne (RG-170).
+        if (isbn13 is { IsInternal: true } requestedInternalCode)
         {
             return Errors.RareBook.InvalidIsbn(requestedInternalCode.Value);
         }

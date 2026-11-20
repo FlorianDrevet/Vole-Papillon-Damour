@@ -74,11 +74,12 @@ public sealed class CreateRareBookCommandHandler(
             return Errors.RareBook.DuplicateIsbn(isbn13.Value.Value);
         }
 
-        // RG-173 : un livre rare sans ISBN reçoit son propre code interne, un par exemplaire.
-        BookCode? rareCode = isbn13;
-        if (rareCode is null)
+        // RG-173 : un livre rare sans ISBN reçoit son propre code interne, un par exemplaire. Ce code reste
+        // sur l'étiquette même si un ISBN est ajouté plus tard (RG-174).
+        BookCode? internalCode = null;
+        if (isbn13 is null)
         {
-            rareCode = await codeIssuer.IssueNextAsync(cancellationToken);
+            internalCode = await codeIssuer.IssueNextAsync(cancellationToken);
         }
 
         RareBook? rareBook = null;
@@ -96,9 +97,10 @@ public sealed class CreateRareBookCommandHandler(
                     command.PublicDescription,
                     nowUtc,
                     command.UserId,
-                    rareCode,
+                    isbn13,
                     collisionSuffix,
-                    command.ClientGestureId);
+                    command.ClientGestureId,
+                    internalCode);
             }
             catch (ArgumentException exception)
             {

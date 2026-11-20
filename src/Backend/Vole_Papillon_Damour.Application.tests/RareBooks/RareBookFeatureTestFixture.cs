@@ -111,7 +111,8 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
         string title,
         decimal price = 25m,
         bool published = false,
-        string? isbn13 = null)
+        string? isbn13 = null,
+        string? internalCode = null)
     {
         BookCode? parsedIsbn13 = null;
         if (!string.IsNullOrWhiteSpace(isbn13))
@@ -133,7 +134,8 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             publisher: "Un éditeur",
             publicationYear: 1920,
             condition: RareBookCondition.GoodWithFlaws,
-            isbn13: parsedIsbn13);
+            isbn13: parsedIsbn13,
+            internalCode: string.IsNullOrWhiteSpace(internalCode) ? null : BookCode.CreateInternal(internalCode));
         if (published)
         {
             book.Publish(UserId, Now.AddMinutes(1));
@@ -234,6 +236,10 @@ internal sealed class RareBookFeatureTestDbContext(
                 .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn.HasValue ? isbn.Value.Value : null,
                     value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.InternalCode)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    code => code.HasValue ? code.Value.Value : null,
+                    value => value == null ? null : BookCode.CreateInternal(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()

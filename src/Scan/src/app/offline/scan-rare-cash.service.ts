@@ -39,6 +39,7 @@ export class ScanRareCashService {
           book.title,
           book.authorMention ?? '',
           book.isbn13 ?? '',
+          book.internalCode ?? '',
         ].some(value => value.toLocaleLowerCase('fr-FR').includes(query)))
         .sort((left, right) =>
           left.title.localeCompare(right.title, 'fr', {sensitivity: 'base'}) ||
@@ -159,7 +160,9 @@ export class ScanRareCashService {
 
   private async findByIsbnInternal(isbn13: string): Promise<ScanRareBook | null> {
     const normalized = isbn13.trim();
-    return (await this.store.listRareBooks()).find(book => book.isbn13 === normalized) ?? null;
+    // Le code interne et l'ISBN désignent le même exemplaire (RG-174).
+    return (await this.store.listRareBooks())
+      .find(book => book.isbn13 === normalized || book.internalCode === normalized) ?? null;
   }
 }
 
@@ -181,6 +184,7 @@ function toLocalRareBook(
     ...existing,
     serverId: response.id,
     isbn13: response.isbn13,
+    internalCode: response.internalCode ?? existing.internalCode ?? null,
     title: response.title,
     authorMention: response.authorMention,
     publisher: response.publisher,

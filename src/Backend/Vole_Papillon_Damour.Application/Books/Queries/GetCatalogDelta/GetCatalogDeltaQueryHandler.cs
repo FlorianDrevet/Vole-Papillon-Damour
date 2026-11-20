@@ -190,6 +190,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             .Select(book => new ScanCatalogRareBookResult(
                 book.Id.Value,
                 book.Isbn13 == null ? null : book.Isbn13.Value.Value,
+                book.InternalCode == null ? null : book.InternalCode.Value.Value,
                 book.Title,
                 book.AuthorMention,
                 book.Price,

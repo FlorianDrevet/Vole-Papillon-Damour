@@ -109,6 +109,8 @@ export interface ScanRareBook {
   serverId: string | null;
   clientGestureId: string;
   isbn13: string | null;
+  // Code interne de l'exemplaire (RG-173), gardé à vie sur l'étiquette (RG-174).
+  internalCode?: string | null;
   title: string;
   authorMention: string | null;
   publisher: string | null;

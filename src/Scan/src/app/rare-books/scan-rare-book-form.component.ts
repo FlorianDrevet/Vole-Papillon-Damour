@@ -11,6 +11,7 @@ import {
   ScanRareBookPhotoQueueEntry,
 } from '../offline/scan-offline.model';
 import {ScanRareBookService} from './scan-rare-book.service';
+import {rareBookLabelCode} from './rare-book-label';
 
 export type ScanRareBookFormStep = 'choice' | 'candidate' | 'identify' | 'describe' | 'photos';
 
@@ -86,7 +87,7 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
 
   // E5 : impression de l'étiquette de la fiche, avec son prix ferme (RG-179).
   printLabel(): void {
-    const code = this.book?.isbn13;
+    const code = this.book ? rareBookLabelCode(this.book) : null;
     if (!code) {
       return;
     }

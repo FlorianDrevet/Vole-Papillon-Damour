@@ -131,7 +131,7 @@ public sealed class RegisterSaleCommandHandlerTests
             25m,
             ScanBookCommandHandlerTests.ClientScanAt,
             userId,
-            isbn13: BookCode.CreateInternal("2000000000015"));
+            internalCode: BookCode.CreateInternal("2000000000015"));
         rareBook.Publish(userId, ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.RareBooks.Add(rareBook);
         await fixture.Context.SaveChangesAsync();

@@ -187,6 +187,32 @@ public sealed class ScanBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_AnInternalCodeOfARareBook_IsRecognizedAsTheRareBook_EvenAfterAnIsbnIsAdded()
+    {
+        // RG-173 / RG-174 : le code interne de l'exemplaire rare reste reconnu (RareBooks.InternalCode) ; l'ISBN
+        // ajouté ensuite désigne le même exemplaire, et ne crée pas de fiche « ordinaire ».
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var userId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var rare = RareBook.CreateWithDetails(
+            "Livre rare", null, null, null, 25m, RareBookCondition.AsNew, null, SessionStartedAt, userId,
+            internalCode: BookCode.CreateInternal("2000000000015"));
+        rare.Update("Livre rare", null, null, null, 25m, RareBookCondition.AsNew, null, ClientScanAt, userId,
+            ParseIsbn("9782070363735"));
+        fixture.Context.RareBooks.Add(rare);
+        await fixture.Context.SaveChangesAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var handler = fixture.CreateHandler();
+
+        var byInternalCode = await handler.Handle(CreateCommand(session, "2000000000015", kept: true), CancellationToken.None);
+        var byIsbn = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+
+        byInternalCode.IsError.Should().BeTrue();
+        byInternalCode.FirstError.Code.Should().Be("Book.RareBookCode");
+        byIsbn.IsError.Should().BeFalse();
+        (await fixture.Context.Books.CountAsync(book => book.Id == BookCode.CreateInternal("2000000000015"))).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenNextFairScanIsKept_CreatesAnnouncementAndDoesNotIncreaseAvailableStock()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -1150,6 +1176,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn.HasValue ? isbn.Value.Value : null,
                     value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.InternalCode)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    code => code.HasValue ? code.Value.Value : null,
+                    value => value == null ? null : BookCode.CreateInternal(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
