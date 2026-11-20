@@ -87,7 +87,8 @@ public sealed class AddBookPhotoCommandHandler(
                 code,
                 blobUri,
                 blobName,
-                book.Photos.Count,
+                // Après une suppression, le nombre de photos ne donne plus un rang libre : on prend le suivant.
+                book.Photos.Count == 0 ? 0 : book.Photos.Max(existing => existing.Position) + 1,
                 contentType,
                 command.SizeBytes,
                 nowUtc,

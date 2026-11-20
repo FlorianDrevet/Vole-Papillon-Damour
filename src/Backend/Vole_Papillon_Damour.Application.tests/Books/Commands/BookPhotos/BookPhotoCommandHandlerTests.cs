@@ -94,6 +94,33 @@ public sealed class BookPhotoCommandHandlerTests
     }
 
     [Fact]
+    public async Task AddPhoto_AfterADeletion_DoesNotReuseAnExistingPosition()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        fixture.Context.Books.Add(Book.CreateWithInternalCode(BookCode.CreateInternal(InternalCode), Now));
+        await fixture.Context.SaveChangesAsync();
+        fixture.Context.ChangeTracker.Clear();
+        var first = await CreateAddHandler(fixture, CreateBlob()).Handle(
+            CreateAddCommand(InternalCode, "image/png"),
+            CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+        await CreateAddHandler(fixture, CreateBlob()).Handle(
+            CreateAddCommand(InternalCode, "image/png"),
+            CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+        await new DeleteBookPhotoCommandHandler(fixture.Context, CreateBlob(), CreateClock())
+            .Handle(new DeleteBookPhotoCommand(InternalCode, first.Value.Id, Volunteer), CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+
+        var third = await CreateAddHandler(fixture, CreateBlob()).Handle(
+            CreateAddCommand(InternalCode, "image/png"),
+            CancellationToken.None);
+
+        third.IsError.Should().BeFalse();
+        third.Value.Position.Should().Be(2);
+    }
+
+    [Fact]
     public async Task GetBooksWithoutIsbn_ListsOnlyBooksWithoutIsbn()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
