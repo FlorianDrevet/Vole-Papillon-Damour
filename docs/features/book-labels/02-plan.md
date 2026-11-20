@@ -110,9 +110,10 @@ AccountCard ×3, page compte ×1).
   `dotnet ef migrations has-pending-model-changes` ne signale aucun changement.
 - **Achats (T16)** : le type d'un achat (code interne ou ISBN) est déduit du code côté front ; le DTO n'a pas
   été modifié.
-- **Front admin (T12)** : le parseur d'ISBN vit dans `shared/barcode/isbn-input.ts`. Dans
-  `features/administration/`, trois specs de la page admin dépassaient le délai de 5 s ; le déplacement a suffi.
-  La cause exacte n'est pas identifiée.
+- **Front admin (T12)** : le parseur d'ISBN vit dans `shared/barcode/isbn-input.ts`. Trois specs async de la page
+  admin (délai de 5 s) ont été vues en échec. Après le déplacement, elles passent dans la suite complète, mais
+  elles échouent de nouveau en isolé après une réinstallation de `node_modules`. **Instabilité de timing non
+  résolue** : le déplacement n'est pas une correction démontrée. À surveiller.
 
 ### Migrations du lot 2
 
