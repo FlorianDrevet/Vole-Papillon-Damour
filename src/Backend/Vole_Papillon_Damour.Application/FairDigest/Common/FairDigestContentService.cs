@@ -136,7 +136,7 @@ public sealed class FairDigestContentService(
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         var arrivalIsbns = publicArrivals
-            .Select(book => ParseIsbn(book.Isbn13))
+            .Select(book => ParseBookCode(book.Isbn13))
             .ToArray();
         var workBooks = await dbContext.Books
             .AsNoTracking()
@@ -302,7 +302,7 @@ public sealed class FairDigestContentService(
         if (excludedIsbns.Count > 0)
         {
             var exclusionIsbnValues = excludedIsbns
-                .Select(ParseIsbn)
+                .Select(ParseBookCode)
                 .ToArray();
             var additionalWorkIds = await dbContext.Books
                 .AsNoTracking()
@@ -318,14 +318,14 @@ public sealed class FairDigestContentService(
     private static string GroupKey(string? workId, string isbn) =>
         string.IsNullOrWhiteSpace(workId) ? $"isbn:{isbn}" : $"work:{workId}";
 
-    private static BookCode ParseIsbn(string value)
+    private static BookCode ParseBookCode(string value)
     {
-        if (!Isbn13.TryCreate(value, out var isbn13))
+        if (!BookCode.TryCreate(value, out var code))
         {
-            throw new InvalidOperationException("Fair digest ISBNs must be valid ISBN-13 values.");
+            throw new InvalidOperationException("Fair digest book codes must be valid ISBN-13 or internal codes.");
         }
 
-        return isbn13;
+        return code;
     }
 
     private static int InventoryDelta(BookMovementType type, int quantity) => type switch

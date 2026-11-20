@@ -1063,7 +1063,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(item => item.Isbn13)
                 .HasConversion(
                     (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (string? value) => value == null ? (BookCode?)null : ParseBookCode(value));
             builder.Property(item => item.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,

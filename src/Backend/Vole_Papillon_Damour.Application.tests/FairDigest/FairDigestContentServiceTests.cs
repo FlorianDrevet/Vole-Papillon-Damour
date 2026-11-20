@@ -11,6 +11,9 @@ using Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendati
 using Vole_Papillon_Damour.Application.tests.Books.Queries;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects;
@@ -95,6 +98,134 @@ public sealed class FairDigestContentServiceTests
         result.Value.News.Should().ContainSingle();
         result.Value.News[0].Book.Isbn13.Should().Be(otherBook.Id.Value);
         result.Value.Back.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Build_WhenAnInternalCodeBookArrived_BuildsTheDigest()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var previousFair = fixture.AddFair(
+            "Bourse de février",
+            DateTimeOffset.Parse("2027-01-31T09:00:00+01:00"),
+            DateTimeOffset.Parse("2027-02-01T18:00:00+01:00"));
+        var nextFair = fixture.AddFair(
+            "Bourse de mars",
+            DateTimeOffset.Parse("2027-03-13T09:00:00+01:00"),
+            DateTimeOffset.Parse("2027-03-13T18:00:00+01:00"));
+        var code = BookCode.CreateInternal("2000000000015");
+        var arrivedAt = new DateTime(2027, 2, 10, 10, 0, 0, DateTimeKind.Utc);
+        var book = Book.CreateWithInternalCode(code, arrivedAt);
+        book.RecordAvailableEntry(arrivedAt);
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                "Livre sans ISBN",
+                "Auteur",
+                "Éditeur",
+                2020,
+                "Poche",
+                "fr",
+                "Roman",
+                null,
+                [BookMetadataField.Title, BookMetadataField.Authors]),
+            arrivedAt);
+        fixture.Context.Books.Add(book);
+        fixture.Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            code,
+            BookMovementType.DirectEntry,
+            quantity: 1,
+            arrivedAt,
+            arrivedAt,
+            clockSuspect: false,
+            scanSessionId: null,
+            volunteerId: null,
+            assoEventsId: null,
+            note: null,
+            clientGestureId: null));
+        await fixture.SaveAsync();
+        var member = CreateMember(Guid.Parse("7f0b0f0e-0000-0000-0000-000000000c02"));
+        fixture.Context.Users.Add(member);
+        await fixture.SaveAsync();
+
+        var result = await CreateService(fixture).BuildAsync(
+            member,
+            CreateSchedule(previousFair, nextFair),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Build_WhenMemberWatchesAnInternalCodeBook_BuildsTheDigest()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var previousFair = fixture.AddFair(
+            "Bourse de février",
+            DateTimeOffset.Parse("2027-01-31T09:00:00+01:00"),
+            DateTimeOffset.Parse("2027-02-01T18:00:00+01:00"));
+        var nextFair = fixture.AddFair(
+            "Bourse de mars",
+            DateTimeOffset.Parse("2027-03-13T09:00:00+01:00"),
+            DateTimeOffset.Parse("2027-03-13T18:00:00+01:00"));
+        var member = CreateMember(Guid.Parse("7f0b0f0e-0000-0000-0000-000000000c03"));
+        fixture.Context.Users.Add(member);
+        fixture.Context.WatchlistItems.Add(WatchlistItem.CreateEdition(
+            Guid.NewGuid(),
+            member.Id,
+            BookCode.CreateInternal("2000000000015"),
+            Now));
+        await fixture.SaveAsync();
+
+        var result = await CreateService(fixture).BuildAsync(
+            member,
+            CreateSchedule(previousFair, nextFair),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+    }
+
+    private static User CreateMember(Guid id)
+    {
+        var userId = UserId.Create(id);
+        return User.CreateFromExternalIdentity(userId, userId.Value.ToString("D"), "member@example.test", Now);
+    }
+
+    private static FairDigestContentService CreateService(CatalogDeltaFixture fixture)
+    {
+        var mediator = Substitute.For<IMediator>();
+        mediator.Send(Arg.Any<GetMyRecommendationsQuery>(), Arg.Any<CancellationToken>())
+            .Returns(ErrorOrFactory.From(new MyRecommendationsResult(
+                RecommendationStatus.Enabled,
+                Array.Empty<PersonalRecommendation>())));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        return new FairDigestContentService(
+            fixture.Context,
+            mediator,
+            clock,
+            Options.Create(new FairDigestOptions()),
+            new FairDigestContentBuilder(Options.Create(new FairDigestOptions())));
+    }
+
+    private static FairDigestScheduleResult CreateSchedule(AssoEvents previousFair, AssoEvents nextFair)
+    {
+        return new FairDigestScheduleResult(
+            new FairDigestEvent(
+                nextFair.Id.Value,
+                EventsType.EventsTypeEnum.Books,
+                nextFair.DateStart,
+                nextFair.DateEnd,
+                false,
+                nextFair.Name),
+            new FairDigestEvent(
+                previousFair.Id.Value,
+                EventsType.EventsTypeEnum.Books,
+                previousFair.DateStart,
+                previousFair.DateEnd,
+                false,
+                previousFair.Name),
+            DateTimeOffset.Parse("2027-03-10T09:00:00Z"),
+            FairDigestSchedule.EndOfFairDay(previousFair.DateEnd!.Value));
     }
 
     private static PublicCatalogBookResult PublicBook(string isbn, string workId) => new(
