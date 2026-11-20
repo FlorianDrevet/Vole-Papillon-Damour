@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FluentAssertions;
 using MapsterMapper;
 using MediatR;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -108,6 +109,17 @@ public class EndpointAuthorizationTests
         RegisteredEndpoints()
             .Should()
             .NotContain(endpoint => RouteOf(endpoint) == "/catalog/fairs/next");
+    }
+
+    [Fact]
+    public void Book_photo_upload_disables_antiforgery_like_the_other_uploads()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/books/{code}/photos" && HttpMethods(endpoint).Contains("POST"));
+
+        var antiforgery = endpoint.Metadata.GetMetadata<IAntiforgeryMetadata>();
+        antiforgery.Should().NotBeNull("l'upload de photo doit appeler DisableAntiforgery() comme les autres uploads multipart");
+        antiforgery!.RequiresValidation.Should().BeFalse();
     }
 
     [Fact]

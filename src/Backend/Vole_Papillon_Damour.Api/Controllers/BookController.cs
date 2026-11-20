@@ -824,6 +824,7 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("AddBookPhoto")
+                .DisableAntiforgery()
                 .RequireAuthorization("TriOrAdmin");
 
             endpoints.MapDelete(
