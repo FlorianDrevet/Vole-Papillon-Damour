@@ -26,8 +26,19 @@
 | T8 | Traitements ISBNdb et enrichissement : filtre `IsInternalCode` côté SQL | RG-170 | `b8daf268` |
 | T9 | Scanette : entrée, page de création E2/E3, impression E5, réimpression E4 | RG-175, RG-179, RG-180 | `17502121` |
 | T10 | Site Catalog : liste admin E9, formulaire E10, fiche publique E11 | RG-181, RG-183, Q6 | `1c8f784b` |
+| T11 | Compteur des codes internes en séquence SQL `InternalBookCodeNumbers` (table supprimée) | RG-170, RG-171 | `b10369fc` |
+| T12 | RG-174 livre ordinaire : « Ajouter un ISBN » (fusion ou création de la fiche ISBN), endpoint, écran admin | RG-174, RG-171 | `0fab602f`, `f1e3bf35` |
+| T13 | RG-174 livre rare : `RareBooks.InternalCode` séparé de l'ISBN, migration des données | RG-173, RG-174 | `4ee15e33` |
+| T14 | Parité EF / base : FK `FK_BookIsbndbRecords_Books_Isbn13` et `FK_Books_Books_RedirectedToIsbn13`, index | (technique) | `cbdea7af` |
+| T15 | Contrainte `CK_Books_IsInternalCode_MatchesCode` (le drapeau ne contredit pas la clé) | RG-170 | `adaae1a7` |
+| T16 | Achats : pas de bouton favori sur un code interne | RG-182 | `6635a4b1` |
+| T17 | Test d'intégration SQL Server réel (Testcontainers, trait `SqlServerIntegration`) | RG-171, RG-170 | `4c521570` |
 
-Tests : domaine 266, application 839, infrastructure 259 ; scanette 374 ; catalog 692 (+ 3 préexistants).
+Tests (lot 1) : domaine 266, application 839, infrastructure 259 ; scanette 374 ; catalog 692 (+ 3 préexistants).
+
+Tests (lot 2, état final) : domaine 275, application 872, infrastructure 266 (dont 3 tests SQL Server réels),
+api 108, worker 23 ; scanette 378 ; catalog 701 (+ 4 préexistants, présents aussi au commit de départ :
+AccountCard ×3, page compte ×1).
 
 ## Écarts avec la spec
 
@@ -65,3 +76,57 @@ Tests : domaine 266, application 839, infrastructure 259 ; scanette 374 ; catalo
 - `E7-bouton-annuler` : l'aperçu d'étiquette n'a pas de bouton d'annulation distinct du retour à l'accueil.
 - `E8-ligne-code-interne` : la caisse résout le code interne vers sa fiche (RG-172) ; la ligne dédiée
   « code interne reconnu » du canevas n'est pas rendue séparément.
+
+## Lot 2 : RG-174, compteur SQL, parité EF (T11 à T17)
+
+### RG-174 : couverte
+
+- **Livre ordinaire** (T12) : « Ajouter un ISBN » sur une fiche à code interne
+  (`POST /books/admin/books/{internalCode}/add-isbn`, politique `Administration`). Le code interne reste
+  valide, les deux codes résolvent vers la fiche ISBN (test scan : code interne et ISBN donnent la même fiche).
+  Si la fiche ISBN existe, fusion ; sinon création avec les métadonnées saisies, toutes marquées éditées.
+  La fusion est partagée avec la fusion admin (`BookMergeOperation`) : stock et mouvements de correction,
+  redirection, watchlist et signalements « introuvable » repointés. Ma sélection, favoris, demandes manuelles
+  et recherches suivent déjà la redirection à la lecture (`RedirectedToIsbn13`), comme pour une fusion classique.
+- **Livre rare** (T13) : `RareBooks.InternalCode` garde le code d'étiquette à vie ; `Isbn13` ne porte plus
+  qu'un ISBN réel. Un rare créé sans ISBN, puis complété d'un ISBN, se résout par les deux codes.
+
+### Écarts avec la proposition
+
+- **Séquence (T11)** : le modèle ne fixe pas `StartsAt`. Le démarrage dépend des données : la migration le
+  calcule (`MAX(LastIssuedNumber) + 1`) avant de supprimer l'ancienne table. Un `StartsAt` constant dans le
+  modèle aurait produit une différence à chaque migration. La séquence n'est déclarée que pour SQL Server
+  (SQLite ne sait pas créer de séquence) ; `IInternalBookCodeIssuer` a une implémentation SQL Server et des fakes.
+- **Lecture de la séquence (T11)** : `NEXT VALUE FOR` est interdit dans une table dérivée (SQL Server) ; un
+  `Database.SqlQuery` l'y place. La lecture est donc une commande ADO.NET de premier niveau dans la transaction courante.
+- **Couverture (T12)** : la couverture de la fiche interne n'est pas recopiée. Une photo marquée « éditée »
+  bloquerait la couverture fournisseur que la fiche ISBN doit prendre. **Manque** : une fiche ISBN créée ainsi
+  n'a pas de couverture tant que l'enrichissement fournisseur ne la fournit pas ; les photos restent sur la fiche masquée.
+- **Annonces (T12)** : la fusion refuse une fiche interne qui a des annonces actives, comme la fusion classique.
+- **Rares (T13)** : un rare créé avant la fonctionnalité, sans ISBN ni code, reste possible (aucun code à
+  migrer). Le domaine ne l'exige qu'au retrait de l'ISBN d'un rare qui en a un. À lister et étiqueter.
+- **Parité (T14)** : `RedirectedToIsbn13` est typé `BookCode?` (même type que la clé). La migration
+  `DeclareBookForeignKeysInModel` a des Up/Down vides : les FK et l'index existent déjà en base. Vérifié :
+  `dotnet ef migrations has-pending-model-changes` ne signale aucun changement.
+- **Achats (T16)** : le type d'un achat (code interne ou ISBN) est déduit du code côté front ; le DTO n'a pas
+  été modifié.
+- **Front admin (T12)** : le parseur d'ISBN vit dans `shared/barcode/isbn-input.ts`. Dans
+  `features/administration/`, trois specs de la page admin dépassaient le délai de 5 s ; le déplacement a suffi.
+  La cause exacte n'est pas identifiée.
+
+### Migrations du lot 2
+
+| Migration | Contenu | Données |
+|---|---|---|
+| `ReplaceInternalBookCodeCounterWithSequence` | Crée la séquence `InternalBookCodeNumbers` (démarrage calculé), supprime `InternalBookCodeSequences` | Aucune perte |
+| `SplitRareBookInternalCode` | Colonne `RareBooks.InternalCode`, déplacement des rares dont `Isbn13` commence par 2, index unique filtré, 2 CHECK | Déplacement, aucune perte |
+| `DeclareBookForeignKeysInModel` | Snapshot seul (FK et index déjà en base) | Aucune |
+| `EnforceBookInternalCodeFlag` | Recalcule `IsInternalCode` depuis la clé, ajoute `CK_Books_IsInternalCode_MatchesCode` | Drapeau recalculé, aucune ligne supprimée |
+
+### Tests d'intégration
+
+- `SqlServerMigrationsIntegrationTests` (trait `Category=SqlServerIntegration`, Testcontainers.MsSql 4.16.0,
+  licence MIT) : applique toutes les migrations sur SQL Server 2022 ; la séquence reprend après le dernier
+  numéro ; deux créations simultanées réussissent avec deux codes ; la CHECK refuse une ligne incohérente (547).
+- Exécution locale avec Podman : `DOCKER_HOST=npipe://./pipe/docker_engine`, `TESTCONTAINERS_RYUK_DISABLED=true`.
+  Sans conteneurs : `dotnet test --filter "Category!=SqlServerIntegration"`.
