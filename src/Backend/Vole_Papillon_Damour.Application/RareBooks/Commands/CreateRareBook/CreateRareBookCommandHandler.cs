@@ -1,5 +1,4 @@
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Application.Books.Common;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook;
 
 public sealed class CreateRareBookCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IInternalBookCodeIssuer codeIssuer)
     : IRequestHandler<CreateRareBookCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -78,7 +78,7 @@ public sealed class CreateRareBookCommandHandler(
         BookCode? rareCode = isbn13;
         if (rareCode is null)
         {
-            rareCode = await InternalBookCodeIssuer.IssueAsync(dbContext, cancellationToken);
+            rareCode = await codeIssuer.IssueNextAsync(cancellationToken);
         }
 
         RareBook? rareBook = null;

@@ -284,7 +284,6 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
-    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookRecommendationJob> BookRecommendationJobs => Set<BookRecommendationJob>();
     public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<BookIsbndbRecord> BookIsbndbRecords => Set<BookIsbndbRecord>();

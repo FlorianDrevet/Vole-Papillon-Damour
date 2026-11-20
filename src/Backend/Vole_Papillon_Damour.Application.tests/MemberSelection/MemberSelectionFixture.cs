@@ -279,7 +279,6 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Book> Books => Set<Book>();
-    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();

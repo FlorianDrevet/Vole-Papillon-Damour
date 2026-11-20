@@ -4,7 +4,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Domain.tests.BookAggregateTests;
 
-public sealed class InternalBookCodeSequenceTests
+public sealed class BookCodeFromSequenceTests
 {
     [Theory]
     [InlineData(1L, "2000000000015")]
@@ -31,17 +31,20 @@ public sealed class InternalBookCodeSequenceTests
     }
 
     [Fact]
-    public void IssueNext_NeverRepeatsACodeAndCountsEveryIssue()
+    public void CreateInternalFromSequence_AcceptsTheLastRepresentableNumber()
     {
-        var sequence = InternalBookCodeSequence.Create();
+        var code = BookCode.CreateInternalFromSequence(BookCode.MaximumInternalSequenceNumber);
 
-        var first = sequence.IssueNext();
-        var second = sequence.IssueNext();
-        var third = sequence.IssueNext();
+        code.IsInternal.Should().BeTrue();
+        code.Value.Should().HaveLength(13);
+        BookCode.IsValidInternalCode(code.Value).Should().BeTrue();
+    }
 
-        new[] { first, second, third }.Distinct().Should().HaveCount(3);
-        sequence.LastIssuedNumber.Should().Be(3);
-        first.Should().Be(BookCode.CreateInternalFromSequence(1));
-        third.Should().Be(BookCode.CreateInternalFromSequence(3));
+    [Fact]
+    public void CreateInternalFromSequence_IsInjectiveOverTheFirstNumbers()
+    {
+        var codes = Enumerable.Range(1, 1000).Select(number => BookCode.CreateInternalFromSequence(number));
+
+        codes.Distinct().Should().HaveCount(1000);
     }
 }

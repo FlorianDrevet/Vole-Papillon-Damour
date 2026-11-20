@@ -14,7 +14,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
 public sealed class CreateBookWithoutIsbnCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IInternalBookCodeIssuer codeIssuer)
     : IRequestHandler<CreateBookWithoutIsbnCommand, ErrorOr<AdminBookOperationResult>>
 {
     private const int MaximumQuantity = 100_000;
@@ -51,7 +52,7 @@ public sealed class CreateBookWithoutIsbnCommandHandler(
         // partagés puis en interblocage (erreur 1205). Le jeton de concurrence du compteur suffit.
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var code = await InternalBookCodeIssuer.IssueAsync(dbContext, cancellationToken);
+        var code = await codeIssuer.IssueNextAsync(cancellationToken);
         var book = Book.CreateWithInternalCode(code, addedAt);
         try
         {

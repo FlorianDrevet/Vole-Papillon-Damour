@@ -1520,7 +1520,6 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
-    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<BookGenre> BookGenres => Set<BookGenre>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();

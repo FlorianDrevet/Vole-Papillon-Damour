@@ -23,6 +23,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence("InternalBookCodeNumbers")
+                .HasMin(1L)
+                .HasMax(99999999999L);
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ActualityAggregate.Actuality", b =>
                 {
                     b.Property<Guid>("Id")
@@ -750,27 +754,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_BookPhotos_BookIsbn13_Position");
 
                     b.ToTable("BookPhotos", (string)null);
-                });
-
-            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.InternalBookCodeSequence", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<long>("LastIssuedNumber")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("InternalBookCodeSequences", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            LastIssuedNumber = 0L
-                        });
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>

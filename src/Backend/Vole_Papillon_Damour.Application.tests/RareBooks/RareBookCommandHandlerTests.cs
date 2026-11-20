@@ -29,7 +29,7 @@ public sealed class RareBookCommandHandlerTests
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand(price: 125.50m), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -43,7 +43,7 @@ public sealed class RareBookCommandHandlerTests
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand(isbn13: null), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -58,7 +58,7 @@ public sealed class RareBookCommandHandlerTests
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand(isbn13: "2000000000015"), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -72,7 +72,7 @@ public sealed class RareBookCommandHandlerTests
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         await fixture.AddRareBookAsync("Premier titre", isbn13: "9780306406157");
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand("Second titre", isbn13: "9780306406157"), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -85,7 +85,7 @@ public sealed class RareBookCommandHandlerTests
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         var clientGestureId = Guid.NewGuid();
         var command = fixture.CreateCommand() with {ClientGestureId = clientGestureId};
-        var handler = new CreateRareBookCommandHandler(fixture.Context, fixture.Clock);
+        var handler = new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer);
 
         var first = await handler.Handle(command, CancellationToken.None);
         var second = await handler.Handle(command, CancellationToken.None);

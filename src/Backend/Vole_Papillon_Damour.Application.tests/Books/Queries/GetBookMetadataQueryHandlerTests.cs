@@ -225,7 +225,6 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
     : DbContext(options), IProjectDbContext
 {
     public DbSet<Book> Books => Set<Book>();
-    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();

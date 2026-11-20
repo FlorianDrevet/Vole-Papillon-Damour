@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Vole_Papillon_Damour.Application.tests.Books.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
@@ -53,6 +54,7 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
     public RareBookFeatureTestDbContext Context { get; }
     public IDateTimeProvider Clock { get; }
     public IBlobService Blob { get; }
+    public FakeInternalBookCodeIssuer CodeIssuer { get; } = new();
     public UserId UserId { get; } = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
     public DateTime Now => DefaultNow;
 
@@ -186,7 +188,6 @@ internal sealed class RareBookFeatureTestDbContext(
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => throw new NotSupportedException();
-    DbSet<InternalBookCodeSequence> IProjectDbContext.InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();

@@ -54,7 +54,6 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
     public DbSet<EmailBounceEvent> EmailBounceEvents => Set<EmailBounceEvent>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
-    public DbSet<InternalBookCodeSequence> InternalBookCodeSequences => Set<InternalBookCodeSequence>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
@@ -79,6 +78,12 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
         modelBuilder
             .ApplyConfigurationsFromAssembly(typeof(ProjectDbContext).Assembly);
         Configurations.IsbndbConfigurations.Apply(modelBuilder);
+        // SQLite ne connaît pas les séquences : elles ne sont déclarées que pour SQL Server (RG-171).
+        if (Database.IsSqlServer())
+        {
+            Configurations.InternalBookCodeNumberingConfiguration.Apply(modelBuilder);
+        }
+
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
