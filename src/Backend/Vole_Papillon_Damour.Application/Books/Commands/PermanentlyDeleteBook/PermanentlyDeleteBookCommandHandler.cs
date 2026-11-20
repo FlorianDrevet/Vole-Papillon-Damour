@@ -17,7 +17,7 @@ public sealed class PermanentlyDeleteBookCommandHandler(IProjectDbContext dbCont
         PermanentlyDeleteBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -46,10 +46,12 @@ public sealed class PermanentlyDeleteBookCommandHandler(IProjectDbContext dbCont
             return Errors.Book.BookHasSales(isbn13.Value);
         }
 
+        // Une redirection ne vise qu'un ISBN : un code interne n'en reçoit jamais.
         var hasRedirect = book.RedirectedToIsbn13 is not null ||
-                          await dbContext.Books.AnyAsync(
-                              candidate => candidate.RedirectedToIsbn13 == isbn13,
-                              cancellationToken);
+                          (isbn13.TryGetIsbn13(out var editionIsbn13) &&
+                           await dbContext.Books.AnyAsync(
+                               candidate => candidate.RedirectedToIsbn13 == editionIsbn13,
+                               cancellationToken));
         if (hasRedirect)
         {
             return Errors.Book.BookHasHistory(isbn13.Value);
@@ -62,8 +64,10 @@ public sealed class PermanentlyDeleteBookCommandHandler(IProjectDbContext dbCont
                 movement => movement.Isbn13 == isbn13 &&
                             (movement.ScanSessionId != null || movement.AssoEventsId != null),
                 cancellationToken);
-        var hasFoundManualRequest = await dbContext.ManualBookRequests
-            .AnyAsync(request => request.FoundIsbn13 == isbn13, cancellationToken);
+        // Une demande manuelle se satisfait par un ISBN : un code interne n'en a jamais trouvé.
+        var hasFoundManualRequest = isbn13.TryGetIsbn13(out var foundIsbn13) &&
+                                    await dbContext.ManualBookRequests
+                                        .AnyAsync(request => request.FoundIsbn13 == foundIsbn13, cancellationToken);
         if (hasAnnouncements || hasSessionOrFairHistory || hasFoundManualRequest)
         {
             return Errors.Book.BookHasHistory(isbn13.Value);

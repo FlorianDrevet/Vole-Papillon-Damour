@@ -600,6 +600,21 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return book;
     }
 
+    public async Task<Book> AddInternalCodeBookAsync(int quantityAvailable)
+    {
+        var book = Book.CreateWithInternalCode(
+            BookCode.CreateInternal("2000000000015"),
+            ScanBookCommandHandlerTests.SessionStartedAt);
+        for (var index = 0; index < quantityAvailable; index++)
+        {
+            book.RecordAvailableEntry(ScanBookCommandHandlerTests.ClientScanAt);
+        }
+
+        Context.Books.Add(book);
+        await Context.SaveChangesAsync();
+        return book;
+    }
+
     public async Task<RareBook> AddRareBookAsync(
         Book book,
         UserId? createdBy = null,

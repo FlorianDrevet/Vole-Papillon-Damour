@@ -17,6 +17,23 @@ public sealed class DeleteBookCommandHandlerTests
         UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
 
     [Fact]
+    public async Task Handle_AcceptsAnInternalCode_WhenBookHasNoHistory()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddInternalCodeBookAsync(quantityAvailable: 0);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new DeleteBookCommandHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new DeleteBookCommand(book.Code.Value, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookHasNoHistory_DeletesTheBook()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

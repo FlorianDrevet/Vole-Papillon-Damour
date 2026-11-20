@@ -18,7 +18,7 @@ public sealed class HideBookCommandHandler(
         HideBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }

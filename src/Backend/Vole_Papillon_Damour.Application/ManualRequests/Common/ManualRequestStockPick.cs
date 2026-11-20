@@ -54,8 +54,9 @@ internal static class ManualRequestStockPick
                 return withdrawal.Errors;
             }
 
+            // Une demande manuelle porte sur un ISBN : un livre à code interne ne la satisfait jamais.
             request.MarkFoundFromStock(
-                withdrawal.Value.Isbn13,
+                withdrawal.Value.Isbn13.AsIsbn13(),
                 pickedFromFairId: null,
                 pickedAnnouncementSessionId: null,
                 withdrawal.Value.MovementId,
@@ -119,6 +120,7 @@ internal static class ManualRequestStockPick
         {
             return await db.Books
                 .Where(book => book.RedirectedToIsbn13 == null &&
+                               !book.IsInternalCode &&
                                book.WorkId == request.WorkId &&
                                book.QuantityAvailable > 0)
                 .OrderByDescending(book => book.QuantityAvailable)

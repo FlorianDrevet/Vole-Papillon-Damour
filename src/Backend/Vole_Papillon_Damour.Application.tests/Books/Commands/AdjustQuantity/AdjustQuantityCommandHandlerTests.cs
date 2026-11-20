@@ -12,6 +12,24 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Commands.AdjustQuantity;
 public sealed class AdjustQuantityCommandHandlerTests
 {
     [Fact]
+    public async Task AdjustQuantity_AcceptsAnInternalCode()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddInternalCodeBookAsync(quantityAvailable: 2);
+
+        var result = await fixture.CreateAdjustQuantityHandler().Handle(
+            new AdjustQuantityCommand(
+                book.Code.Value,
+                QuantityAvailable: 1,
+                "Comptage après la bourse",
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Delta.Should().Be(-1);
+    }
+
+    [Fact]
     public async Task AdjustQuantity_ToZero_LapsesOpenReports()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

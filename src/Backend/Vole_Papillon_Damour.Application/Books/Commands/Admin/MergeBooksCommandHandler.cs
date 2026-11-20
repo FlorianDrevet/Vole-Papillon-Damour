@@ -24,11 +24,17 @@ public sealed class MergeBooksCommandHandler(
         MergeBooksCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.SourceIsbn, out var sourceIsbn) ||
-            !Isbn13.TryCreate(command.TargetIsbn, out var targetIsbn))
+        if (!BookCode.TryCreate(command.SourceIsbn, out var sourceIsbn) ||
+            !BookCode.TryCreate(command.TargetIsbn, out var targetCode))
         {
             return Errors.Book.InvalidIsbn(
-                !Isbn13.TryCreate(command.SourceIsbn, out _) ? command.SourceIsbn : command.TargetIsbn);
+                !BookCode.TryCreate(command.SourceIsbn, out _) ? command.SourceIsbn : command.TargetIsbn);
+        }
+
+        // Une fusion redirige vers une édition réelle : la cible doit être un ISBN, pas un code interne.
+        if (!targetCode.TryGetIsbn13(out var targetIsbn))
+        {
+            return Errors.Book.InvalidIsbn(command.TargetIsbn);
         }
 
         if (sourceIsbn == targetIsbn)

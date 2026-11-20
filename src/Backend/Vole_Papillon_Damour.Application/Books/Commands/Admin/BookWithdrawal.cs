@@ -10,7 +10,7 @@ using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
 public sealed record BookWithdrawalOutcome(
-    Isbn13 Isbn13,
+    BookCode Isbn13,
     int QuantityWithdrawn,
     int QuantityAvailable,
     BookMovementId MovementId);
@@ -26,7 +26,7 @@ public static class BookWithdrawal
         DateTime at,
         CancellationToken ct)
     {
-        if (!Isbn13.TryCreate(isbn, out var isbn13))
+        if (!BookCode.TryCreate(isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(isbn);
         }

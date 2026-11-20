@@ -23,6 +23,21 @@ public sealed class PermanentlyDeleteBookCommandHandlerTests
         UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
 
     [Fact]
+    public async Task Handle_AcceptsAnInternalCode()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddInternalCodeBookAsync(quantityAvailable: 0);
+        var handler = new PermanentlyDeleteBookCommandHandler(fixture.Context);
+
+        var result = await handler.Handle(
+            new PermanentlyDeleteBookCommand(book.Code.Value, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookHasOnlyDirectStockHistory_DeletesTheBookAndItsCatalogueHistory()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

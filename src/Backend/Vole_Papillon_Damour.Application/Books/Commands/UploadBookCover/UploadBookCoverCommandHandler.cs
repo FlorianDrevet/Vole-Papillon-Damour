@@ -22,7 +22,7 @@ public sealed class UploadBookCoverCommandHandler(
         UploadBookCoverCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn13, out var requestedIsbn13))
+        if (!BookCode.TryCreate(command.Isbn13, out var requestedIsbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn13);
         }
