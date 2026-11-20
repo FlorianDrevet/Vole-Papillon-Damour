@@ -365,6 +365,16 @@ describe('CatalogBookDetailPageComponent', () => {
       .toBe('https://livres.volepapillondamour.fr/cdn-cgi/image/width=660,height=990,fit=scale-down,quality=80,format=auto/https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
   });
 
+  it('offers no favorite toggle for an internal code, since the favorite endpoints accept ISBN-13 only', async () => {
+    api.getBook.and.returnValue(of({...book, isbn13: '2000000000015', isInternalCode: true}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.favorite-toggle')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.favorite-note')).toBeNull();
+  });
+
   it('leaves the ISBN out of the structured data for an internal code (RG-181)', async () => {
     const document = TestBed.inject(DOCUMENT);
     api.getBook.and.returnValue(of({...book, isbn13: '2000000000015', isInternalCode: true}));

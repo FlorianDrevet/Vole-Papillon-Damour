@@ -134,19 +134,21 @@
           [title]="item.title || 'Titre à compléter'"
           [helpText]="''"></app-selection-button>
 
-        <button
-          type="button"
-          class="favorite-toggle"
-          data-zone="E5-bouton-coup-de-coeur"
-          [class.favorite-toggle--active]="isFavorite(item)"
-          [attr.aria-pressed]="isFavorite(item)"
-          [disabled]="favoritePending()"
-          (click)="toggleFavorite(item)">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" />
-          </svg>
-          {{ isFavorite(item) ? 'Dans vos coups de cœur' : 'Coup de cœur' }}
-        </button>
+        @if (!item.isInternalCode) {
+          <button
+            type="button"
+            class="favorite-toggle"
+            data-zone="E5-bouton-coup-de-coeur"
+            [class.favorite-toggle--active]="isFavorite(item)"
+            [attr.aria-pressed]="isFavorite(item)"
+            [disabled]="favoritePending()"
+            (click)="toggleFavorite(item)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20.5s-7.6-4.7-7.6-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.8c0 5.6-7.6 10.3-7.6 10.3z" />
+            </svg>
+            {{ isFavorite(item) ? 'Dans vos coups de cœur' : 'Coup de cœur' }}
+          </button>
+        }
       </div>
 
       @if (favoriteMessage()) {
@@ -158,9 +160,11 @@
       @if (favoriteError()) {
         <p class="favorite-feedback favorite-feedback--error" role="alert">{{ favoriteError() }}</p>
       }
-      <p class="favorite-note">
-        Un coup de cœur dit que vous avez aimé ce livre&nbsp;: il sert à vous proposer des livres qui lui ressemblent. Il ne réserve rien.
-      </p>
+      @if (!item.isInternalCode) {
+        <p class="favorite-note">
+          Un coup de cœur dit que vous avez aimé ce livre&nbsp;: il sert à vous proposer des livres qui lui ressemblent. Il ne réserve rien.
+        </p>
+      }
 
       @if (item.physicalFormat || item.language) {
         <dl class="detail-facts">
