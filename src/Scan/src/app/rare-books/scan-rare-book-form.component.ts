@@ -82,7 +82,7 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
 
   // RG-180 : un livre sans ISBN ne se crée pas hors ligne. Le parcours est la création en ligne.
   startNoIsbn(): void {
-    void this.router.navigateByUrl('/sans-isbn');
+    void this.router.navigateByUrl('/livres-rares/sans-isbn');
   }
 
   // E5 : impression de l'étiquette de la fiche, avec son prix ferme (RG-179).

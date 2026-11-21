@@ -21,8 +21,10 @@ catalogue.
 
 L'accès à l'application est protégé par Entra : l'écran de connexion est affiché tant
 qu'aucun compte n'est ouvert, et un compte portant le rôle `Tri` ou `Caisse` peut atteindre
-le scan. Les actions d'accueil restent filtrées : `Tri` ouvre le tri, `Caisse` ouvre la
-vente, et les deux rôles peuvent consulter le catalogue. Une perte de session ou un échec
+le scan. Les actions d'accueil restent filtrées selon les rôles : `Tri` ouvre le tri et
+peut ajouter des livres sans ISBN, `Caisse` ouvre la vente, et le rôle de gestion des livres
+rares ouvre leurs fiches et leur création, avec aussi l'accès à la création sans ISBN.
+L'écran de consultation du catalogue a été retiré. Une perte de session ou un échec
 de renouvellement du jeton renvoie également vers cet écran. Les environnements déclarent
 l'autorité CIAM avec le chemin du tenant ; le service de connexion fournit aussi
 explicitement la page de retour de l'application et affiche l'échec de démarrage au lieu de
@@ -37,8 +39,8 @@ et fonctionne dans les navigateurs mobiles modernes, notamment Safari iOS, lorsq
 ouverte sur une URL HTTPS. Une photo peut aussi être sélectionnée depuis le téléphone si la
 caméra continue n'est pas disponible.
 
-Les écrans `Caisse` et `Consultation` ouvrent eux aussi la caméra dès leur arrivée et
-conservent le même flux autorisé entre deux lectures pour enchaîner les livres sans
+L'écran `Caisse` ouvre lui aussi la caméra dès son arrivée et conserve le même flux autorisé
+entre deux lectures pour enchaîner les livres sans
 redemander l’autorisation. Après une détection, le flux reste ouvert mais la détection est
 mise en pause pendant l’affichage du résultat ; elle reprend dès que nécessaire. La caisse
 affiche les sorties en cours sous le cadre caméra et chaque ligne peut être retirée

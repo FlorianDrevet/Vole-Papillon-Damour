@@ -3,6 +3,7 @@ import {firstValueFrom} from 'rxjs';
 
 import {
   ScanApiService,
+  ScanRareBookAdminListRequest,
   ScanRareBookCreateRequest,
   ScanRareBookResponse,
 } from '../offline/scan-api.service';
@@ -19,6 +20,13 @@ export interface ScanRareBookSyncResult {
   updated: number;
   uploadedPhotos: number;
   failed: number;
+}
+
+export interface ScanRareBookListPage {
+  books: ScanRareBook[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 @Injectable({providedIn: 'root'})
@@ -67,16 +75,24 @@ export class ScanRareBookService {
     return await this.store.listRareBooks();
   }
 
-  async refreshFromServer(): Promise<ScanRareBook[]> {
+  async refreshFromServer(request: ScanRareBookAdminListRequest = {}): Promise<ScanRareBookListPage> {
     return await this.enqueue(async () => {
       const localBooks = await this.store.listRareBooks();
-      const response = await firstValueFrom(this.api.getRareBooksAdmin());
+      const response = await firstValueFrom(this.api.getRareBooksAdmin(request));
       const books = response.books.map(serverBook => {
         const existing = localBooks.find(book => book.serverId === serverBook.id);
+        if (existing && existing.syncStatus !== 'Synced') {
+          return existing;
+        }
         return fromServerResponse(serverBook, existing?.clientId ?? serverBook.id);
       });
       await this.store.putRareBooks(books);
-      return await this.store.listRareBooks();
+      return {
+        books,
+        totalCount: response.totalCount,
+        page: response.page,
+        pageSize: response.pageSize,
+      };
     });
   }
 

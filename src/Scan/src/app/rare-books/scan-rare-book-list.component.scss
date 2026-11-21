@@ -1,12 +1,16 @@
 :host {
   display: block;
-  min-height: 100%;
+  height: 100dvh;
+  min-height: 0;
 }
 
 .rare-management-screen {
-  min-height: 100%;
-  overflow-y: auto;
-  padding: 0 20px 32px;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: env(safe-area-inset-top) clamp(12px, 5vw, 20px) max(12px, env(safe-area-inset-bottom));
   background: #f4f9fc;
   color: var(--scan-ink);
 }
@@ -28,13 +32,14 @@
   width: 100%;
   max-width: 390px;
   margin: 0 auto;
+  flex: none;
   border-bottom: 1px solid #dfeaf1;
 }
 
 .rare-flow-back {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   flex: none;
   place-items: center;
   border-radius: 50%;
@@ -68,7 +73,23 @@
 .rare-list-toolbar {
   display: grid;
   gap: 12px;
-  padding: 22px 0 16px;
+  padding: clamp(12px, 3dvh, 22px) 0 clamp(10px, 2.2dvh, 16px);
+  flex: none;
+}
+
+.rare-management-screen > scan-status-bar {
+  flex: none;
+}
+
+.rare-list-scroll {
+  width: 100%;
+  max-width: 390px;
+  min-height: 0;
+  flex: 1 1 auto;
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rare-search {
@@ -118,7 +139,7 @@
 }
 
 .rare-filter-tab {
-  min-height: 32px;
+  min-height: 44px;
   padding: 6px 12px;
   border: 1px solid #e2cdae;
   border-radius: 999px;
@@ -137,6 +158,7 @@
 .rare-list {
   display: grid;
   gap: 10px;
+  padding-bottom: 12px;
 }
 
 .rare-card {
@@ -168,7 +190,7 @@
   height: 92px;
   overflow: hidden;
   place-items: center;
-  background: repeating-linear-gradient(135deg, #eee4f5 0 9px, #f9f5fc 9px 18px);
+  background: #f1ebf9;
 }
 
 .rare-card-photo img {
@@ -261,6 +283,34 @@
   text-align: center;
 }
 
+.rare-pagination {
+  display: grid;
+  grid-template-columns: minmax(86px, 1fr) auto minmax(86px, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0 4px;
+  color: var(--scan-muted);
+  font: 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  text-align: center;
+}
+
+.rare-page-button {
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid #cddde7;
+  border-radius: 999px;
+  color: var(--scan-blue);
+  background: #fff;
+  cursor: pointer;
+  font: 600 10px/1 "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rare-page-button:disabled {
+  color: #8496a2;
+  background: #edf3f6;
+  cursor: default;
+}
+
 .rare-loading {
   display: grid;
   min-height: 180px;
@@ -293,8 +343,9 @@
 
 .rare-list-footer {
   display: flex;
+  flex: none;
   justify-content: center;
-  padding: 20px 0 10px;
+  padding: 12px 0 4px;
 }
 
 .rare-add {
@@ -322,7 +373,8 @@
 .rare-flow-back:focus-visible,
 .rare-filter-tab:focus-visible,
 .rare-add:focus-visible,
-.rare-retry:focus-visible {
+.rare-retry:focus-visible,
+.rare-page-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
   outline-offset: 3px;
 }
@@ -337,5 +389,25 @@
   .rare-form-screen::before {
     margin-right: -24px;
     margin-left: -24px;
+  }
+}
+
+@media (max-height: 620px) {
+  .rare-flow-header {
+    min-height: 54px;
+  }
+
+  .rare-list-toolbar {
+    gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+
+  .rare-list-footer {
+    padding-top: 8px;
+  }
+
+  .rare-add {
+    min-height: 44px;
   }
 }

@@ -6,7 +6,7 @@
 
 - an ASP.NET Core backend API
 - three Angular 21 web applications (`BackOffice`, `Website`, and the public books `Catalog`)
-- one Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, and cash sales (`Scan`)
+- one Angular 21 Scanette PWA for ISBN capture, offline triage, rare-book management, and cash sales (`Scan`)
 - one .NET isolated Worker for account deletion, Books `Sweep`/`Enrich`, and alert delivery
 - one .NET MAUI cashier client (`MauiCashApp`)
 
@@ -18,7 +18,7 @@
 - `src/Website/` is the Angular public website.
 - `src/Catalog/` is the separate Angular SSR public books catalog, released at
   `https://livres.volepapillondamour.fr`.
-- `src/Scan/` is the public Scanette PWA for authenticated triage, consultation, and cash sales,
+- `src/Scan/` is the public Scanette PWA for authenticated triage, rare-book management, and cash sales,
   released at `https://scan.volepapillondamour.fr` with the ACA FQDN as a technical fallback.
 - `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion, Books sweep/enrichment, and alert-delivery worker.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
