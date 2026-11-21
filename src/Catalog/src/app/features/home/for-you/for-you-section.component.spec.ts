@@ -45,7 +45,7 @@ describe('ForYouSectionComponent', () => {
       suggestionStatus: suggestionStatus.asReadonly(),
       currentMinimumHearts: minimumHearts.asReadonly(),
       refresh: jasmine.createSpy('refresh').and.resolveTo(),
-      onSignedIn: jasmine.createSpy('onSignedIn').and.resolveTo(),
+      refreshHomepageRecommendations: jasmine.createSpy('refreshHomepageRecommendations').and.resolveTo(),
     } as unknown as CatalogFavoritesService;
 
     localStore = jasmine.createSpyObj<LocalFavoritesStore>(
@@ -77,7 +77,7 @@ describe('ForYouSectionComponent', () => {
     fixture.detectChanges();
 
     expect(auth.initialize).toHaveBeenCalled();
-    expect(favorites.onSignedIn).toHaveBeenCalledOnceWith();
+    expect(favorites.refreshHomepageRecommendations).toHaveBeenCalledOnceWith();
     expect(fixture.nativeElement.querySelector('[data-zone="E11-encart-entree"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-zone="E1-section-pour-vous"]')).toBeNull();
   });

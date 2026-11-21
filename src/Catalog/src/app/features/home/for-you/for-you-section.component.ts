@@ -51,7 +51,7 @@ export class ForYouSectionComponent implements OnInit {
     try {
       await this.auth.initialize();
       if (this.auth.isAuthenticated()) {
-        await this.favorites.onSignedIn();
+        await this.favorites.refreshHomepageRecommendations();
       } else {
         await this.favorites.refresh();
       }

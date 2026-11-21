@@ -4,11 +4,18 @@
 
 - La page `/trouver-mon-prochain-livre` est une route client rendue par `CatalogFavoritesPageComponent`; l’accueil expose une entrée et les suggestions activées par `Recommendations:Enabled`.
 - `CatalogFavoritesService` orchestre les déclarations anonymes, la reprise de liste lors de la création de compte, les préférences membre, le calcul de suggestions et les états d’indisponibilité.
+- Sur l’accueil, `ForYouSectionComponent` charge d’abord `/catalog/me/recommendations`; la lecture des favoris membre suit après l’affichage pour maintenir le polling des calculs en cours. Les visiteurs anonymes gardent la route de suggestions publiques.
 - `LocalFavoritesStore` conserve les entrées anonymes dans le navigateur, sans identifiant de visiteur transmis avec la liste. Les plafonds sont 50 entrées locales et 200 entrées membre.
 - Les composants de feature vivent dans `src/Catalog/src/app/features/favorites/`; le panneau d’ajout recherche d’abord le catalogue. ISBNdb n’est utilisé qu’au flux d’ajout/éditions supplémentaires, jamais pendant la recherche E3.
 - La recherche des livres à ajouter ne garde que les résultats dont la langue est explicitement française. Le catalogue expose `language`; BnF lit le champ UNIMARC `101$a`; Open Library retourne la langue des éditions; la recherche ISBNdb publique demande `language=fr`. Un résultat sans langue française vérifiée est écarté. Le filtre est propre aux coups de cœur et ne change pas la recherche bibliographique partagée par Catalog et l’administration.
 - Le seuil `MinimumHearts` reste réglable sur `/trouver-mon-prochain-livre`; le profil ne l’affiche pas. L’e-mail utilise toujours trois cœurs, quel que soit ce seuil.
 - Les préférences membre comprennent l’activation des suggestions et celle de l’e-mail avant chaque bourse. L’e-mail est activé par défaut; `FairDigestEnabled = false` représente une désactivation explicite.
+
+## Latence des suggestions sur l’accueil — 2026-11-21
+
+- Lecture seule d’Application Insights sur 30 jours : `GET /catalog/me/recommendations` a 13 réponses réussies, p50 122 ms et p95/max 1,7 s. La trace la plus lente contient une dépendance SQL de 1,582 s; le champ SQL est vide, donc la requête précise reste à identifier avant toute optimisation EF/index.
+- L’accueil attend maintenant la réponse personnalisée avant de sortir du squelette; la lecture des favoris membre démarre après pour conserver le polling des recommandations en calcul. Si des favoris anonymes doivent être fusionnés, cette fusion reste préalable et leur seuil est transmis à la requête.
+- Le flux anonyme et l’orchestration `onSignedIn()` des autres pages restent inchangés. Aucun déploiement Azure ni changement de base.
 
 ## Domaine, API et persistance
 

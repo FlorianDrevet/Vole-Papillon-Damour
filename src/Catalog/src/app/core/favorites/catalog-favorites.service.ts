@@ -42,6 +42,7 @@ export class CatalogFavoritesService {
     fairDigestEnabled: boolean;
     fairDigestConsentedAt: string | null;
   } | null>(null);
+  private readonly homepageMinimumHearts = signal<number | null>(null);
   private readonly digestEnabled = signal(true);
   private readonly currentError = signal<string | null>(null);
   private readonly refreshStartedAt = signal<number | null>(null);
@@ -75,7 +76,9 @@ export class CatalogFavoritesService {
   readonly currentMinimumHearts: Signal<number> = computed(() => {
     this.localRevision();
     return this.mode() === 'remote'
-      ? this.memberPreference()?.minimumHearts ?? this.local.minimumHearts()
+      ? this.memberPreference()?.minimumHearts ??
+        this.homepageMinimumHearts() ??
+        this.local.minimumHearts()
       : this.local.minimumHearts();
   });
 
@@ -269,6 +272,39 @@ export class CatalogFavoritesService {
     }
   }
 
+  async refreshHomepageRecommendations(): Promise<void> {
+    if (!this.auth.isAuthenticated()) {
+      await this.refresh();
+      return;
+    }
+
+    this.currentError.set(null);
+    const token = await this.auth.getApiAccessToken();
+    const entries = this.local.list();
+    let minimumHearts: number | undefined;
+    if (entries.length > 0) {
+      minimumHearts = this.local.minimumHearts();
+      const result = await firstValueFrom(this.memberApi.mergeFavorites(
+        token,
+        entries.map(({isbn13, addedAt}) => ({isbn13, addedAt})),
+      ));
+      this.local.clear();
+      this.localRevision.update(value => value + 1);
+      this.currentSyncNotice.set(result);
+    }
+
+    const recommendations = await firstValueFrom(this.memberApi.getRecommendations(
+      token,
+      8,
+      minimumHearts,
+    ));
+    this.suggestionItems.set(recommendations.items);
+    this.currentSuggestionStatus.set(recommendations.status);
+    this.homepageMinimumHearts.set(recommendations.minimumHearts ?? minimumHearts ?? null);
+
+    void this.refreshHomepageMemberState(token, minimumHearts);
+  }
+
   async onSignedIn(): Promise<void> {
     if (!this.auth.isAuthenticated()) {
       return;
@@ -319,6 +355,7 @@ export class CatalogFavoritesService {
         fairDigestEnabled: preference.fairDigestEnabled ?? true,
         fairDigestConsentedAt: preference.fairDigestConsentedAt ?? null,
       });
+      this.homepageMinimumHearts.set(minimumHearts);
       this.digestEnabled.set(preference.fairDigestEnabled ?? true);
     } catch {
       this.memberPreference.set(null);
@@ -351,6 +388,7 @@ export class CatalogFavoritesService {
       ));
       this.suggestionItems.set(suggestions.items);
       this.currentSuggestionStatus.set(suggestions.status);
+      this.homepageMinimumHearts.set(suggestions.minimumHearts ?? this.minimumHearts());
       this.updatePolling();
       return;
     }
@@ -384,6 +422,47 @@ export class CatalogFavoritesService {
       }
     }
     this.currentComputing.set(computing);
+  }
+
+  private async refreshHomepageMemberState(
+    accessToken: string,
+    minimumHearts?: number,
+  ): Promise<void> {
+    if (minimumHearts !== undefined) {
+      try {
+        const preference = await firstValueFrom(this.memberApi.getRecommendationPreference(accessToken));
+        await firstValueFrom(this.memberApi.setRecommendationPreference(
+          accessToken,
+          preference.enabled,
+          minimumHearts,
+        ));
+        this.memberPreference.set({
+          enabled: preference.enabled,
+          minimumHearts,
+          fairDigestEnabled: preference.fairDigestEnabled ?? true,
+          fairDigestConsentedAt: preference.fairDigestConsentedAt ?? null,
+        });
+        this.digestEnabled.set(preference.fairDigestEnabled ?? true);
+      } catch {
+        this.memberPreference.set(null);
+        this.currentError.set('Vos coups de cœur ont été repris, mais votre exigence de suggestions n’a pas pu être enregistrée.');
+      }
+    }
+
+    try {
+      const response = await firstValueFrom(this.memberApi.getFavorites(accessToken));
+      this.remoteFavorites.set(response);
+      this.localRevision.update(value => value + 1);
+      this.updateComputingFromMemberFavorites(response);
+      if (response.total === 0) {
+        this.stopPolling();
+        return;
+      }
+
+      this.updatePolling();
+    } catch {
+      // Homepage recommendations are already available; another signed-in visit can refresh this state.
+    }
   }
 
   private updatePolling(): void {
