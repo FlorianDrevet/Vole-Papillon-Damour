@@ -78,7 +78,7 @@ describe('ScanRareBookFormComponent', () => {
 
     component.startNoIsbn();
 
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/sans-isbn');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/livres-rares/sans-isbn');
     expect(rareBooks.createDraft).not.toHaveBeenCalled();
   });
   it('presents the new-book choice with the two mockup paths', () => {

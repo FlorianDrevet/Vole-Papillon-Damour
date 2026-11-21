@@ -45,6 +45,6 @@
 ## Scan, validation et livraison
 
 - `ScanCatalogBook.favoriteCount` est optionnel pour accepter le cache hors ligne existant. `ScanVerdictService` somme le livre et les éditions liées de façon forte; les liens d’œuvre faibles ne contribuent pas et le verdict garde la même priorité.
-- Le bandeau E10 est affiché en Tri et Consultation, jamais en Caisse. Les bundles déjà en cache affichent 0 jusqu’à leur synchronisation.
+- Le bandeau E10 est affiché en Tri, jamais en Caisse. L'écran Consultation du Scan a été retiré. Les bundles déjà en cache affichent 0 jusqu’à leur synchronisation.
 - Vérifier avec `dotnet build/test src/Backend/Vole_Papillon_Damour.slnx`, `npm test` et `npm run build` depuis `src/Catalog` et `src/Scan`, plus `az bicep build --file infra/main.bicep`. Docker indisponible signifie que les parcours Aspire/Keycloak restent à refaire localement avant validation runtime.
 - Les seuils de cœurs et `SimilarMinScore` demandent une revue d’environ 50 suggestions sur le vrai catalogue. Aucun déploiement ni migration distante n’a été effectué lors de l’implémentation initiale.

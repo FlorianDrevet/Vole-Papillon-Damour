@@ -10,7 +10,7 @@
   </header>
 
   <scan-status-bar
-    [offline]="false"
+    [offline]="offline"
     [actionRequired]="pendingPhotoCount > 0"
     [pendingRarePhotos]="pendingPhotoCount"
     detail="Les fiches et photos restent conservées sur cet appareil."
@@ -25,7 +25,11 @@
           <path d="m15.3 15.3 4.4 4.4"></path>
         </svg>
       </span>
-      <input type="search" [(ngModel)]="search" placeholder="Chercher un titre, un auteur">
+      <input
+        type="search"
+        [ngModel]="search"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Chercher un titre, un auteur">
     </label>
 
     <div *ngIf="!loading" class="rare-filter-tabs" role="tablist" aria-label="Filtrer les fiches">
@@ -35,8 +39,8 @@
         class="rare-filter-tab"
         [class.rare-filter-tab-active]="listFilter === 'all'"
         [attr.aria-selected]="listFilter === 'all'"
-        (click)="listFilter = 'all'">
-        Toutes · {{ books.length }}
+        (click)="setFilter('all')">
+        Toutes
       </button>
       <button
         type="button"
@@ -44,58 +48,69 @@
         class="rare-filter-tab"
         [class.rare-filter-tab-active]="listFilter === 'drafts'"
         [attr.aria-selected]="listFilter === 'drafts'"
-        (click)="listFilter = 'drafts'">
-        Brouillons · {{ draftCount }}
+        (click)="setFilter('drafts')">
+        Brouillons
       </button>
     </div>
   </section>
 
-  <div *ngIf="loading" class="rare-loading">
-    <vpd-loader
-      variant="butterflies"
-      logoSrc="assets/papillon_without_back.png"
-      label="Chargement des fiches rares"
-      detail="Récupération des fiches…"></vpd-loader>
-  </div>
-  <div *ngIf="error" class="rare-error" role="alert">
-    <p>{{ error }}</p>
-    <button type="button" class="rare-retry" (click)="reload()">Réessayer</button>
+  <div class="rare-list-scroll">
+    <div *ngIf="loading" class="rare-loading">
+      <vpd-loader
+        variant="butterflies"
+        logoSrc="assets/papillon_without_back.png"
+        label="Chargement des fiches rares"
+        detail="Récupération des fiches…"></vpd-loader>
+    </div>
+    <div *ngIf="error" class="rare-error" role="alert">
+      <p>{{ error }}</p>
+      <button type="button" class="rare-retry" (click)="reload()">Réessayer</button>
+    </div>
+
+    <section *ngIf="!loading" class="rare-list" aria-label="Fiches rares">
+      <button
+        *ngFor="let book of filteredBooks"
+        type="button"
+        class="rare-card"
+        [class.rare-card-sold]="book.isSold"
+        (click)="open(book)">
+        <span class="rare-card-photo">
+          <img *ngIf="book.thumbnail" [src]="book.thumbnail" [alt]="'Vignette de ' + book.title">
+          <span *ngIf="!book.thumbnail" class="rare-card-photo-placeholder">PHOTO</span>
+        </span>
+        <span class="rare-card-copy">
+          <span class="rare-card-status">{{ statusLabel(book) }}</span>
+          <strong>{{ book.title || 'Titre à renseigner' }}</strong>
+          <span *ngIf="book.authorMention" class="rare-card-author">{{ book.authorMention }}</span>
+          <span class="rare-card-meta">{{ book.publicationYear || 'année à préciser' }}</span>
+          <span class="rare-card-price">{{ priceLabel(book) }} · {{ photoLabel(book) }}</span>
+          <span *ngIf="book.isbn13" class="rare-card-print" role="link" tabindex="0" data-zone="E5-liste-imprimer" (click)="$event.stopPropagation(); printLabel(book)" (keydown.enter)="$event.stopPropagation(); printLabel(book)">Imprimer l'étiquette</span>
+          <span *ngIf="book.syncStatus !== 'Synced'" class="rare-card-pending">À synchroniser</span>
+        </span>
+        <span class="rare-card-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m13 6 6 6-6 6"></path>
+          </svg>
+        </span>
+      </button>
+      <p *ngIf="totalCount === 0 && !search && listFilter === 'all'" class="rare-empty">Aucune fiche rare pour le moment.</p>
+      <p *ngIf="(search || listFilter === 'drafts') && totalCount === 0" class="rare-empty">
+        Aucune fiche ne correspond à la recherche ou au filtre sélectionné.
+      </p>
+      <nav *ngIf="pageCount > 1" class="rare-pagination" aria-label="Pages des fiches rares">
+        <button type="button" class="rare-page-button" [disabled]="page <= 1" (click)="changePage(page - 1)">
+          Précédent
+        </button>
+        <span>Page {{ page }} sur {{ pageCount }}</span>
+        <button type="button" class="rare-page-button" [disabled]="page >= pageCount" (click)="changePage(page + 1)">
+          Suivant
+        </button>
+      </nav>
+    </section>
   </div>
 
-  <section *ngIf="!loading && !error" class="rare-list" aria-label="Fiches rares">
-    <button
-      *ngFor="let book of filteredBooks"
-      type="button"
-      class="rare-card"
-      [class.rare-card-sold]="book.isSold"
-      (click)="open(book)">
-      <span class="rare-card-photo">
-        <img *ngIf="book.thumbnail" [src]="book.thumbnail" [alt]="'Vignette de ' + book.title">
-        <span *ngIf="!book.thumbnail" class="rare-card-photo-placeholder">PHOTO</span>
-      </span>
-      <span class="rare-card-copy">
-        <span class="rare-card-status">{{ statusLabel(book) }}</span>
-        <strong>{{ book.title || 'Titre à renseigner' }}</strong>
-        <span *ngIf="book.authorMention" class="rare-card-author">{{ book.authorMention }}</span>
-        <span class="rare-card-meta">{{ book.publicationYear || 'année à préciser' }}</span>
-        <span class="rare-card-price">{{ priceLabel(book) }} · {{ photoLabel(book) }}</span>
-        <span *ngIf="book.isbn13" class="rare-card-print" role="link" tabindex="0" data-zone="E5-liste-imprimer" (click)="$event.stopPropagation(); printLabel(book)" (keydown.enter)="$event.stopPropagation(); printLabel(book)">Imprimer l'étiquette</span>
-        <span *ngIf="book.syncStatus !== 'Synced'" class="rare-card-pending">À synchroniser</span>
-      </span>
-      <span class="rare-card-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14"></path>
-          <path d="m13 6 6 6-6 6"></path>
-        </svg>
-      </span>
-    </button>
-    <p *ngIf="books.length === 0" class="rare-empty">Aucune fiche rare pour le moment.</p>
-    <p *ngIf="books.length > 0 && filteredBooks.length === 0" class="rare-empty">
-      Aucune fiche ne correspond à la recherche ou au filtre sélectionné.
-    </p>
-  </section>
-
-  <footer *ngIf="!error" class="rare-list-footer">
+  <footer class="rare-list-footer">
     <button type="button" class="rare-add" (click)="openNew()">
       <span aria-hidden="true">＋</span> Ajouter un livre rare
     </button>

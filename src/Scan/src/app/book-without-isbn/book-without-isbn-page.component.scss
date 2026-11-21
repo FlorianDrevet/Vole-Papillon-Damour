@@ -1,76 +1,284 @@
-.book-without-isbn {
+:host {
+  display: block;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.book-without-isbn-screen {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 clamp(12px, 5vw, 20px) calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.book-without-isbn-form {
   display: grid;
-  gap: 16px;
-  padding: 16px;
-  max-width: 560px;
+  width: 100%;
+  max-width: 390px;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 14px 0 8px;
+}
+
+.book-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 10px;
+  margin-top: 18px;
+}
+
+.book-field-wide {
+  grid-column: 1 / -1;
+}
+
+.book-fields .rare-field {
+  min-width: 0;
+}
+
+.book-fields input,
+.book-fields select,
+.book-fields textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 11px;
+  border: 1px solid #d5e3eb;
+  border-radius: 0;
+  outline: 0;
+  background: #fff;
+  color: var(--scan-ink);
+  font: 15px/1.25 "Libre Franklin", Arial, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.book-fields input:focus,
+.book-fields select:focus,
+.book-fields textarea:focus,
+.book-price-control:focus-within {
+  border-color: var(--scan-purple);
+  box-shadow: 0 0 0 3px rgb(95 58 134 / 12%);
+}
+
+.book-fields textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.book-price-control {
+  min-height: 46px;
+}
+
+.book-price-control input {
+  height: 44px;
+  padding: 6px 4px 6px 10px;
+  font-size: 28px;
+}
+
+.book-price-control > span {
+  padding-right: 10px;
+  font-size: 22px;
+}
+
+.book-photos-panel h2 {
+  margin: 10px 0 6px;
+  color: var(--scan-ink);
+  font: 500 25px/1.05 Newsreader, Georgia, serif;
+}
+
+.book-photos-intro {
+  margin: 0 0 14px;
+  color: var(--scan-slate);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.book-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.book-photo-card,
+.book-photo-add {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 104px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #cfc6e8;
+  border-radius: 0;
+  background: #f1ebf9;
+}
+
+.book-photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-photo-badge,
+.book-photo-name {
+  position: absolute;
+  right: 5px;
+  left: 5px;
+  padding: 4px 5px;
+  color: #fff;
+  background: rgb(7 43 69 / 78%);
+  font: 500 8px/1.1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.book-photo-badge {
+  top: 5px;
+  right: auto;
+  left: 5px;
+  border-radius: 999px;
+  background: var(--scan-purple);
+}
+
+.book-photo-name {
+  bottom: 5px;
+}
+
+.book-photo-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 50%;
+  color: #fff;
+  background: rgb(7 43 69 / 78%);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.book-photo-add {
+  align-content: center;
+  gap: 6px;
+  color: var(--scan-purple);
+  cursor: pointer;
+  text-align: center;
+}
+
+.book-photo-add input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.book-photo-add-icon {
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.book-photo-add strong {
+  padding: 0 6px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.book-photo-add:focus-within,
+.book-photo-remove:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
+  outline-offset: 3px;
+}
+
+.book-online-note {
+  margin: 2px 4px;
+  color: var(--scan-muted);
+  font: 10px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+}
+
+.book-feedback {
+  margin: 0;
+}
+
+.book-create-button {
+  width: 100%;
+  min-height: 52px;
+}
+
+.book-created-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  text-align: center;
+}
+
+.book-created-panel h1 {
+  margin: 0;
+}
+
+.book-barcode {
+  display: block;
+  width: min(100%, 300px);
+  height: 76px;
+  justify-self: center;
+  fill: var(--scan-ink);
+}
+
+.book-code {
+  margin: 0;
+  color: var(--scan-ink);
+  font: 600 17px/1.3 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  overflow-wrap: anywhere;
+}
+
+.book-created-price {
+  margin: 0;
+  color: var(--scan-purple);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.book-created-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.book-created-actions .rare-link {
   margin: 0 auto;
 }
 
-.back-link {
-  font-size: 14px;
+.book-without-isbn-screen :is(.rare-flow-back, .rare-primary, .rare-secondary, .rare-link, .book-photo-remove):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
+  outline-offset: 3px;
 }
 
-.kind-choice {
-  display: flex;
-  gap: 8px;
-}
+@media (max-width: 340px) {
+  .book-without-isbn-screen {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
 
-.kind-choice button.active {
-  font-weight: 700;
-  border-bottom: 2px solid currentColor;
-}
+  .book-without-isbn-panel {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
 
-.form {
-  display: grid;
-  gap: 10px;
-}
-
-.form label,
-.photo-picker {
-  display: grid;
-  gap: 4px;
-  font-size: 14px;
-}
-
-.form input,
-.form textarea,
-.form select {
-  font: inherit;
-  padding: 8px;
-}
-
-.photo-list {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: 4px;
-}
-
-.photo-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.error {
-  color: #b42318;
-  font-size: 14px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.barcode {
-  width: 100%;
-  max-width: 300px;
-  height: 96px;
-}
-
-.digits {
-  font: 600 18px 'IBM Plex Mono', ui-monospace, monospace;
-  letter-spacing: 0.08em;
+  .book-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

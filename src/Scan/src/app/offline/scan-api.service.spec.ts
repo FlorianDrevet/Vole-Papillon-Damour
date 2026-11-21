@@ -153,6 +153,16 @@ describe('ScanApiService', () => {
     request.flush({});
   });
 
+  it('sends rare-book search, status and paging to the server', () => {
+    service.getRareBooksAdmin({search: 'Victor Hugo', status: 'Draft', page: 2, pageSize: 24}).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/rare-books/admin?availability=all&search=Victor%20Hugo&status=Draft&page=2&pageSize=24`,
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({generatedAt: '2026-11-21T10:00:00Z', books: [], totalCount: 0, page: 2, pageSize: 24});
+  });
+
   it('times out when the rare-book admin list never responds', () => {
     jasmine.clock().install();
     try {
@@ -160,7 +170,7 @@ describe('ScanApiService', () => {
       service.getRareBooksAdmin().subscribe({error: error => receivedError = error});
 
       const request = http.expectOne(
-        `${environment.apiUrl}/rare-books/admin?availability=all&page=1&pageSize=200`,
+        `${environment.apiUrl}/rare-books/admin?availability=all&page=1&pageSize=24`,
       );
       jasmine.clock().tick(30_000);
 

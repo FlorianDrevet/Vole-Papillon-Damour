@@ -514,21 +514,6 @@ describe('ScannerComponent', () => {
     bannerFixture.destroy();
   });
 
-  it('uses singular wording for one favorite in consultation', () => {
-    const result = createLocalScanResult();
-    result.verdict.favoriteCount = 1;
-    const bannerFixture = TestBed.createComponent(ScannerComponent);
-    const bannerComponent = bannerFixture.componentInstance;
-    bannerComponent.screen = 'consultation';
-    bannerComponent.consultationResult = {verdict: result.verdict, catalogBook: null};
-    bannerFixture.detectChanges();
-
-    const banner = bannerFixture.nativeElement.querySelector('[data-zone="E10-bandeau-a-deja-plu"]') as HTMLElement | null;
-    expect(banner?.textContent).toContain('un lecteur');
-    expect(banner?.textContent).toContain('de la bourse');
-    bannerFixture.destroy();
-  });
-
   it('does not show the favorite banner when the book has no favorites', () => {
     const result = createLocalScanResult();
     const bannerFixture = TestBed.createComponent(ScannerComponent);
@@ -749,7 +734,7 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
   });
 
-  it('orders the rare-books tile between sorting and cash on the mockup home', () => {
+  it('places cash after rare books and names the no-ISBN entry with a barcode icon', () => {
     component.returnHome();
     fixture.detectChanges();
 
@@ -761,11 +746,13 @@ describe('ScannerComponent', () => {
     expect(labels).toEqual([
       'Trier des livres',
       'Livres rares',
-      'Ajouter un livre sans ISBN',
-      'Imprimante d\'étiquettes',
       'Caisse',
-      'ConsulterN’enregistre rien',
+      'Livre sans ISBN',
+      'Imprimante d\'étiquettes',
     ]);
+    const noIsbnButton = fixture.nativeElement.querySelector('[data-zone="E1-entree-ajouter-sans-isbn"]') as HTMLElement;
+    expect(noIsbnButton.querySelector('svg')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Consulter');
   });
 
   it('centers the home actions between the header and footer', () => {
@@ -943,7 +930,6 @@ describe('ScannerComponent', () => {
       ['manual', '.manual-screen'],
       ['session-end', '.session-end-screen'],
       ['cash', '.cash-screen'],
-      ['consultation', '.consultation-screen'],
     ] as const;
 
     for (const [screen, selector] of screens) {
@@ -1037,15 +1023,15 @@ describe('ScannerComponent', () => {
     await lookup;
   });
 
-  it('shows the scan progress in consultation while the lookup is pending', async () => {
+  it('shows the scan progress in cash while the lookup is pending', async () => {
     const metadataResponse = new Subject<BookMetadata>();
     metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
-    component.screen = 'consultation';
+    component.screen = 'cash';
 
-    const lookup = component.lookup('9782070363735', 'consultation');
+    const lookup = component.lookup('9782070363735', 'cash');
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.consultation-lookup-progress')?.textContent)
+    expect(fixture.nativeElement.querySelector('.cash-lookup-progress')?.textContent)
       .toContain('Scan détecté');
 
     metadataResponse.next(createMetadata());
@@ -1185,7 +1171,7 @@ describe('ScannerComponent', () => {
     expect(localComponent.storageError).toContain('catalogue local');
   });
 
-  it('surfaces a local catalog lookup failure in consultation', async () => {
+  it('surfaces a local catalog lookup failure in cash', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'lookupCatalog',
     ]);
@@ -1206,7 +1192,7 @@ describe('ScannerComponent', () => {
       null,
     );
 
-    await localComponent.lookup('9782070363735', 'consultation');
+    await localComponent.lookup('9782070363735', 'cash');
 
     expect(localComponent.storageError).toContain('catalogue local');
   });
@@ -1235,7 +1221,7 @@ describe('ScannerComponent', () => {
       null,
     );
 
-    await localComponent.lookup('9782070363735', 'consultation');
+    await localComponent.lookup('9782070363735', 'cash');
 
     expect(localComponent.storageError).toContain('fermée par une autre instance');
   });
@@ -1376,22 +1362,6 @@ describe('ScannerComponent', () => {
 
     expect(component.cashItems).toEqual([]);
     expect(component.cashMessage).toContain('n’est plus disponible');
-  });
-
-  it('starts the live camera as soon as consultation opens', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
-    component.authAvailable = true;
-    component.isAuthenticated = true;
-
-    component.openConsultation();
-    await fixture.whenStable();
-
-    expect(cameraService.start).toHaveBeenCalledOnceWith(
-      jasmine.any(HTMLElement),
-      jasmine.any(Function),
-      jasmine.any(Function),
-    );
-    expect(component.cameraActive).toBeTrue();
   });
 
   it('keeps the live camera session after a cash scan so the next book can be read immediately', async () => {
@@ -2019,7 +1989,7 @@ describe('ScannerComponent', () => {
   });
 
   it('keeps status feedback below the session bar and opens actions from the compact strip', () => {
-    for (const screen of ['tri', 'cash', 'consultation'] as const) {
+    for (const screen of ['tri', 'cash'] as const) {
       const screenFixture = TestBed.createComponent(ScannerComponent);
       const screenComponent = screenFixture.componentInstance;
       screenComponent.screen = screen;

@@ -1,4 +1,4 @@
-import {scanRoutes} from './scan-routing';
+import {scanPrintGuard, scanRoutes} from './scan-routing';
 
 describe('scan routing', () => {
   it('exposes the unified shell, operating routes, and private statistics route', () => {
@@ -15,9 +15,9 @@ describe('scan routing', () => {
       'tri/livres',
       'tri/fin',
       'caisse',
-      'consulter',
       'statistiques',
       'livres-rares',
+      'livres-rares/sans-isbn',
       'sans-isbn',
       'imprimante',
       'imprimante/diagnostic',
@@ -25,6 +25,7 @@ describe('scan routing', () => {
       'livres-rares/nouveau',
       'livres-rares/:id',
     ]));
+    expect(childPaths).not.toContain('consulter');
   });
 
   it('keeps role guards on the tri and caisse routes', () => {
@@ -35,8 +36,10 @@ describe('scan routing', () => {
     expect(children.find(route => route.path === 'tri/mode')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'tri/livres')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'caisse')?.canActivate?.length).toBe(1);
+    expect(children.find(route => route.path === 'sans-isbn')?.canActivate).toEqual([scanPrintGuard]);
     expect(children.find(route => route.path === 'tri/fin')?.canActivate?.length).toBe(2);
     expect(children.find(route => route.path === 'livres-rares')?.canActivate?.length).toBe(1);
+    expect(children.find(route => route.path === 'livres-rares/sans-isbn')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'livres-rares/nouveau')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'livres-rares/:id')?.canActivate?.length).toBe(1);
   });

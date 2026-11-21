@@ -1,8 +1,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
-import {Router} from '@angular/router';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 
-import {ScanAuthService} from '../auth/scan-auth.service';
 import {EAN13_MODULE_COUNT, Ean13BarRect, ean13BarRects, isEan13} from '../label-printer/ean13';
 import {BookWithoutIsbnService} from './book-without-isbn.service';
 import {
@@ -34,7 +33,7 @@ export interface CreatedBookLabel {
   changeDetection: ChangeDetectionStrategy.Eager,
   standalone: false,
 })
-export class BookWithoutIsbnPageComponent {
+export class BookWithoutIsbnPageComponent implements OnDestroy {
   readonly conditions = [
     {value: 'AsNew', label: 'Comme neuf'},
     {value: 'GoodWithFlaws', label: 'Bon état avec défauts'},
@@ -44,7 +43,7 @@ export class BookWithoutIsbnPageComponent {
   readonly maxPhotos = MAX_PHOTOS;
   readonly moduleCount = EAN13_MODULE_COUNT;
 
-  kind: BookWithoutIsbnKind = 'ordinary';
+  readonly kind: BookWithoutIsbnKind;
   ordinary: OrdinaryForm = emptyOrdinaryForm();
   rare: RareForm = emptyRareForm();
   photos: File[] = [];
@@ -53,32 +52,28 @@ export class BookWithoutIsbnPageComponent {
   error: string | null = null;
   created: CreatedBookLabel | null = null;
   bars: Ean13BarRect[] = [];
+  private readonly photoPreviews = new Map<File, string>();
 
   constructor(
     private readonly service: BookWithoutIsbnService,
-    private readonly auth: ScanAuthService,
     private readonly router: Router,
     private readonly changeDetector: ChangeDetectorRef,
+    route: ActivatedRoute,
   ) {
-    this.kind = this.canCreateOrdinary ? 'ordinary' : 'rare';
+    this.kind = route.snapshot.data['kind'] === 'rare' ? 'rare' : 'ordinary';
   }
 
-  get canCreateOrdinary(): boolean {
-    return this.auth.canSort;
+  ngOnDestroy(): void {
+    this.clearPhotoPreviews();
   }
 
-  get canCreateRare(): boolean {
-    return this.auth.canManageRareBooks;
-  }
-
-  chooseKind(kind: BookWithoutIsbnKind): void {
-    if ((kind === 'ordinary' && !this.canCreateOrdinary) || (kind === 'rare' && !this.canCreateRare)) {
-      return;
+  photoPreview(file: File): string {
+    let preview = this.photoPreviews.get(file);
+    if (!preview) {
+      preview = URL.createObjectURL(file);
+      this.photoPreviews.set(file, preview);
     }
-
-    this.kind = kind;
-    this.error = null;
-    this.changeDetector.markForCheck();
+    return preview;
   }
 
   addPhotos(event: Event): void {
@@ -105,6 +100,12 @@ export class BookWithoutIsbnPageComponent {
   }
 
   removePhoto(index: number): void {
+    const photo = this.photos[index];
+    const preview = photo ? this.photoPreviews.get(photo) : null;
+    if (photo && preview) {
+      URL.revokeObjectURL(preview);
+      this.photoPreviews.delete(photo);
+    }
     this.photos = this.photos.filter((_, position) => position !== index);
     this.changeDetector.markForCheck();
   }
@@ -158,18 +159,26 @@ export class BookWithoutIsbnPageComponent {
   }
 
   later(): void {
-    void this.router.navigateByUrl('/accueil');
+    void this.router.navigateByUrl(this.kind === 'rare' ? '/livres-rares' : '/accueil');
   }
 
   createAnother(): void {
     this.created = null;
     this.bars = [];
+    this.clearPhotoPreviews();
     this.photos = [];
     this.photoError = null;
     this.error = null;
     this.ordinary = emptyOrdinaryForm();
     this.rare = emptyRareForm();
     this.changeDetector.markForCheck();
+  }
+
+  private clearPhotoPreviews(): void {
+    for (const preview of this.photoPreviews.values()) {
+      URL.revokeObjectURL(preview);
+    }
+    this.photoPreviews.clear();
   }
 
   private async createOrdinary(): Promise<CreatedBookLabel> {

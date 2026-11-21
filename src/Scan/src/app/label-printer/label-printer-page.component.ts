@@ -42,7 +42,7 @@ import {LABEL_PRINTER, LabelPrinter} from './label-printer';
     </main>
   `,
   styles: [`
-    .printer-page { display: flex; flex-direction: column; gap: 16px; min-height: 100%; padding: 22px 20px 28px; background: #f7fbfe; color: #072b45; box-sizing: border-box; }
+    .printer-page { display: flex; height: 100%; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: 16px; overflow-y: auto; overscroll-behavior-y: contain; padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); background: #f7fbfe; color: #072b45; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
     .printer-header h1 { margin: 6px 0 0; font: 500 30px/1.1 Newsreader, Georgia, serif; }
     .printer-eyebrow { font: 500 11px/1.2 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #41617a; }
     .printer-simulation { padding: 12px 16px; border-left: 4px solid #dc6412; background: #fdf1e4; color: #6b3608; font-size: 14px; }

@@ -122,6 +122,13 @@ export interface ScanRareBookPageResponse {
   pageSize: number;
 }
 
+export interface ScanRareBookAdminListRequest {
+  search?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 @Injectable({providedIn: 'root'})
 export class ScanApiService {
   private readonly baseUrl = environment.apiUrl;
@@ -253,10 +260,21 @@ export class ScanApiService {
     );
   }
 
-  getRareBooksAdmin(): Observable<ScanRareBookPageResponse> {
+  getRareBooksAdmin(request: ScanRareBookAdminListRequest = {}): Observable<ScanRareBookPageResponse> {
+    let params = new HttpParams().set('availability', 'all');
+    if (request.search?.trim()) {
+      params = params.set('search', request.search.trim());
+    }
+    if (request.status) {
+      params = params.set('status', request.status);
+    }
+    params = params
+      .set('page', request.page ?? 1)
+      .set('pageSize', request.pageSize ?? 24);
+
     return this.http.get<ScanRareBookPageResponse>(
       `${this.baseUrl}/rare-books/admin`,
-      {params: new HttpParams().set('availability', 'all').set('page', 1).set('pageSize', 200)},
+      {params},
     ).pipe(timeout({first: RARE_BOOKS_ADMIN_REQUEST_TIMEOUT_MS}));
   }
 

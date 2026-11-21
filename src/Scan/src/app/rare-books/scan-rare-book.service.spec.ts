@@ -13,6 +13,7 @@ describe('ScanRareBookService', () => {
 
   beforeEach(async () => {
     api = jasmine.createSpyObj<ScanApiService>('ScanApiService', [
+      'getRareBooksAdmin',
       'createRareBook',
       'updateRareBook',
       'addRareBookPhoto',
@@ -104,6 +105,46 @@ describe('ScanRareBookService', () => {
     expect(createPayloadKeys.filter(key =>
       ['shelf', 'binding', 'dimensions', 'pageCount', 'shelfLocation', 'priceSetBy'].includes(key),
     )).toEqual([]);
+  });
+
+  it('uses server paging and preserves local pending edits during a rare-book refresh', async () => {
+    const localBook = {
+      clientId: 'local-rare-1',
+      serverId: 'server-rare-1',
+      clientGestureId: 'local-rare-1',
+      isbn13: null,
+      internalCode: null,
+      title: 'Titre modifié hors ligne',
+      authorMention: null,
+      publisher: null,
+      publicationYear: null,
+      price: 60,
+      condition: 'GoodWithFlaws',
+      publicDescription: null,
+      status: 'Draft',
+      isSold: false,
+      thumbnail: null,
+      updatedAt: '2026-09-18T10:00:00.000Z',
+      rowVersion: 'AQ==',
+      syncStatus: 'PendingUpdate',
+      lastError: null,
+    } as const;
+    await store.putRareBooks([localBook]);
+    api.getRareBooksAdmin.and.returnValue(of({
+      generatedAt: '2026-09-18T10:00:00.000Z',
+      books: [createServerBook('local-rare-1')],
+      totalCount: 1,
+      page: 1,
+      pageSize: 24,
+    }));
+
+    const page = await service.refreshFromServer({search: 'Titre modifié', page: 1, pageSize: 24});
+
+    expect(api.getRareBooksAdmin).toHaveBeenCalledOnceWith({
+      search: 'Titre modifié', page: 1, pageSize: 24,
+    });
+    expect(page.books[0].title).toBe('Titre modifié hors ligne');
+    expect((await store.getRareBook('local-rare-1'))?.syncStatus).toBe('PendingUpdate');
   });
 
   it('keeps the queue after a failed upload and retries it on the next synchronization', async () => {

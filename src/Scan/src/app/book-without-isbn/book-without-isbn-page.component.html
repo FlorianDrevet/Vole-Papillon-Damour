@@ -1,83 +1,159 @@
-<main class="book-without-isbn" aria-labelledby="book-without-isbn-title">
-  <header class="page-head">
-    <a routerLink="/accueil" class="back-link">Retour à l'accueil</a>
-    <h1 id="book-without-isbn-title">Ajouter un livre sans ISBN</h1>
+<main class="rare-form-screen book-without-isbn-screen" aria-labelledby="book-without-isbn-title">
+  <header class="rare-flow-header">
+    <button
+      type="button"
+      class="rare-flow-back"
+      (click)="later()"
+      [attr.aria-label]="kind === 'rare' ? 'Retour aux livres rares' : 'Retour à l’accueil'">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"></path>
+        <path d="m11 6-6 6 6 6"></path>
+      </svg>
+    </button>
+    <p class="rare-flow-title">{{ kind === 'rare' ? 'LIVRE RARE SANS ISBN' : 'LIVRE SANS ISBN' }}</p>
   </header>
 
   <ng-container *ngIf="created === null; else createdView">
-    <div class="kind-choice" role="group" aria-label="Type de livre" data-zone="E2-bascule-type">
-      <button type="button" [class.active]="kind === 'ordinary'" [disabled]="!canCreateOrdinary" (click)="chooseKind('ordinary')">
-        Livre ordinaire
-      </button>
-      <button type="button" [class.active]="kind === 'rare'" [disabled]="!canCreateRare" (click)="chooseKind('rare')">
-        Livre rare
-      </button>
-    </div>
+    <form
+      class="book-without-isbn-form"
+      [attr.data-kind]="kind"
+      [attr.data-zone]="kind === 'ordinary' ? 'E2-formulaire-ordinaire' : 'E2-formulaire-rare'"
+      (ngSubmit)="submit()"
+      novalidate>
+      <section class="rare-panel rare-step-panel book-without-isbn-panel" aria-labelledby="book-without-isbn-title">
+        <p class="rare-panel-eyebrow">FICHE SANS CODE-BARRES</p>
+        <h1 id="book-without-isbn-title">Ajouter un livre sans ISBN</h1>
+        <p class="rare-panel-intro">Renseignez les informations utiles. Vous pourrez imprimer son étiquette dès la création.</p>
 
-    <form *ngIf="kind === 'ordinary'; else rareForm" class="form" data-zone="E2-formulaire-ordinaire" (ngSubmit)="submit()" novalidate>
-      <label data-zone="E2-champ-titre">Titre *<input name="title" [(ngModel)]="ordinary.title" required maxlength="500"></label>
-      <label data-zone="E2-champ-auteur">Auteur<input name="authors" [(ngModel)]="ordinary.authors" maxlength="500"></label>
-      <label data-zone="E2-champ-editeur">Éditeur<input name="publisher" [(ngModel)]="ordinary.publisher" maxlength="200"></label>
-      <label data-zone="E2-champ-annee">Année<input name="publicationYear" inputmode="numeric" [(ngModel)]="ordinary.publicationYear"></label>
-      <label>Format<input name="physicalFormat" [(ngModel)]="ordinary.physicalFormat" maxlength="50"></label>
-      <label>Langue<input name="language" [(ngModel)]="ordinary.language" maxlength="10"></label>
-      <label>Genre<input name="genre" [(ngModel)]="ordinary.genre" maxlength="100"></label>
-      <label>Édition<input name="edition" [(ngModel)]="ordinary.edition" maxlength="100"></label>
-      <label>Pages<input name="pages" inputmode="numeric" [(ngModel)]="ordinary.pages"></label>
-      <label>Résumé<textarea name="summary" [(ngModel)]="ordinary.summary" maxlength="20000"></textarea></label>
-      <label data-zone="E2-champ-quantite">Quantité *<input name="quantity" inputmode="numeric" [(ngModel)]="ordinary.quantity" required></label>
+        <div *ngIf="kind === 'ordinary'; else rareFields" class="book-fields">
+          <label class="rare-field book-field-wide" data-zone="E2-champ-titre">
+            <span>Titre *</span>
+            <input name="title" [(ngModel)]="ordinary.title" autocomplete="off" required maxlength="500">
+          </label>
+          <label class="rare-field book-field-wide" data-zone="E2-champ-auteur">
+            <span>Auteur</span>
+            <input name="authors" [(ngModel)]="ordinary.authors" autocomplete="off" maxlength="500">
+          </label>
+          <label class="rare-field book-field-wide" data-zone="E2-champ-editeur">
+            <span>Éditeur</span>
+            <input name="publisher" [(ngModel)]="ordinary.publisher" autocomplete="organization" maxlength="200">
+          </label>
+          <label class="rare-field">
+            <span>Année</span>
+            <input name="publicationYear" [(ngModel)]="ordinary.publicationYear" inputmode="numeric" autocomplete="off">
+          </label>
+          <label class="rare-field">
+            <span>Format</span>
+            <input name="physicalFormat" [(ngModel)]="ordinary.physicalFormat" maxlength="50">
+          </label>
+          <label class="rare-field">
+            <span>Langue</span>
+            <input name="language" [(ngModel)]="ordinary.language" maxlength="10">
+          </label>
+          <label class="rare-field">
+            <span>Genre</span>
+            <input name="genre" [(ngModel)]="ordinary.genre" maxlength="100">
+          </label>
+          <label class="rare-field">
+            <span>Édition</span>
+            <input name="edition" [(ngModel)]="ordinary.edition" maxlength="100">
+          </label>
+          <label class="rare-field">
+            <span>Pages</span>
+            <input name="pages" [(ngModel)]="ordinary.pages" inputmode="numeric">
+          </label>
+          <label class="rare-field" data-zone="E2-champ-quantite">
+            <span>Quantité *</span>
+            <input name="quantity" [(ngModel)]="ordinary.quantity" inputmode="numeric" required>
+          </label>
+          <label class="rare-field book-field-wide">
+            <span>Résumé</span>
+            <textarea name="summary" [(ngModel)]="ordinary.summary" maxlength="20000" rows="4"></textarea>
+          </label>
+        </div>
+
+        <ng-template #rareFields>
+          <div class="book-fields">
+            <label class="rare-field book-field-wide" data-zone="E2-champ-titre">
+              <span>Titre *</span>
+              <input name="rareTitle" [(ngModel)]="rare.title" autocomplete="off" required maxlength="500">
+            </label>
+            <label class="rare-field book-field-wide">
+              <span>Auteur ou mention</span>
+              <input name="rareAuthor" [(ngModel)]="rare.authorMention" autocomplete="off" maxlength="200">
+            </label>
+            <label class="rare-field book-field-wide">
+              <span>Éditeur</span>
+              <input name="rarePublisher" [(ngModel)]="rare.publisher" autocomplete="organization" maxlength="200">
+            </label>
+            <label class="rare-field">
+              <span>Année</span>
+              <input name="rareYear" [(ngModel)]="rare.publicationYear" inputmode="numeric">
+            </label>
+            <label class="rare-field" data-zone="E2-champ-prix">
+              <span>Prix ferme *</span>
+              <span class="rare-price-control book-price-control">
+                <input name="rarePrice" [(ngModel)]="rare.price" type="number" min="0" step="0.01" inputmode="decimal" required aria-label="Prix ferme en euros">
+                <span aria-hidden="true">€</span>
+              </span>
+            </label>
+            <label class="rare-field book-field-wide" data-zone="E2-champ-etat">
+              <span>État *</span>
+              <select name="rareCondition" [(ngModel)]="rare.condition" required>
+                <option *ngFor="let condition of conditions" [value]="condition.value">{{ condition.label }}</option>
+              </select>
+            </label>
+            <label class="rare-field book-field-wide">
+              <span>Description</span>
+              <textarea name="rareDescription" [(ngModel)]="rare.publicDescription" maxlength="2000" rows="4"></textarea>
+            </label>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="rare-panel book-photos-panel" data-zone="E2-photos" aria-labelledby="book-photos-title">
+        <p class="rare-panel-eyebrow">PHOTOGRAPHIER</p>
+        <h2 id="book-photos-title">Ajouter des photos</h2>
+        <p class="book-photos-intro">Une couverture lisible aide à retrouver le livre. {{ photos.length }} / {{ maxPhotos }}</p>
+
+        <div class="book-photo-grid">
+          <article *ngFor="let photo of photos; let index = index" class="book-photo-card">
+            <img [src]="photoPreview(photo)" [alt]="'Photo ' + (index + 1) + ' de ' + (kind === 'rare' ? rare.title : ordinary.title)">
+            <span *ngIf="index === 0" class="book-photo-badge">Couverture</span>
+            <span class="book-photo-name">{{ photo.name }}</span>
+            <button type="button" class="book-photo-remove" (click)="removePhoto(index)" [attr.aria-label]="'Retirer la photo ' + (index + 1)">×</button>
+          </article>
+          <label *ngIf="photos.length < maxPhotos" class="book-photo-add">
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="addPhotos($event)">
+            <span class="book-photo-add-icon" aria-hidden="true">＋</span>
+            <strong>Prendre une photo</strong>
+          </label>
+        </div>
+        <p *ngIf="photoError" class="rare-error book-feedback" role="alert">{{ photoError }}</p>
+      </section>
+
+      <p class="book-online-note">Création en ligne uniquement : une fiche sans ISBN ne peut pas être créée hors connexion.</p>
+      <p *ngIf="error" class="rare-error book-feedback" role="alert" data-zone="E2-erreur">{{ error }}</p>
+      <button type="submit" class="rare-primary book-create-button" data-zone="E2-bouton-creer" [disabled]="busy">
+        {{ busy ? 'Création…' : 'Créer la fiche' }}
+      </button>
     </form>
-
-    <ng-template #rareForm>
-      <form class="form" data-zone="E2-formulaire-rare" (ngSubmit)="submit()" novalidate>
-        <label>Titre *<input name="rareTitle" [(ngModel)]="rare.title" required maxlength="500"></label>
-        <label>Auteur<input name="rareAuthor" [(ngModel)]="rare.authorMention" maxlength="200"></label>
-        <label>Éditeur<input name="rarePublisher" [(ngModel)]="rare.publisher" maxlength="200"></label>
-        <label>Année<input name="rareYear" inputmode="numeric" [(ngModel)]="rare.publicationYear"></label>
-        <label>Prix ferme *<input name="rarePrice" inputmode="decimal" [(ngModel)]="rare.price" required></label>
-        <label data-zone="E2-champ-etat">État *
-          <select name="rareCondition" [(ngModel)]="rare.condition">
-            <option *ngFor="let condition of conditions" [value]="condition.value">{{ condition.label }}</option>
-          </select>
-        </label>
-        <label>Description<textarea name="rareDescription" [(ngModel)]="rare.publicDescription" maxlength="2000"></textarea></label>
-      </form>
-    </ng-template>
-
-    <section class="photos" data-zone="E2-photos" aria-label="Photos du livre">
-      <label class="photo-picker">
-        Photos ({{ photos.length }}/{{ maxPhotos }})
-        <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="addPhotos($event)">
-      </label>
-      <ul *ngIf="photos.length > 0" class="photo-list">
-        <li *ngFor="let photo of photos; let index = index">
-          <span>{{ photo.name }}</span>
-          <button type="button" (click)="removePhoto(index)" aria-label="Retirer la photo">Retirer</button>
-        </li>
-      </ul>
-      <p *ngIf="photoError" class="error" role="alert">{{ photoError }}</p>
-    </section>
-
-    <p data-zone="E2-message-connexion" class="online-note">Création en ligne uniquement : aucune fiche sans ISBN hors connexion.</p>
-    <p *ngIf="error" class="error" role="alert" data-zone="E2-erreur">{{ error }}</p>
-    <button type="button" class="primary" data-zone="E2-bouton-creer" [disabled]="busy" (click)="submit()">
-      {{ busy ? 'Création…' : 'Créer la fiche' }}
-    </button>
   </ng-container>
 
   <ng-template #createdView>
-    <section class="created" data-zone="E3-fiche-creee" aria-live="polite">
-      <h2>Fiche créée</h2>
-      <svg *ngIf="bars.length > 0" class="barcode" data-zone="E3-code-barres" [attr.viewBox]="'0 0 ' + moduleCount + ' 60'" role="img" [attr.aria-label]="'Code-barres ' + created?.code">
+    <section class="rare-panel book-created-panel" data-zone="E3-fiche-creee" aria-live="polite">
+      <p class="rare-panel-eyebrow">ÉTIQUETTE PRÊTE</p>
+      <h1>Fiche créée</h1>
+      <svg *ngIf="bars.length > 0" class="book-barcode" data-zone="E3-code-barres" [attr.viewBox]="'0 0 ' + moduleCount + ' 60'" role="img" [attr.aria-label]="'Code-barres ' + created?.code">
         <rect *ngFor="let bar of bars" [attr.x]="bar.x" [attr.width]="bar.width" y="0" height="60"></rect>
       </svg>
-      <p class="digits" data-zone="E3-code-chiffres">{{ created?.code }}</p>
-      <p *ngIf="created?.price" class="price" data-zone="E3-prix">Prix ferme : {{ created?.price }}</p>
-      <p *ngIf="photoError" class="error" role="alert">{{ photoError }}</p>
-      <div class="actions">
-        <button type="button" class="primary" data-zone="E3-bouton-imprimer" (click)="printLabel()">Imprimer l'étiquette</button>
-        <button type="button" data-zone="E3-bouton-plus-tard" (click)="later()">Plus tard</button>
-        <button type="button" data-zone="E3-bouton-autre" (click)="createAnother()">Ajouter un autre livre</button>
+      <p class="book-code" data-zone="E3-code-chiffres">{{ created?.code }}</p>
+      <p *ngIf="created?.price" class="book-created-price" data-zone="E3-prix">Prix ferme : {{ created?.price }}</p>
+      <p *ngIf="photoError" class="rare-error book-feedback" role="alert">{{ photoError }}</p>
+      <div class="book-created-actions">
+        <button type="button" class="rare-primary" data-zone="E3-bouton-imprimer" (click)="printLabel()">Imprimer l’étiquette</button>
+        <button type="button" class="rare-secondary" data-zone="E3-bouton-autre" (click)="createAnother()">Ajouter un autre livre</button>
+        <button type="button" class="rare-link" data-zone="E3-bouton-plus-tard" (click)="later()">Terminer</button>
       </div>
     </section>
   </ng-template>

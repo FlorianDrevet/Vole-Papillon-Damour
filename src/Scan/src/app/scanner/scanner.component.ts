@@ -69,10 +69,9 @@ export type ScanScreen =
   | 'manual'
   | 'session-end'
   | 'cash'
-  | 'consultation'
   | 'reprise';
 
-type ScanDestination = 'tri' | 'cash' | 'consultation';
+type ScanDestination = 'tri' | 'cash';
 
 /**
  * `critical` needs a human decision before the data can be trusted, `warning`
@@ -162,7 +161,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   isLoading = false;
   cameraActive = false;
   localScan: LocalScanResult | null = null;
-  consultationResult: LocalCatalogResult | null = null;
+  cashLookupResult: LocalCatalogResult | null = null;
   manualRequestLookup: ScanManualRequestLookup = {state: 'none'};
   cashItems: CashScanItem[] = [];
   availableRareBooks: ScanRareBook[] = [];
@@ -622,7 +621,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get activeBook(): ScanCatalogBook | null {
-    return this.localScan?.catalogBook ?? this.consultationResult?.catalogBook ?? null;
+    return this.localScan?.catalogBook ?? null;
   }
 
   private rebuildSessionBookGroups(): void {
@@ -678,8 +677,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
-  get activeVerdict(): LocalScanResult['verdict'] | LocalCatalogResult['verdict'] | null {
-    return this.localScan?.verdict ?? this.consultationResult?.verdict ?? null;
+  get activeVerdict(): LocalScanResult['verdict'] | null {
+    return this.localScan?.verdict ?? null;
   }
 
   get activeFavoriteCount(): number {
@@ -946,87 +945,41 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     if (destination === 'tri' && !internalCode) {
       this.startManualRequestLookup(normalizedIsbn, lookupVersion);
     }
-    const localPromise = destination === 'tri' && this.scanWorkflow
-      ? this.scanWorkflow.recordScan(normalizedIsbn)
-      : destination === 'consultation' && this.scanWorkflow
-        ? this.scanWorkflow.lookupCatalog(normalizedIsbn)
-        : Promise.resolve(null);
-
-    if (destination === 'tri') {
-      if (metadataPromise) {
-        this.metadataLookupState = 'loading';
-        void this.resolveTriageMetadata(metadataPromise, lookupVersion);
-      }
-
-      const [localOutcome] = await Promise.allSettled([localPromise]);
-      if (lookupVersion !== this.lookupVersion) {
-        return;
-      }
-
-      if (localOutcome.status === 'fulfilled') {
-        this.localScan = localOutcome.value as LocalScanResult | null;
-        this.isLoading = false;
-        this.refreshView();
-        if (this.localScan) {
-          await this.refreshLocalState();
-          if (lookupVersion !== this.lookupVersion) {
-            return;
-          }
-          await this.refreshTriageOtherEditions(lookupVersion);
-          this.trySync();
-        }
-      } else {
-        this.setStorageError('critical', this.isSessionClosePendingError(localOutcome.reason)
-          ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
-          : this.describeStorageError(
-            localOutcome.reason,
-            'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
-          ));
-        this.isLoading = false;
-        this.refreshView();
-      }
-      return;
+    if (metadataPromise) {
+      this.metadataLookupState = 'loading';
+      void this.resolveTriageMetadata(metadataPromise, lookupVersion);
     }
 
-    const [localOutcome, metadataOutcome] = await Promise.allSettled([
-      localPromise,
-      metadataPromise ?? Promise.resolve(null),
-    ]);
-
+    const localPromise = this.scanWorkflow
+      ? this.scanWorkflow.recordScan(normalizedIsbn)
+      : Promise.resolve(null);
+    const [localOutcome] = await Promise.allSettled([localPromise]);
     if (lookupVersion !== this.lookupVersion) {
       return;
     }
 
     if (localOutcome.status === 'fulfilled') {
-      this.consultationResult = localOutcome.value as LocalCatalogResult | null;
-    } else {
-      this.setStorageError('critical', this.describeStorageError(
-        localOutcome.reason,
-        'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.',
-      ));
-    }
-
-    let metadata: BookMetadata | null = null;
-    if (metadataOutcome.status === 'fulfilled' && metadataOutcome.value !== null) {
-      metadata = metadataOutcome.value;
-      this.metadata = metadata;
-      this.coverUrl = metadata.coverUrl;
-      if (this.scanWorkflow) {
-        try {
-          await this.scanWorkflow.cacheMetadata(metadata);
-        } catch {
-          // Bibliographic metadata is best-effort; the durable scan remains in the outbox.
+      this.localScan = localOutcome.value as LocalScanResult | null;
+      this.isLoading = false;
+      this.refreshView();
+      if (this.localScan) {
+        await this.refreshLocalState();
+        if (lookupVersion !== this.lookupVersion) {
+          return;
         }
+        await this.refreshTriageOtherEditions(lookupVersion);
+        this.trySync();
       }
-    } else if (metadataOutcome.status === 'rejected') {
-      const error = metadataOutcome.reason;
-      this.errorMessage = error instanceof HttpErrorResponse && error.status === 404
-        ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
-        : 'La notice ne peut pas être chargée pour le moment.';
+    } else {
+      this.setStorageError('critical', this.isSessionClosePendingError(localOutcome.reason)
+        ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
+        : this.describeStorageError(
+          localOutcome.reason,
+          'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
+        ));
+      this.isLoading = false;
+      this.refreshView();
     }
-
-    this.isLoading = false;
-    this.refreshView();
   }
 
   private async lookupCashBook(
@@ -1072,7 +1025,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     const localResult = localOutcome.value;
-    this.consultationResult = localResult;
+    this.cashLookupResult = localResult;
     const catalogResult = localResult?.catalogBook ? 'found' : 'not_found';
 
     if (rareOutcome.status === 'rejected') {
@@ -1451,14 +1404,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     this.screen = 'home';
     this.refreshView();
-  }
-
-  openConsultation(): void {
-    this.stopCamera();
-    this.screen = 'consultation';
-    this.resetLookupState();
-    this.refreshView();
-    this.startCameraIfNeeded(true);
   }
 
   openRecovery(): void {
@@ -2541,7 +2486,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private isCameraDestinationActive(): boolean {
-    return this.screen === 'tri' || this.screen === 'cash' || this.screen === 'consultation';
+    return this.screen === 'tri' || this.screen === 'cash';
   }
 
   private refreshView(): void {
@@ -2787,8 +2732,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         return '/tri/fin';
       case 'cash':
         return '/caisse';
-      case 'consultation':
-        return '/consulter';
       case 'reprise':
         return '/reprise';
       case 'manual':
@@ -2797,18 +2740,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private destinationForScreen(): ScanDestination {
-    switch (this.screen) {
-      case 'cash':
-        return 'cash';
-      case 'consultation':
-        return 'consultation';
-      default:
-        return 'tri';
-    }
+    return this.screen === 'cash' ? 'cash' : 'tri';
   }
 
   private isScanDestinationActive(): boolean {
-    return this.screen === 'tri' || this.screen === 'cash' || this.screen === 'consultation';
+    return this.screen === 'tri' || this.screen === 'cash';
   }
 
   private resetLookupState(invalidatePendingLookup = true): void {
@@ -2820,7 +2756,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.metadataLookupState = 'idle';
     this.coverUrl = null;
     this.localScan = null;
-    this.consultationResult = null;
+    this.cashLookupResult = null;
     this.manualRequestLookup = {state: 'none'};
     this.errorMessage = null;
     this.cameraError = null;
@@ -2947,7 +2883,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private createCashItem(
     isbn13: string,
     metadata: BookMetadata | null,
-    localResult: LocalCatalogResult | null = this.consultationResult,
+    localResult: LocalCatalogResult | null = this.cashLookupResult,
   ): CashScanItem {
     const book = localResult?.catalogBook ?? this.activeBook;
     const verdict = localResult?.verdict ?? this.activeVerdict;
