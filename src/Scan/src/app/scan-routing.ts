@@ -11,6 +11,7 @@ import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.compon
 import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
 import {LabelPrinterPageComponent} from './label-printer/label-printer-page.component';
 import {LabelPreviewComponent} from './label-printer/label-preview.component';
+import {SupvanDiagnosticComponent} from './label-printer/supvan/supvan-diagnostic.component';
 import {BookWithoutIsbnPageComponent} from './book-without-isbn/book-without-isbn-page.component';
 
 export type ScanRequiredRole = 'Tri' | 'Caisse' | 'LivresRares';
@@ -69,6 +70,14 @@ export const scanPrintGuard: CanActivateFn = () => {
   return authenticated && (auth.canSort || auth.canManageRareBooks) ? true : router.parseUrl('/');
 };
 
+// Diagnostic matériel : n'expose rien d'autre que la liaison locale à l'étiqueteuse, ouvert à tout compte connecté.
+export const scanAuthenticatedGuard: CanActivateFn = () => {
+  const auth = inject(ScanAuthService);
+  const router = inject(Router);
+  const authenticated = auth.authState.status === 'authorized' || auth.authState.status === 'degraded';
+  return authenticated ? true : router.parseUrl('/');
+};
+
 export const scanRoutes: Routes = [
   {
     path: '',
@@ -89,6 +98,7 @@ export const scanRoutes: Routes = [
       {path: 'livres-rares/:id', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
       {path: 'sans-isbn', component: BookWithoutIsbnPageComponent, canActivate: [scanPrintGuard]},
       {path: 'imprimante', component: LabelPrinterPageComponent, canActivate: [scanPrintGuard]},
+      {path: 'imprimante/diagnostic', component: SupvanDiagnosticComponent, canActivate: [scanAuthenticatedGuard]},
       {path: 'etiquette', component: LabelPreviewComponent, canActivate: [scanPrintGuard]},
       {path: '**', redirectTo: 'accueil'},
     ],
