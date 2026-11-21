@@ -16,6 +16,7 @@
 - Lecture seule d’Application Insights sur 30 jours : `GET /catalog/me/recommendations` a 13 réponses réussies, p50 122 ms et p95/max 1,7 s. La trace la plus lente contient une dépendance SQL de 1,582 s; le champ SQL est vide, donc la requête précise reste à identifier avant toute optimisation EF/index.
 - L’accueil attend maintenant la réponse personnalisée avant de sortir du squelette; la lecture des favoris membre démarre après pour conserver le polling des recommandations en calcul. Si des favoris anonymes doivent être fusionnés, cette fusion reste préalable et leur seuil est transmis à la requête.
 - Le flux anonyme et l’orchestration `onSignedIn()` des autres pages restent inchangés. Aucun déploiement Azure ni changement de base.
+- La [PR #410](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/410) est ouverte vers `main`, non fusionnée.
 
 ## Domaine, API et persistance
 
