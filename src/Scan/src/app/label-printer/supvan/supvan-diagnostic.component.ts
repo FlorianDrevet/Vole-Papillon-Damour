@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy} from '@angular/core';
 
 import {ScanTelemetryService} from '../../offline/scan-telemetry.service';
-import {SupvanLabelPrinter, webSerial} from './supvan-printer';
+import {SupvanLabelPrinter, webBluetooth, webSerial} from './supvan-printer';
 import {describeStatus, statusErrors} from './supvan-protocol';
 
 // Page de diagnostic matériel de la T50M Pro (Bluetooth série). Hors parcours bénévole :
@@ -25,19 +25,23 @@ import {describeStatus, statusErrors} from './supvan-protocol';
           <li>L'appairer dans les réglages Bluetooth du téléphone (nom « T0117… »), si ce n'est pas déjà fait.</li>
           <li>Ouvrir cette page dans <b>Chrome</b>.</li>
         </ol>
-        <p class="diag-compat" [class.diag-ko]="!supported">
-          Bluetooth série (Web Serial) : {{ supported ? 'disponible' : 'NON disponible sur ce navigateur' }}
+        <p class="diag-compat" [class.diag-ko]="!supported && !supportedBle">
+          Bluetooth série : {{ supported ? 'disponible' : 'non disponible' }}
+          · Bluetooth basse conso. : {{ supportedBle ? 'disponible' : 'non disponible' }}
         </p>
       </section>
 
       <div class="diag-actions">
-        <button type="button" class="diag-primary" data-zone="D2-connecter" [disabled]="busy || !supported" (click)="connect()">
-          {{ connected ? 'Relancer le diagnostic' : '1 · Connecter et diagnostiquer' }}
+        <button type="button" class="diag-primary" data-zone="D2-connecter" [disabled]="busy || !supported" (click)="connect('serial')">
+          {{ connected ? 'Relancer le diagnostic' : '1 · Connecter (Bluetooth série)' }}
+        </button>
+        <button type="button" class="diag-secondary" data-zone="D2b-connecter-ble" [disabled]="busy || !supportedBle" (click)="connect('ble')">
+          1 bis · Connecter (Bluetooth basse conso. BLE)
         </button>
         <label class="diag-density">
           Densité d'impression
           <select [value]="density" (change)="setDensity($any($event.target).value)">
-            <option *ngFor="let level of densities" [value]="level">{{ level }}{{ level === 4 ? ' (défaut)' : '' }}</option>
+            <option *ngFor="let level of densities" [value]="level" [selected]="level === density">{{ level }}{{ level === 4 ? ' (défaut)' : '' }}</option>
           </select>
         </label>
         <button type="button" class="diag-secondary" data-zone="D3-imprimer" [disabled]="busy || !connected" (click)="printTest()">
@@ -78,6 +82,7 @@ import {describeStatus, statusErrors} from './supvan-protocol';
 })
 export class SupvanDiagnosticComponent implements OnDestroy {
   readonly supported = webSerial() !== null;
+  readonly supportedBle = webBluetooth() !== null;
   readonly densities = Array.from({length: 15}, (_, index) => index + 1);
   density = 4;
   busy = false;
@@ -90,7 +95,7 @@ export class SupvanDiagnosticComponent implements OnDestroy {
 
   constructor(private readonly cdr: ChangeDetectorRef, private readonly telemetry: ScanTelemetryService) {
     this.write(`Navigateur : ${navigator.userAgent}`);
-    this.write(`Web Serial : ${this.supported ? 'oui' : 'non'} · contexte sécurisé : ${window.isSecureContext ? 'oui' : 'non'}`);
+    this.write(`Web Serial : ${this.supported ? 'oui' : 'non'} · Web Bluetooth : ${this.supportedBle ? 'oui' : 'non'} · contexte sécurisé : ${window.isSecureContext ? 'oui' : 'non'}`);
   }
 
   get connected(): boolean {
@@ -106,11 +111,11 @@ export class SupvanDiagnosticComponent implements OnDestroy {
     this.printer.density = this.density;
   }
 
-  async connect(): Promise<void> {
+  async connect(transport: 'serial' | 'ble'): Promise<void> {
     await this.run('connexion', async () => {
       if (!this.connected) {
         this.write('Choisissez l\'étiqueteuse dans la fenêtre Bluetooth…');
-        await this.printer.connect();
+        await this.printer.connect(transport);
         this.write(`Connecté : ${this.printer.deviceName}`);
       }
 
