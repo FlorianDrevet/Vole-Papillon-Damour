@@ -23,12 +23,19 @@ import {describeStatus, statusErrors} from './supvan-protocol';
         <ol>
           <li>Allumer l'étiqueteuse (rouleau en place, capot fermé).</li>
           <li>L'appairer dans les réglages Bluetooth du téléphone (nom « T0117… »), si ce n'est pas déjà fait.</li>
-          <li>Ouvrir cette page dans <b>Chrome</b>.</li>
+          <li>Ouvrir cette page dans <b>Chrome</b> (Android) ou dans <b>Bluefy</b> (iPhone).</li>
         </ol>
         <p class="diag-compat" [class.diag-ko]="!supported && !supportedBle">
           Bluetooth série : {{ supported ? 'disponible' : 'non disponible' }}
           · Bluetooth basse conso. : {{ supportedBle ? 'disponible' : 'non disponible' }}
         </p>
+      </section>
+
+      <section *ngIf="onIos && !supportedBle" class="diag-card" data-zone="D1b-iphone">
+        <strong>Sur iPhone</strong>
+        <p>Safari et Chrome n'autorisent pas le Bluetooth sur iPhone. Installez l'application gratuite
+          <b>Bluefy</b> (App Store), ouvrez cette même adresse dedans, reconnectez-vous, puis utilisez le bouton
+          « 1 bis · BLE ».</p>
       </section>
 
       <div class="diag-actions">
@@ -83,6 +90,8 @@ import {describeStatus, statusErrors} from './supvan-protocol';
 export class SupvanDiagnosticComponent implements OnDestroy {
   readonly supported = webSerial() !== null;
   readonly supportedBle = webBluetooth() !== null;
+  readonly onIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   readonly densities = Array.from({length: 15}, (_, index) => index + 1);
   density = 4;
   busy = false;
