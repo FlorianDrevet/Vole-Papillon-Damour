@@ -6,12 +6,13 @@ namespace Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 
 public sealed class BookGenre
 {
-    public Isbn13 BookIsbn13 { get; private set; }
+    // Identifiant du livre : ISBN-13 ou code interne (RG-170). Le nom de colonne est conservé.
+    public BookCode BookIsbn13 { get; private set; }
     public string Name { get; private set; } = null!;
 
-    private BookGenre(Isbn13 bookIsbn13, string name)
+    private BookGenre(BookCode bookCode, string name)
     {
-        BookIsbn13 = bookIsbn13;
+        BookIsbn13 = bookCode;
         Name = Normalize(name);
     }
 
@@ -19,7 +20,7 @@ public sealed class BookGenre
     {
     }
 
-    public static BookGenre Create(Isbn13 bookIsbn13, string name) => new(bookIsbn13, name);
+    public static BookGenre Create(BookCode bookCode, string name) => new(bookCode, name);
 
     public static bool NamesAreEquivalent(string? left, string? right)
     {

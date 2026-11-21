@@ -56,7 +56,7 @@ internal static class NotFoundReportClosureSupport
 
             return new ResolvedNotFoundReportTarget(
                 new NotFoundReportTargetRef("edition", canonicalIsbn.Value),
-                canonicalIsbn,
+                canonicalIsbn.AsIsbn13(),
                 null,
                 book,
                 null,

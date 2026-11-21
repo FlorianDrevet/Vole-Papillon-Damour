@@ -193,7 +193,7 @@ public sealed class ManualRequestQueriesTests
         var request = await fixture.AddWorkRequestAsync(requester.Id);
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
         request.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             BookMovementId.CreateUnique(),
             session.VolunteerId,
@@ -314,7 +314,7 @@ public sealed class ManualRequestQueriesTests
     private static void MarkFound(ManualBookRequest request, DateTime foundAt)
     {
         request.MarkFoundFromStock(
-            request.Isbn13!.Value,
+            request.Isbn13!.Value.AsIsbn13(),
             null,
             null,
             BookMovementId.CreateUnique(),

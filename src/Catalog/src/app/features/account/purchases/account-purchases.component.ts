@@ -5,6 +5,7 @@ import {CatalogAuthenticationRedirectStartedError, CatalogAuthService} from '../
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
 import {CatalogFavoritesService} from '../../../core/favorites/catalog-favorites.service';
 import {CatalogPurchaseLine, CatalogPurchasePassage, CatalogPurchasesResponse} from '../../../core/catalog.models';
+import {isInternalCode} from '../../../shared/barcode/ean13';
 
 const CONTACT_EMAIL = 'volepapillondamour@sfr.fr';
 
@@ -97,6 +98,11 @@ export class AccountPurchasesComponent implements OnInit {
 
   toggleReport(passageId: string): void {
     this.reportingPassageId.update(current => current === passageId ? null : passageId);
+  }
+
+  // Un code interne (RG-170) n'est pas un ISBN : il n'a ni bouton favori (RG-182) ni libellé « ISBN ».
+  isInternalCodeLine(line: {isbn13: string | null}): boolean {
+    return isInternalCode(line.isbn13);
   }
 
   isFavorite(line: CatalogPurchaseLine): boolean {

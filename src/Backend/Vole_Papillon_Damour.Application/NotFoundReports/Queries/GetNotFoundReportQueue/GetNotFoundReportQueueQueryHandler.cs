@@ -58,7 +58,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
                 PublicationYear = null,
                 CoverUrl = null,
                 Genre = dbContext.Books.AsNoTracking()
-                    .Where(book => (Isbn13?)book.Id == reports.Key)
+                    .Where(book => (BookCode?)book.Id == reports.Key)
                     .Select(book => book.Genre)
                     .FirstOrDefault(),
                 QuantityAvailable = 0,
@@ -135,7 +135,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
 
         var pageEditionIds = pageTargets
             .Where(target => target.Isbn13.HasValue)
-            .Select(target => target.Isbn13!.Value)
+            .Select(target => (BookCode)target.Isbn13!)
             .Distinct()
             .ToArray();
         List<Book> books = pageEditionIds.Length == 0
@@ -214,7 +214,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
         CancellationToken cancellationToken)
     {
         var editionIds = targets.Where(target => target.Isbn13.HasValue)
-            .Select(target => target.Isbn13!.Value)
+            .Select(target => (BookCode)target.Isbn13!)
             .Distinct()
             .ToArray();
         var rareBookIds = targets.Where(target => target.RareBookId is not null)
@@ -241,7 +241,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
             .ToListAsync(cancellationToken);
     }
 
-    private static string TargetKey(Isbn13? isbn13, RareBookId? rareBookId) =>
+    private static string TargetKey(BookCode? isbn13, RareBookId? rareBookId) =>
         isbn13 is { } edition
             ? $"edition:{edition.Value}"
             : $"rare:{rareBookId!.Value:D}";
@@ -278,7 +278,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
     private sealed class QueueTargetProjection
     {
         public string Kind { get; init; } = string.Empty;
-        public Isbn13? Isbn13 { get; init; }
+        public BookCode? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public string Title { get; init; } = string.Empty;
         public string? Authors { get; init; }
@@ -295,7 +295,7 @@ public sealed class GetNotFoundReportQueueQueryHandler(
 
     private sealed class QueueCommentProjection
     {
-        public Isbn13? Isbn13 { get; init; }
+        public BookCode? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public string Text { get; init; } = string.Empty;
         public DateTime ReportedAt { get; init; }

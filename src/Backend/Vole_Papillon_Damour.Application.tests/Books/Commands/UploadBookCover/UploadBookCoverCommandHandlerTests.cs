@@ -19,6 +19,41 @@ public sealed class UploadBookCoverCommandHandlerTests
         new(2026, 10, 20, 15, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task Handle_AcceptsAnInternalCode()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddInternalCodeBookAsync(quantityAvailable: 1);
+        var blobUri = new Uri("https://storage.example.test/book-covers/2000000000015/cover.jpg");
+        var blobService = Substitute.For<IBlobService>();
+        blobService.UploadBookCoverAsync(
+                Arg.Any<string>(),
+                Arg.Any<Stream>(),
+                "image/jpeg",
+                Arg.Any<CancellationToken>())
+            .Returns(blobUri);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(UpdatedAt);
+        var handler = new UploadBookCoverCommandHandler(
+            fixture.Context,
+            blobService,
+            clock,
+            NullLogger<UploadBookCoverCommandHandler>.Instance);
+        await using var stream = new MemoryStream([0xff, 0xd8, 0xff]);
+
+        var result = await handler.Handle(
+            new UploadBookCoverCommand(
+                "2000000000015",
+                stream,
+                "image/jpeg",
+                3,
+                AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.CoverUrl.Should().Be(blobUri);
+    }
+
+    [Fact]
     public async Task Handle_WhenCoverIsUploaded_StoresBlobUrlAsManualCover()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

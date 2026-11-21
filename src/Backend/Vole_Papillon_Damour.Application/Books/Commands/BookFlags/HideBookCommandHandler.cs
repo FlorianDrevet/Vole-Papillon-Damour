@@ -18,7 +18,7 @@ public sealed class HideBookCommandHandler(
         HideBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -52,6 +52,6 @@ public sealed class HideBookCommandHandler(
         var changed = book.UpdateCatalogVisibility(command.Hidden, updatedAt);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return new BookFlagResult(book.Isbn13.Value, book.IsHiddenFromCatalog, changed);
+        return new BookFlagResult(book.Code.Value, book.IsHiddenFromCatalog, changed);
     }
 }

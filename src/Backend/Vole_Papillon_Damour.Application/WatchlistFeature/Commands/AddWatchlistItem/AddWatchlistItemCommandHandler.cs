@@ -149,7 +149,7 @@ public sealed class AddWatchlistItemCommandHandler(
     private static bool TryBuildTarget(
         AddWatchlistItemCommand command,
         out string? workId,
-        out Isbn13? isbn13,
+        out BookCode? isbn13,
         out RareBookId? rareBookId,
         out Error error)
     {
@@ -173,7 +173,7 @@ public sealed class AddWatchlistItemCommandHandler(
 
             case WatchlistItemScope.Edition:
                 if (!string.IsNullOrWhiteSpace(command.WorkId) || command.RareBookId is not null ||
-                    !Isbn13.TryCreate(command.Isbn13, out var parsedIsbn13))
+                    !BookCode.TryCreate(command.Isbn13, out var parsedIsbn13))
                 {
                     error = Errors.Watchlist.InvalidEditionTarget();
                     return false;

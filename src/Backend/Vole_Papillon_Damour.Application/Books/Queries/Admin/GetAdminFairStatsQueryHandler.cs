@@ -164,7 +164,7 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
         EventsType? EventType);
 
     private sealed record FairSaleProjection(
-        Isbn13 Isbn13,
+        BookCode Isbn13,
         int Quantity,
         DateTime OccurredAt);
 

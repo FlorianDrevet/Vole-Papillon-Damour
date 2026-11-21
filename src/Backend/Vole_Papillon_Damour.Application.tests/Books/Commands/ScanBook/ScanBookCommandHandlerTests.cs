@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.VoidSale;
 using Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
@@ -119,7 +120,7 @@ public sealed class ScanBookCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var source = Book.Create(ParseIsbn("9782070363735"), ScanBookCommandHandlerTests.SessionStartedAt);
         var canonical = Book.Create(ParseIsbn("9783140464079"), ScanBookCommandHandlerTests.SessionStartedAt);
-        source.RedirectTo(canonical.Id);
+        source.RedirectTo(canonical.Id.AsIsbn13());
         fixture.Context.Books.AddRange(source, canonical);
         await fixture.Context.SaveChangesAsync();
         var handler = fixture.CreateHandler();
@@ -130,11 +131,85 @@ public sealed class ScanBookCommandHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Isbn13.Should().Be("9783140464079");
-        (await fixture.Context.Books.SingleAsync(book => book.Id == canonical.Id))
+        (await fixture.Context.Books.SingleAsync(book => book.Id == canonical.Id.AsIsbn13()))
             .QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(book => book.Id == source.Id))
             .QuantityAvailable.Should().Be(0);
         (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(canonical.Id);
+    }
+
+    [Fact]
+    public async Task Handle_AfterAnIsbnIsAddedToAnInternalCodeFiche_BothCodesResolveToTheSameIsbnFiche()
+    {
+        // RG-174 : l'étiquette collée (code interne) et l'ISBN désignent la même fiche, qui porte le stock.
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var internalFiche = Book.CreateWithInternalCode(BookCode.CreateInternal("2000000000015"), SessionStartedAt);
+        internalFiche.ApplyManualMetadata(
+            new BookMetadataPatch(
+                Title: "Atlas du Maroc",
+                Authors: null,
+                Publisher: null,
+                PublicationYear: null,
+                PhysicalFormat: null,
+                Language: null,
+                Genre: null,
+                CoverUrl: null,
+                Fields: [BookMetadataField.Title]),
+            SessionStartedAt);
+        internalFiche.RecordAvailableEntry(ClientScanAt, 2);
+        fixture.Context.Books.Add(internalFiche);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ReceivedAt);
+        var addIsbn = new AddIsbnToBookWithoutIsbnCommandHandler(
+            fixture.Context,
+            clock,
+            new NotFoundReportLapser(fixture.Context));
+        var added = await addIsbn.Handle(
+            new AddIsbnToBookWithoutIsbnCommand("2000000000015", "9782070363735", UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
+            CancellationToken.None);
+        added.IsError.Should().BeFalse();
+
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var handler = fixture.CreateHandler();
+
+        var byInternalCode = await handler.Handle(CreateCommand(session, "2000000000015", kept: true), CancellationToken.None);
+        var byIsbn = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+
+        byInternalCode.IsError.Should().BeFalse();
+        byInternalCode.Value.Isbn13.Should().Be("9782070363735");
+        byIsbn.IsError.Should().BeFalse();
+        byIsbn.Value.Isbn13.Should().Be("9782070363735");
+        (await fixture.Context.Books.SingleAsync(book => book.Id == BookCode.CreateInternal("2000000000015")))
+            .QuantityAvailable.Should().Be(0);
+        (await fixture.Context.Books.SingleAsync(book => book.Id == ParseIsbn("9782070363735")))
+            .QuantityAvailable.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Handle_AnInternalCodeOfARareBook_IsRecognizedAsTheRareBook_EvenAfterAnIsbnIsAdded()
+    {
+        // RG-173 / RG-174 : le code interne de l'exemplaire rare reste reconnu (RareBooks.InternalCode) ; l'ISBN
+        // ajouté ensuite désigne le même exemplaire, et ne crée pas de fiche « ordinaire ».
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var userId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var rare = RareBook.CreateWithDetails(
+            "Livre rare", null, null, null, 25m, RareBookCondition.AsNew, null, SessionStartedAt, userId,
+            internalCode: BookCode.CreateInternal("2000000000015"));
+        rare.Update("Livre rare", null, null, null, 25m, RareBookCondition.AsNew, null, ClientScanAt, userId,
+            ParseIsbn("9782070363735"));
+        fixture.Context.RareBooks.Add(rare);
+        await fixture.Context.SaveChangesAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var handler = fixture.CreateHandler();
+
+        var byInternalCode = await handler.Handle(CreateCommand(session, "2000000000015", kept: true), CancellationToken.None);
+        var byIsbn = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+
+        byInternalCode.IsError.Should().BeTrue();
+        byInternalCode.FirstError.Code.Should().Be("Book.RareBookCode");
+        byIsbn.IsError.Should().BeFalse();
+        (await fixture.Context.Books.CountAsync(book => book.Id == BookCode.CreateInternal("2000000000015"))).Should().Be(0);
     }
 
     [Fact]
@@ -524,6 +599,10 @@ public sealed class ScanBookCommandHandlerTests
             volunteerId ?? session.VolunteerId);
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -596,6 +675,21 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return book;
     }
 
+    public async Task<Book> AddInternalCodeBookAsync(int quantityAvailable)
+    {
+        var book = Book.CreateWithInternalCode(
+            BookCode.CreateInternal("2000000000015"),
+            ScanBookCommandHandlerTests.SessionStartedAt);
+        for (var index = 0; index < quantityAvailable; index++)
+        {
+            book.RecordAvailableEntry(ScanBookCommandHandlerTests.ClientScanAt);
+        }
+
+        Context.Books.Add(book);
+        await Context.SaveChangesAsync();
+        return book;
+    }
+
     public async Task<RareBook> AddRareBookAsync(
         Book book,
         UserId? createdBy = null,
@@ -610,7 +704,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
             userId,
             authorMention: book.Authors,
             condition: RareBookCondition.AsNew,
-            isbn13: book.Id);
+            isbn13: book.Id.AsIsbn13());
         if (published)
         {
             rareBook.Publish(userId, ScanBookCommandHandlerTests.ClientScanAt);
@@ -740,6 +834,10 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         _receivedAt = receivedAt;
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value)
     {
         return Isbn13.TryCreate(value, out var isbn)
@@ -843,6 +941,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.ApplyConfiguration(new BookRecommendationJobConfiguration());
         modelBuilder.ApplyConfiguration(new AdminDashboardSnapshotConfiguration());
         modelBuilder.ApplyConfiguration(new MemberFavoriteBookConfiguration());
@@ -892,14 +991,13 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Isbn13);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseIsbn(value));
             builder.Property(book => book.IsbndbCompletedBy)
                 .HasConversion(
                     (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
@@ -920,10 +1018,6 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.Property(record => record.Isbn13)
                 .ValueGeneratedNever()
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.HasOne<Book>()
-                .WithOne()
-                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<IsbndbCatchUpRun>(builder =>
@@ -952,7 +1046,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
             builder.Property(announcement => announcement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(announcement => announcement.AssoEventsId)
                 .HasConversion(
                     (AssoEventsId? id) => id == null ? (Guid?)null : id.Value,
@@ -969,7 +1063,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookMovementId.Create(value));
             builder.Property(movement => movement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(movement => movement.Type).HasConversion<byte>();
             builder.Property(movement => movement.ScanSessionId)
                 .HasConversion(
@@ -1024,9 +1118,9 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(userId => userId.Value, value => UserId.Create(value));
             builder.Property(item => item.Scope).HasConversion<byte>();
             builder.Property(item => item.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Property(item => item.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -1048,9 +1142,9 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.Property(history => history.UserId)
                 .HasConversion(userId => userId.Value, value => UserId.Create(value));
             builder.Property(history => history.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Property(history => history.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -1078,16 +1172,20 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.InternalCode)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    code => code.HasValue ? code.Value.Value : null,
+                    value => value == null ? null : BookCode.CreateInternal(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,
@@ -1128,6 +1226,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(id => id.Value, value => UserId.Create(value));
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {

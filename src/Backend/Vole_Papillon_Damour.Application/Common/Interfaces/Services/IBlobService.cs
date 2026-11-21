@@ -9,6 +9,7 @@ public interface IBlobService
     public Task<Uri> UploadActualityImagesAsync(string fileName, Stream stream);
     public Task<Uri> UploadEventImagesAsync(string fileName, Stream stream);
     public Task<Uri> UploadRareBookPhotoAsync(string fileName, Stream stream);
+    public Task<Uri> UploadBookPhotoAsync(string fileName, Stream stream, string contentType, CancellationToken cancellationToken);
     public Task<Uri> UploadBookCoverAsync(
         string fileName,
         Stream stream,

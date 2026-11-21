@@ -73,7 +73,7 @@ public sealed class BookAlertDeliveryServiceTests
                 workItem.MessageId,
                 workItem.ClaimedUntil,
                 Now,
-                Arg.Is<IReadOnlyCollection<Isbn13>>(items => items.Single() == isbn),
+                Arg.Is<IReadOnlyCollection<BookCode>>(items => items.Single() == isbn),
                 Arg.Any<CancellationToken>())
             .Returns(true);
 
@@ -88,7 +88,7 @@ public sealed class BookAlertDeliveryServiceTests
             workItem.MessageId,
             workItem.ClaimedUntil,
             Now,
-            Arg.Any<IReadOnlyCollection<Isbn13>>(),
+            Arg.Any<IReadOnlyCollection<BookCode>>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -191,7 +191,7 @@ public sealed class BookAlertDeliveryServiceTests
                 workItem.MessageId,
                 workItem.ClaimedUntil,
                 afterClaim,
-                Arg.Is<IReadOnlyCollection<Isbn13>>(items => items.Single() == isbn),
+                Arg.Is<IReadOnlyCollection<BookCode>>(items => items.Single() == isbn),
                 Arg.Any<CancellationToken>())
             .Returns(true);
 

@@ -92,18 +92,18 @@ public sealed class RefreshBookSimilarityProfilesCommandHandler(
             .Select(candidate => candidate.Isbn13)
             .ToArray();
         var isbndbBooks = isbndbCandidateIds.Length == 0
-            ? new Dictionary<Isbn13, Book>()
+            ? new Dictionary<BookCode, Book>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Include(book => book.Genres)
                 .Where(book => isbndbCandidateIds.Contains(book.Id))
                 .ToDictionaryAsync(book => book.Id, cancellationToken);
         var isbndbRecords = isbndbCandidateIds.Length == 0
-            ? new Dictionary<Isbn13, BookIsbndbRecord>()
+            ? new Dictionary<BookCode, BookIsbndbRecord>()
             : await dbContext.BookIsbndbRecords
                 .AsNoTracking()
                 .Where(record => isbndbCandidateIds.Contains(record.Isbn13))
-                .ToDictionaryAsync(record => record.Isbn13, cancellationToken);
+                .ToDictionaryAsync(record => (BookCode)record.Isbn13, cancellationToken);
 
         var candidateIsbns = candidates.Select(book => book.Isbn13.Value).ToArray();
         var profiles = await dbContext.BookSimilarityProfiles

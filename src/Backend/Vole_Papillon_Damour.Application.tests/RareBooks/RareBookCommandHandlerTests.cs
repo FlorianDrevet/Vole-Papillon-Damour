@@ -14,6 +14,7 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.RestoreRareBookAvailab
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UnpublishRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCaption;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
@@ -28,7 +29,7 @@ public sealed class RareBookCommandHandlerTests
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand(price: 125.50m), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -38,12 +39,41 @@ public sealed class RareBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Create_without_isbn_gives_the_rare_copy_its_own_internal_code()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
+            .Handle(fixture.CreateCommand(isbn13: null), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13.Should().BeNull();
+        stored.InternalCode.Should().NotBeNull();
+        stored.InternalCode!.Value.IsInternal.Should().BeTrue();
+        BookCode.IsValidInternalCode(stored.InternalCode.Value.Value).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Create_refuses_an_internal_code_chosen_by_the_client()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
+            .Handle(fixture.CreateCommand(isbn13: "2000000000015"), CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("RareBook.InvalidIsbn");
+        (await fixture.Context.RareBooks.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Create_rejects_an_isbn_already_used_by_another_rare_book()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         await fixture.AddRareBookAsync("Premier titre", isbn13: "9780306406157");
 
-        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var result = await new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer)
             .Handle(fixture.CreateCommand("Second titre", isbn13: "9780306406157"), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -56,7 +86,7 @@ public sealed class RareBookCommandHandlerTests
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         var clientGestureId = Guid.NewGuid();
         var command = fixture.CreateCommand() with {ClientGestureId = clientGestureId};
-        var handler = new CreateRareBookCommandHandler(fixture.Context, fixture.Clock);
+        var handler = new CreateRareBookCommandHandler(fixture.Context, fixture.Clock, fixture.CodeIssuer);
 
         var first = await handler.Handle(command, CancellationToken.None);
         var second = await handler.Handle(command, CancellationToken.None);
@@ -87,6 +117,78 @@ public sealed class RareBookCommandHandlerTests
 
         staleResult.IsError.Should().BeTrue();
         staleResult.FirstError.Code.Should().Be("RareBook.ConcurrencyConflict");
+    }
+
+    [Fact]
+    public async Task Update_without_isbn_keeps_the_internal_code_of_the_copy()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
+
+        var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13.Should().BeNull();
+        stored.InternalCode.Should().Be(BookCode.CreateInternal("2000000000015"));
+    }
+
+    [Fact]
+    public async Task Update_adds_an_isbn_and_the_internal_code_stays_on_the_label()
+    {
+        // RG-174 : un exemplaire rare sans ISBN, complété d'un ISBN, se résout par les deux codes.
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
+        var command = fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()) with
+        {
+            Isbn13 = "9780306406157",
+        };
+
+        var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var stored = await fixture.Context.RareBooks.SingleAsync();
+        stored.Isbn13!.Value.Value.Should().Be("9780306406157");
+        stored.InternalCode.Should().Be(BookCode.CreateInternal("2000000000015"));
+        result.Value.InternalCode.Should().Be("2000000000015");
+    }
+
+    [Fact]
+    public async Task Update_refuses_an_internal_code_sent_as_the_isbn()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var book = await fixture.AddRareBookAsync("Livre sans ISBN", internalCode: "2000000000015");
+        var command = fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()) with
+        {
+            Isbn13 = "2000000000015",
+        };
+
+        var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("RareBook.InvalidIsbn");
+        (await fixture.Context.RareBooks.SingleAsync()).Isbn13.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Update_refuses_an_internal_code_chosen_by_the_client()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var book = await fixture.AddRareBookAsync("Livre avec ISBN", isbn13: "9780306406157");
+        var command = fixture.UpdateCommand(book.Id, "Titre modifié", book.RowVersion.ToArray()) with
+        {
+            Isbn13 = "2000000000015",
+        };
+
+        var result = await new UpdateRareBookCommandHandler(fixture.Context, fixture.Clock)
+            .Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("RareBook.InvalidIsbn");
+        (await fixture.Context.RareBooks.SingleAsync()).Isbn13.Should().Be(book.Isbn13);
     }
 
     [Fact]

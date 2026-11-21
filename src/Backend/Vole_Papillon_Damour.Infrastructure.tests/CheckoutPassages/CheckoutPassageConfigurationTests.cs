@@ -144,7 +144,7 @@ public sealed class CheckoutPassageConfigurationTests
     {
         return BookMovement.Create(
             BookMovementId.CreateUnique(),
-            book.Isbn13,
+            book.Code,
             BookMovementType.Sale,
             -1,
             Now,

@@ -16,7 +16,16 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
 {
     public void Configure(EntityTypeBuilder<RareBook> builder)
     {
-        builder.ToTable("RareBooks");
+        builder.ToTable("RareBooks", table =>
+        {
+            // Un ISBN n'est jamais un code interne, et un code interne n'est jamais stocké comme ISBN (RG-170).
+            table.HasCheckConstraint(
+                "CK_RareBooks_Isbn13_IsNotInternal",
+                "[Isbn13] IS NULL OR [Isbn13] NOT LIKE '2%'");
+            table.HasCheckConstraint(
+                "CK_RareBooks_InternalCode_IsInternal",
+                "[InternalCode] IS NULL OR [InternalCode] LIKE '2%'");
+        });
         builder.HasKey(book => book.Id);
 
         builder.Property(book => book.Id)
@@ -36,8 +45,16 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
+
+        // Code interne de l'exemplaire (RG-173), séparé de l'ISBN : il reste sur l'étiquette (RG-174).
+        builder.Property(book => book.InternalCode)
+            .HasColumnType("char(13)")
+            .IsUnicode(false)
+            .HasConversion(
+                code => BookPersistenceConversions.SerializeNullableBookCode(code),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
 
         builder.Property(book => book.Title)
             .HasMaxLength(300)
@@ -100,6 +117,10 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
         builder.HasIndex(book => book.Isbn13)
             .IsUnique()
             .HasFilter("[Isbn13] IS NOT NULL");
+        builder.HasIndex(book => book.InternalCode)
+            .IsUnique()
+            .HasFilter("[InternalCode] IS NOT NULL")
+            .HasDatabaseName("IX_RareBooks_InternalCode");
         builder.HasIndex(book => new { book.Status, book.IsSold, book.Price });
         builder.HasIndex(book => book.ClientGestureId)
             .IsUnique()

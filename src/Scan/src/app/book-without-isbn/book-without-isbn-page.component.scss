@@ -1,0 +1,76 @@
+.book-without-isbn {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.back-link {
+  font-size: 14px;
+}
+
+.kind-choice {
+  display: flex;
+  gap: 8px;
+}
+
+.kind-choice button.active {
+  font-weight: 700;
+  border-bottom: 2px solid currentColor;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.form label,
+.photo-picker {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.form input,
+.form textarea,
+.form select {
+  font: inherit;
+  padding: 8px;
+}
+
+.photo-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.photo-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.error {
+  color: #b42318;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.barcode {
+  width: 100%;
+  max-width: 300px;
+  height: 96px;
+}
+
+.digits {
+  font: 600 18px 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}

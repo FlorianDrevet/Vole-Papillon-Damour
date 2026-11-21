@@ -23,6 +23,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence("InternalBookCodeNumbers")
+                .HasMin(1L)
+                .HasMax(99999999999L);
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ActualityAggregate.Actuality", b =>
                 {
                     b.Property<Guid>("Id")
@@ -343,6 +347,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsInternalCode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsIsbndbSourced")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -461,7 +470,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDatabaseName("IX_Books_IsFavoriteReference")
                         .HasFilter("[IsFavoriteReference] = 1");
 
-                    b.HasIndex("RedirectedToIsbn13");
+                    b.HasIndex("RedirectedToIsbn13")
+                        .HasDatabaseName("IX_Books_RedirectedToIsbn13");
 
                     b.HasIndex("RowVersion");
 
@@ -508,6 +518,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.ToTable("Books", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Books_IsInternalCode_MatchesCode", "([IsInternalCode] = 1 AND [Isbn13] LIKE '2%') OR ([IsInternalCode] = 0 AND [Isbn13] NOT LIKE '2%')");
+
                             t.HasCheckConstraint("CK_Books_NoSelfRedirect", "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]");
                         });
                 });
@@ -702,6 +714,51 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasKey("Isbn13");
 
                     b.ToTable("BookIsbndbRecords", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("BlobUri")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("BookIsbn13")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookIsbn13", "Position")
+                        .HasDatabaseName("IX_BookPhotos_BookIsbn13_Position");
+
+                    b.ToTable("BookPhotos", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookMovementAggregate.BookMovement", b =>
@@ -1540,6 +1597,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("InternalCode")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
                     b.Property<bool>("IsSold")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -1608,6 +1669,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("InternalCode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RareBooks_InternalCode")
+                        .HasFilter("[InternalCode] IS NOT NULL");
+
                     b.HasIndex("Isbn13")
                         .IsUnique()
                         .HasFilter("[Isbn13] IS NOT NULL");
@@ -1623,7 +1689,12 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("Status", "IsSold", "Price");
 
-                    b.ToTable("RareBooks", (string)null);
+                    b.ToTable("RareBooks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RareBooks_InternalCode_IsInternal", "[InternalCode] IS NULL OR [InternalCode] LIKE '2%'");
+
+                            t.HasCheckConstraint("CK_RareBooks_Isbn13_IsNotInternal", "[Isbn13] IS NULL OR [Isbn13] NOT LIKE '2%'");
+                        });
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor", b =>
@@ -2289,7 +2360,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
                         .WithMany()
                         .HasForeignKey("RedirectedToIsbn13")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Books_Books_RedirectedToIsbn13");
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookAnnouncement", b =>
@@ -2326,6 +2398,16 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
                         .WithOne()
                         .HasForeignKey("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookIsbndbRecord", "Isbn13")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_BookIsbndbRecords_Books_Isbn13");
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Entities.BookPhoto", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.BookAggregate.Book", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("BookIsbn13")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -2633,6 +2715,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.BookAggregate.Book", b =>
                 {
                     b.Navigation("Genres");
+
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>

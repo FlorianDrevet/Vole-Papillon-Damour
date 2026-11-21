@@ -36,7 +36,7 @@ public static class SelectionTargetResolver
                 : Errors.MemberSelection.NotInCatalog(rareBookId.Value.ToString());
         }
 
-        if (!Isbn13.TryCreate(isbn, out var requestedIsbn))
+        if (!BookCode.TryCreate(isbn, out var requestedIsbn))
         {
             return Errors.Book.InvalidIsbn(isbn!);
         }
@@ -44,7 +44,7 @@ public static class SelectionTargetResolver
         var book = await dbContext.Books
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.Id == requestedIsbn, cancellationToken);
-        var canonicalIsbn = book?.RedirectedToIsbn13 ?? requestedIsbn;
+        var canonicalIsbn = book?.RedirectedToIsbn13 is { } redirectedIsbn ? (BookCode)redirectedIsbn : requestedIsbn;
         if (canonicalIsbn != requestedIsbn)
         {
             book = await dbContext.Books

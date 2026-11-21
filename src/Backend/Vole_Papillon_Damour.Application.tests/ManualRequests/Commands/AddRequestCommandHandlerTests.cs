@@ -177,7 +177,7 @@ public sealed class AddRequestCommandHandlerTests
         result.IsError.Should().BeFalse();
         (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == fewerCopies.Id)).QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == moreCopies.Id)).QuantityAvailable.Should().Be(2);
-        (await fixture.Context.ManualBookRequests.SingleAsync()).FoundIsbn13.Should().Be(moreCopies.Id);
+        (await fixture.Context.ManualBookRequests.SingleAsync()).FoundIsbn13.Should().Be(moreCopies.Id.AsIsbn13());
         (await fixture.Context.BookMovements.SingleAsync()).Isbn13.Should().Be(moreCopies.Id);
     }
 
@@ -231,7 +231,7 @@ public sealed class AddRequestCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var request = await fixture.AddEditionRequestAsync(requester.Id, Isbn);
         request.MarkFoundByScan(
-            book.Id, session.Id, BookMovementId.CreateUnique(), ManualRequestFixture.VolunteerId,
+            book.Id.AsIsbn13(), session.Id, BookMovementId.CreateUnique(), ManualRequestFixture.VolunteerId,
             ManualRequestFixture.DefaultNow);
         await fixture.Context.SaveChangesAsync();
         var handler = new PickManualRequestFromStockCommandHandler(fixture.Context, fixture.CreateClock());

@@ -120,7 +120,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
         var sales = BuildEffectiveSales(movements);
         var bookIsbns = keptMovements.Select(movement => movement.Isbn13).Distinct().ToArray();
         var books = bookIsbns.Length == 0
-            ? new Dictionary<Isbn13, StatisticsBookProjection>()
+            ? new Dictionary<BookCode, StatisticsBookProjection>()
             : await dbContext.Books
                 .AsNoTracking()
                 .Where(book => bookIsbns.Contains(book.Id))
@@ -163,7 +163,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
     private static IReadOnlyList<AdminCatalogueGenreFlowResult> BuildGenreFlow(
         IReadOnlyCollection<StatisticsCatalogueMovementProjection> keptMovements,
         IReadOnlyCollection<EffectiveSale> sales,
-        IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books)
+        IReadOnlyDictionary<BookCode, StatisticsBookProjection> books)
     {
         var keptByGenre = keptMovements
             .GroupBy(movement => GetGenre(movement.Isbn13, books), StringComparer.OrdinalIgnoreCase)
@@ -215,7 +215,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             .ToArray();
     }
 
-    private static string GetGenre(Isbn13 isbn, IReadOnlyDictionary<Isbn13, StatisticsBookProjection> books) =>
+    private static string GetGenre(BookCode isbn, IReadOnlyDictionary<BookCode, StatisticsBookProjection> books) =>
         books.TryGetValue(isbn, out var book) && !string.IsNullOrWhiteSpace(book.Genre)
             ? book.Genre!
             : "Sans genre";

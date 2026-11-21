@@ -101,7 +101,7 @@ public sealed class AdjustAnnouncementQuantityCommandHandler(
             .Select(candidate => (int?)candidate.Quantity)
             .SumAsync(cancellationToken) ?? 0;
         return new AdminBookOperationResult(
-            book.Isbn13.Value,
+            book.Code.Value,
             book.QuantityAvailable,
             announcedQuantity,
             delta != 0,

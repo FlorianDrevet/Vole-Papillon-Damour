@@ -21,6 +21,33 @@ public sealed class UpdateBookMetadataCommandHandlerTests
         new(2026, 9, 3, 18, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task Handle_AcceptsAnInternalCodeForAManualEdit()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddInternalCodeBookAsync(quantityAvailable: 1);
+        var handler = CreateHandler(fixture);
+
+        var result = await handler.Handle(
+            new UpdateBookMetadataCommand(
+                "2000000000015",
+                "Livre sans ISBN",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title],
+                AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Isbn13.Should().Be("2000000000015");
+        (await fixture.Context.Books.SingleAsync()).Title.Should().Be("Livre sans ISBN");
+    }
+
+    [Fact]
     public async Task Handle_UpdatesSelectedFieldsAndStoresManualLocks()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -141,7 +168,7 @@ public sealed class UpdateBookMetadataCommandHandlerTests
         result.IsError.Should().BeFalse();
         var genres = await fixture.Context.Set<BookGenre>()
             .AsNoTracking()
-            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Where(genre => genre.BookIsbn13 == book.Code.AsIsbn13())
             .Select(genre => genre.Name)
             .ToArrayAsync();
         genres.Should().Equal("Conte");

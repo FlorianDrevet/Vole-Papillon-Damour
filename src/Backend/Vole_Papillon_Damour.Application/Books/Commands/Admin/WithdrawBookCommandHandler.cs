@@ -20,7 +20,7 @@ public sealed class WithdrawBookCommandHandler(
         WithdrawBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out _))
+        if (!BookCode.TryCreate(command.Isbn, out _))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }

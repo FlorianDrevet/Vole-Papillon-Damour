@@ -39,7 +39,7 @@ public sealed class GetAdminMemberQueryHandlerTests
             UserAlertHistory.Create(
                 Guid.NewGuid(),
                 Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects.UserId.Create(MemberId),
-                alerted.Isbn13,
+                alerted.Code.AsIsbn13(),
                 WatchlistFeatureTestFixture.Now.AddHours(-1)));
         await fixture.Context.SaveChangesAsync();
         var handler = new GetAdminMemberQueryHandler(fixture.Context, clock);

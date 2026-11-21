@@ -41,7 +41,7 @@ public sealed class SearchRareBooksForCashQueryHandler(
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{search.Replace("%", "[%]", StringComparison.Ordinal).Replace("_", "[_]", StringComparison.Ordinal)}%";
-            var hasIsbnSearch = Isbn13.TryCreate(search, out var isbnSearch);
+            var hasIsbnSearch = BookCode.TryCreate(search, out var isbnSearch);
             booksQuery = booksQuery.Where(book =>
                 EF.Functions.Like(book.Title, pattern) ||
                 EF.Functions.Like(book.AuthorMention ?? string.Empty, pattern) ||

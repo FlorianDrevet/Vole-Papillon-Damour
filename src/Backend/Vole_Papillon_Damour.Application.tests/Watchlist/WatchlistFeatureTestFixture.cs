@@ -160,6 +160,7 @@ internal sealed class WatchlistFeatureTestDbContext(
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();
@@ -208,9 +209,9 @@ internal sealed class WatchlistFeatureTestDbContext(
             builder.Property(item => item.Scope).HasConversion<byte>();
             builder.Property(item => item.WorkId).HasMaxLength(64);
             builder.Property(item => item.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Property(item => item.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -229,9 +230,9 @@ internal sealed class WatchlistFeatureTestDbContext(
             builder.Property(history => history.UserId)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
             builder.Property(history => history.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Property(history => history.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -249,12 +250,11 @@ internal sealed class WatchlistFeatureTestDbContext(
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Isbn13);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.IsbndbCompletedBy)
@@ -272,7 +272,7 @@ internal sealed class WatchlistFeatureTestDbContext(
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
             builder.Property(announcement => announcement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(announcement => announcement.AssoEventsId)
                 .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -310,16 +310,17 @@ internal sealed class WatchlistFeatureTestDbContext(
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.InternalCode).HasConversion(new ValueConverter<BookCode?, string?>(code => code.HasValue ? code.Value.Value : null, value => value == null ? null : BookCode.CreateInternal(value)));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,
@@ -367,4 +368,7 @@ internal sealed class WatchlistFeatureTestDbContext(
             ? isbn
             : throw new InvalidOperationException($"Invalid test ISBN: {value}");
     }
+    private static BookCode ParseBookCode(string value) =>
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
 }

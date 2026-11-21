@@ -84,7 +84,7 @@ public sealed class BackgroundBookCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
         fixture.Context.BookAnnouncements.Add(BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             fair.Id,
             quantity: 2,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -135,14 +135,14 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.BookAnnouncements.AddRange(
             BookAnnouncement.Create(
                 BookAnnouncementId.CreateUnique(),
-                book.Isbn13,
+                book.Code.AsIsbn13(),
                 futureFair.Id,
                 1,
                 ScanBookCommandHandlerTests.ClientScanAt,
                 session.Id),
             BookAnnouncement.Create(
                 BookAnnouncementId.CreateUnique(),
-                book.Isbn13,
+                book.Code.AsIsbn13(),
                 otherEventId,
                 1,
                 ScanBookCommandHandlerTests.ClientScanAt,
@@ -181,7 +181,7 @@ public sealed class BackgroundBookCommandHandlerTests
             null);
         var announcement = BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             assoEventsId: null,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -220,7 +220,7 @@ public sealed class BackgroundBookCommandHandlerTests
             DateTimeOffset.Parse("2026-05-13T18:00:00+00:00"));
         var announcement = BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             assoEventsId: null,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -261,7 +261,7 @@ public sealed class BackgroundBookCommandHandlerTests
             null);
         var announcement = BookAnnouncement.Create(
             BookAnnouncementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             cancelledFair.Id,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -288,9 +288,9 @@ public sealed class BackgroundBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 "Antoine de Saint-Exupéry",
                 "Gallimard",
@@ -321,7 +321,7 @@ public sealed class BackgroundBookCommandHandlerTests
             CancellationToken.None);
 
         retry.ProcessedCount.Should().Be(0);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -359,9 +359,9 @@ public sealed class BackgroundBookCommandHandlerTests
         var requestedBook = await fixture.AddBookAsync("9791036377426", quantityAvailable: 0);
         var otherBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(requestedBook.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(requestedBook.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                requestedBook.Isbn13.Value,
+                requestedBook.Code.Value,
                 "Petit Ours brun se promène en forêt",
                 "Aubinais, Marie, Bour, Danièle",
                 "Bayard jeunesse",
@@ -375,7 +375,7 @@ public sealed class BackgroundBookCommandHandlerTests
         var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
 
         var result = await handler.Handle(
-            new EnrichPendingBooksCommand(Isbn13: requestedBook.Isbn13),
+            new EnrichPendingBooksCommand(Isbn13: requestedBook.Code.AsIsbn13()),
             CancellationToken.None);
 
         result.ResolvedCount.Should().Be(1);
@@ -384,10 +384,10 @@ public sealed class BackgroundBookCommandHandlerTests
         (await fixture.Context.Books.SingleAsync(book => book.Id == otherBook.Id))
             .MetadataStatus.Should().Be(BookMetadataStatus.Pending);
         await resolver.Received(1).ResolveAsync(
-            requestedBook.Isbn13,
+            requestedBook.Code.AsIsbn13(),
             Arg.Any<CancellationToken>());
         await resolver.DidNotReceive().ResolveAsync(
-            otherBook.Isbn13,
+            otherBook.Code.AsIsbn13(),
             Arg.Any<CancellationToken>());
     }
 
@@ -397,9 +397,9 @@ public sealed class BackgroundBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -446,9 +446,9 @@ public sealed class BackgroundBookCommandHandlerTests
             rawPayload: null);
         await fixture.Context.SaveChangesAsync();
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 null,
                 null,
                 null,
@@ -472,7 +472,7 @@ public sealed class BackgroundBookCommandHandlerTests
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
         persisted.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/42-L.jpg");
         persisted.CoverSource.Should().Be(BookCoverSource.OpenLibrary);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -503,9 +503,9 @@ public sealed class BackgroundBookCommandHandlerTests
             coverSource: BookCoverSource.Bnf);
         await fixture.Context.SaveChangesAsync();
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 "Antoine de Saint-Exupéry",
                 "Gallimard",
@@ -528,7 +528,7 @@ public sealed class BackgroundBookCommandHandlerTests
         result.ResolvedCount.Should().Be(0);
         result.CoverUpdatedCount.Should().Be(0);
         (await fixture.Context.Books.SingleAsync()).Genre.Should().Be("Romans");
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -563,9 +563,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Titre fournisseur différent",
                 "Autre auteur",
                 "Autre éditeur",
@@ -593,7 +593,7 @@ public sealed class BackgroundBookCommandHandlerTests
         persisted.Genres.Select(genre => genre.Name).Should().Equal("Roman", "Jeunesse");
         (await fixture.Context.Set<BookGenre>()
             .AsNoTracking()
-            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Where(genre => genre.BookIsbn13 == book.Code.AsIsbn13())
             .Select(genre => genre.Name)
             .ToArrayAsync())
             .Should().BeEquivalentTo("Roman", "Jeunesse");
@@ -625,9 +625,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -677,9 +677,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -702,7 +702,7 @@ public sealed class BackgroundBookCommandHandlerTests
         first.ProcessedCount.Should().Be(1);
         second.ProcessedCount.Should().Be(0);
         (await fixture.Context.Books.SingleAsync()).GenresRefreshedAt.Should().Be(WorkerNow);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -733,9 +733,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -758,7 +758,7 @@ public sealed class BackgroundBookCommandHandlerTests
 
         result.ProcessedCount.Should().Be(1);
         (await fixture.Context.Books.SingleAsync()).Summary.Should().Be("Un petit prince quitte sa planète.");
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true);
     }
 
     [Fact]
@@ -785,9 +785,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Titre fournisseur différent",
                 "Antoine de Saint-Exupéry",
                 "Gallimard",
@@ -864,9 +864,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 null,
                 null,
                 null,
@@ -892,7 +892,7 @@ public sealed class BackgroundBookCommandHandlerTests
         var persisted = await fixture.Context.Books.SingleAsync();
         persisted.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/42-L.jpg");
         persisted.CoverCheckedAt.Should().Be(WorkerNow);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true);
     }
 
     [Fact]
@@ -905,9 +905,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince retrouvé",
                 null,
                 null,
@@ -932,7 +932,7 @@ public sealed class BackgroundBookCommandHandlerTests
         var persisted = await fixture.Context.Books.SingleAsync();
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
         persisted.Title.Should().Be("Le Petit Prince retrouvé");
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>(), true);
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>(), true);
     }
 
     [Fact]
@@ -956,9 +956,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -1010,9 +1010,9 @@ public sealed class BackgroundBookCommandHandlerTests
         fixture.Context.ChangeTracker.Clear();
 
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Le Petit Prince",
                 null,
                 null,
@@ -1037,7 +1037,7 @@ public sealed class BackgroundBookCommandHandlerTests
             .Should().BeEquivalentTo("Prédestination", "Fiction");
         (await fixture.Context.Set<BookGenre>()
             .AsNoTracking()
-            .Where(genre => genre.BookIsbn13 == book.Isbn13)
+            .Where(genre => genre.BookIsbn13 == book.Code.AsIsbn13())
             .Select(genre => genre.Name)
             .ToArrayAsync())
             .Should().BeEquivalentTo("Prédestination", "Fiction");
@@ -1066,7 +1066,7 @@ public sealed class BackgroundBookCommandHandlerTests
             coverSource: BookCoverSource.Bnf);
         await fixture.Context.SaveChangesAsync();
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<BookMetadataResult?>(
                 new HttpRequestException("providers unavailable")));
         var clock = Substitute.For<IDateTimeProvider>();
@@ -1088,7 +1088,7 @@ public sealed class BackgroundBookCommandHandlerTests
             CancellationToken.None);
 
         retry.ProcessedCount.Should().Be(0);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -1097,7 +1097,7 @@ public sealed class BackgroundBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<BookMetadataResult?>(
                 new HttpRequestException("providers unavailable")));
         var clock = Substitute.For<IDateTimeProvider>();
@@ -1120,7 +1120,7 @@ public sealed class BackgroundBookCommandHandlerTests
             CancellationToken.None);
 
         replay.ProcessedCount.Should().Be(0);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -1130,12 +1130,12 @@ public sealed class BackgroundBookCommandHandlerTests
         var failedBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var nextBook = await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(failedBook.Isbn13, Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(failedBook.Code.AsIsbn13(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<BookMetadataResult?>(
                 new HttpRequestException("providers unavailable")));
-        resolver.ResolveAsync(nextBook.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(nextBook.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                nextBook.Isbn13.Value,
+                nextBook.Code.Value,
                 "Le Petit Prince",
                 "Antoine de Saint-Exupéry",
                 "Gallimard",
@@ -1165,10 +1165,10 @@ public sealed class BackgroundBookCommandHandlerTests
             .SingleAsync(book => book.Id == nextBook.Id);
         persistedNextBook.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
         await resolver.Received(1).ResolveAsync(
-            failedBook.Isbn13,
+            failedBook.Code.AsIsbn13(),
             Arg.Any<CancellationToken>());
         await resolver.Received(1).ResolveAsync(
-            nextBook.Isbn13,
+            nextBook.Code.AsIsbn13(),
             Arg.Any<CancellationToken>());
     }
 
@@ -1178,9 +1178,9 @@ public sealed class BackgroundBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 null,
                 "Auteur connu",
                 "Éditeur connu",
@@ -1213,7 +1213,7 @@ public sealed class BackgroundBookCommandHandlerTests
             book.DiscardMetadataCandidate(WorkerNow.AddMinutes(1));
             await fixture.Context.SaveChangesAsync();
             return new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 "Titre trouvé après suppression",
                 "Auteur connu",
                 null,
@@ -1223,7 +1223,7 @@ public sealed class BackgroundBookCommandHandlerTests
                 null,
                 new DateTimeOffset(WorkerNow));
         }
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>())
             .Returns(_ => ResolveAndDiscardAsync());
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(WorkerNow);
@@ -1244,7 +1244,7 @@ public sealed class BackgroundBookCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>())
             .Returns((BookMetadataResult?)null);
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(WorkerNow);
@@ -1261,6 +1261,6 @@ public sealed class BackgroundBookCommandHandlerTests
         second.ProcessedCount.Should().Be(0);
         (await fixture.Context.Books.SingleAsync()).MetadataStatus
             .Should().Be(BookMetadataStatus.NotFound);
-        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>());
     }
 }

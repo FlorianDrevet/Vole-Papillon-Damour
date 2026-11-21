@@ -78,7 +78,8 @@ public static class PublicCatalogProjector
                     book.CoverSource?.ToString(),
                     Genres: book.Genres.Count > 0
                         ? book.Genres
-                        : string.IsNullOrWhiteSpace(book.Genre) ? [] : [book.Genre]);
+                        : string.IsNullOrWhiteSpace(book.Genre) ? [] : [book.Genre],
+                    IsInternalCode: BookCode.IsValidInternalCode(book.Isbn13));
             })
             .ToArray();
     }

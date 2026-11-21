@@ -18,7 +18,7 @@ public sealed class BookIsbndbRecordConfiguration : IEntityTypeConfiguration<Boo
             .ValueGeneratedNever()
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(record => record.TitleLong).HasColumnType("nvarchar(max)");
         builder.Property(record => record.Isbn10)
@@ -60,9 +60,11 @@ public sealed class BookIsbndbRecordConfiguration : IEntityTypeConfiguration<Boo
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
             .IsRequired();
 
+        // Les notices ISBNdb suivent la fiche : suppression en cascade.
         builder.HasOne<Book>()
             .WithOne()
             .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
+            .HasConstraintName("FK_BookIsbndbRecords_Books_Isbn13")
             .OnDelete(DeleteBehavior.Cascade);
     }
 

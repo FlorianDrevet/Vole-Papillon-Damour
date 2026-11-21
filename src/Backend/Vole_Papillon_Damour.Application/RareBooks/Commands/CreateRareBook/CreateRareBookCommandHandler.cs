@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook;
 
 public sealed class CreateRareBookCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IInternalBookCodeIssuer codeIssuer)
     : IRequestHandler<CreateRareBookCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -59,11 +61,25 @@ public sealed class CreateRareBookCommandHandler(
             return parseError.Value;
         }
 
+        // Un code interne n'est attribué que par la plateforme (RG-171, RG-173) : le client ne peut pas le choisir.
+        if (isbn13 is { IsInternal: true } requestedInternalCode)
+        {
+            return Errors.RareBook.InvalidIsbn(requestedInternalCode.Value);
+        }
+
         if (isbn13 is not null && await dbContext.RareBooks
                 .AsNoTracking()
                 .AnyAsync(book => book.Isbn13 == isbn13, cancellationToken))
         {
             return Errors.RareBook.DuplicateIsbn(isbn13.Value.Value);
+        }
+
+        // RG-173 : un livre rare sans ISBN reçoit son propre code interne, un par exemplaire. Ce code reste
+        // sur l'étiquette même si un ISBN est ajouté plus tard (RG-174).
+        BookCode? internalCode = null;
+        if (isbn13 is null)
+        {
+            internalCode = await codeIssuer.IssueNextAsync(cancellationToken);
         }
 
         RareBook? rareBook = null;
@@ -83,7 +99,8 @@ public sealed class CreateRareBookCommandHandler(
                     command.UserId,
                     isbn13,
                     collisionSuffix,
-                    command.ClientGestureId);
+                    command.ClientGestureId,
+                    internalCode);
             }
             catch (ArgumentException exception)
             {
@@ -107,7 +124,14 @@ public sealed class CreateRareBookCommandHandler(
         }
 
         dbContext.RareBooks.Add(rareBook);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            return Error.Conflict("RareBook.InternalCodeConflict", "La création a été concurrente d'une autre. Réessayez.");
+        }
         return RareBookProjector.ToResult(rareBook);
     }
 }

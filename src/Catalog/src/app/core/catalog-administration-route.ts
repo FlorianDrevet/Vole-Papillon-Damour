@@ -9,6 +9,7 @@ export const CATALOG_ADMIN_SECTIONS = [
   'isbn-not-found',
   'isbndb-absent',
   'rare-books',
+  'books-without-isbn',
   'statistics',
   'alerts',
   'members',

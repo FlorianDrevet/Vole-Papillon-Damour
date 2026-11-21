@@ -58,10 +58,10 @@ public sealed class GetAdminMemberQueryHandler(
         // whole catalog, then their announcements and the fairs they reference.
         var isbn13s = items
             .Where(item => item.Isbn13 is not null)
-            .Select(item => item.Isbn13!.Value)
+            .Select(item => (BookCode)item.Isbn13!)
             .Concat(histories
                 .Where(history => history.Isbn13 is not null)
-                .Select(history => history.Isbn13!.Value))
+                .Select(history => (BookCode)history.Isbn13!))
             .Distinct()
             .ToArray();
         var workIds = items
@@ -166,7 +166,7 @@ public sealed class GetAdminMemberQueryHandler(
 
         var historyIsbns = histories
             .Where(history => history.Isbn13 is not null)
-            .Select(history => history.Isbn13!.Value)
+            .Select(history => (BookCode)history.Isbn13!)
             .ToArray();
         var historyBooks = books
             .Where(book => historyIsbns.Contains(book.Id))

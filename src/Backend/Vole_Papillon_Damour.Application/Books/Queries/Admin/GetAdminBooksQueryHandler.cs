@@ -150,16 +150,16 @@ public sealed class GetAdminBooksQueryHandler(
                 .Where(announcement => ids.Contains(announcement.Isbn13))
                 .ToListAsync(cancellationToken);
         var recordSubjects = ids.Length == 0
-            ? new Dictionary<Isbn13, string?>()
+            ? new Dictionary<BookCode, string?>()
             : await dbContext.BookIsbndbRecords.AsNoTracking()
                 .Where(record => ids.Contains(record.Isbn13))
                 .Select(record => new { record.Isbn13, record.Subjects })
-                .ToDictionaryAsync(record => record.Isbn13, record => record.Subjects, cancellationToken);
+                .ToDictionaryAsync(record => (BookCode)record.Isbn13, record => record.Subjects, cancellationToken);
         var rawPayloadIsbns = ids
             .Where(isbn => IsbndbSubjectReader.Read(recordSubjects.GetValueOrDefault(isbn), null).Count == 0)
             .ToArray();
         var rawPayloads = rawPayloadIsbns.Length == 0
-            ? new Dictionary<Isbn13, string?>()
+            ? new Dictionary<BookCode, string?>()
             : await dbContext.Books.AsNoTracking()
                 .Where(book => rawPayloadIsbns.Contains(book.Id))
                 .Select(book => new { book.Id, book.RawPayload })

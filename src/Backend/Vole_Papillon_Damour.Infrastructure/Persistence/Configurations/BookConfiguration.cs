@@ -10,11 +10,18 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 {
     public void Configure(EntityTypeBuilder<Book> builder)
     {
-        builder.ToTable("Books", table => table.HasCheckConstraint(
-            "CK_Books_NoSelfRedirect",
-            "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]"));
+        builder.ToTable("Books", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Books_NoSelfRedirect",
+                "[RedirectedToIsbn13] IS NULL OR [RedirectedToIsbn13] <> [Isbn13]");
+            // Le drapeau reflète la clé : un code interne (préfixe 2) pour un livre sans ISBN, un ISBN sinon (RG-170).
+            table.HasCheckConstraint(
+                "CK_Books_IsInternalCode_MatchesCode",
+                "([IsInternalCode] = 1 AND [Isbn13] LIKE '2%') OR ([IsInternalCode] = 0 AND [Isbn13] NOT LIKE '2%')");
+        });
         builder.HasKey(book => book.Id);
-        builder.Ignore(book => book.Isbn13);
+        builder.Property(book => book.IsInternalCode).HasDefaultValue(false);
         builder.Ignore(book => book.IsDefinitiveForRecommendation);
 
         builder.Property(book => book.Id)
@@ -24,14 +31,14 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .ValueGeneratedNever()
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(book => book.RedirectedToIsbn13)
             .HasColumnType("char(13)")
             .IsUnicode(false)
             .HasConversion(
-                isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
-                value => BookPersistenceConversions.ParseNullableIsbn13(value));
+                isbn13 => BookPersistenceConversions.SerializeNullableBookCode(isbn13),
+                value => BookPersistenceConversions.ParseNullableBookCode(value));
 
         builder.Property(book => book.WorkId).HasMaxLength(64);
         builder.Property(book => book.Title)
@@ -186,16 +193,29 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
             .HasFilter(publicCatalogFilter)
             .HasDatabaseName("IX_Books_PublicCatalog_Search");
 
+        // Une redirection pointe vers une autre fiche (ISBN). Suppression restreinte : une fiche redirigée
+        // ne disparaît pas tant qu'une autre fiche la désigne.
         builder.HasOne<Book>()
             .WithMany()
             .HasForeignKey(book => book.RedirectedToIsbn13)
+            .HasConstraintName("FK_Books_Books_RedirectedToIsbn13")
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(book => book.RedirectedToIsbn13)
+            .HasDatabaseName("IX_Books_RedirectedToIsbn13");
 
         builder.HasMany(book => book.Genres)
             .WithOne()
             .HasForeignKey(genre => genre.BookIsbn13)
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(book => book.Genres)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(book => book.Photos)
+            .WithOne()
+            .HasForeignKey(photo => photo.BookIsbn13)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(book => book.Photos)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

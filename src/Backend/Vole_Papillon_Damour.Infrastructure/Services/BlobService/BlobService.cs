@@ -59,6 +59,15 @@ public class BlobService
         return await UploadAsync(fileName, stream, _blobContainerRareBookPhotosClient);
     }
 
+    // Photos des livres sans ISBN : rangées dans le conteneur des couvertures, sous un préfixe dédié.
+    public async Task<Uri> UploadBookPhotoAsync(
+        string fileName,
+        Stream stream,
+        string contentType,
+        CancellationToken cancellationToken)
+    {
+        return await UploadBookCoverAsync(fileName, stream, contentType, cancellationToken);
+    }
     public async Task<Uri> UploadBookCoverAsync(
         string fileName,
         Stream stream,

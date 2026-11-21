@@ -626,7 +626,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         }
 
         var itemIsbns = payloadItems
-            .Select(item => BookPersistenceConversions.ParseIsbn13(item.Isbn13))
+            .Select(item => BookPersistenceConversions.ParseBookCode(item.Isbn13))
             .ToArray();
         var rareBookIds = payloadRareItems
             .Select(item => item.RareBookId)
@@ -652,7 +652,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         var eligibleItems = payloadItems
             .Where(item =>
             {
-                var isbn13 = BookPersistenceConversions.ParseIsbn13(item.Isbn13);
+                var isbn13 = BookPersistenceConversions.ParseBookCode(item.Isbn13);
                 return watchlistItems.Any(watchlistItem =>
                            Matches(watchlistItem, item, isbn13)) &&
                        (item.AssoEventsId is null ||
@@ -734,7 +734,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         Guid messageId,
         DateTime claimedUntil,
         DateTime sentAt,
-        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<BookCode> itemIsbn13s,
         CancellationToken cancellationToken)
     {
         return await MarkSentAsync(
@@ -750,7 +750,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         Guid messageId,
         DateTime claimedUntil,
         DateTime sentAt,
-        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<BookCode> itemIsbn13s,
         IReadOnlyCollection<Guid> rareBookIds,
         CancellationToken cancellationToken)
     {
@@ -1219,7 +1219,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
     private static BookAlertOutboxItem ToApplicationItem(AlertItemPayload item)
     {
         return new BookAlertOutboxItem(
-            BookPersistenceConversions.ParseIsbn13(item.Isbn13),
+            BookPersistenceConversions.ParseBookCode(item.Isbn13),
             item.WorkId,
             item.Title,
             item.Authors,
@@ -1280,7 +1280,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
     private static bool Matches(
         WatchlistItem item,
         AlertItemPayload candidate,
-        Isbn13 isbn13)
+        BookCode isbn13)
     {
         return item.Scope switch
         {
@@ -1338,7 +1338,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
     }
 
     private sealed record AlertCandidate(
-        Isbn13 Isbn13,
+        BookCode Isbn13,
         string? WorkId,
         string? Title,
         string? Authors,

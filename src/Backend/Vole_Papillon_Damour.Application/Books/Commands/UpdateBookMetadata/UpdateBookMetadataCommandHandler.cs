@@ -26,7 +26,7 @@ public sealed class UpdateBookMetadataCommandHandler(
         UpdateBookMetadataCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -114,7 +114,7 @@ public sealed class UpdateBookMetadataCommandHandler(
         }
 
         return new UpdateBookMetadataResult(
-            book.Isbn13.Value,
+            book.Code.Value,
             book.MetadataStatus,
             book.MetadataSource!.Value,
             book.ManuallyEditedFields,

@@ -5,12 +5,9 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.NotFoundReports.Common;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.BookMovementAggregate;
-using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
-using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
@@ -24,11 +21,17 @@ public sealed class MergeBooksCommandHandler(
         MergeBooksCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.SourceIsbn, out var sourceIsbn) ||
-            !Isbn13.TryCreate(command.TargetIsbn, out var targetIsbn))
+        if (!BookCode.TryCreate(command.SourceIsbn, out var sourceIsbn) ||
+            !BookCode.TryCreate(command.TargetIsbn, out var targetCode))
         {
             return Errors.Book.InvalidIsbn(
-                !Isbn13.TryCreate(command.SourceIsbn, out _) ? command.SourceIsbn : command.TargetIsbn);
+                !BookCode.TryCreate(command.SourceIsbn, out _) ? command.SourceIsbn : command.TargetIsbn);
+        }
+
+        // Une fusion redirige vers une édition réelle : la cible doit être un ISBN, pas un code interne.
+        if (!targetCode.TryGetIsbn13(out var targetIsbn))
+        {
+            return Errors.Book.InvalidIsbn(command.TargetIsbn);
         }
 
         if (sourceIsbn == targetIsbn)
@@ -71,99 +74,19 @@ public sealed class MergeBooksCommandHandler(
             return Errors.Book.NotFound(targetIsbn.Value);
         }
 
-        if (source.RedirectedToIsbn13 is not null || target.RedirectedToIsbn13 is not null)
-        {
-            return Errors.Book.CannotMergeBook("A redirected fiche cannot be used in another merge.");
-        }
-
-        var activeAnnouncements = await dbContext.BookAnnouncements.AnyAsync(
-            announcement =>
-                announcement.Isbn13 == sourceIsbn &&
-                announcement.Status == BookAnnouncementStatus.Announced,
+        var merged = await BookMergeOperation.ApplyAsync(
+            dbContext,
+            notFoundReportLapser,
+            source,
+            target,
+            command.Note.Trim(),
+            command.UpdatedBy,
+            mergedAt,
             cancellationToken);
-        if (activeAnnouncements)
+        if (merged.IsError)
         {
-            return Errors.Book.CannotMergeBook(
-                "The source fiche has active announcements; correct or release them before merging.");
+            return merged.Errors;
         }
-
-        var sourceQuantity = source.QuantityAvailable;
-        if (sourceQuantity > 0)
-        {
-            source.ApplyQuantityCorrection(0, mergedAt);
-            dbContext.BookMovements.Add(BookMovement.Create(
-                BookMovementId.CreateUnique(),
-                sourceIsbn,
-                BookMovementType.Correction,
-                -sourceQuantity,
-                mergedAt,
-                mergedAt,
-                clockSuspect: false,
-                scanSessionId: null,
-                command.UpdatedBy,
-                assoEventsId: null,
-                $"Merge.Source: {command.Note.Trim()}",
-                clientGestureId: null));
-
-            target.RecordAvailableEntry(mergedAt, sourceQuantity);
-            dbContext.BookMovements.Add(BookMovement.Create(
-                BookMovementId.CreateUnique(),
-                targetIsbn,
-                BookMovementType.Correction,
-                sourceQuantity,
-                mergedAt,
-                mergedAt,
-                clockSuspect: false,
-                scanSessionId: null,
-                command.UpdatedBy,
-                assoEventsId: null,
-                $"Merge.Target: {command.Note.Trim()}",
-                clientGestureId: null));
-        }
-
-        source.RedirectTo(targetIsbn);
-
-        var sourceWatchlistItems = await dbContext.WatchlistItems
-            .Where(item => item.Scope == WatchlistItemScope.Edition && item.Isbn13 == sourceIsbn)
-            .ToListAsync(cancellationToken);
-        var targetWatchlistItems = await dbContext.WatchlistItems
-            .Where(item => item.Scope == WatchlistItemScope.Edition && item.Isbn13 == targetIsbn)
-            .ToListAsync(cancellationToken);
-        foreach (var item in sourceWatchlistItems)
-        {
-            if (targetWatchlistItems.Any(targetItem => targetItem.UserId == item.UserId))
-            {
-                dbContext.WatchlistItems.Remove(item);
-            }
-            else
-            {
-                item.RedirectEdition(targetIsbn);
-            }
-        }
-
-        var sourceReports = await dbContext.BookNotFoundReports
-            .Where(report => report.Isbn13 == sourceIsbn && report.Status == NotFoundReportStatus.Open)
-            .ToListAsync(cancellationToken);
-        var targetReports = await dbContext.BookNotFoundReports
-            .Where(report => report.Isbn13 == targetIsbn && report.Status == NotFoundReportStatus.Open)
-            .ToListAsync(cancellationToken);
-        foreach (var report in sourceReports)
-        {
-            var alreadyReportedByMember = report.UserId is { } userId &&
-                targetReports.Any(targetReport => targetReport.UserId == userId);
-            if (alreadyReportedByMember)
-            {
-                // The filtered unique index permits one open report per member and
-                // canonical edition. Keep the canonical report and retire its duplicate.
-                report.Lapse(mergedAt);
-                continue;
-            }
-
-            report.RetargetEdition(targetIsbn);
-            targetReports.Add(report);
-        }
-
-        await notFoundReportLapser.LapseIfUnavailableAsync(targetIsbn, mergedAt, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

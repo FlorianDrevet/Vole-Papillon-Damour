@@ -3,6 +3,7 @@ export type CatalogSort = 'relevance' | 'recent' | 'price-asc' | 'price-desc';
 
 export interface CatalogBook {
   isbn13: string;
+  isInternalCode?: boolean;
   title: string | null;
   authors: string | null;
   publisher: string | null;
@@ -1471,6 +1472,8 @@ export interface CatalogAdminRareBook {
   id: string;
   slug: string;
   isbn13: string | null;
+  // Code interne de l'exemplaire, gardé sur l'étiquette même après l'ajout d'un ISBN (RG-174).
+  internalCode?: string | null;
   title: string;
   authorMention: string | null;
   publisher: string | null;
@@ -1602,3 +1605,46 @@ export interface CatalogAdminMemberFilters {
   pageSize?: number;
 }
 
+// Livres sans ISBN (RG-170 à RG-183) : liste et création depuis le site.
+export interface CatalogAdminBookPhoto {
+  id: string;
+  url: string;
+  position: number;
+  contentType: string;
+}
+
+export interface CatalogAdminBookWithoutIsbnItem {
+  code: string;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  quantityAvailable: number;
+  firstSeenAt: string;
+  photos: CatalogAdminBookPhoto[];
+}
+
+export interface CatalogAdminBookWithoutIsbnPage {
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  items: CatalogAdminBookWithoutIsbnItem[];
+}
+
+export interface CatalogAdminBookWithoutIsbnRequest {
+  title: string;
+  quantityAvailable: number;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  physicalFormat: string | null;
+  language: string | null;
+  genre: string | null;
+  summary: string | null;
+  edition: string | null;
+  pages: number | null;
+}
+
+export interface CatalogAdminBookWithoutIsbnCreated {
+  code: string;
+  quantityAvailable: number;
+}

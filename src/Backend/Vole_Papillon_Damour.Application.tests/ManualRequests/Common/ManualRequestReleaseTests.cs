@@ -23,7 +23,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var session = await fixture.AddSessionAsync();
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var plan = await ManualRequestRelease.PlanAsync(
             fixture.Context, request, ManualRequestFixture.DefaultNow, CancellationToken.None);
@@ -41,7 +41,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var plan = await ManualRequestRelease.PlanAsync(
             fixture.Context, request, ManualRequestFixture.DefaultNow, CancellationToken.None);
@@ -72,7 +72,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair?.Id);
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var plan = await ManualRequestRelease.PlanAsync(
             fixture.Context, request, ManualRequestFixture.DefaultNow, CancellationToken.None);
@@ -88,7 +88,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var request = await CreateRequestAsync(fixture);
         request.MarkFoundFromStock(
-            book.Id, null, null, BookMovementId.CreateUnique(), ManualRequestFixture.AdministratorId,
+            book.Id.AsIsbn13(), null, null, BookMovementId.CreateUnique(), ManualRequestFixture.AdministratorId,
             ManualRequestFixture.DefaultNow);
 
         var plan = await ManualRequestRelease.PlanAsync(
@@ -159,7 +159,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var session = await fixture.AddSessionAsync();
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var result = await ManualRequestRelease.ReleaseAsync(
             fixture.Context, request, ManualRequestFixture.AdministratorId,
@@ -185,7 +185,7 @@ public sealed class ManualRequestReleaseTests
         var book = await fixture.AddBookAsync(Isbn);
         var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var result = await ManualRequestRelease.ReleaseAsync(
             fixture.Context, request, ManualRequestFixture.AdministratorId,
@@ -218,7 +218,7 @@ public sealed class ManualRequestReleaseTests
         session.Reassign(ScanMode.AvailableNow, null).Should().BeTrue();
         await fixture.Context.SaveChangesAsync();
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, book.Id, session.Id);
+        MarkFoundByScan(request, book.Id.AsIsbn13(), session.Id);
 
         var plan = await ManualRequestRelease.PlanAsync(
             fixture.Context, request, ManualRequestFixture.DefaultNow, CancellationToken.None);
@@ -234,18 +234,18 @@ public sealed class ManualRequestReleaseTests
         const string canonicalIsbn = "9782070612765";
         var redirected = await fixture.AddBookAsync(redirectedIsbn);
         var canonical = await fixture.AddBookAsync(canonicalIsbn);
-        redirected.RedirectTo(canonical.Id);
+        redirected.RedirectTo(canonical.Id.AsIsbn13());
         await fixture.Context.SaveChangesAsync();
         var session = await fixture.AddSessionAsync();
         var request = await CreateRequestAsync(fixture);
-        MarkFoundByScan(request, redirected.Id, session.Id);
+        MarkFoundByScan(request, redirected.Id.AsIsbn13(), session.Id);
 
         var result = await ManualRequestRelease.ReleaseAsync(
             fixture.Context, request, ManualRequestFixture.AdministratorId,
             ManualRequestFixture.DefaultNow, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id)).QuantityAvailable.Should().Be(1);
+        (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id.AsIsbn13())).QuantityAvailable.Should().Be(1);
         (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == redirected.Id)).QuantityAvailable.Should().Be(0);
         fixture.Context.BookMovements.Local.Single(candidate => candidate.Id == result.Value).Isbn13.Should().Be(canonical.Id);
     }

@@ -92,6 +92,7 @@ public static class DependencyInjection
         services.AddScoped<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
         services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
         services.AddScoped<IBookAlertOutbox, BookAlertOutbox>();
+        services.AddScoped<IInternalBookCodeIssuer, SqlServerInternalBookCodeIssuer>();
         services.Configure<BookAlertEmailOptions>(
             builderConfiguration.GetSection(BookAlertEmailOptions.SectionName));
         services.Configure<UnsubscribeTokenOptions>(

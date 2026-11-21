@@ -27,7 +27,7 @@ public sealed class RegisterSaleCommandHandler(
         RegisterSaleCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -103,6 +103,17 @@ public sealed class RegisterSaleCommandHandler(
 
             if (book is null)
             {
+                if (!isbn13.IsIsbn)
+                {
+                    // Un code interne désigne l'exemplaire rare par son code d'étiquette (RG-173).
+                    var isRareCode = await dbContext.RareBooks
+                        .AsNoTracking()
+                        .AnyAsync(rare => rare.InternalCode == isbn13, cancellationToken);
+                    return isRareCode
+                        ? Error.Validation("Book.RareBookCode", "Ce code désigne un livre rare : il se gère depuis la vente des livres rares.")
+                        : Errors.Book.UnknownInternalCode(isbn13.Value);
+                }
+
                 book = Book.Create(isbn13, receivedAt);
                 dbContext.Books.Add(book);
             }
@@ -223,13 +234,13 @@ public sealed class RegisterSaleCommandHandler(
     }
 
     private Task<bool> IsRareBookAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return dbContext.RareBooks
             .AsNoTracking()
             .AnyAsync(rareBook =>
-                rareBook.Isbn13 == isbn13 &&
+                (rareBook.Isbn13 == isbn13 || rareBook.InternalCode == isbn13) &&
                 rareBook.Status == RareBookStatus.Published &&
                 !rareBook.IsSold,
                 cancellationToken);

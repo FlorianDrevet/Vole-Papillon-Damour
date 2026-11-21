@@ -9,6 +9,9 @@ import {ScanSessionSummaryService} from './scan-session-summary.service';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
 import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
+import {LabelPrinterPageComponent} from './label-printer/label-printer-page.component';
+import {LabelPreviewComponent} from './label-printer/label-preview.component';
+import {BookWithoutIsbnPageComponent} from './book-without-isbn/book-without-isbn-page.component';
 
 export type ScanRequiredRole = 'Tri' | 'Caisse' | 'LivresRares';
 
@@ -58,6 +61,14 @@ const triGuard = scanRoleGuard('Tri');
 const cashGuard = scanRoleGuard('Caisse');
 const rareBooksGuard = scanRoleGuard('LivresRares');
 
+// Impression d'étiquettes (RG-176) : rôles Tri et LivresRares.
+export const scanPrintGuard: CanActivateFn = () => {
+  const auth = inject(ScanAuthService);
+  const router = inject(Router);
+  const authenticated = auth.authState.status === 'authorized' || auth.authState.status === 'degraded';
+  return authenticated && (auth.canSort || auth.canManageRareBooks) ? true : router.parseUrl('/');
+};
+
 export const scanRoutes: Routes = [
   {
     path: '',
@@ -76,6 +87,9 @@ export const scanRoutes: Routes = [
       {path: 'livres-rares', component: ScanRareBookListComponent, canActivate: [rareBooksGuard]},
       {path: 'livres-rares/nouveau', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
       {path: 'livres-rares/:id', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
+      {path: 'sans-isbn', component: BookWithoutIsbnPageComponent, canActivate: [scanPrintGuard]},
+      {path: 'imprimante', component: LabelPrinterPageComponent, canActivate: [scanPrintGuard]},
+      {path: 'etiquette', component: LabelPreviewComponent, canActivate: [scanPrintGuard]},
       {path: '**', redirectTo: 'accueil'},
     ],
   },

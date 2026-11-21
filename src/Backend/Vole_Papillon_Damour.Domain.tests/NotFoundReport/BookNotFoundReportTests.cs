@@ -36,7 +36,7 @@ public sealed class BookNotFoundReportTests
         report.Status.Should().Be(NotFoundReportStatus.Open);
         report.IsOpen.Should().BeTrue();
         report.UserId.Should().Be(Member);
-        report.Isbn13.Should().Be(isbn);
+        report.Isbn13.Should().Be((BookCode?)isbn);
         report.RareBookId.Should().BeNull();
         report.Comment.Should().Be("Rayon polar vide");
         report.ReportedAt.Should().Be(ReportedAt);

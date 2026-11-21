@@ -12,6 +12,7 @@ public sealed record ScanCatalogDeltaResponse(
 public sealed record ScanCatalogRareBookResponse(
     Guid Id,
     string? Isbn13,
+    string? InternalCode,
     string Title,
     string? AuthorMention,
     decimal Price,

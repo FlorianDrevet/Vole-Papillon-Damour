@@ -7,10 +7,10 @@ internal static class IsbnNotFoundImportRowValidator
 {
     public static IsbnNotFoundImportValidation Validate(
         IReadOnlyList<IsbnNotFoundCsvRow> rows,
-        IReadOnlyDictionary<Isbn13, BookMetadataStatus> knownStatuses,
+        IReadOnlyDictionary<BookCode, BookMetadataStatus> knownStatuses,
         IReadOnlySet<string>? previewReadyIsbns = null)
     {
-        var seen = new HashSet<Isbn13>();
+        var seen = new HashSet<BookCode>();
         var readyRows = new List<IsbnNotFoundImportReadyRow>();
         var rejections = new List<IsbnNotFoundImportRejection>();
         var ignoredCount = 0;

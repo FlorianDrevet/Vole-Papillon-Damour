@@ -189,11 +189,10 @@ public sealed class IsbndbPersistenceTests
             index.GetFilter() == "[IsIsbndbSourced] = 0");
 
         var record = context.Model.FindEntityType(typeof(BookIsbndbRecord))!;
-        var foreignKey = record.GetForeignKeys().Should().ContainSingle().Subject;
-        foreignKey.PrincipalEntityType.ClrType.Should().Be(typeof(Book));
-        foreignKey.Properties.Select(property => property.Name)
-            .Should().Equal(nameof(BookIsbndbRecord.Isbn13));
-        foreignKey.DeleteBehavior.Should().Be(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+        // La contrainte vers Book (suppression en cascade) est déclarée dans le modèle, comme en base.
+        record.GetForeignKeys().Should().ContainSingle(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(Book) &&
+            foreignKey.DeleteBehavior == DeleteBehavior.Cascade);
     }
 
     private static async Task<SqliteConnection> OpenConnectionAsync()

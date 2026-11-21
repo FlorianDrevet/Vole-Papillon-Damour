@@ -11,7 +11,7 @@ internal static class ManualRequestMatcher
 {
     public static Task<ManualBookRequest?> FindOldestSearchingAsync(
         IProjectDbContext db,
-        Isbn13 isbn13,
+        BookCode isbn13,
         string? workId,
         CancellationToken ct)
     {
@@ -38,7 +38,7 @@ internal static class ManualRequestMatcher
     public static async Task<string?> ResolveWorkIdAsync(
         IProjectDbContext db,
         IBibliographicMetadataResolver? resolver,
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken ct)
     {
         var bookWorkId = await db.Books
@@ -56,6 +56,7 @@ internal static class ManualRequestMatcher
             return null;
         }
 
-        return await resolver.ResolveWorkIdAsync(isbn13, ct);
+        // Les bibliothèques externes ne connaissent que les ISBN : un code interne n'est jamais résolu.
+        return isbn13.TryGetIsbn13(out var isbn) ? await resolver.ResolveWorkIdAsync(isbn, ct) : null;
     }
 }

@@ -23,7 +23,7 @@ public sealed class ManualBookRequest : Entity<Guid>
     public Guid RequesterId { get; private set; }
     public ManualBookRequestScope Scope { get; private set; }
     public string? WorkId { get; private set; }
-    public Isbn13? Isbn13 { get; private set; }
+    public BookCode? Isbn13 { get; private set; }
     public string? Title { get; private set; }
     public string? Authors { get; private set; }
     public string? Publisher { get; private set; }

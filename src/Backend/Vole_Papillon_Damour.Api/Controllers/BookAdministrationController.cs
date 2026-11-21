@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Application.Books.Queries.GetBooksWithoutIsbn;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -515,7 +516,78 @@ public static class BookAdministrationController
                     })
                 .WithName("AddAdminBook")
                 .RequireAuthorization("Administration");
+            endpoints.MapPost(
+                    "/books/admin/books/without-isbn",
+                    async (
+                        CreateBookWithoutIsbnRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
 
+                        var result = await mediator.Send(
+                            new CreateBookWithoutIsbnCommand(
+                                request.Title,
+                                request.QuantityAvailable,
+                                userId,
+                                request.Authors,
+                                request.Publisher,
+                                request.PublicationYear,
+                                request.PhysicalFormat,
+                                request.Language,
+                                request.Genre,
+                                request.Summary,
+                                request.Edition,
+                                request.Pages),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(ToResponse(operation)),
+                            error => error.Result());
+                    })
+                .WithName("CreateAdminBookWithoutIsbn")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/without-isbn",
+                    async (
+                        int? page,
+                        int? pageSize,
+                        string? search,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetBooksWithoutIsbnQuery(page ?? 1, pageSize ?? 50, search),
+                            cancellationToken);
+                        return result.Match(
+                            pageResult => Results.Ok(new BookWithoutIsbnPageResponse(
+                                pageResult.TotalCount,
+                                pageResult.Page,
+                                pageResult.PageSize,
+                                pageResult.Items
+                                    .Select(item => new BookWithoutIsbnItemResponse(
+                                        item.Code,
+                                        item.Title,
+                                        item.Authors,
+                                        item.Publisher,
+                                        item.QuantityAvailable,
+                                        item.FirstSeenAt,
+                                        item.Photos
+                                            .Select(photo => new BookPhotoResponse(
+                                                photo.Id,
+                                                photo.Url,
+                                                photo.Position,
+                                                photo.ContentType))
+                                            .ToArray()))
+                                    .ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminBooksWithoutIsbn")
+                .RequireAuthorization("Administration");
             endpoints.MapPost(
                     "/books/admin/books/import",
                     async (
@@ -793,6 +865,31 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("MergeAdminBooks")
+                .RequireAuthorization("Administration");
+
+            // RG-174 : ajoute un ISBN à une fiche à code interne. Le code interne reste valide.
+            endpoints.MapPost(
+                    "/books/admin/books/{internalCode}/add-isbn",
+                    async (
+                        string internalCode,
+                        AddIsbnToBookRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new AddIsbnToBookWithoutIsbnCommand(internalCode, request.Isbn13, userId),
+                            cancellationToken);
+                        return result.Match(
+                            operation => Results.Ok(ToResponse(operation)),
+                            error => error.Result());
+                    })
+                .WithName("AddIsbnToAdminBookWithoutIsbn")
                 .RequireAuthorization("Administration");
 
             endpoints.MapDelete(

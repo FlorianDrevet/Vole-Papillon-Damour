@@ -21,7 +21,7 @@ public sealed class GetPublicBookQueryHandler(
         GetPublicBookQuery query,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(query.Isbn13, out var isbn13))
+        if (!BookCode.TryCreate(query.Isbn13, out var isbn13))
         {
             return DomainErrors.Book.InvalidIsbn(query.Isbn13);
         }
@@ -71,6 +71,14 @@ public sealed class GetPublicBookQueryHandler(
         var result = PublicCatalogProjector
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
             .Single();
+        if (result.CoverUrl is null)
+        {
+            var photoCovers = await BookPhotoCovers.FirstPhotoUrlsAsync(dbContext, [isbn13], cancellationToken);
+            if (photoCovers.TryGetValue(isbn13.Value, out var photoUrl))
+            {
+                result = result with { CoverUrl = photoUrl };
+            }
+        }
         var summary = book.Summary;
         if (summary is null && !book.IsMetadataFieldManuallyEdited(BookMetadataField.Summary))
         {

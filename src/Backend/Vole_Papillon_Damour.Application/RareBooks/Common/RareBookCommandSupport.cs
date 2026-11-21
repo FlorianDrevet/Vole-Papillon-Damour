@@ -27,7 +27,7 @@ internal static class RareBookCommandSupport
         string conditionValue,
         string? isbnValue,
         out RareBookCondition condition,
-        out Isbn13? isbn13)
+        out BookCode? isbn13)
     {
         condition = null!;
         isbn13 = null;
@@ -46,12 +46,12 @@ internal static class RareBookCommandSupport
             return null;
         }
 
-        if (!Isbn13.TryCreate(isbnValue, out var parsedIsbn13))
+        if (!BookCode.TryCreate(isbnValue, out var parsedCode))
         {
             return Errors.RareBook.InvalidIsbn(isbnValue);
         }
 
-        isbn13 = parsedIsbn13;
+        isbn13 = parsedCode;
         return null;
     }
 

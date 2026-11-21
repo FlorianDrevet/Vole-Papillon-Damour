@@ -50,7 +50,7 @@ public sealed class GetMySelectionQueryHandler(
 
         var editionIsbns = selectionItems
             .Where(item => item.Isbn13 is not null)
-            .Select(item => item.Isbn13!.Value)
+            .Select(item => (BookCode)item.Isbn13!)
             .ToHashSet();
         var rareBookIds = selectionItems
             .Where(item => item.RareBookId is not null)
@@ -66,7 +66,7 @@ public sealed class GetMySelectionQueryHandler(
                 .ToListAsync(cancellationToken);
         }
 
-        List<Isbn13> announcedIsbns = [];
+        List<BookCode> announcedIsbns = [];
         if (editionIsbns.Count > 0)
         {
             announcedIsbns = await dbContext.BookAnnouncements
@@ -113,7 +113,7 @@ public sealed class GetMySelectionQueryHandler(
 
         var notFoundReportsByEdition = notFoundReports
             .Where(report => report.Isbn13 is not null)
-            .GroupBy(report => report.Isbn13!.Value)
+            .GroupBy(report => (BookCode)report.Isbn13!)
             .ToDictionary(
                 group => group.Key,
                 group => ProjectNotFoundReport(group.First(), generatedAt));
@@ -151,9 +151,9 @@ public sealed class GetMySelectionQueryHandler(
     private static SelectionItemResult ProjectItem(
         MemberSelectionItem item,
         IReadOnlyCollection<Book> books,
-        IReadOnlySet<Isbn13> announcedIsbns,
+        IReadOnlySet<BookCode> announcedIsbns,
         IReadOnlyCollection<RareBook> rareBooks,
-        IReadOnlyDictionary<Isbn13, NotFoundReportSummary?> notFoundReportsByEdition,
+        IReadOnlyDictionary<BookCode, NotFoundReportSummary?> notFoundReportsByEdition,
         IReadOnlyDictionary<Domain.RareBookAggregate.ValueObjects.RareBookId, NotFoundReportSummary?> notFoundReportsByRareBook,
         DateTimeOffset generatedAt)
     {

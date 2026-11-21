@@ -231,7 +231,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
             foundBook.Id.Value,
             GeneratedAt.AddMinutes(-7));
         foundRequest.MarkFoundFromStock(
-            foundBook.Id,
+            foundBook.Id.AsIsbn13(),
             null,
             null,
             BookMovementId.CreateUnique(),
@@ -242,7 +242,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
             givenBook.Id.Value,
             GeneratedAt.AddMinutes(-5));
         givenRequest.MarkFoundFromStock(
-            givenBook.Id,
+            givenBook.Id.AsIsbn13(),
             null,
             null,
             BookMovementId.CreateUnique(),
@@ -288,7 +288,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
         created.Value.Books.Single().IsManuallyRequested.Should().BeTrue();
 
         request.MarkFoundFromStock(
-            book.Id,
+            book.Id.AsIsbn13(),
             null,
             null,
             BookMovementId.CreateUnique(),
@@ -532,6 +532,10 @@ public sealed class GetCatalogDeltaQueryHandlerTests
             .Should().ContainSingle(command => command.Contains("LIMIT 1", StringComparison.Ordinal));
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -727,7 +731,7 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
             volunteerId,
             authorMention: book.Authors,
             condition: RareBookCondition.AsNew,
-            isbn13: book.Id);
+            isbn13: book.Id.AsIsbn13());
         rareBook.Publish(volunteerId, GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
         rareBook.AddPhoto(
             RareBookPhoto.Create(
@@ -824,6 +828,10 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         await connection.DisposeAsync();
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -883,6 +891,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
         modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());
@@ -892,7 +901,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(favorite => favorite.UserId)
                 .HasConversion(userId => userId.Value, value => UserId.Create(value));
             builder.Property(favorite => favorite.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
         });
         modelBuilder.Entity<AnonymousFavoriteCount>(builder =>
         {
@@ -901,7 +910,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(favorite => favorite.Id)
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
         });
         modelBuilder.Entity<User>(builder =>
         {
@@ -955,9 +964,9 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
         {
             builder.HasKey(line => line.Id);
             builder.Property(line => line.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Ignore(line => line.SaleMovementId);
             builder.Ignore(line => line.RareBookId);
             builder.Ignore(line => line.AssoEventsId);
@@ -968,9 +977,9 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(item => item.UserId)
                 .HasConversion(userId => userId.Value, value => UserId.Create(value));
             builder.Property(item => item.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                .HasConversion(new ValueConverter<BookCode?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
+                    value => value == null ? null : ParseBookCode(value)));
             builder.Ignore(item => item.RareBookId);
             builder.Property(item => item.Status).HasConversion<byte>();
         });
@@ -981,7 +990,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookMovementId.Create(value));
             builder.Property(movement => movement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(movement => movement.Type).HasConversion<byte>();
             builder.Ignore(movement => movement.ScanSessionId);
             builder.Ignore(movement => movement.VolunteerId);
@@ -997,12 +1006,11 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(book => book.Id)
                 .HasColumnName("Isbn13")
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.Ignore(book => book.Isbn13);
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseIsbn(value));
             builder.Property(book => book.IsbndbCompletedBy)
                 .HasConversion(
                     (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
@@ -1013,10 +1021,6 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.HasKey(record => record.Isbn13);
             builder.Property(record => record.Isbn13)
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.HasOne<Book>()
-                .WithOne()
-                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>
@@ -1026,7 +1030,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
             builder.Property(announcement => announcement.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(announcement => announcement.Status).HasConversion<byte>();
             builder.Property(announcement => announcement.Quantity);
             builder.Ignore(announcement => announcement.AssoEventsId);
@@ -1057,8 +1061,8 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(item => item.Scope).HasConversion<byte>();
             builder.Property(item => item.Isbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseBookCode(value));
             builder.Property(item => item.RareBookId)
                 .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                     id => id == null ? null : id.Value,
@@ -1115,16 +1119,17 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.InternalCode).HasConversion(new ValueConverter<BookCode?, string?>(code => code.HasValue ? code.Value.Value : null, value => value == null ? null : BookCode.CreateInternal(value)));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,
@@ -1171,6 +1176,10 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
             builder.Property(tombstone => tombstone.DeletedAt);
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {

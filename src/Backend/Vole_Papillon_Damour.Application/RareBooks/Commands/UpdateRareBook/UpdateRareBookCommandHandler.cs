@@ -51,6 +51,13 @@ public sealed class UpdateRareBookCommandHandler(
             return Errors.RareBook.ConcurrencyConflict(command.RareBookId.Value);
         }
 
+        // Le code interne (RG-173) est attribué à la création et n'est jamais modifié ici : l'ISBN, lui, ne
+        // peut pas être un code interne (RG-170).
+        if (isbn13 is { IsInternal: true } requestedInternalCode)
+        {
+            return Errors.RareBook.InvalidIsbn(requestedInternalCode.Value);
+        }
+
         if (isbn13 is not null && await dbContext.RareBooks
                 .AsNoTracking()
                 .AnyAsync(book => book.Id != command.RareBookId && book.Isbn13 == isbn13, cancellationToken))

@@ -56,7 +56,8 @@ import {ScanConfirmationRequest, ScanConfirmationService} from '../scan-confirma
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
-import {normalizeIsbn} from './isbn.util';
+import {normalizeBookCode, normalizeIsbn} from './isbn.util';
+import {isInternalCode} from '../label-printer/ean13';
 import {ScanSessionSummaryService} from '../scan-session-summary.service';
 import {parseMemberCredential} from '../offline/scan-member-card';
 
@@ -719,6 +720,26 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.metadata?.isbn13 ?? this.activeBook?.isbn13 ?? this.isbnInput;
   }
 
+  // ISBN-13 réimprimable depuis le résultat (RG-175) : aucun mouvement n'est créé.
+  get reprintableIsbn(): string | null {
+    return normalizeBookCode(this.activeIsbn);
+  }
+
+  get canReprintIsbnLabel(): boolean {
+    return this.canSort && this.reprintableIsbn !== null;
+  }
+
+  reprintIsbnLabel(): void {
+    const isbn = this.reprintableIsbn;
+    if (isbn === null || !this.router) {
+      return;
+    }
+
+    this.stopCamera();
+    const query = isInternalCode(isbn) ? `code=${encodeURIComponent(isbn)}` : `isbn=${encodeURIComponent(isbn)}`;
+    void this.router.navigateByUrl(`/etiquette?${query}`);
+  }
+
   get activeVerdictKey(): 'ManualRequest' | 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
     if (this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found') {
       return 'ManualRequest';
@@ -886,13 +907,13 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    const normalizedIsbn = normalizeIsbn(rawInput);
+    const normalizedIsbn = normalizeBookCode(rawInput);
     const lookupVersion = ++this.lookupVersion;
     this.resetLookupState(false);
 
     if (!normalizedIsbn) {
       this.isLoading = false;
-      this.errorMessage = 'Saisissez un ISBN-10 ou ISBN-13 valide.';
+      this.errorMessage = 'Saisissez un ISBN-10, un ISBN-13 ou un code interne valide.';
       this.refreshView();
       return;
     }
@@ -917,8 +938,12 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    const metadataPromise = firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
-    if (destination === 'tri') {
+    // Un code interne n'a pas de notice bibliographique externe (RG-172) : pas de métadonnées ni de demande.
+    const internalCode = isInternalCode(normalizedIsbn);
+    const metadataPromise = internalCode
+      ? null
+      : firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
+    if (destination === 'tri' && !internalCode) {
       this.startManualRequestLookup(normalizedIsbn, lookupVersion);
     }
     const localPromise = destination === 'tri' && this.scanWorkflow
@@ -928,8 +953,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         : Promise.resolve(null);
 
     if (destination === 'tri') {
-      this.metadataLookupState = 'loading';
-      void this.resolveTriageMetadata(metadataPromise, lookupVersion);
+      if (metadataPromise) {
+        this.metadataLookupState = 'loading';
+        void this.resolveTriageMetadata(metadataPromise, lookupVersion);
+      }
 
       const [localOutcome] = await Promise.allSettled([localPromise]);
       if (lookupVersion !== this.lookupVersion) {
@@ -963,7 +990,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     const [localOutcome, metadataOutcome] = await Promise.allSettled([
       localPromise,
-      metadataPromise,
+      metadataPromise ?? Promise.resolve(null),
     ]);
 
     if (lookupVersion !== this.lookupVersion) {
@@ -980,7 +1007,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     let metadata: BookMetadata | null = null;
-    if (metadataOutcome.status === 'fulfilled') {
+    if (metadataOutcome.status === 'fulfilled' && metadataOutcome.value !== null) {
       metadata = metadataOutcome.value;
       this.metadata = metadata;
       this.coverUrl = metadata.coverUrl;
@@ -991,7 +1018,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           // Bibliographic metadata is best-effort; the durable scan remains in the outbox.
         }
       }
-    } else {
+    } else if (metadataOutcome.status === 'rejected') {
       const error = metadataOutcome.reason;
       this.errorMessage = error instanceof HttpErrorResponse && error.status === 404
         ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
@@ -1387,6 +1414,28 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.selectedRareBook = null;
     this.cashMessage = null;
     this.refreshView();
+  }
+
+  openBookWithoutIsbn(): void {
+    if (this.authAvailable && !this.canSort && !this.canManageRareBooks) {
+      return;
+    }
+
+    this.stopCamera();
+    if (this.router) {
+      void this.router.navigateByUrl('/sans-isbn');
+    }
+  }
+
+  openLabelPrinter(): void {
+    if (this.authAvailable && !this.canSort && !this.canManageRareBooks) {
+      return;
+    }
+
+    this.stopCamera();
+    if (this.router) {
+      void this.router.navigateByUrl('/imprimante');
+    }
   }
 
   openRareBooks(): void {

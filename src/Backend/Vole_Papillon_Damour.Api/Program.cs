@@ -71,6 +71,7 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("Administration", policy => policy.RequireRole("Administration", "Admin"))
     .AddPolicy("RareBooks", policy => policy.RequireRole("LivresRares", "Administration", "Admin"))
     .AddPolicy("Tri", policy => policy.RequireRole("Tri"))
+    .AddPolicy("TriOrAdmin", policy => policy.RequireRole("Tri", "Administration", "Admin"))
     .AddPolicy("Caisse", policy => policy.RequireRole("Caisse"))
     .AddPolicy("ScanVolunteer", policy => policy.RequireRole("Tri", "Caisse"))
     .AddPolicy("IsAdmin", policy => policy.RequireRole("Administration", "Admin"));

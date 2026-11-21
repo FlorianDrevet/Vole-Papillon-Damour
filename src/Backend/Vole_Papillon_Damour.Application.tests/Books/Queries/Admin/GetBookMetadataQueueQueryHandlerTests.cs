@@ -39,8 +39,8 @@ public sealed class GetBookMetadataQueueQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.TotalCount.Should().Be(2);
         result.Value.Items.Select(item => item.Isbn13)
-            .Should().BeEquivalentTo(pending.Isbn13.Value, failed.Isbn13.Value);
-        result.Value.Items.Single(item => item.Isbn13 == failed.Isbn13.Value)
+            .Should().BeEquivalentTo(pending.Code.Value, failed.Code.Value);
+        result.Value.Items.Single(item => item.Isbn13 == failed.Code.Value)
             .FailureReason.Should().Be("Le fournisseur de notices est indisponible.");
     }
 

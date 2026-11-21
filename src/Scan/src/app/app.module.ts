@@ -21,6 +21,10 @@ import {ScanShellComponent} from './scan-shell.component';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
 import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
+import {LabelPrinterPageComponent} from './label-printer/label-printer-page.component';
+import {LabelPreviewComponent} from './label-printer/label-preview.component';
+import {BookWithoutIsbnPageComponent} from './book-without-isbn/book-without-isbn-page.component';
+import {LABEL_PRINTER, SimulatedLabelPrinter} from './label-printer/label-printer';
 import {scanRoutes} from './scan-routing';
 import {
   msalGuardConfig,
@@ -43,6 +47,9 @@ import {environment} from '../environments/environment';
     ScanStatisticsComponent,
     ScanRareBookFormComponent,
     ScanRareBookListComponent,
+    LabelPrinterPageComponent,
+    LabelPreviewComponent,
+    BookWithoutIsbnPageComponent,
   ],
   imports: [
     BrowserModule,
@@ -69,6 +76,8 @@ import {environment} from '../environments/environment';
     provideZonelessChangeDetection(),
     {provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true},
     {provide: ErrorHandler, useFactory: () => new ApplicationInsightsErrorHandler()},
+    // Imprimante simulée tant que le pilote réel n'est pas branché (RG-178).
+    {provide: LABEL_PRINTER, useFactory: () => new SimulatedLabelPrinter()},
   ],
   bootstrap: [AppComponent, MsalRedirectComponent],
 })

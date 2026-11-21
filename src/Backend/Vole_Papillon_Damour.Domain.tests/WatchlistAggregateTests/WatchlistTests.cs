@@ -130,7 +130,7 @@ public sealed class WatchlistTests
 
         item.Scope.Should().Be(WatchlistItemScope.Edition);
         item.UserId.Should().Be(userId);
-        item.Isbn13.Should().Be(isbn);
+        item.Isbn13.Should().Be((BookCode)isbn);
         item.WorkId.Should().BeNull();
     }
 

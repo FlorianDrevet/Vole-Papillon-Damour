@@ -9,7 +9,8 @@ namespace Vole_Papillon_Damour.Domain.WatchlistAggregate;
 public sealed class UserAlertHistory : Entity<Guid>
 {
     public UserId UserId { get; private set; } = null!;
-    public Isbn13? Isbn13 { get; private set; }
+    // Livre alerté : ISBN-13 ou code interne (RG-182). Le nom de colonne est conservé.
+    public BookCode? Isbn13 { get; private set; }
     public RareBookId? RareBookId { get; private set; }
     public DateTime SentAt { get; private set; }
     public Guid? OutboxMessageId { get; private set; }
@@ -17,7 +18,7 @@ public sealed class UserAlertHistory : Entity<Guid>
     private UserAlertHistory(
         Guid id,
         UserId userId,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         RareBookId? rareBookId,
         DateTime sentAt,
         Guid? outboxMessageId) : base(id)
@@ -56,7 +57,7 @@ public sealed class UserAlertHistory : Entity<Guid>
     public static UserAlertHistory Create(
         Guid id,
         UserId userId,
-        Isbn13 isbn13,
+        BookCode isbn13,
         DateTime sentAt,
         Guid? outboxMessageId = null)
     {

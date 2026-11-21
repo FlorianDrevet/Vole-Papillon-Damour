@@ -12,6 +12,9 @@ import {
   CatalogAdminAlertPage,
   CatalogAdminAlertOperation,
   CatalogAdminAddBookRequest,
+  CatalogAdminBookWithoutIsbnCreated,
+  CatalogAdminBookWithoutIsbnPage,
+  CatalogAdminBookWithoutIsbnRequest,
   CatalogAdminBookImportRequest,
   CatalogAdminBookImportResponse,
   CatalogAdminBookCoverUpload,
@@ -512,6 +515,14 @@ export class CatalogAdminApiService {
     );
   }
 
+  addIsbn(accessToken: string, internalCode: string, request: {isbn13: string}): Observable<CatalogAdminOperation> {
+    return this.http.post<CatalogAdminOperation>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(internalCode)}/add-isbn`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
   deleteBook(accessToken: string, isbn13: string): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}`,
@@ -880,6 +891,44 @@ export class CatalogAdminApiService {
     );
   }
 
+  getBooksWithoutIsbn(
+    accessToken: string,
+    filters: {page: number; pageSize: number; search?: string | null},
+  ): Observable<CatalogAdminBookWithoutIsbnPage> {
+    let params = new HttpParams()
+      .set('page', filters.page)
+      .set('pageSize', filters.pageSize);
+    const search = filters.search?.trim();
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    return this.http.get<CatalogAdminBookWithoutIsbnPage>(
+      `${this.apiUrl}/books/admin/without-isbn`,
+      this.options(accessToken, params),
+    );
+  }
+
+  createBookWithoutIsbn(
+    accessToken: string,
+    request: CatalogAdminBookWithoutIsbnRequest,
+  ): Observable<CatalogAdminBookWithoutIsbnCreated> {
+    return this.http.post<CatalogAdminBookWithoutIsbnCreated>(
+      `${this.apiUrl}/books/without-isbn`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  addBookPhoto(accessToken: string, code: string, file: File): Observable<unknown> {
+    const form = new FormData();
+    form.append('File', file, file.name);
+    return this.http.post(
+      `${this.apiUrl}/books/${encodeURIComponent(code)}/photos`,
+      form,
+      this.options(accessToken),
+    );
+  }
   private options(accessToken: string, params?: HttpParams): {headers: HttpHeaders; params?: HttpParams} {
     if (!accessToken.trim()) {
       throw new Error('An administrator access token is required.');

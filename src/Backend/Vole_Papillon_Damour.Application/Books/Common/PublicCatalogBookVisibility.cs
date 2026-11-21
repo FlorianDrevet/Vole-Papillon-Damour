@@ -36,7 +36,7 @@ public static class PublicCatalogBookVisibility
                !string.IsNullOrWhiteSpace(book.Title);
     }
 
-    public static async Task<Isbn13[]> GetInProgressScanIsbnsAsync(
+    public static async Task<BookCode[]> GetInProgressScanIsbnsAsync(
         IProjectDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -65,7 +65,7 @@ public static class PublicCatalogBookVisibility
     /// </summary>
     public static IQueryable<Book> FilterPublicCatalogBooks(
         IQueryable<Book> books,
-        IReadOnlyCollection<Isbn13> inProgressScanIsbns)
+        IReadOnlyCollection<BookCode> inProgressScanIsbns)
     {
         var visibleBooks = books.Where(Predicate);
         if (inProgressScanIsbns.Count == 0)

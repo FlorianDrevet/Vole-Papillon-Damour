@@ -90,6 +90,7 @@ export interface ScanRareBookPhotoResponse {
 }
 
 export interface ScanRareBookResponse {
+  internalCode?: string | null;
   id: string;
   slug: string;
   isbn13: string | null;

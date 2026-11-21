@@ -208,7 +208,7 @@ public sealed class RemoveScanBookCommandHandler(
     }
 
     private async Task<Book?> GetBookAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         var book = await dbContext.Books.SingleOrDefaultAsync(
@@ -225,7 +225,7 @@ public sealed class RemoveScanBookCommandHandler(
     }
 
     private async Task<int> GetQuantityAnnouncedAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return await dbContext.BookAnnouncements

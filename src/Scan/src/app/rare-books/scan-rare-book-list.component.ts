@@ -3,6 +3,7 @@ import {Router} from '@angular/router';
 
 import {ScanRareBook} from '../offline/scan-offline.model';
 import {ScanRareBookService} from './scan-rare-book.service';
+import {rareBookLabelCode} from './rare-book-label';
 
 type RareBookListFilter = 'all' | 'drafts';
 
@@ -40,6 +41,7 @@ export class ScanRareBookListComponent implements OnInit {
       book.title,
       book.authorMention ?? '',
       book.isbn13 ?? '',
+      book.internalCode ?? '',
     ].some(value => value.toLocaleLowerCase('fr-FR').includes(query)));
   }
 
@@ -80,6 +82,17 @@ export class ScanRareBookListComponent implements OnInit {
       return 'Parti';
     }
     return book.status === 'Published' ? 'Photo publiée' : 'Photo brouillon';
+  }
+
+  // E5 : impression de l'étiquette d'une fiche rare, avec son prix ferme (RG-179).
+  printLabel(book: ScanRareBook): void {
+    const code = rareBookLabelCode(book);
+    if (!code) {
+      return;
+    }
+
+    const queryParams = book.price > 0 ? {code, price: `${book.price.toFixed(2)} €`} : {code};
+    void this.router.navigate(['/etiquette'], {queryParams});
   }
 
   priceLabel(book: ScanRareBook): string {

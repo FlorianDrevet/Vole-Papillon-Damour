@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Vole_Papillon_Damour.Application.tests.Books.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
@@ -53,6 +54,7 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
     public RareBookFeatureTestDbContext Context { get; }
     public IDateTimeProvider Clock { get; }
     public IBlobService Blob { get; }
+    public FakeInternalBookCodeIssuer CodeIssuer { get; } = new();
     public UserId UserId { get; } = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
     public DateTime Now => DefaultNow;
 
@@ -109,12 +111,13 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
         string title,
         decimal price = 25m,
         bool published = false,
-        string? isbn13 = null)
+        string? isbn13 = null,
+        string? internalCode = null)
     {
-        Isbn13? parsedIsbn13 = null;
+        BookCode? parsedIsbn13 = null;
         if (!string.IsNullOrWhiteSpace(isbn13))
         {
-            if (!Isbn13.TryCreate(isbn13, out var parsed))
+            if (!BookCode.TryCreate(isbn13, out var parsed))
             {
                 throw new ArgumentException("The test ISBN is invalid.", nameof(isbn13));
             }
@@ -131,7 +134,8 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             publisher: "Un éditeur",
             publicationYear: 1920,
             condition: RareBookCondition.GoodWithFlaws,
-            isbn13: parsedIsbn13);
+            isbn13: parsedIsbn13,
+            internalCode: string.IsNullOrWhiteSpace(internalCode) ? null : BookCode.CreateInternal(internalCode));
         if (published)
         {
             book.Publish(UserId, Now.AddMinutes(1));
@@ -228,16 +232,20 @@ internal sealed class RareBookFeatureTestDbContext(
 
         modelBuilder.Entity<RareBook>(builder =>
         {
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    isbn => isbn.HasValue ? isbn.Value.Value : null,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.InternalCode)
+                .HasConversion(new ValueConverter<BookCode?, string?>(
+                    code => code.HasValue ? code.Value.Value : null,
+                    value => value == null ? null : BookCode.CreateInternal(value)));
             builder.HasKey(book => book.Id);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
             builder.Property(book => book.Slug)
                 .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
-            builder.Property(book => book.Isbn13)
-                .HasConversion(new ValueConverter<Isbn13?, string?>(
-                    isbn => isbn == null ? null : isbn.Value.Value,
-                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

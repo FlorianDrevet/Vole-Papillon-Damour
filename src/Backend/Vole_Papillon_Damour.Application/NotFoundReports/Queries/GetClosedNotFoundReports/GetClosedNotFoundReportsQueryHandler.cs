@@ -89,7 +89,7 @@ public sealed class GetClosedNotFoundReportsQueryHandler(
             .ToList();
 
         var editionIds = pageClosures.Where(closure => closure.Isbn13.HasValue)
-            .Select(closure => closure.Isbn13!.Value)
+            .Select(closure => (BookCode)closure.Isbn13!)
             .Distinct()
             .ToArray();
         List<Book> books = editionIds.Length == 0
@@ -164,7 +164,7 @@ public sealed class GetClosedNotFoundReportsQueryHandler(
     private sealed class ClosedProjection
     {
         public string Kind { get; init; } = string.Empty;
-        public Isbn13? Isbn13 { get; init; }
+        public BookCode? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public DateTime? ClosedAt { get; init; }
         public UserId? ClosedBy { get; init; }

@@ -39,7 +39,7 @@ public sealed class ProcessBookRecommendationsCommandHandler(
 
         var isbns = requestedByIsbn.Keys.ToArray();
         var bookIds = isbns
-            .Select(value => Isbn13.TryCreate(value, out var isbn13)
+            .Select(value => BookCode.TryCreate(value, out var isbn13)
                 ? isbn13
                 : throw new InvalidOperationException("A recommendation request ISBN was not canonical."))
             .ToArray();

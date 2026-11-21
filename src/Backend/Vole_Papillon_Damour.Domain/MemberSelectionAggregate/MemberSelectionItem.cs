@@ -12,7 +12,8 @@ public sealed class MemberSelectionItem : Entity<Guid>
     public const int MaxItemsPerMember = 500;
 
     public UserId UserId { get; private set; } = null!;
-    public Isbn13? Isbn13 { get; private set; }
+    // Édition désignée par son identifiant : ISBN-13 ou code interne (RG-182).
+    public BookCode? Isbn13 { get; private set; }
     public RareBookId? RareBookId { get; private set; }
     public MemberSelectionStatus Status { get; private set; }
     public DateTime AddedAt { get; private set; }
@@ -22,7 +23,7 @@ public sealed class MemberSelectionItem : Entity<Guid>
     private MemberSelectionItem(
         Guid id,
         UserId userId,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         RareBookId? rareBookId,
         DateTime addedAt) : base(id)
     {
@@ -49,7 +50,7 @@ public sealed class MemberSelectionItem : Entity<Guid>
         StatusChangedAt = AddedAt;
     }
 
-    public static MemberSelectionItem CreateForEdition(Guid id, UserId userId, Isbn13 isbn13, DateTime addedAt)
+    public static MemberSelectionItem CreateForEdition(Guid id, UserId userId, BookCode isbn13, DateTime addedAt)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))
         {

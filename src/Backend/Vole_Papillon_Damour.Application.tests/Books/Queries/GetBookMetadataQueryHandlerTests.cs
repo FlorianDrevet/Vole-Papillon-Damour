@@ -244,6 +244,7 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
         modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
         modelBuilder.Ignore<Product>();
@@ -262,14 +263,13 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
-            builder.Ignore(book => book.Isbn13);
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(isbn => isbn.Value, value => ParseBookCode(value));
             builder.Property(book => book.RedirectedToIsbn13)
                 .HasConversion(
-                    (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
-                    (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+                    (BookCode? isbn) => isbn.HasValue ? isbn.Value.Value : null,
+                    (string? value) => value == null ? (BookCode?)null : ParseIsbn(value));
             builder.Property(book => book.IsbndbCompletedBy)
                 .HasConversion(
                     (UserId? userId) => userId == null ? (Guid?)null : userId.Value,
@@ -279,6 +279,10 @@ internal sealed class GetBookMetadataTestDbContext(DbContextOptions<GetBookMetad
             builder.Property(book => book.CoverSource).HasConversion<byte?>();
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value)
     {

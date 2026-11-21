@@ -10,7 +10,8 @@ namespace Vole_Papillon_Damour.Domain.BookMovementAggregate;
 
 public sealed class BookMovement : AggregateRoot<BookMovementId>
 {
-    public Isbn13 Isbn13 { get; private set; }
+    // Identifiant du livre : ISBN-13 ou code interne (RG-170). Le nom de colonne est conservé.
+    public BookCode Isbn13 { get; private set; }
     public BookMovementType Type { get; private set; }
     public int Quantity { get; private set; }
     public DateTime OccurredAt { get; private set; }
@@ -26,7 +27,7 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
 
     private BookMovement(
         BookMovementId id,
-        Isbn13 isbn13,
+        BookCode isbn13,
         BookMovementType type,
         int quantity,
         DateTime occurredAt,
@@ -63,7 +64,7 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
 
     public static BookMovement Create(
         BookMovementId id,
-        Isbn13 isbn13,
+        BookCode isbn13,
         BookMovementType type,
         int quantity,
         DateTime occurredAt,
@@ -98,11 +99,11 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
     {
     }
 
-    private static void EnsureIsbn(Isbn13 isbn13)
+    private static void EnsureIsbn(BookCode isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))
         {
-            throw new ArgumentException("A valid ISBN-13 is required.", nameof(isbn13));
+            throw new ArgumentException("A valid book code is required.", nameof(isbn13));
         }
     }
 }

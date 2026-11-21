@@ -7,14 +7,15 @@ namespace Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 public sealed class MemberFavoriteBook
 {
     public UserId UserId { get; private set; } = null!;
-    public Isbn13 Isbn13 { get; private set; }
+    // Identifiant du livre : ISBN-13 ou code interne (RG-170). Le nom de colonne est conservé.
+    public BookCode Isbn13 { get; private set; }
     public DateTime AddedAt { get; private set; }
 
     private MemberFavoriteBook()
     {
     }
 
-    public static MemberFavoriteBook Create(UserId userId, Isbn13 isbn13, DateTime addedAt)
+    public static MemberFavoriteBook Create(UserId userId, BookCode isbn13, DateTime addedAt)
     {
         ArgumentNullException.ThrowIfNull(userId);
         if (userId.Value == Guid.Empty)

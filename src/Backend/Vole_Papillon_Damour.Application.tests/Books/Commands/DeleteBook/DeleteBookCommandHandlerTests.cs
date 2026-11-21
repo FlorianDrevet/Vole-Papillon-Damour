@@ -17,6 +17,23 @@ public sealed class DeleteBookCommandHandlerTests
         UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
 
     [Fact]
+    public async Task Handle_AcceptsAnInternalCode_WhenBookHasNoHistory()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddInternalCodeBookAsync(quantityAvailable: 0);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new DeleteBookCommandHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new DeleteBookCommand(book.Code.Value, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookHasNoHistory_DeletesTheBook()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -41,7 +58,7 @@ public sealed class DeleteBookCommandHandlerTests
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var sale = BookMovement.Create(
             BookMovementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             BookMovementType.Sale,
             -1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -59,7 +76,7 @@ public sealed class DeleteBookCommandHandlerTests
         var handler = new DeleteBookCommandHandler(fixture.Context, clock);
 
         var result = await handler.Handle(
-            new DeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new DeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
@@ -74,7 +91,7 @@ public sealed class DeleteBookCommandHandlerTests
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var entry = BookMovement.Create(
             BookMovementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             BookMovementType.DirectEntry,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -92,7 +109,7 @@ public sealed class DeleteBookCommandHandlerTests
         var handler = new DeleteBookCommandHandler(fixture.Context, clock);
 
         var result = await handler.Handle(
-            new DeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new DeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -117,7 +134,7 @@ public sealed class DeleteBookCommandHandlerTests
             ScanBookCommandHandlerTests.ReceivedAt);
         var entry = BookMovement.Create(
             BookMovementId.CreateUnique(),
-            book.Isbn13,
+            book.Code.AsIsbn13(),
             BookMovementType.DirectEntry,
             1,
             ScanBookCommandHandlerTests.ClientScanAt,
@@ -135,7 +152,7 @@ public sealed class DeleteBookCommandHandlerTests
         var handler = new DeleteBookCommandHandler(fixture.Context, clock);
 
         var result = await handler.Handle(
-            new DeleteBookCommand(book.Isbn13.Value, AdministratorId),
+            new DeleteBookCommand(book.Code.Value, AdministratorId),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();

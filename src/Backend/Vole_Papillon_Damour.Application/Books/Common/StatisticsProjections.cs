@@ -11,14 +11,14 @@ using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 namespace Vole_Papillon_Damour.Application.Books.Common;
 
 internal sealed record StatisticsBookProjection(
-    Isbn13 Isbn13,
+    BookCode Isbn13,
     string? Title,
     string? Authors,
     string? Genre);
 
 internal sealed record StatisticsBookMovementProjection(
     BookMovementId Id,
-    Isbn13 Isbn13,
+    BookCode Isbn13,
     BookMovementType Type,
     int Quantity,
     DateTime OccurredAt,
@@ -29,7 +29,7 @@ internal sealed record StatisticsBookMovementProjection(
 
 internal sealed record StatisticsCatalogueMovementProjection(
     BookMovementId Id,
-    Isbn13 Isbn13,
+    BookCode Isbn13,
     BookMovementType Type,
     int Quantity,
     DateTime OccurredAt,

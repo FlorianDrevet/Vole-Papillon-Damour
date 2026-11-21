@@ -193,6 +193,19 @@ describe('AccountPurchasesComponent', () => {
     expect(page.nativeElement.querySelector('.purchases-notice')).toBeNull();
   });
 
+  it('ne propose pas « J’ai aimé » pour un code interne : les favoris n’acceptent que des ISBN', async () => {
+    api.getPurchases.and.returnValue(of(response([passage({
+      lines: passage().lines.map(line => ({...line, isbn13: '2000000000015'})),
+    })])));
+    const page = render();
+    await settle(page);
+
+    expect(page.nativeElement.querySelector('[data-zone="E6-bouton-jai-aime"]')).toBeNull();
+    expect(page.nativeElement.textContent).toContain('2000000000015');
+    expect(page.nativeElement.textContent).not.toContain('ISBN 2000000000015');
+    expect(favorites.add).not.toHaveBeenCalled();
+  });
+
   it('adds a purchase to favorites with the “J’ai aimé” action', async () => {
     const page = render();
     await settle(page);

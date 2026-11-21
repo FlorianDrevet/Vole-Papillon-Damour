@@ -54,8 +54,9 @@ internal static class ManualRequestStockPick
                 return withdrawal.Errors;
             }
 
+            // Une demande manuelle porte sur un ISBN : un livre à code interne ne la satisfait jamais.
             request.MarkFoundFromStock(
-                withdrawal.Value.Isbn13,
+                withdrawal.Value.Isbn13.AsIsbn13(),
                 pickedFromFairId: null,
                 pickedAnnouncementSessionId: null,
                 withdrawal.Value.MovementId,
@@ -66,6 +67,12 @@ internal static class ManualRequestStockPick
 
         var announcement = await FindLatestAnnouncementAsync(db, request, ct);
         if (announcement is null || announcement.AssoEventsId is not { } fairId)
+        {
+            return Errors.ManualRequest.NothingInStock();
+        }
+
+        // Une demande manuelle porte sur un ISBN : une annonce à code interne ne la satisfait jamais.
+        if (!announcement.Isbn13.IsIsbn)
         {
             return Errors.ManualRequest.NothingInStock();
         }
@@ -81,7 +88,7 @@ internal static class ManualRequestStockPick
 
         var movement = BookMovement.Create(
             BookMovementId.CreateUnique(),
-            announcement.Isbn13,
+            announcement.Isbn13.AsIsbn13(),
             BookMovementType.Correction,
             quantity: -1,
             occurredAt: now,
@@ -94,7 +101,7 @@ internal static class ManualRequestStockPick
             clientGestureId: null);
         db.BookMovements.Add(movement);
         request.MarkFoundFromStock(
-            announcement.Isbn13,
+            announcement.Isbn13.AsIsbn13(),
             fairId,
             announcement.ScanSessionId,
             movement.Id,
@@ -113,6 +120,7 @@ internal static class ManualRequestStockPick
         {
             return await db.Books
                 .Where(book => book.RedirectedToIsbn13 == null &&
+                               !book.IsInternalCode &&
                                book.WorkId == request.WorkId &&
                                book.QuantityAvailable > 0)
                 .OrderByDescending(book => book.QuantityAvailable)
@@ -126,7 +134,7 @@ internal static class ManualRequestStockPick
         }
 
         var currentIsbn = requestedIsbn;
-        var visited = new HashSet<Isbn13>();
+        var visited = new HashSet<BookCode>();
         while (visited.Add(currentIsbn))
         {
             var currentBook = await db.Books

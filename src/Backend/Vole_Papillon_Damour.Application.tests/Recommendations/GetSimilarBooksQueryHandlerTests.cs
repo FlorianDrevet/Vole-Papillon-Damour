@@ -123,7 +123,7 @@ public sealed class GetSimilarBooksQueryHandlerTests
         fixture.AddBook(FirstNeighborIsbn, "Masqué", "Auteur", hidden: true);
         var redirectedTarget = fixture.AddBook("9782266233200", "Cible canonique", "Auteur");
         var redirected = fixture.AddBook(SecondNeighborIsbn, "Redirigé", "Auteur");
-        redirected.RedirectTo(redirectedTarget.Id);
+        redirected.RedirectTo(redirectedTarget.Id.AsIsbn13());
         await fixture.SetCurrentGenerationAsync(CurrentGeneration, 4);
         fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 1, FirstNeighborIsbn, 0.9f, NeighborReason.Theme);
         fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 2, SecondNeighborIsbn, 0.8f, NeighborReason.Theme);

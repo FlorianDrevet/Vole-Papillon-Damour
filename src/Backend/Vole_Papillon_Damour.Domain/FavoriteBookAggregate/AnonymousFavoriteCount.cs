@@ -4,13 +4,13 @@ using Vole_Papillon_Damour.Domain.Common.Models;
 
 namespace Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 
-public sealed class AnonymousFavoriteCount : AggregateRoot<Isbn13>
+public sealed class AnonymousFavoriteCount : AggregateRoot<BookCode>
 {
-    public Isbn13 Isbn13 => Id;
+    public BookCode Isbn13 => Id;
     public int Count { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
-    private AnonymousFavoriteCount(Isbn13 isbn13, DateTime createdAt) : base(isbn13)
+    private AnonymousFavoriteCount(BookCode isbn13, DateTime createdAt) : base(isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))
         {
@@ -24,7 +24,7 @@ public sealed class AnonymousFavoriteCount : AggregateRoot<Isbn13>
     {
     }
 
-    public static AnonymousFavoriteCount Create(Isbn13 isbn13, DateTime createdAt)
+    public static AnonymousFavoriteCount Create(BookCode isbn13, DateTime createdAt)
     {
         return new AnonymousFavoriteCount(isbn13, createdAt);
     }

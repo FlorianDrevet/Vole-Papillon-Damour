@@ -259,6 +259,10 @@ internal sealed class RecommendationProfileFixture : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
+
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
         ? isbn
         : throw new InvalidOperationException($"Invalid test ISBN: {value}");
@@ -333,6 +337,7 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
         modelBuilder.Ignore<User>();
         modelBuilder.ApplyConfiguration(new BookConfiguration());
         modelBuilder.ApplyConfiguration(new BookGenreConfiguration());
+        modelBuilder.ApplyConfiguration(new BookPhotoConfiguration());
         modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.ManuallyEditedFields).HasColumnType("TEXT");
         modelBuilder.Entity<Book>().Property(book => book.RowVersion)
@@ -349,12 +354,12 @@ internal sealed class RecommendationProfileTestDbContext(DbContextOptions<Recomm
             builder.HasKey(record => record.Isbn13);
             builder.Property(record => record.Isbn13)
                 .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
-            builder.HasOne<Book>()
-                .WithOne()
-                .HasForeignKey<BookIsbndbRecord>(record => record.Isbn13)
-                .OnDelete(DeleteBehavior.Cascade);
         });
     }
+
+    private static BookCode ParseBookCode(string value) =>
+
+        BookCode.TryCreate(value, out var code) ? code : throw new ArgumentException(value);
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
         ? isbn

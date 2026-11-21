@@ -16,7 +16,7 @@ public sealed class GetAdminBookQueryHandler(IProjectDbContext dbContext)
         GetAdminBookQuery query,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(query.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(query.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(query.Isbn);
         }

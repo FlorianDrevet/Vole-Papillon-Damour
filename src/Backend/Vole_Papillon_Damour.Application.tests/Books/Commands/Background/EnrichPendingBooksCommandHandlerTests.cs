@@ -20,9 +20,9 @@ public sealed class EnrichPendingBooksCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
-        resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
+        resolver.ResolveAsync(book.Code.AsIsbn13(), Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
-                book.Isbn13.Value,
+                book.Code.Value,
                 new string('x', 501),
                 null,
                 null,

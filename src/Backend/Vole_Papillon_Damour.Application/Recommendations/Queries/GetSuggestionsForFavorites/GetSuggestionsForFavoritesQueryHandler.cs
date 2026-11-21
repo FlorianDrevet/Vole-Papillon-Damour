@@ -39,11 +39,11 @@ public sealed class GetSuggestionsForFavoritesQueryHandler(
         }
 
         var requestedIsbns = query.Isbn13s
-            .Where(isbn => Isbn13.TryCreate(isbn, out var parsed) && parsed.Value == isbn)
+            .Where(isbn => BookCode.TryCreate(isbn, out var parsed) && parsed.Value == isbn)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         var requestedIds = requestedIsbns
-            .Select(isbn => Isbn13.TryCreate(isbn, out var parsed) ? parsed : default)
+            .Select(isbn => BookCode.TryCreate(isbn, out var code) ? code : default)
             .ToArray();
         var seedBooks = await dbContext.Books
             .AsNoTracking()
@@ -102,8 +102,8 @@ public sealed class GetSuggestionsForFavoritesQueryHandler(
         var candidateIsbns = neighbors
             .Select(neighbor => neighbor.NeighborIsbn13)
             .Distinct(StringComparer.Ordinal)
-            .Where(isbn => Isbn13.TryCreate(isbn, out _))
-            .Select(isbn => Isbn13.TryCreate(isbn, out var parsed) ? parsed : (Isbn13?)null)
+            .Where(isbn => BookCode.TryCreate(isbn, out _))
+            .Select(isbn => BookCode.TryCreate(isbn, out var code) ? code : (BookCode?)null)
             .Where(isbn => isbn.HasValue)
             .Select(isbn => isbn!.Value)
             .ToArray();

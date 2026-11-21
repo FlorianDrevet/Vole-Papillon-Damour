@@ -164,7 +164,7 @@ public sealed class DecisionCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var request = await fixture.AddEditionRequestAsync(requester.Id, Isbn, requestedAt);
         request.MarkFoundByScan(
-            book.Id,
+            book.Id.AsIsbn13(),
             session.Id,
             BookMovementId.CreateUnique(),
             ManualRequestFixture.VolunteerId,

@@ -9,6 +9,23 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Commands.BookFlags;
 public sealed class BookFlagsCommandHandlerTests
 {
     [Fact]
+    public async Task HideBook_AcceptsAnInternalCode()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddInternalCodeBookAsync(quantityAvailable: 1);
+
+        var result = await fixture.CreateHideBookHandler().Handle(
+            new HideBookCommand(
+                book.Code.Value,
+                Hidden: true,
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.IsHiddenFromCatalog.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task HideBook_UpdatesCatalogVisibilityWithoutChangingQuantity()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -17,7 +34,7 @@ public sealed class BookFlagsCommandHandlerTests
 
         var result = await handler.Handle(
             new HideBookCommand(
-                book.Isbn13.Value,
+                book.Code.Value,
                 Hidden: true,
                 UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
             CancellationToken.None);

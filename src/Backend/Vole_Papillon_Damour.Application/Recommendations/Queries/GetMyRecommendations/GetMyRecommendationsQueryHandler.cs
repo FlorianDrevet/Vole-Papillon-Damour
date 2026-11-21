@@ -150,8 +150,8 @@ public sealed class GetMyRecommendationsQueryHandler(
         var candidateIsbns = neighbors
             .Select(neighbor => neighbor.NeighborIsbn13)
             .Distinct(StringComparer.Ordinal)
-            .Where(isbn => Isbn13.TryCreate(isbn, out _))
-            .Select(isbn => Isbn13.TryCreate(isbn, out var parsed) ? parsed : (Isbn13?)null)
+            .Where(isbn => BookCode.TryCreate(isbn, out _))
+            .Select(isbn => BookCode.TryCreate(isbn, out var parsed) ? parsed : (BookCode?)null)
             .Where(isbn => isbn.HasValue)
             .Select(isbn => isbn!.Value)
             .ToArray();
@@ -214,7 +214,7 @@ public sealed class GetMyRecommendationsQueryHandler(
     {
         var purchaseIsbnIds = purchasedLines
             .Where(line => line.Isbn13.HasValue)
-            .Select(line => line.Isbn13!.Value)
+            .Select(line => (BookCode)line.Isbn13!)
             .Distinct()
             .ToArray();
         var workIds = new HashSet<string>(StringComparer.Ordinal);
@@ -244,5 +244,5 @@ public sealed class GetMyRecommendationsQueryHandler(
     private static MyRecommendationsResult Empty(RecommendationStatus status, int minimumHearts) =>
         new(status, [], minimumHearts);
 
-    private sealed record PurchaseLineSnapshot(Isbn13? Isbn13, string Title);
+    private sealed record PurchaseLineSnapshot(BookCode? Isbn13, string Title);
 }

@@ -33,7 +33,7 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
             .IsRequired()
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(movement => movement.Type)
             .HasConversion<byte>()

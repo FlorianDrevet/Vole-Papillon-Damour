@@ -190,6 +190,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             .Select(book => new ScanCatalogRareBookResult(
                 book.Id.Value,
                 book.Isbn13 == null ? null : book.Isbn13.Value.Value,
+                book.InternalCode == null ? null : book.InternalCode.Value.Value,
                 book.Title,
                 book.AuthorMention,
                 book.Price,
@@ -374,7 +375,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         {
             return (JsonSerializer.Deserialize<IsbndbOtherIsbn[]>(json) ?? [])
                 .Select(otherIsbn => otherIsbn.Isbn?.Trim())
-                .Where(value => Isbn13.TryCreate(value, out _))
+                .Where(value => BookCode.TryCreate(value, out _))
                 .Select(value => value!)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
@@ -567,7 +568,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         IReadOnlyList<Guid> RemovedIds);
 
     private sealed record CatalogBookRow(
-        Isbn13 Isbn13,
+        BookCode Isbn13,
         string? Title,
         string? Authors,
         string? WorkId,
@@ -583,26 +584,26 @@ public sealed class GetCatalogDeltaQueryHandler(
 
     private sealed record WatchlistTarget(
         WatchlistItemScope Scope,
-        Isbn13? Isbn13,
+        BookCode? Isbn13,
         string? WorkId);
 
     private sealed record ManualRequestTarget(
         ManualBookRequestScope Scope,
-        Isbn13? Isbn13,
+        BookCode? Isbn13,
         string? WorkId);
 
     private sealed class WantedTargets
     {
-        private readonly HashSet<Isbn13> isbn13s;
+        private readonly HashSet<BookCode> isbn13s;
         private readonly HashSet<string> workIds;
 
-        private WantedTargets(HashSet<Isbn13> isbn13s, HashSet<string> workIds)
+        private WantedTargets(HashSet<BookCode> isbn13s, HashSet<string> workIds)
         {
             this.isbn13s = isbn13s;
             this.workIds = workIds;
         }
 
-        public IReadOnlyCollection<Isbn13> Isbn13s => isbn13s;
+        public IReadOnlyCollection<BookCode> Isbn13s => isbn13s;
 
         public IReadOnlyCollection<string> WorkIds => workIds;
 
@@ -611,7 +612,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             return new WantedTargets(
                 items
                     .Where(item => item.Scope == WatchlistItemScope.Edition && item.Isbn13 is not null)
-                    .Select(item => item.Isbn13!.Value)
+                    .Select(item => (BookCode)item.Isbn13!)
                     .ToHashSet(),
                 items
                     .Where(item => item.Scope == WatchlistItemScope.Work && item.WorkId is not null)
@@ -628,16 +629,16 @@ public sealed class GetCatalogDeltaQueryHandler(
 
     private sealed class ManualTargets
     {
-        private readonly HashSet<Isbn13> isbn13s;
+        private readonly HashSet<BookCode> isbn13s;
         private readonly HashSet<string> workIds;
 
-        private ManualTargets(HashSet<Isbn13> isbn13s, HashSet<string> workIds)
+        private ManualTargets(HashSet<BookCode> isbn13s, HashSet<string> workIds)
         {
             this.isbn13s = isbn13s;
             this.workIds = workIds;
         }
 
-        public IReadOnlyCollection<Isbn13> Isbn13s => isbn13s;
+        public IReadOnlyCollection<BookCode> Isbn13s => isbn13s;
 
         public IReadOnlyCollection<string> WorkIds => workIds;
 
@@ -646,7 +647,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             return new ManualTargets(
                 requests
                     .Where(request => request.Scope == ManualBookRequestScope.Edition && request.Isbn13 is not null)
-                    .Select(request => request.Isbn13!.Value)
+                    .Select(request => (BookCode)request.Isbn13!)
                     .ToHashSet(),
                 requests
                     .Where(request => request.Scope == ManualBookRequestScope.Work && request.WorkId is not null)

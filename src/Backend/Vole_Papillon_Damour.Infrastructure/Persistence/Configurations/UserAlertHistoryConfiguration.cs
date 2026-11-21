@@ -26,7 +26,7 @@ public sealed class UserAlertHistoryConfiguration : IEntityTypeConfiguration<Use
             .IsUnicode(false)
             .HasConversion(
                 isbn13 => isbn13 == null ? null : isbn13.Value.Value,
-                value => value == null ? null : BookPersistenceConversions.ParseIsbn13(value));
+                value => value == null ? null : BookPersistenceConversions.ParseBookCode(value));
         builder.Property(history => history.RareBookId)
             .HasConversion(new ValueConverter<RareBookId?, Guid?>(
                 rareBookId => rareBookId == null ? null : rareBookId.Value,

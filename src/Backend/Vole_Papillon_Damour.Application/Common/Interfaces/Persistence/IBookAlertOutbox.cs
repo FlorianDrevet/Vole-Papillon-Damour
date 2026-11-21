@@ -87,14 +87,14 @@ public interface IBookAlertOutbox
         Guid messageId,
         DateTime claimedUntil,
         DateTime sentAt,
-        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<BookCode> itemIsbn13s,
         CancellationToken cancellationToken);
 
     Task<bool> MarkSentAsync(
         Guid messageId,
         DateTime claimedUntil,
         DateTime sentAt,
-        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<BookCode> itemIsbn13s,
         IReadOnlyCollection<Guid> rareBookIds,
         CancellationToken cancellationToken);
 

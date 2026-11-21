@@ -310,7 +310,7 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var canonical = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
         var redirected = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
-        redirected.RedirectTo(canonical.Id);
+        redirected.RedirectTo(canonical.Id.AsIsbn13());
         fixture.Context.BookMovements.Add(BookMovement.Create(
             BookMovementId.CreateUnique(),
             redirected.Id,
@@ -336,7 +336,7 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.AffectedMovementCount.Should().Be(1);
-        (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id))
+        (await fixture.Context.Books.SingleAsync(candidate => candidate.Id == canonical.Id.AsIsbn13()))
             .QuantityAvailable.Should().Be(0);
     }
 
@@ -403,7 +403,7 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
             consentGiven: true,
             AdministratorId,
             occurredAt.AddMinutes(-1));
-        request.MarkFoundByScan(book.Id, session.Id, movement.Id, session.VolunteerId, occurredAt);
+        request.MarkFoundByScan(book.Id.AsIsbn13(), session.Id, movement.Id, session.VolunteerId, occurredAt);
         if (markGiven)
         {
             request.MarkGiven(AdministratorId, occurredAt.AddMinutes(2));

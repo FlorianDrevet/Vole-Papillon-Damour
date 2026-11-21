@@ -12,7 +12,15 @@ namespace Vole_Papillon_Damour.Domain.RareBookAggregate;
 public sealed class RareBook : AggregateRoot<RareBookId>
 {
     public RareBookSlug Slug { get; private set; } = null!;
-    public Isbn13? Isbn13 { get; private set; }
+    // ISBN réel, optionnel. Un code interne n'est jamais stocké ici (RG-170).
+    public BookCode? Isbn13 { get; private set; }
+
+    // Code interne de l'exemplaire (RG-173), gardé à vie : il reste sur l'étiquette même après l'ajout d'un ISBN (RG-174).
+    public BookCode? InternalCode { get; private set; }
+
+    // Code imprimé sur l'étiquette : le code interne s'il existe, sinon l'ISBN.
+    public BookCode? LabelCode => InternalCode ?? Isbn13;
+
     public string Title { get; private set; } = null!;
     public string? AuthorMention { get; private set; }
     public string? Publisher { get; private set; }
@@ -50,9 +58,10 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13,
+        BookCode? isbn13,
         int slugCollisionSuffix,
-        Guid? clientGestureId) : base(id)
+        Guid? clientGestureId,
+        BookCode? internalCode) : base(id)
     {
         if (id is null || id.Value == Guid.Empty)
         {
@@ -67,6 +76,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         Condition = condition ?? throw new ArgumentNullException(nameof(condition));
         PublicDescription = NormalizeOptional(publicDescription, 1200, nameof(publicDescription));
         Isbn13 = ValidateIsbn(isbn13);
+        InternalCode = ValidateInternalCode(internalCode);
         ClientGestureId = ValidateClientGestureId(clientGestureId);
         Slug = RareBookSlug.Create(Title, AuthorMention, PublicationYear, slugCollisionSuffix);
         CreatedAt = DomainTime.RequireUtc(createdAt, nameof(createdAt));
@@ -87,9 +97,10 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13 = null,
+        BookCode? isbn13 = null,
         int slugCollisionSuffix = 1,
-        Guid? clientGestureId = null)
+        Guid? clientGestureId = null,
+        BookCode? internalCode = null)
     {
         return new RareBook(
             RareBookId.CreateUnique(),
@@ -104,7 +115,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             createdBy,
             isbn13,
             slugCollisionSuffix,
-            clientGestureId);
+            clientGestureId,
+            internalCode);
     }
 
     public static RareBook Create(
@@ -117,9 +129,10 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         int? publicationYear = null,
         RareBookCondition? condition = null,
         string? publicDescription = null,
-        Isbn13? isbn13 = null,
+        BookCode? isbn13 = null,
         int slugCollisionSuffix = 1,
-        Guid? clientGestureId = null)
+        Guid? clientGestureId = null,
+        BookCode? internalCode = null)
     {
         return CreateWithDetails(
             title,
@@ -133,7 +146,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             createdBy,
             isbn13,
             slugCollisionSuffix,
-            clientGestureId);
+            clientGestureId,
+            internalCode);
     }
 
     public bool Update(
@@ -146,7 +160,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? publicDescription,
         DateTime updatedAt,
         UserId updatedBy,
-        Isbn13? isbn13 = null)
+        BookCode? isbn13 = null)
     {
         var normalizedTitle = NormalizeOptional(title, 300, nameof(title)) ?? string.Empty;
         var normalizedAuthorMention = NormalizeOptional(authorMention, 300, nameof(authorMention));
@@ -155,6 +169,11 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         var normalizedPrice = NormalizePrice(price);
         var normalizedPublicDescription = NormalizeOptional(publicDescription, 1200, nameof(publicDescription));
         var normalizedIsbn13 = ValidateIsbn(isbn13);
+        // Retirer l'ISBN ne doit jamais laisser le rare sans code : un code interne doit exister (RG-173).
+        if (normalizedIsbn13 is null && Isbn13 is not null && InternalCode is null)
+        {
+            throw new ArgumentException("A rare book keeps an ISBN or its internal code.", nameof(isbn13));
+        }
 
         if (Status == RareBookStatus.Published &&
             (string.IsNullOrWhiteSpace(normalizedTitle) || normalizedPrice <= 0))
@@ -435,14 +454,29 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         }
     }
 
-    private static Isbn13? ValidateIsbn(Isbn13? isbn13)
+    private static BookCode? ValidateIsbn(BookCode? isbn13)
     {
         if (isbn13 is { } value && string.IsNullOrWhiteSpace(value.Value))
         {
             throw new ArgumentException("A valid ISBN-13 is required.", nameof(isbn13));
         }
 
+        if (isbn13 is { IsInternal: true })
+        {
+            throw new ArgumentException("An internal code cannot be stored as the ISBN of a rare book.", nameof(isbn13));
+        }
+
         return isbn13;
+    }
+
+    private static BookCode? ValidateInternalCode(BookCode? internalCode)
+    {
+        if (internalCode is { } value && !value.IsInternal)
+        {
+            throw new ArgumentException("The internal code of a rare book must be an internal code.", nameof(internalCode));
+        }
+
+        return internalCode;
     }
 
     private static Guid? ValidateClientGestureId(Guid? clientGestureId)

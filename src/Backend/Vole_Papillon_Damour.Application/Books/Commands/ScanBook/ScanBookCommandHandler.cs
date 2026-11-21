@@ -39,7 +39,7 @@ public sealed class ScanBookCommandHandler(
         ScanBookCommand command,
         CancellationToken cancellationToken)
     {
-        if (!Isbn13.TryCreate(command.Isbn, out var isbn13))
+        if (!BookCode.TryCreate(command.Isbn, out var isbn13))
         {
             return Errors.Book.InvalidIsbn(command.Isbn);
         }
@@ -169,13 +169,25 @@ public sealed class ScanBookCommandHandler(
 
             if (book is null)
             {
+                if (!isbn13.IsIsbn)
+                {
+                    // Un code interne désigne l'exemplaire rare par son code d'étiquette (RG-173).
+                    var isRareCode = await dbContext.RareBooks
+                        .AsNoTracking()
+                        .AnyAsync(rare => rare.InternalCode == isbn13, cancellationToken);
+                    return isRareCode
+                        ? Error.Validation("Book.RareBookCode", "Ce code désigne un livre rare : il se gère depuis la vente des livres rares.")
+                        : Errors.Book.UnknownInternalCode(isbn13.Value);
+                }
+
                 book = Book.Create(isbn13, receivedAt);
                 dbContext.Books.Add(book);
             }
 
             var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
             var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
-            var heldRequest = command.Kept
+            // Une demande manuelle porte sur un ISBN : un code interne ne peut pas la satisfaire.
+            var heldRequest = command.Kept && isbn13.IsIsbn
                 ? await ManualRequestMatcher.FindOldestSearchingAsync(
                     dbContext, isbn13, resolvedWorkId ?? book.WorkId, cancellationToken)
                 : null;
@@ -241,7 +253,7 @@ public sealed class ScanBookCommandHandler(
             dbContext.BookMovements.Add(movement);
 
             heldRequest?.MarkFoundByScan(
-                isbn13,
+                isbn13.AsIsbn13(), // heldRequest n'existe que pour un ISBN (garde ci-dessus)
                 session.Id,
                 movement.Id,
                 session.VolunteerId,
@@ -252,7 +264,10 @@ public sealed class ScanBookCommandHandler(
 
             if (book.MetadataStatus == BookMetadataStatus.Pending)
             {
-                metadataEnrichmentQueue?.Enqueue(book.Id);
+                if (book.Id.IsIsbn)
+                {
+                    metadataEnrichmentQueue?.Enqueue(book.Id.AsIsbn13());
+                }
             }
 
             var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
@@ -362,7 +377,7 @@ public sealed class ScanBookCommandHandler(
     }
 
     private async Task<int> GetQuantityAnnouncedAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return await dbContext.BookAnnouncements
@@ -374,12 +389,12 @@ public sealed class ScanBookCommandHandler(
     }
 
     private Task<bool> IsRareBookAsync(
-        Isbn13 isbn13,
+        BookCode isbn13,
         CancellationToken cancellationToken)
     {
         return dbContext.RareBooks
             .AsNoTracking()
-            .AnyAsync(rareBook => rareBook.Isbn13 == isbn13, cancellationToken);
+            .AnyAsync(rareBook => rareBook.Isbn13 == isbn13 || rareBook.InternalCode == isbn13, cancellationToken);
     }
 
     private static BookVerdictDecision CalculateVerdict(

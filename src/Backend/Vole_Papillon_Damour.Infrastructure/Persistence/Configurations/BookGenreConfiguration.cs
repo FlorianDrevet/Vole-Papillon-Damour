@@ -17,7 +17,7 @@ public sealed class BookGenreConfiguration : IEntityTypeConfiguration<BookGenre>
             .IsUnicode(false)
             .HasConversion(
                 isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                value => BookPersistenceConversions.ParseBookCode(value));
 
         builder.Property(genre => genre.Name)
             .HasMaxLength(100)

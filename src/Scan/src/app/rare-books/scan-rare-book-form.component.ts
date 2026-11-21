@@ -4,13 +4,14 @@ import {firstValueFrom} from 'rxjs';
 
 import {BookMetadata} from '../scanner/book-metadata.model';
 import {BookMetadataService} from '../scanner/book-metadata.service';
-import {normalizeIsbn} from '../scanner/isbn.util';
+import {normalizeBookCode, normalizeIsbn} from '../scanner/isbn.util';
 import {
   ScanRareBook,
   ScanRareBookDraftInput,
   ScanRareBookPhotoQueueEntry,
 } from '../offline/scan-offline.model';
 import {ScanRareBookService} from './scan-rare-book.service';
+import {rareBookLabelCode} from './rare-book-label';
 
 export type ScanRareBookFormStep = 'choice' | 'candidate' | 'identify' | 'describe' | 'photos';
 
@@ -79,11 +80,22 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
     this.step = 'candidate';
   }
 
+  // RG-180 : un livre sans ISBN ne se crée pas hors ligne. Le parcours est la création en ligne.
   startNoIsbn(): void {
-    this.error = null;
-    this.candidate = null;
-    this.form = {...emptyDraft(), title: 'Livre à renseigner'};
-    this.step = 'identify';
+    void this.router.navigateByUrl('/sans-isbn');
+  }
+
+  // E5 : impression de l'étiquette de la fiche, avec son prix ferme (RG-179).
+  printLabel(): void {
+    const code = this.book ? rareBookLabelCode(this.book) : null;
+    if (!code) {
+      return;
+    }
+
+    const queryParams = this.book && this.book.price > 0
+      ? {code, price: `${this.book.price.toFixed(2)} €`}
+      : {code};
+    void this.router.navigate(['/etiquette'], {queryParams});
   }
 
   async lookupCandidate(): Promise<void> {
@@ -123,8 +135,9 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
+  // Un code interne déjà imprimé (RG-172, RG-174) reste valide : il ne doit pas être effacé ici.
   useManualEntry(): void {
-    this.form = {...this.form, isbn13: normalizeIsbn(this.isbn)};
+    this.form = {...this.form, isbn13: normalizeBookCode(this.isbn)};
     this.step = 'identify';
     this.error = null;
   }

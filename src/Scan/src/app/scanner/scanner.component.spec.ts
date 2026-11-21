@@ -761,6 +761,8 @@ describe('ScannerComponent', () => {
     expect(labels).toEqual([
       'Trier des livres',
       'Livres rares',
+      'Ajouter un livre sans ISBN',
+      'Imprimante d\'étiquettes',
       'Caisse',
       'ConsulterN’enregistre rien',
     ]);

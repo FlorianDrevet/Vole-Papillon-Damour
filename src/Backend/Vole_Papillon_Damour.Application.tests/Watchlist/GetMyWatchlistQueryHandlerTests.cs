@@ -38,7 +38,7 @@ public sealed class GetMyWatchlistQueryHandlerTests
             UserAlertHistory.Create(
                 Guid.NewGuid(),
                 Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects.UserId.Create(MemberId),
-                book.Isbn13,
+                book.Code.AsIsbn13(),
                 WatchlistFeatureTestFixture.Now.AddHours(-1)));
         await fixture.Context.SaveChangesAsync();
         var handler = new GetMyWatchlistQueryHandler(fixture.Context, identity, clock);
@@ -53,7 +53,7 @@ public sealed class GetMyWatchlistQueryHandlerTests
         var item = result.Value.Items.Single();
         item.Id.Should().Be(added.Value.Id);
         item.Book.Should().NotBeNull();
-        item.Book!.Isbn13.Should().Be(book.Isbn13.Value);
+        item.Book!.Isbn13.Should().Be(book.Code.Value);
         item.Book.Title.Should().Be("Le livre de test");
         item.LastAlertAt.Should().Be(WatchlistFeatureTestFixture.Now.AddHours(-1));
     }
