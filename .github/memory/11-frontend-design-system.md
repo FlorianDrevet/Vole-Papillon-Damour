@@ -14,6 +14,7 @@
 - The shell uses the association butterfly, 1280 px content maximum, 24 px mobile/44 px desktop gutters, a cyan-blue-orange rule, and a dedicated three-column footer. At 1040 px it changes to mobile navigation to prevent intermediate-width overflow.
 - Use shared book-card variants for home, search/list, rare, work, and detail contexts. Keep availability, future announcements, and rare-book price truthful and distinct; no fabricated stock, reservation, role, or physical-inventory state.
 - Public catalogue pages remain crawlable. Account/admin screens use the same paper/ink language but keep API-backed roles/permissions and empty/error states explicit. Do not display account IDs, reporter identities, or prices beyond their contract.
+- Catalog administration forms follow the rare-book editor's visual language: Newsreader headings, Libre Franklin body text, IBM Plex Mono metadata, 44 px controls, visible blue focus outlines, and field grids that collapse for narrow screens.
 - Catalog mobile layouts collapse sidebars and controls, preserve safe areas, use internal scrolling only where designed, and keep menus/dialogs operable by keyboard and touch.
 
 ## Shared UI package
