@@ -38,6 +38,7 @@ import {LABEL_PRINTER, LabelPrinter} from './label-printer';
           Tester (étiquette d'essai)
         </button>
       </div>
+      <a routerLink="/imprimante/diagnostic" class="printer-link" data-zone="E6-lien-diagnostic">Diagnostic matériel</a>
     </main>
   `,
   styles: [`
@@ -54,6 +55,7 @@ import {LABEL_PRINTER, LabelPrinter} from './label-printer';
     .printer-actions button { min-height: 52px; border-radius: 999px; font: inherit; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
     .printer-primary { border: 0; background: #f0801c; color: #ffffff; }
     .printer-secondary { border: 1.5px solid #9dc2da; background: #ffffff; color: #0c6ea6; }
+    .printer-link { text-align: center; color: #0c6ea6; font-weight: 600; }
     .printer-actions button:disabled { opacity: .5; cursor: not-allowed; }
     .printer-actions button:focus-visible { outline: 3px solid #0c6ea6; outline-offset: 2px; }
   `],
