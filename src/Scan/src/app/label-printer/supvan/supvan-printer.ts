@@ -38,7 +38,7 @@ const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, m
 export type SupvanLog = (line: string) => void;
 
 // Tuyau série Bluetooth : écritures découpées, lecture continue, réponses « 7E 5A » reconstituées.
-export class SerialPipe {
+export class SerialPipe implements SupvanPipe {
   private rx: number[] = [];
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
@@ -136,13 +136,171 @@ export class SerialPipe {
   }
 }
 
+export interface SupvanPipe {
+  sendCmd(frame: Uint8Array): Promise<Uint8Array | null>;
+  sendDataFrame(frame: Uint8Array, readReply: boolean): Promise<Uint8Array | null>;
+  close(): Promise<void>;
+}
+
+// --- Web Bluetooth (BLE GATT) : Chrome Android, ou Bluefy sur iPhone -------------------------------------
+
+interface BleCharacteristic {
+  startNotifications(): Promise<BleCharacteristic>;
+  addEventListener(type: string, listener: (event: {target: {value?: DataView}}) => void): void;
+  writeValueWithResponse?(value: BufferSource): Promise<void>;
+  writeValue(value: BufferSource): Promise<void>;
+}
+
+interface BleService {
+  uuid: string;
+  getCharacteristic(uuid: string): Promise<BleCharacteristic>;
+}
+
+interface BleServer {
+  getPrimaryServices(): Promise<BleService[]>;
+  disconnect(): void;
+}
+
+interface BleDevice {
+  name?: string;
+  gatt?: {connect(): Promise<BleServer>};
+}
+
+interface BluetoothLike {
+  requestDevice(options: object): Promise<BleDevice>;
+}
+
+const sig = (short: string) => `0000${short}-0000-1000-8000-00805f9b34fb`;
+const BLE_SERVICES: ReadonlyArray<{service: string; notify: string; write: string}> = [
+  {service: sig('fee7'), notify: sig('fec1'), write: sig('fec1')},
+  {service: '0000e0ff-3c17-d293-8e48-14fe2e4da212', notify: sig('ffe1'), write: sig('ffe9')},
+  {service: sig('ff00'), notify: sig('ff01'), write: sig('ff02')},
+];
+const BLE_REPLY_TIMEOUT_MS = 4000;
+
+export function webBluetooth(): BluetoothLike | null {
+  const bluetooth = (navigator as unknown as {bluetooth?: BluetoothLike}).bluetooth;
+  return bluetooth ?? null;
+}
+
+export class BlePipe implements SupvanPipe {
+  private rx: number[] = [];
+  private server: BleServer | null = null;
+  private writeChar: BleCharacteristic | null = null;
+  deviceName = '';
+
+  constructor(private readonly log: SupvanLog) {}
+
+  async open(): Promise<void> {
+    const bluetooth = webBluetooth();
+    if (!bluetooth) {
+      throw new Error('Ce navigateur ne gère pas le Bluetooth Web.');
+    }
+
+    const device = await bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: BLE_SERVICES.map(entry => entry.service),
+    });
+    this.deviceName = device.name ?? '';
+    this.log(`Appareil BLE : ${this.deviceName || '(sans nom)'}`);
+    if (!device.gatt) {
+      throw new Error('Cet appareil n\'expose pas de GATT.');
+    }
+
+    this.server = await device.gatt.connect();
+    const services = await this.server.getPrimaryServices();
+    this.log(`Services GATT : ${services.map(service => service.uuid).join(', ') || '(aucun autorisé)'}`);
+
+    for (const entry of BLE_SERVICES) {
+      const service = services.find(candidate => candidate.uuid === entry.service);
+      if (!service) {
+        continue;
+      }
+      const notifyChar = await service.getCharacteristic(entry.notify);
+      const writeChar = entry.write === entry.notify ? notifyChar : await service.getCharacteristic(entry.write);
+      await notifyChar.startNotifications();
+      notifyChar.addEventListener('characteristicvaluechanged', event => {
+        const value = event.target.value;
+        if (value) {
+          for (let i = 0; i < value.byteLength; i += 1) {
+            this.rx.push(value.getUint8(i));
+          }
+        }
+      });
+      this.writeChar = writeChar;
+      this.log(`Service Supvan utilisé : ${entry.service}`);
+      return;
+    }
+
+    this.server.disconnect();
+    throw new Error('Aucun service Supvan connu (FEE7, E0FF, FF00) sur cet appareil.');
+  }
+
+  private async write(bytes: Uint8Array): Promise<void> {
+    const characteristic = this.writeChar;
+    if (!characteristic) {
+      throw new Error('Imprimante non connectée.');
+    }
+    for (let offset = 0; offset < bytes.length; offset += CHUNK) {
+      if (offset > 0) {
+        await sleep(CHUNK_DELAY_MS);
+      }
+      const chunk = bytes.slice(offset, offset + CHUNK);
+      if (characteristic.writeValueWithResponse) {
+        await characteristic.writeValueWithResponse(chunk);
+      } else {
+        await characteristic.writeValue(chunk);
+      }
+    }
+  }
+
+  // Réponse = première trame « 7E 5A » complète qui répète l'octet de commande à l'offset 7.
+  private async awaitReply(cmd: number): Promise<Uint8Array | null> {
+    const deadline = Date.now() + BLE_REPLY_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      while (this.rx.length > 0 && !(this.rx[0] === 0x7e && (this.rx.length < 2 || this.rx[1] === 0x5a))) {
+        this.rx.shift();
+      }
+      const bytes = Uint8Array.from(this.rx);
+      const length = frameLen(bytes);
+      if (length !== null && bytes.length >= length) {
+        this.rx.splice(0, length);
+        if (bytes[7] === cmd) {
+          return bytes.subarray(0, length);
+        }
+        continue;
+      }
+      await sleep(REPLY_POLL_MS);
+    }
+    return null;
+  }
+
+  async sendCmd(frame: Uint8Array): Promise<Uint8Array | null> {
+    this.rx = [];
+    await this.write(frame);
+    return this.awaitReply(frame[7]);
+  }
+
+  // Pas d'accusé sur les trames de données en BLE.
+  async sendDataFrame(frame: Uint8Array, _readReply: boolean): Promise<Uint8Array | null> {
+    await this.write(frame);
+    return null;
+  }
+
+  async close(): Promise<void> {
+    this.server?.disconnect();
+    this.server = null;
+    this.writeChar = null;
+  }
+}
+
 // --- Commandes et flux d'impression ---------------------------------------------------------------------
 
 const STATUS_POLL_MS = 100;
 const BUFFER_POLL_MS = 20;
 
 export class SupvanClient {
-  constructor(private readonly pipe: SerialPipe, private readonly log: SupvanLog = () => undefined) {}
+  constructor(private readonly pipe: SupvanPipe, private readonly log: SupvanLog = () => undefined) {}
 
   private async command(name: string, cmd: number, a = 0, b = 0): Promise<Uint8Array | null> {
     const reply = await this.pipe.sendCmd(makeCmd(cmd, a, b));
@@ -253,7 +411,7 @@ export class SupvanLabelPrinter implements LabelPrinter {
   deviceName = 'T50M Pro';
   density = DEFAULT_DENSITY;
 
-  private pipe: SerialPipe | null = null;
+  private pipe: SupvanPipe | null = null;
   private client: SupvanClient | null = null;
   private material: MaterialInfo | null = null;
   private currentStatus: LabelPrinterStatus = 'disconnected';
@@ -272,16 +430,25 @@ export class SupvanLabelPrinter implements LabelPrinter {
     return this.client;
   }
 
-  async connect(): Promise<void> {
-    const serial = webSerial();
-    if (!serial) {
-      throw new Error('Ce navigateur ne gère pas le Bluetooth série (Web Serial). Utilisez Chrome sur Android ou ordinateur.');
-    }
+  async connect(transport: 'serial' | 'ble' = 'serial'): Promise<void> {
+    let pipe: SupvanPipe;
+    if (transport === 'ble') {
+      const blePipe = new BlePipe(this.log);
+      await blePipe.open();
+      this.deviceName = blePipe.deviceName || this.deviceName;
+      pipe = blePipe;
+    } else {
+      const serial = webSerial();
+      if (!serial) {
+        throw new Error('Ce navigateur ne gère pas le Bluetooth série (Web Serial). Utilisez Chrome sur Android ou ordinateur.');
+      }
 
-    // L'imprimante doit déjà être appairée dans les réglages Bluetooth de l'appareil.
-    const port = await serial.requestPort({allowedBluetoothServiceClassIds: [SPP_UUID]});
-    const pipe = new SerialPipe(port);
-    await pipe.open();
+      // L'imprimante doit déjà être appairée dans les réglages Bluetooth de l'appareil.
+      const port = await serial.requestPort({allowedBluetoothServiceClassIds: [SPP_UUID]});
+      const serialPipe = new SerialPipe(port);
+      await serialPipe.open();
+      pipe = serialPipe;
+    }
     const client = new SupvanClient(pipe, this.log);
 
     try {
@@ -289,7 +456,7 @@ export class SupvanLabelPrinter implements LabelPrinter {
         throw new Error('L\'appareil choisi ne répond pas comme une étiqueteuse Supvan.');
       }
       this.material = await client.queryMaterial();
-      this.deviceName = (await client.readDeviceName()) ?? 'T50M Pro';
+      this.deviceName = (await client.readDeviceName()) ?? (this.deviceName || 'T50M Pro');
     } catch (error) {
       await pipe.close();
       throw error;
