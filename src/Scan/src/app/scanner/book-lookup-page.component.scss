@@ -1,11 +1,53 @@
 :host {
   display: block;
   width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
   min-width: 0;
+}
+
+.book-lookup-page {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: max(16px, env(safe-area-inset-top)) clamp(14px, 5vw, 22px) max(20px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: var(--scan-paper);
+  color: var(--scan-ink);
+  -webkit-overflow-scrolling: touch;
+}
+
+.book-lookup-back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  align-self: flex-start;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--scan-line);
+  border-radius: 5px;
+  color: var(--scan-blue);
+  background: #fff;
+  cursor: pointer;
+  font: 600 12px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.book-lookup-back svg {
+  width: 18px;
+  height: 18px;
   flex: none;
 }
 
-.home-book-lookup {
+.book-lookup {
   display: grid;
   gap: 10px;
   min-width: 0;
@@ -15,12 +57,12 @@
   background: #fff;
 }
 
-.home-book-lookup-header {
+.book-lookup-header {
   display: grid;
   gap: 4px;
 }
 
-.home-book-lookup-header p {
+.book-lookup-header p {
   margin: 0;
   color: var(--scan-orange);
   font: 600 9px/1.2 "IBM Plex Mono", ui-monospace, monospace;
@@ -28,27 +70,27 @@
   text-transform: uppercase;
 }
 
-.home-book-lookup-header h2 {
+.book-lookup-header h1 {
   margin: 0;
   color: var(--scan-ink);
-  font: 500 21px/1.1 Newsreader, Georgia, serif;
+  font: 500 28px/1.08 Newsreader, Georgia, serif;
 }
 
-.home-book-lookup-header span,
-.home-book-lookup-hint {
+.book-lookup-header span,
+.book-lookup-hint {
   margin: 0;
   color: var(--scan-slate);
   font-size: 12px;
   line-height: 1.4;
 }
 
-.home-book-lookup-form {
+.book-lookup-form {
   display: grid;
   gap: 8px;
   min-width: 0;
 }
 
-.home-book-lookup-form input {
+.book-lookup-form input {
   width: 100%;
   min-width: 0;
   min-height: 46px;
@@ -60,17 +102,17 @@
   font-size: 15px;
 }
 
-.home-book-lookup-form input:focus-visible {
+.book-lookup-form input:focus-visible {
   border-color: var(--scan-blue);
 }
 
-.home-book-lookup-actions {
+.book-lookup-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
 }
 
-.home-book-lookup-actions button {
+.book-lookup-actions button {
   display: inline-flex;
   min-width: 0;
   min-height: 44px;
@@ -85,35 +127,35 @@
   font-weight: 700;
 }
 
-.home-book-lookup-actions svg {
+.book-lookup-actions svg {
   width: 18px;
   height: 18px;
   flex: none;
 }
 
-.home-book-lookup-scan {
+.book-lookup-scan {
   color: var(--scan-blue);
   background: var(--scan-blue-soft);
 }
 
-.home-book-lookup-submit {
+.book-lookup-submit {
   color: #fff;
   background: var(--scan-blue);
 }
 
-.home-book-lookup-actions button:disabled {
+.book-lookup-actions button:disabled {
   border-color: #cddde7;
   color: #8496a2;
   background: #edf3f6;
   cursor: default;
 }
 
-.home-book-lookup-hint {
+.book-lookup-hint {
   color: var(--scan-muted);
   font-size: 10px;
 }
 
-.home-book-lookup-camera {
+.book-lookup-camera {
   width: 100%;
   height: clamp(130px, 24dvh, 190px);
   overflow: hidden;
@@ -121,18 +163,18 @@
   background: #072b45;
 }
 
-.home-book-lookup-camera[hidden] {
+.book-lookup-camera[hidden] {
   display: none;
 }
 
-.home-book-lookup-camera video {
+.book-lookup-camera video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.home-book-lookup-camera-actions {
+.book-lookup-camera-actions {
   display: flex;
   min-height: 36px;
   align-items: center;
@@ -142,7 +184,7 @@
   font-size: 11px;
 }
 
-.home-book-lookup-camera-actions button {
+.book-lookup-camera-actions button {
   min-height: 40px;
   padding: 6px 10px;
   border: 1px solid var(--scan-line);
@@ -154,7 +196,7 @@
   font-weight: 650;
 }
 
-.home-book-lookup-result {
+.book-lookup-result {
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 12px;
@@ -164,9 +206,9 @@
   border-top: 1px solid #e2eef7;
 }
 
-.home-book-lookup-cover,
-.home-book-lookup-cover-placeholder,
-.home-book-lookup-skeleton-cover {
+.book-lookup-cover,
+.book-lookup-cover-placeholder,
+.book-lookup-skeleton-cover {
   display: grid;
   width: 64px;
   height: 92px;
@@ -174,65 +216,65 @@
   object-fit: cover;
 }
 
-.home-book-lookup-cover-placeholder {
+.book-lookup-cover-placeholder {
   color: #66829a;
   background: #edf5fa;
   font: 500 9px/1 "IBM Plex Mono", ui-monospace, monospace;
   text-transform: uppercase;
 }
 
-.home-book-lookup-copy {
+.book-lookup-copy {
   display: grid;
   align-content: start;
   gap: 4px;
   min-width: 0;
 }
 
-.home-book-lookup-copy p,
-.home-book-lookup-copy h3 {
+.book-lookup-copy p,
+.book-lookup-copy h3 {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.home-book-lookup-status {
+.book-lookup-status {
   color: var(--scan-orange);
   font: 600 9px/1.2 "IBM Plex Mono", ui-monospace, monospace;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
 
-.home-book-lookup-copy h3 {
+.book-lookup-copy h3 {
   color: var(--scan-ink);
   font: 500 18px/1.08 Newsreader, Georgia, serif;
 }
 
-.home-book-lookup-author {
+.book-lookup-author {
   color: var(--scan-slate);
   font-size: 12px;
   line-height: 1.25;
 }
 
-.home-book-lookup-meta,
-.home-book-lookup-isbn {
+.book-lookup-meta,
+.book-lookup-isbn {
   color: var(--scan-muted);
   font-size: 10px;
   line-height: 1.3;
 }
 
-.home-book-lookup-isbn {
+.book-lookup-isbn {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   overflow-wrap: anywhere;
 }
 
-.home-book-lookup-availability {
+.book-lookup-availability {
   color: var(--scan-green);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
 }
 
-.home-book-lookup-message {
+.book-lookup-message {
   margin: 0;
   padding: 10px 11px;
   border-left: 3px solid var(--scan-orange);
@@ -242,59 +284,74 @@
   line-height: 1.4;
 }
 
-.home-book-lookup-error {
+.book-lookup-reprint {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  background: var(--scan-orange);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.book-lookup-error {
   margin: 0;
   color: var(--scan-red);
   font-size: 12px;
   line-height: 1.4;
 }
 
-.home-book-lookup-loading {
+.book-lookup-loading {
   align-items: center;
 }
 
-.home-book-lookup-skeleton-cover,
-.home-book-lookup-skeleton-copy span {
+.book-lookup-skeleton-cover,
+.book-lookup-skeleton-copy span {
   border-radius: 4px;
   background: #e9f1f6;
-  animation: home-book-lookup-pulse 1.3s ease-in-out infinite alternate;
+  animation: book-lookup-pulse 1.3s ease-in-out infinite alternate;
 }
 
-.home-book-lookup-skeleton-copy {
+.book-lookup-skeleton-copy {
   display: grid;
   gap: 8px;
   align-content: center;
 }
 
-.home-book-lookup-skeleton-copy span {
+.book-lookup-skeleton-copy span {
   display: block;
   width: 90%;
   height: 9px;
 }
 
-.home-book-lookup-skeleton-copy span:first-child {
+.book-lookup-skeleton-copy span:first-child {
   width: 68%;
   height: 15px;
 }
 
-.home-book-lookup-skeleton-copy span:last-child {
+.book-lookup-skeleton-copy span:last-child {
   width: 54%;
 }
 
-.home-book-lookup :focus-visible {
+.book-lookup-page :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
   outline-offset: 2px;
 }
 
-@keyframes home-book-lookup-pulse {
+@keyframes book-lookup-pulse {
   to {
     opacity: .55;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-book-lookup-skeleton-cover,
-  .home-book-lookup-skeleton-copy span {
+  .book-lookup-skeleton-cover,
+  .book-lookup-skeleton-copy span {
     animation: none;
   }
 }

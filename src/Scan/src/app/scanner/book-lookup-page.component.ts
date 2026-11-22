@@ -2,29 +2,31 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, signal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
+import {Router} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 
+import {ScanAuthService} from '../auth/scan-auth.service';
 import {ScanApiService} from '../offline/scan-api.service';
 import {ScanPublicCatalogBook} from '../offline/scan-offline.model';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
 import {normalizeIsbn} from './isbn.util';
 
-type HomeBookLookupState = 'idle' | 'invalid' | 'loading' | 'found' | 'not-found' | 'unavailable';
+type BookLookupState = 'idle' | 'invalid' | 'loading' | 'found' | 'not-found' | 'unavailable';
 
 @Component({
-  selector: 'app-home-book-lookup',
-  templateUrl: './home-book-lookup.component.html',
-  styleUrl: './home-book-lookup.component.scss',
+  selector: 'app-book-lookup-page',
+  templateUrl: './book-lookup-page.component.html',
+  styleUrl: './book-lookup-page.component.scss',
   standalone: true,
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HomeBookLookupComponent implements OnDestroy {
+export class BookLookupPageComponent implements OnDestroy {
   @ViewChild('cameraContainer', {static: true})
   private readonly cameraContainer!: ElementRef<HTMLElement>;
 
   readonly isbn = signal('');
-  readonly lookupState = signal<HomeBookLookupState>('idle');
+  readonly lookupState = signal<BookLookupState>('idle');
   readonly book = signal<ScanPublicCatalogBook | null>(null);
   readonly nextFairLabel = signal<string | null>(null);
   readonly cameraActive = signal(false);
@@ -38,7 +40,26 @@ export class HomeBookLookupComponent implements OnDestroy {
   constructor(
     private readonly scanApi: ScanApiService,
     private readonly cameraScanner: CameraScannerService,
+    private readonly router: Router,
+    private readonly auth: ScanAuthService,
   ) {}
+
+  get canReprintLabel(): boolean {
+    return this.auth.canSort || this.auth.canManageRareBooks;
+  }
+
+  returnHome(): void {
+    void this.router.navigateByUrl('/accueil');
+  }
+
+  reprintLabel(): void {
+    const book = this.book();
+    if (!book || !this.canReprintLabel) {
+      return;
+    }
+
+    void this.router.navigateByUrl(`/etiquette?isbn=${encodeURIComponent(book.isbn13)}`);
+  }
 
   onIsbnChanged(value: string): void {
     this.isbn.set(value);

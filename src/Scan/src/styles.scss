@@ -259,6 +259,14 @@ input:focus-visible {
   box-shadow: 0 26px 44px -30px rgb(20 151 214 / 70%);
 }
 
+.home-mode-lookup {
+  border-color: var(--scan-blue);
+}
+
+.home-mode-lookup svg {
+  color: var(--scan-blue);
+}
+
 .home-mode-tri svg {
   color: var(--scan-sky);
 }

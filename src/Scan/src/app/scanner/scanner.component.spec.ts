@@ -12,7 +12,6 @@ import {BookMetadataService} from './book-metadata.service';
 import {BookPhoto} from './book-photo.model';
 import {BookPhotoService} from './book-photo.service';
 import {CameraScannerService} from './camera-scanner.service';
-import {HomeBookLookupComponent} from './home-book-lookup.component';
 import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
 import {
@@ -31,7 +30,6 @@ import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
-import {ScanApiService} from '../offline/scan-api.service';
 import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
 import {ScanPassageAssociationService, ScanPassageAssociationState} from '../offline/scan-passage-association.service';
@@ -41,6 +39,7 @@ import {ScanSessionSummaryService} from '../scan-session-summary.service';
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
   let component: ScannerComponent;
+  let router: jasmine.SpyObj<Router>;
   let metadataService: jasmine.SpyObj<BookMetadataService>;
   let bookPhotoService: jasmine.SpyObj<BookPhotoService>;
   let cameraService: jasmine.SpyObj<CameraScannerService>;
@@ -62,6 +61,8 @@ describe('ScannerComponent', () => {
       position: 0,
       contentType: 'image/jpeg',
     }));
+    router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
+    router.navigateByUrl.and.resolveTo(true);
     cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start', 'scanFile']);
     const confirmation = jasmine.createSpyObj<ScanConfirmationService>(
       'ScanConfirmationService',
@@ -104,12 +105,12 @@ describe('ScannerComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent, ScanStatusBarComponent, ScanRecoveryComponent],
-      imports: [CommonModule, FormsModule, DesignSystemModule, HomeBookLookupComponent],
+      imports: [CommonModule, FormsModule, DesignSystemModule],
       providers: [
+        {provide: Router, useValue: router},
         {provide: BookMetadataService, useValue: metadataService},
         {provide: BookPhotoService, useValue: bookPhotoService},
         {provide: CameraScannerService, useValue: cameraService},
-        {provide: ScanApiService, useValue: {getPublicCatalogBook: () => of(null)}},
         {provide: ScanAuthService, useValue: null},
         {provide: ScanSyncService, useValue: null},
         ScanStatusService,
@@ -817,7 +818,19 @@ describe('ScannerComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.home-screen')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
-    expect(fixture.nativeElement.querySelector('app-home-book-lookup')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-book-lookup-page')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="E1-entree-recherche-livre"]')).not.toBeNull();
+  });
+
+  it('opens the dedicated catalog lookup page from its home action', async () => {
+    component.returnHome();
+    fixture.detectChanges();
+
+    const lookupButton = fixture.nativeElement.querySelector('[data-zone="E1-entree-recherche-livre"]') as HTMLButtonElement;
+    lookupButton.click();
+    await fixture.whenStable();
+
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/recherche-livre');
   });
 
   it('places cash after rare books and names the no-ISBN entry with a barcode icon', () => {
@@ -834,6 +847,7 @@ describe('ScannerComponent', () => {
       'Livres rares',
       'Caisse',
       'Livre sans ISBN',
+      'Rechercher un livre',
       'Imprimante d\'étiquettes',
     ]);
     const noIsbnButton = fixture.nativeElement.querySelector('[data-zone="E1-entree-ajouter-sans-isbn"]') as HTMLElement;

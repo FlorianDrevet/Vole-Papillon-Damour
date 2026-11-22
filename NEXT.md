@@ -1046,9 +1046,9 @@ git pull
 
 ## En cours
 
-### Scan — recherche ISBN sur l’accueil — 2026-11-22
+### Scan — recherche ISBN sur une page dédiée et réimpression — 2026-11-22
 
-L’accueil de l’application Scan propose la recherche d’une fiche du catalogue par ISBN-10/13 saisi ou lu par la caméra. L’ISBN est normalisé avant l’appel public `GET /catalog/books/{isbn13}` ; la fiche affiche les métadonnées disponibles, la couverture et les disponibilités. Un 404 indique qu’aucune fiche n’existe ; les erreurs de connexion restent distinctes. Validation : suite Scan 407/407, build de production réussi, carte testée à 320 px sans débordement. Le navigateur local est redirigé vers la connexion Entra, donc le contrôle visuel authentifié reste à faire. Aucune modification de l’API, Azure, des données ou aucun déploiement. Branche `feat/scan-isbn-search` dans le worktree `VPD-scan-isbn-search` ; [PR #419](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/419) ouverte vers `main`, non fusionnée.
+L’utilisateur confirme que la [PR #419](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/419) a été fusionnée et déployée. Ce suivi remplace le formulaire intégré à l’accueil par un bouton d’action qui ouvre `/recherche-livre`. La nouvelle page permet de saisir ou scanner l’ISBN, affiche la fiche publique et propose « Réimprimer l’étiquette » vers l’aperçu existant `/etiquette?isbn=…`, sous la même autorisation d’impression. Validation : Scan 413/413, build production réussi, `graphify update .` et `git diff --check` réussis ; page vérifiée à 320 px sans débordement. Le navigateur local demande une session Entra, donc le contrôle visuel authentifié et l’essai de l’imprimante restent à faire après déploiement. Worktree `VPD-scan-home-book-search-label`, branche `feat/scan-home-book-search-and-label-reprint` ; PR à ouvrir vers `main`.
 
 ### Coups de cœur — suivi du merge et de la CI — 2026-11-14
 
@@ -2627,9 +2627,10 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
-Au 2026-11-22, la recherche ISBN de l’accueil Scan est uniquement dans le dépôt. Aucun
-service, compte Entra, donnée, ressource Azure ni déploiement n’a été modifié. Après la
-fusion, le contrôle de l’écran avec une session bénévole authentifiée reste à faire.
+Au 2026-11-22, l’utilisateur confirme la fusion et le déploiement de la PR #419. La
+correction page dédiée/réimpression est uniquement dans le dépôt : aucun service, compte
+Entra, donnée ni ressource Azure n’a été modifié par Codex. La fusion puis le déploiement
+de cette correction et le contrôle avec une session bénévole authentifiée restent à faire.
 
 Au 2026-11-11, l’utilisateur a confirmé la fusion de la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381)
 et son déploiement. Le correctif en cours ne modifie aucun service externe; son
@@ -2870,6 +2871,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-22 | Windows — `VPD-scan-home-book-search-label` | **Scan — déplacer la recherche ISBN sur une page et réimprimer l’étiquette.** Après confirmation utilisateur de la fusion et du déploiement de la PR #419, remplacement de la carte intégrée à l’accueil par un bouton vers `/recherche-livre`; page dédiée avec saisie/caméra, fiche publique et bouton de réimpression qui réutilise `/etiquette?isbn=…`. Scan 413/413, build réussi avec route lazy (`17,88 kB`), `graphify update .` et `git diff --check` réussis. Le bundle initial dépasse le budget de 166,13 kB. Test responsive Chrome à 320 px ; contrôle visuel authentifié et imprimante réelle en attente d’une session Entra. Aucun changement API/Azure ni déploiement. Branche `feat/scan-home-book-search-and-label-reprint` ; PR à ouvrir vers `main`. |
 | 2026-11-22 | Windows — `VPD-scan-isbn-search` | **Scan — recherche de fiche ISBN depuis l’accueil.** Dans le worktree `VPD-scan-isbn-search` (`feat/scan-isbn-search`), saisie ISBN-10/13 normalisée ou scan caméra, consultation de l’endpoint public du catalogue, fiche avec disponibilités et état explicite en cas de 404 ou d’indisponibilité. Suite Scan 407/407, build de production et `graphify update .` réussis ; `git diff --check` réussi. Le bundle initial dépasse le budget Angular de 173,12 kB. La connexion Entra empêche le contrôle navigateur authentifié ; test de largeur 320 px sans débordement. Aucun changement Azure ni déploiement. [PR #419](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/419) ouverte vers `main`, non fusionnée. |
 | 2026-11-22 | Windows — `VPD-manual-request-create-person` | **Demandes manuelles — créer une fiche sans recherche.** Le bouton Personnes et `newRequester()` ne bloquent plus la création avant recherche; la recherche reste disponible pour réutiliser une fiche. Build Catalog, `git diff --check` et Graphify passent. Tests automatisés non lancés; revue visuelle authentifiée bloquée par l’écran Entra. Aucun changement de schéma ni déploiement. [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417) ouverte vers `main`, non fusionnée. |
 | 2026-11-15 | Windows — `Vole-Papillon-Damour-perf-catalogue-admin` | **Portail Catalog — tâches 14–15.** États de chargement par bloc, squelettes, reprise locale et réponses tardives ignorées. Specs ciblées 95/95 ; suite Catalog 659/663 avec quatre échecs reproduits sur les fichiers inchangés de `origin/main` (3 AccountCard, 1 CatalogAccountPage). Build Catalog, build BackOffice et tests .NET 1 164/1 164 réussis. Les contrôles bootstrap BackOffice passent 4/6 (deux attentes du script ne correspondent pas au bootstrap conditionnel présent sur `main`). Vérification réseau/seed impossible faute de daemon Podman/Docker ; les mesures locales précédentes et App Insights avant correctif sont conservées dans le rapport. Le contrôle visuel authentifié à 390/1 440 px reste en attente, l’outil Computer Use ayant arrêté le navigateur par garde de sécurité. Aucun changement Azure ni déploiement. PR à ouvrir après validation finale. |

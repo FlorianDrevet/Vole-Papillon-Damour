@@ -85,6 +85,11 @@ export const scanRoutes: Routes = [
     children: [
       {path: '', pathMatch: 'full', redirectTo: 'accueil'},
       {path: 'accueil', component: ScanPageComponent, data: {screen: 'home'}},
+      {
+        path: 'recherche-livre',
+        loadComponent: () => import('./scanner/book-lookup-page.component')
+          .then(module => module.BookLookupPageComponent),
+      },
       {path: 'reprise', component: ScanPageComponent, data: {screen: 'reprise'}},
       {path: 'tri/mode', component: ScanPageComponent, canActivate: [triGuard], data: {screen: 'session-mode'}},
       {path: 'tri/livres', component: ScanPageComponent, canActivate: [triGuard], data: {screen: 'session-books'}},

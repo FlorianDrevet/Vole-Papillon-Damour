@@ -1475,6 +1475,13 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
+  openBookLookup(): void {
+    this.stopCamera();
+    if (this.router) {
+      void this.router.navigateByUrl('/recherche-livre');
+    }
+  }
+
   openLabelPrinter(): void {
     if (this.authAvailable && !this.canSort && !this.canManageRareBooks) {
       return;
