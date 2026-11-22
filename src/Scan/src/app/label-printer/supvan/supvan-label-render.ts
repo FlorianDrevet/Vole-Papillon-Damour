@@ -72,11 +72,15 @@ export function renderLabel(options: LabelRenderOptions): InkImage {
 
   const pixels = context.getImageData(0, 0, width, height).data;
   const ink = new Uint8Array(width * height);
-  // The T50M Pro outputs this raster 180° from the browser preview, so rotate
-  // the whole image before packing it for the printhead.
-  for (let sourceIndex = 0; sourceIndex < ink.length; sourceIndex += 1) {
-    const luminance = 0.3 * pixels[sourceIndex * 4] + 0.59 * pixels[sourceIndex * 4 + 1] + 0.11 * pixels[sourceIndex * 4 + 2];
-    ink[ink.length - sourceIndex - 1] = luminance < 140 ? 1 : 0;
+  // La T50M Pro imprime ce raster en miroir gauche-droite (constaté sur une étiquette réelle : barres et chiffres
+  // inversés, le chiffre restant sous les barres ; une rotation de 180° ne corrige pas un miroir). On envoie donc
+  // l'image déjà retournée gauche-droite, pour que l'étiquette sorte comme l'aperçu.
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const source = (y * width + x) * 4;
+      const luminance = 0.3 * pixels[source] + 0.59 * pixels[source + 1] + 0.11 * pixels[source + 2];
+      ink[y * width + (width - 1 - x)] = luminance < 140 ? 1 : 0;
+    }
   }
 
   return {width, height, ink};
