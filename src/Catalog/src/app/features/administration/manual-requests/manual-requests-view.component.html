@@ -81,9 +81,9 @@
       <header class="manual-requester-directory-heading">
         <div>
           <h2 id="manual-requesters-title">Personnes enregistrées</h2>
-          <p>Recherchez par nom ou téléphone pour réutiliser une fiche existante avant d’en créer une nouvelle.</p>
+          <p>Recherchez par nom ou téléphone pour réutiliser une fiche existante, ou créez une nouvelle fiche.</p>
         </div>
-        <button class="button button-primary" data-testid="manual-requester-create" type="button" [disabled]="!canCreateRequester()" title="Recherchez d’abord le nom ou le téléphone." (click)="newRequester()">
+        <button class="button button-primary" data-testid="manual-requester-create" type="button" (click)="newRequester()">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg> {{ requesterTotal() > 0 ? 'Créer une fiche pour une autre personne' : 'Créer une nouvelle fiche' }}
         </button>
       </header>

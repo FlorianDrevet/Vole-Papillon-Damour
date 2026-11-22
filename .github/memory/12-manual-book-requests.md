@@ -10,8 +10,8 @@ as immediately due; the API attempts delivery and the hourly Sweep remains the f
 
 The follow-up administration UX adds a paginated **Personnes** directory searchable by
 name, first name, or phone so volunteers can reopen a requester and add books without
-recreating the person. A search is required before enabling creation of a new requester;
-existing matches stay visible. In the add-book dialog, **all editions of a work** is the
+recreating the person. Searching is optional: volunteers can create a new requester directly,
+and search results remain available for reusing existing matches. In the add-book dialog, **all editions of a work** is the
 default scope, selecting an edition switches to edition-only, and only the edition list
 scrolls between the fixed search/scope header and stock/actions footer.
 
@@ -35,8 +35,9 @@ The migration `20261012084826_AddManualBookRequests` was applied by
 [Books runtime - deploy #38689858408](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/38689858408)
 on 2026-10-15; API/Worker rolled out successfully. Catalog #38689891967 and Scan #38689915502
 also deployed successfully on `e26dacc8`. The UX follow-up in
-[PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259) adds an API query
-but no schema change; after merge, deploy API and Catalog, with no migration or Scan deploy.
+[PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259) merged on
+2026-10-15. It adds an API query but no schema change; see `NEXT.md` for its deployment
+validation state.
 
 ## Validation record (2026-10-12)
 
@@ -52,11 +53,22 @@ but no schema change; after merge, deploy API and Catalog, with no migration or 
 
 ## Administration UX follow-up (2026-10-15)
 
-- Branch `feat/manual-request-admin-ux`, PR #259 open to `main`; based on a fresh
-  `origin/main` worktree. No merge or deployment for this follow-up yet.
+- Branch `feat/manual-request-admin-ux`, PR #259 merged to `main` on 2026-10-15 from a
+  fresh `origin/main` worktree; it added no schema migration.
 - API build: 5 projects, 0 errors (85 warnings, including existing NuGet advisory warnings).
 - Catalog production build: 0 errors; existing initial bundle/CSS budget and CommonJS warnings.
 - `git diff --check` and `graphify update .` pass; graph has 11,636 nodes and 16,968 edges.
 - No automated tests were run for this follow-up. Local browser reached the Entra login wall;
   API at `localhost:5257` was unavailable, so authenticated visual checks at desktop/mobile
   sizes remain open.
+
+## Requester creation without a prior search (2026-11-22)
+
+- Catalog administration now allows opening the new-requester form before searching by
+  name or phone; search remains available to find and reuse existing records.
+- Branch `fix/manual-request-create-person` — [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417)
+  is open and unmerged. Catalog production build and Graphify update pass (21,585 nodes,
+  65,985 edges, 634 communities) with existing bundle/style-budget and CommonJS warnings.
+  Automated tests were not run; the local administration route reached the Microsoft Entra
+  login wall, so an authenticated responsive review remains open. No schema change or
+  deployment was made.

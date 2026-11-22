@@ -6,7 +6,7 @@
 
 - Backend: .NET 10 ASP.NET Core API with layered CQRS in `src/Backend/`.
 - Local orchestration: .NET Aspire AppHost for API, Angular apps, SQL Server, and Azurite.
-- Frontends: Angular 21 BackOffice, Website, public SSR Catalog, and offline Scan PWA; shared UI source is `src/SharedUi/` via `@vpd/ui`.
+- Frontends: Angular 22 BackOffice, Website, public SSR Catalog, and offline Scan PWA; shared UI source is `src/SharedUi/` via `@vpd/ui`.
 - Background work: .NET isolated Worker for account deletion, Books processing, alerts, and social imports.
 - Native client: Android-only .NET MAUI cashier in `src/MauiCashApp/`.
 - Backend and app builds are in CI; frontend unit suites remain local validation.

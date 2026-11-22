@@ -201,6 +201,15 @@ bundle/CSS et de dépendances CommonJS restent présents. Aucun test automatisé
 sur ce suivi. La page locale reste derrière Microsoft Entra et l'API locale n'était pas
 disponible; le contrôle visuel authentifié du dialogue à 390 / 1440 px reste à faire.
 
+Correctif du 2026-11-22 : [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417)
+ouverte et non fusionnée. La création d'une personne dans « Demandes manuelles » est désormais
+possible sans recherche préalable; la recherche reste disponible pour retrouver une fiche à
+réutiliser. Le build Catalog, `git diff --check` et Graphify réussissent (21 585 nœuds,
+65 985 arêtes, 634 communautés), avec les avertissements existants de bundle/CSS/CommonJS.
+Les tests automatisés n'ont pas été lancés. Le navigateur local atteint l'écran Microsoft
+Entra; la revue responsive authentifiée reste à faire. Aucun changement de schéma ou
+déploiement. Après fusion, lancer `Catalog - deploy`.
+
 ### Navigation mobile du Catalog — 2026-10-15
 
 [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) a été fusionnée le
@@ -2853,6 +2862,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-22 | Windows — `VPD-manual-request-create-person` | **Demandes manuelles — créer une fiche sans recherche.** Le bouton Personnes et `newRequester()` ne bloquent plus la création avant recherche; la recherche reste disponible pour réutiliser une fiche. Build Catalog, `git diff --check` et Graphify passent. Tests automatisés non lancés; revue visuelle authentifiée bloquée par l’écran Entra. Aucun changement de schéma ni déploiement. [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417) ouverte vers `main`, non fusionnée. |
 | 2026-11-15 | Windows — `Vole-Papillon-Damour-perf-catalogue-admin` | **Portail Catalog — tâches 14–15.** États de chargement par bloc, squelettes, reprise locale et réponses tardives ignorées. Specs ciblées 95/95 ; suite Catalog 659/663 avec quatre échecs reproduits sur les fichiers inchangés de `origin/main` (3 AccountCard, 1 CatalogAccountPage). Build Catalog, build BackOffice et tests .NET 1 164/1 164 réussis. Les contrôles bootstrap BackOffice passent 4/6 (deux attentes du script ne correspondent pas au bootstrap conditionnel présent sur `main`). Vérification réseau/seed impossible faute de daemon Podman/Docker ; les mesures locales précédentes et App Insights avant correctif sont conservées dans le rapport. Le contrôle visuel authentifié à 390/1 440 px reste en attente, l’outil Computer Use ayant arrêté le navigateur par garde de sécurité. Aucun changement Azure ni déploiement. PR à ouvrir après validation finale. |
 | 2026-11-14 | Windows — `VPD-ci-book-favorites-after-merge-20261114` | **CI après le merge des coups de cœur.** La CI #43627523795 a échoué sur les valeurs par défaut de `RecommendationOptions` et une assertion d’annulation concurrente. Restauration du défaut modèle et remise à zéro du tableau avant le binding; tests DI ajoutés. Le test concurrent n’utilise plus de délais fixes et passe 10/10 exécutions; Infrastructure 255/255, Application 759/759, builds API/Worker Release réussis. Pas de déploiement par Codex. La [PR #395](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/395) est ouverte vers `main`; les contrôles CI passent. |
 | 2026-11-14 | Windows — `VPD-book-favorites-production-20261114` | **Suivi de mise en production des coups de cœur.** Diagnostic de l’API `0000032` en `CrashLoopBackOff` (`Recommendations:HeartThresholds`) et correction du binding. La recherche ajout de coup de cœur filtre les résultats aux éditions françaises; le texte, l’état vide, le consentement du profil et la navigation ont été ajustés. Builds API, Worker et Catalog réussis; vérification responsive headless à 390 et 1 440 px; tests automatisés non lancés; Graphify actualisé. La [PR #394](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/394) a été fusionnée; Books runtime et Catalog ont été déployés, et la route protégée répond désormais 401 sans authentification. La CI post-merge a révélé un défaut de valeurs par défaut et un échec intermittent de test; voir l’entrée de suivi ci-dessus. |
