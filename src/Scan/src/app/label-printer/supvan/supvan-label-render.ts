@@ -72,9 +72,11 @@ export function renderLabel(options: LabelRenderOptions): InkImage {
 
   const pixels = context.getImageData(0, 0, width, height).data;
   const ink = new Uint8Array(width * height);
-  for (let index = 0; index < ink.length; index += 1) {
-    const luminance = 0.3 * pixels[index * 4] + 0.59 * pixels[index * 4 + 1] + 0.11 * pixels[index * 4 + 2];
-    ink[index] = luminance < 140 ? 1 : 0;
+  // The T50M Pro outputs this raster 180° from the browser preview, so rotate
+  // the whole image before packing it for the printhead.
+  for (let sourceIndex = 0; sourceIndex < ink.length; sourceIndex += 1) {
+    const luminance = 0.3 * pixels[sourceIndex * 4] + 0.59 * pixels[sourceIndex * 4 + 1] + 0.11 * pixels[sourceIndex * 4 + 2];
+    ink[ink.length - sourceIndex - 1] = luminance < 140 ? 1 : 0;
   }
 
   return {width, height, ink};
