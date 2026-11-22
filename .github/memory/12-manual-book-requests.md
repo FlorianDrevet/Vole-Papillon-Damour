@@ -66,7 +66,9 @@ validation state.
 
 - Catalog administration now allows opening the new-requester form before searching by
   name or phone; search remains available to find and reuse existing records.
-- The change is on `fix/manual-request-create-person`. Catalog production build and Graphify
-  update pass with existing bundle/style-budget and CommonJS warnings. Automated tests were
-  not run; the local administration route reached the Microsoft Entra login wall, so an
-  authenticated responsive review remains open. No schema change or deployment was made.
+- Branch `fix/manual-request-create-person` — [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417)
+  is open and unmerged. Catalog production build and Graphify update pass (21,585 nodes,
+  65,985 edges, 634 communities) with existing bundle/style-budget and CommonJS warnings.
+  Automated tests were not run; the local administration route reached the Microsoft Entra
+  login wall, so an authenticated responsive review remains open. No schema change or
+  deployment was made.
