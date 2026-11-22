@@ -12,7 +12,7 @@ const MAX_BUF_DATA = 4074;
 const MAX_COMPRESSED_BLOCK = PRINT_BUF_SIZE;
 const MAX_GROUP_BUFFERS = 4;
 const CHECKSUM_STRIDE = 256;
-const MAX_DENSITY = 15;
+export const MAX_DENSITY = 15;
 const MAX_SPEED = 60;
 const MAT_LABEL = 1;
 

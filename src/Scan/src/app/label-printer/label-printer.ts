@@ -2,9 +2,12 @@ import {InjectionToken} from '@angular/core';
 
 import {isEan13} from './ean13';
 
-// Interface unique vers l'étiqueteuse (RG-178). Le pilote réel (T50M Pro) implémentera
-// cette interface ; les écrans n'appellent que celle-ci.
+// Interface unique vers l'étiqueteuse (RG-178). Les écrans n'appellent que celle-ci ;
+// le pilote réel (T50M Pro) est dans ./supvan.
 export type LabelPrinterStatus = 'disconnected' | 'connected';
+
+// Mode de liaison : Bluetooth basse consommation (Chrome Android, Bluefy sur iPhone) ou Bluetooth série (Chrome).
+export type LabelPrinterTransport = 'ble' | 'serial';
 
 export interface LabelJob {
   // ISBN-13 ou code interne (EAN-13), RG-175 / RG-170.
@@ -14,14 +17,26 @@ export interface LabelJob {
   copies: number;
 }
 
+// Rouleau d'étiquettes lu dans l'imprimante.
+export interface LabelRoll {
+  widthMm: number;
+  heightMm: number;
+  remaining: number | null;
+}
+
 export interface LabelPrinter {
-  readonly simulated: boolean;
   readonly deviceName: string;
+  readonly roll: LabelRoll | null;
+  // Niveau de noirceur (1 à 15), mémorisé sur l'appareil.
+  density: number;
+  availableTransports(): LabelPrinterTransport[];
+  preferredTransport(): LabelPrinterTransport | null;
   status(): LabelPrinterStatus;
-  connect(): Promise<void>;
+  connect(transport?: LabelPrinterTransport): Promise<void>;
   disconnect(): void;
-  test(): Promise<void>;
-  print(job: LabelJob): Promise<void>;
+  print(job: LabelJob, onProgress?: (done: number, total: number) => void): Promise<void>;
+  // Prévient quand l'état ou le journal change ; renvoie la fonction de désabonnement.
+  subscribe(listener: () => void): () => void;
 }
 
 export const LABEL_PRINTER = new InjectionToken<LabelPrinter>('LABEL_PRINTER');
@@ -38,43 +53,4 @@ export function validateLabelJob(job: LabelJob): string | null {
   }
 
   return null;
-}
-
-// Implémentation simulée : aucune impression réelle, aucune trace écrite (RG-177, RG-178).
-export class SimulatedLabelPrinter implements LabelPrinter {
-  readonly simulated = true;
-  readonly deviceName = 'T50M Pro (simulation)';
-
-  private currentStatus: LabelPrinterStatus = 'disconnected';
-
-  status(): LabelPrinterStatus {
-    return this.currentStatus;
-  }
-
-  async connect(): Promise<void> {
-    this.currentStatus = 'connected';
-  }
-
-  disconnect(): void {
-    this.currentStatus = 'disconnected';
-  }
-
-  async test(): Promise<void> {
-    this.assertConnected();
-  }
-
-  async print(job: LabelJob): Promise<void> {
-    this.assertConnected();
-
-    const error = validateLabelJob(job);
-    if (error) {
-      throw new Error(error);
-    }
-  }
-
-  private assertConnected(): void {
-    if (this.currentStatus !== 'connected') {
-      throw new Error('Imprimante non connectée.');
-    }
-  }
 }
