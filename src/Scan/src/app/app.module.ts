@@ -25,7 +25,9 @@ import {LabelPrinterPageComponent} from './label-printer/label-printer-page.comp
 import {LabelPreviewComponent} from './label-printer/label-preview.component';
 import {BookWithoutIsbnPageComponent} from './book-without-isbn/book-without-isbn-page.component';
 import {SupvanDiagnosticComponent} from './label-printer/supvan/supvan-diagnostic.component';
-import {LABEL_PRINTER, SimulatedLabelPrinter} from './label-printer/label-printer';
+import {ScanTelemetryService} from './offline/scan-telemetry.service';
+import {LABEL_PRINTER} from './label-printer/label-printer';
+import {SupvanLabelPrinter} from './label-printer/supvan/supvan-printer';
 import {scanRoutes} from './scan-routing';
 import {
   msalGuardConfig,
@@ -78,8 +80,9 @@ import {environment} from '../environments/environment';
     provideZonelessChangeDetection(),
     {provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true},
     {provide: ErrorHandler, useFactory: () => new ApplicationInsightsErrorHandler()},
-    // Imprimante simulée tant que le pilote réel n'est pas branché (RG-178).
-    {provide: LABEL_PRINTER, useFactory: () => new SimulatedLabelPrinter()},
+    // Une seule imprimante pour toute l'application : la connexion survit à la navigation entre les écrans.
+    {provide: SupvanLabelPrinter, useFactory: () => new SupvanLabelPrinter(inject(ScanTelemetryService))},
+    {provide: LABEL_PRINTER, useExisting: SupvanLabelPrinter},
   ],
   bootstrap: [AppComponent, MsalRedirectComponent],
 })

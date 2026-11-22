@@ -2,11 +2,13 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy} from '
 
 import {ScanTelemetryService} from '../../offline/scan-telemetry.service';
 import {SupvanLabelPrinter, webBluetooth, webSerial} from './supvan-printer';
+import {MAX_DENSITY} from './supvan-raster';
 import {describeStatus, statusErrors} from './supvan-protocol';
 
-// Page de diagnostic matériel de la T50M Pro (Bluetooth série). Hors parcours bénévole :
-// elle permet de vérifier la liaison, de lire l'état et de lancer une étiquette d'essai.
-// Chaque ligne du journal part aussi en télémétrie (événement `label_printer_diagnostic`).
+// Page de dépannage de la T50M Pro. Hors parcours bénévole : elle permet de vérifier la liaison,
+// de lire l'état de l'imprimante et d'imprimer une étiquette de contrôle.
+// Elle partage l'imprimante de l'application (connexion et journal) ; chaque action part en télémétrie
+// (événement `label_printer_diagnostic`, en plus des événements `label_printer_*` du pilote).
 @Component({
   selector: 'app-supvan-diagnostic',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -15,7 +17,7 @@ import {describeStatus, statusErrors} from './supvan-protocol';
     <main class="diag-page">
       <header>
         <span class="diag-eyebrow">Matériel</span>
-        <h1>Diagnostic de l'étiqueteuse</h1>
+        <h1>Dépannage de l'imprimante</h1>
       </header>
 
       <section class="diag-card" data-zone="D1-prerequis">
@@ -52,7 +54,7 @@ import {describeStatus, statusErrors} from './supvan-protocol';
           </select>
         </label>
         <button type="button" class="diag-secondary" data-zone="D3-imprimer" [disabled]="busy || !connected" (click)="printTest()">
-          2 · Imprimer l'étiquette de test
+          2 · Imprimer une étiquette de contrôle
         </button>
         <button type="button" class="diag-secondary" data-zone="D4-copier" (click)="copyReport()">Copier le rapport</button>
         <button type="button" class="diag-link" [disabled]="!connected" (click)="disconnect()">Déconnecter</button>
@@ -92,19 +94,28 @@ export class SupvanDiagnosticComponent implements OnDestroy {
   readonly supportedBle = webBluetooth() !== null;
   readonly onIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  readonly densities = Array.from({length: 15}, (_, index) => index + 1);
-  density = 4;
+  readonly densities = Array.from({length: MAX_DENSITY}, (_, index) => index + 1);
   busy = false;
   summary: string | null = null;
   summaryIsError = false;
-  journal = '';
 
-  private readonly started = Date.now();
-  private readonly printer = new SupvanLabelPrinter(line => this.write(line));
+  private readonly unsubscribe: () => void;
 
-  constructor(private readonly cdr: ChangeDetectorRef, private readonly telemetry: ScanTelemetryService) {
-    this.write(`Navigateur : ${navigator.userAgent}`);
-    this.write(`Web Serial : ${this.supported ? 'oui' : 'non'} · Web Bluetooth : ${this.supportedBle ? 'oui' : 'non'} · contexte sécurisé : ${window.isSecureContext ? 'oui' : 'non'}`);
+  constructor(
+    private readonly cdr: ChangeDetectorRef,
+    private readonly telemetry: ScanTelemetryService,
+    private readonly printer: SupvanLabelPrinter,
+  ) {
+    // Zoneless : chaque ligne du journal et chaque changement d'état doit redessiner la page.
+    this.unsubscribe = printer.subscribe(() => this.cdr.markForCheck());
+  }
+
+  get journal(): string {
+    return this.printer.journal;
+  }
+
+  get density(): number {
+    return this.printer.density;
   }
 
   get connected(): boolean {
@@ -112,20 +123,20 @@ export class SupvanDiagnosticComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.printer.disconnect();
+    // La connexion reste ouverte : l'imprimante est partagée avec le reste de l'application.
+    this.unsubscribe();
   }
 
   setDensity(value: string): void {
-    this.density = Number(value);
-    this.printer.density = this.density;
+    this.printer.density = Number(value);
   }
 
   async connect(transport: 'serial' | 'ble'): Promise<void> {
     await this.run('connexion', async () => {
       if (!this.connected) {
-        this.write('Choisissez l\'étiqueteuse dans la fenêtre Bluetooth…');
+        this.printer.log('Choisissez l\'étiqueteuse dans la fenêtre Bluetooth…');
         await this.printer.connect(transport);
-        this.write(`Connecté : ${this.printer.deviceName}`);
+        this.printer.log(`Connecté : ${this.printer.deviceName}`);
       }
 
       const client = this.printer.supvanClient;
@@ -135,19 +146,19 @@ export class SupvanDiagnosticComponent implements OnDestroy {
 
       const material = await client.queryMaterial();
       if (material) {
-        this.write(`Rouleau : ${material.widthMm} × ${material.heightMm} mm, écart ${material.gapMm} mm, `
+        this.printer.log(`Rouleau : ${material.widthMm} × ${material.heightMm} mm, écart ${material.gapMm} mm, `
           + `restantes ${material.remaining ?? '?'}, type ${material.labelType}, uuid ${material.uuid}, code ${material.code}`);
       } else {
-        this.write('Rouleau : réponse illisible.');
+        this.printer.log('Rouleau : réponse illisible.');
       }
 
-      this.write(`Firmware : ${(await client.readFirmwareVersion()) ?? '?'} · protocole : ${(await client.readProtocolVersion()) ?? '?'}`);
+      this.printer.log(`Firmware : ${(await client.readFirmwareVersion()) ?? '?'} · protocole : ${(await client.readProtocolVersion()) ?? '?'}`);
 
       const status = await client.queryStatus();
       if (!status) {
         throw new Error('Statut illisible.');
       }
-      this.write(`Statut : ${describeStatus(status)}`);
+      this.printer.log(`Statut : ${describeStatus(status)}`);
 
       const errors = statusErrors(status);
       this.summary = errors.length === 0
@@ -159,18 +170,16 @@ export class SupvanDiagnosticComponent implements OnDestroy {
 
   async printTest(): Promise<void> {
     await this.run('impression', async () => {
-      this.printer.density = this.density;
-      this.write(`Impression de l'étiquette de test (densité ${this.density})…`);
-      await this.printer.test();
-      this.write('Étiquette envoyée.');
-      this.summary = 'Étiquette envoyée. Vérifiez : code-barres net, chiffres lisibles, étiquette complète.';
+      this.printer.log(`Impression de l'étiquette de contrôle (densité ${this.density})…`);
+      await this.printer.printDiagnosticLabel();
+      this.printer.log('Étiquette envoyée.');
+      this.summary = 'Étiquette de contrôle envoyée. Vérifiez : cadre complet, code-barres net, chiffres lisibles.';
       this.summaryIsError = false;
     });
   }
 
   disconnect(): void {
     this.printer.disconnect();
-    this.write('Déconnecté.');
     this.summary = null;
     this.cdr.markForCheck();
   }
@@ -196,7 +205,7 @@ export class SupvanDiagnosticComponent implements OnDestroy {
       this.telemetry.trackEvent('label_printer_diagnostic', {step, ok: 'true', journal: this.journal.slice(-6000)});
     } catch (error) {
       const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-      this.write(`ERREUR : ${message}`);
+      this.printer.log(`ERREUR : ${message}`);
       this.summary = error instanceof Error ? error.message : 'Échec.';
       this.summaryIsError = true;
       this.telemetry.trackEvent('label_printer_diagnostic', {step, ok: 'false', error: message, journal: this.journal.slice(-6000)});
@@ -204,11 +213,5 @@ export class SupvanDiagnosticComponent implements OnDestroy {
       this.busy = false;
       this.cdr.markForCheck();
     }
-  }
-
-  private write(line: string): void {
-    const seconds = ((Date.now() - this.started) / 1000).toFixed(1).padStart(6, ' ');
-    this.journal += `${seconds}s  ${line}\n`;
-    this.cdr.markForCheck();
   }
 }

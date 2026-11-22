@@ -1,4 +1,6 @@
-import {LabelJob, LabelPrinter, LabelPrinterStatus, validateLabelJob} from '../label-printer';
+import {
+  LabelJob, LabelPrinter, LabelPrinterStatus, LabelPrinterTransport, LabelRoll, MAX_LABEL_COPIES, validateLabelJob,
+} from '../label-printer';
 import {ean13CheckDigit} from '../ean13';
 import {
   buildDataFrames, CMD, DATA_FRAME_LEN, DATA_PAYLOAD_SIZE, describeStatus, frameLen, makeCmd, MaterialInfo,
@@ -6,7 +8,7 @@ import {
   statusErrors, toSpacedHex, validateResponse,
 } from './supvan-protocol';
 import {barcodeModuleDots, renderLabel} from './supvan-label-render';
-import {compressGrouped, DEFAULT_DENSITY, splitIntoBuffers} from './supvan-raster';
+import {compressGrouped, DEFAULT_DENSITY, MAX_DENSITY, splitIntoBuffers} from './supvan-raster';
 
 // --- Web Serial (types minimaux : absents de lib.dom) ---------------------------------------------------
 
@@ -164,6 +166,7 @@ interface BleServer {
 interface BleDevice {
   name?: string;
   gatt?: {connect(): Promise<BleServer>};
+  addEventListener(type: string, listener: () => void): void;
 }
 
 interface BluetoothLike {
@@ -185,12 +188,14 @@ export function webBluetooth(): BluetoothLike | null {
 
 export class BlePipe implements SupvanPipe {
   private rx: number[] = [];
+  private device: BleDevice | null = null;
   private server: BleServer | null = null;
   private writeChar: BleCharacteristic | null = null;
   deviceName = '';
 
-  constructor(private readonly log: SupvanLog) {}
+  constructor(private readonly log: SupvanLog, private readonly onLost: () => void = () => undefined) {}
 
+  // Première connexion : l'utilisateur choisit l'étiqueteuse dans la fenêtre du navigateur.
   async open(): Promise<void> {
     const bluetooth = webBluetooth();
     if (!bluetooth) {
@@ -201,12 +206,34 @@ export class BlePipe implements SupvanPipe {
       acceptAllDevices: true,
       optionalServices: BLE_SERVICES.map(entry => entry.service),
     });
+    this.device = device;
     this.deviceName = device.name ?? '';
     this.log(`Appareil BLE : ${this.deviceName || '(sans nom)'}`);
-    if (!device.gatt) {
+    device.addEventListener('gattserverdisconnected', () => {
+      this.log('Liaison BLE coupée par l\'imprimante ou le téléphone.');
+      this.writeChar = null;
+      this.server = null;
+      this.onLost();
+    });
+    await this.connectGatt();
+  }
+
+  // Reconnexion à l'appareil déjà choisi, sans nouvelle fenêtre de sélection.
+  async reconnect(): Promise<void> {
+    if (!this.device) {
+      throw new Error('Aucune imprimante mémorisée.');
+    }
+    this.log('Reconnexion BLE à l\'imprimante déjà choisie…');
+    await this.connectGatt();
+  }
+
+  private async connectGatt(): Promise<void> {
+    const device = this.device;
+    if (!device?.gatt) {
       throw new Error('Cet appareil n\'expose pas de GATT.');
     }
 
+    this.rx = [];
     this.server = await device.gatt.connect();
     const services = await this.server.getPrimaryServices();
     this.log(`Services GATT : ${services.map(service => service.uuid).join(', ') || '(aucun autorisé)'}`);
@@ -233,6 +260,7 @@ export class BlePipe implements SupvanPipe {
     }
 
     this.server.disconnect();
+    this.server = null;
     throw new Error('Aucun service Supvan connu (FEE7, E0FF, FF00) sur cet appareil.');
   }
 
@@ -340,6 +368,7 @@ export class SupvanClient {
       if (status) {
         const errors = statusErrors(status);
         if (errors.length > 0) {
+          this.log(`Statut en erreur pendant « ${what} » : ${describeStatus(status)}`);
           throw new Error(`Imprimante : ${errors.join(', ')} (pendant : ${what}).`);
         }
         const value = done(status);
@@ -348,6 +377,7 @@ export class SupvanClient {
         }
       }
       if (Date.now() >= deadline) {
+        this.log(`Délai dépassé pendant « ${what} » (dernier statut : ${status ? describeStatus(status) : 'illisible'}).`);
         throw new Error(`Délai dépassé : ${what}.`);
       }
       await sleep(intervalMs);
@@ -406,36 +436,172 @@ export class SupvanClient {
 
 export const TEST_EAN13 = `${'200000000000'}${ean13CheckDigit('200000000000')}`;
 
+const STORAGE_TRANSPORT = 'vpd.labelPrinter.transport';
+const STORAGE_DENSITY = 'vpd.labelPrinter.density';
+const JOURNAL_MAX_LINES = 400;
+const TELEMETRY_JOURNAL_CHARS = 6000;
+
+export interface PrinterTelemetry {
+  trackEvent(name: string, properties: {[key: string]: string}): void;
+}
+
+function readSetting(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSetting(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch { /* stockage indisponible : le réglage ne sera pas retenu */ }
+}
+
+// Message lisible pour l'erreur d'une fenêtre de choix ou d'une liaison Bluetooth.
+export function describeConnectionError(error: unknown): string {
+  const name = error instanceof Error ? error.name : '';
+  if (name === 'NotFoundError') {
+    return 'Aucune imprimante choisie. Vérifiez qu\'elle est allumée, puis réessayez.';
+  }
+  if (name === 'NetworkError') {
+    return 'Connexion impossible : imprimante éteinte, trop loin ou déjà utilisée par un autre appareil.';
+  }
+  if (name === 'SecurityError' || name === 'NotAllowedError') {
+    return 'Le navigateur a refusé l\'accès au Bluetooth. Autorisez-le dans les réglages du site, puis réessayez.';
+  }
+  return error instanceof Error ? error.message : 'Connexion impossible.';
+}
+
+function rawError(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+}
+
 export class SupvanLabelPrinter implements LabelPrinter {
-  readonly simulated = false;
   deviceName = 'T50M Pro';
-  density = DEFAULT_DENSITY;
 
   private pipe: SupvanPipe | null = null;
+  private blePipe: BlePipe | null = null;
   private client: SupvanClient | null = null;
   private material: MaterialInfo | null = null;
   private currentStatus: LabelPrinterStatus = 'disconnected';
+  private transport: LabelPrinterTransport | null = null;
+  private readonly lines: string[] = [];
+  private readonly listeners = new Set<() => void>();
+  private readonly started = Date.now();
+  private densityLevel = DEFAULT_DENSITY;
 
-  constructor(private readonly log: SupvanLog = () => undefined) {}
-
-  status(): LabelPrinterStatus {
-    return this.currentStatus;
+  constructor(private readonly telemetry: PrinterTelemetry | null = null) {
+    const stored = Number(readSetting(STORAGE_DENSITY));
+    if (Number.isInteger(stored) && stored >= 1 && stored <= MAX_DENSITY) {
+      this.densityLevel = stored;
+    }
+    this.log(`Navigateur : ${navigator.userAgent}`);
+    this.log(`Web Bluetooth : ${webBluetooth() ? 'oui' : 'non'} · Web Serial : ${webSerial() ? 'oui' : 'non'} · contexte sécurisé : ${window.isSecureContext ? 'oui' : 'non'}`);
   }
 
-  get currentMaterial(): MaterialInfo | null {
-    return this.material;
+  // Écrit une ligne du journal (diagnostic et télémétrie).
+  readonly log: SupvanLog = line => {
+    const seconds = ((Date.now() - this.started) / 1000).toFixed(1).padStart(7, ' ');
+    this.lines.push(`${seconds}s  ${line}`);
+    if (this.lines.length > JOURNAL_MAX_LINES) {
+      this.lines.splice(0, this.lines.length - JOURNAL_MAX_LINES);
+    }
+    this.notify();
+  };
+
+  get journal(): string {
+    return this.lines.join('\n');
+  }
+
+  get density(): number {
+    return this.densityLevel;
+  }
+
+  set density(value: number) {
+    const level = Math.min(MAX_DENSITY, Math.max(1, Math.round(value)));
+    this.densityLevel = level;
+    writeSetting(STORAGE_DENSITY, String(level));
+    this.notify();
+  }
+
+  get roll(): LabelRoll | null {
+    return this.material
+      ? {widthMm: this.material.widthMm, heightMm: this.material.heightMm, remaining: this.material.remaining}
+      : null;
   }
 
   get supvanClient(): SupvanClient | null {
     return this.client;
   }
 
-  async connect(transport: 'serial' | 'ble' = 'serial'): Promise<void> {
+  status(): LabelPrinterStatus {
+    return this.currentStatus;
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  availableTransports(): LabelPrinterTransport[] {
+    const transports: LabelPrinterTransport[] = [];
+    if (webBluetooth()) {
+      transports.push('ble');
+    }
+    if (webSerial()) {
+      transports.push('serial');
+    }
+    return transports;
+  }
+
+  // Dernier mode qui a fonctionné s'il est disponible, sinon le BLE (iPhone et Android), sinon le série.
+  preferredTransport(): LabelPrinterTransport | null {
+    const available = this.availableTransports();
+    const remembered = readSetting(STORAGE_TRANSPORT);
+    if ((remembered === 'ble' || remembered === 'serial') && available.includes(remembered)) {
+      return remembered;
+    }
+    return available[0] ?? null;
+  }
+
+  async connect(transport: LabelPrinterTransport | null = this.preferredTransport()): Promise<void> {
+    if (transport === null) {
+      this.log('Connexion impossible : aucun Bluetooth disponible dans ce navigateur.');
+      throw new Error('Ce navigateur ne peut pas parler à l\'imprimante. Android : Chrome. iPhone : Bluefy.');
+    }
+
+    const started = Date.now();
+    this.log(`Connexion (${transport === 'ble' ? 'Bluetooth basse consommation' : 'Bluetooth série'})…`);
+    try {
+      await this.open(transport);
+      writeSetting(STORAGE_TRANSPORT, transport);
+      const roll = this.roll;
+      this.log(`Connectée : ${this.deviceName}${roll ? `, rouleau ${roll.widthMm}×${roll.heightMm} mm, restantes ${roll.remaining ?? '?'}` : ', rouleau non lu'}.`);
+      this.track('label_printer_connect', {
+        ok: 'true', transport, deviceName: this.deviceName, durationMs: String(Date.now() - started),
+        roll: roll ? `${roll.widthMm}x${roll.heightMm}` : '',
+      });
+    } catch (error) {
+      const raw = rawError(error);
+      this.log(`ERREUR de connexion : ${raw}`);
+      this.track('label_printer_connect', {
+        ok: 'false', transport, error: raw, durationMs: String(Date.now() - started),
+      });
+      throw new Error(describeConnectionError(error));
+    }
+  }
+
+  private async open(transport: LabelPrinterTransport): Promise<void> {
+    this.discard();
+
     let pipe: SupvanPipe;
     if (transport === 'ble') {
-      const blePipe = new BlePipe(this.log);
+      const blePipe: BlePipe = new BlePipe(this.log, () => this.onLinkLost(blePipe));
       await blePipe.open();
       this.deviceName = blePipe.deviceName || this.deviceName;
+      this.blePipe = blePipe;
       pipe = blePipe;
     } else {
       const serial = webSerial();
@@ -449,52 +615,125 @@ export class SupvanLabelPrinter implements LabelPrinter {
       await serialPipe.open();
       pipe = serialPipe;
     }
-    const client = new SupvanClient(pipe, this.log);
 
+    this.transport = transport;
     try {
-      if (!(await client.checkDevice())) {
-        throw new Error('L\'appareil choisi ne répond pas comme une étiqueteuse Supvan.');
-      }
-      this.material = await client.queryMaterial();
-      this.deviceName = (await client.readDeviceName()) ?? (this.deviceName || 'T50M Pro');
+      await this.handshake(pipe);
     } catch (error) {
+      this.discard();
       await pipe.close();
       throw error;
     }
+  }
+
+  // Vérifie que l'appareil est bien une Supvan et lit le rouleau.
+  private async handshake(pipe: SupvanPipe): Promise<void> {
+    const client = new SupvanClient(pipe, this.log);
+    if (!(await client.checkDevice())) {
+      throw new Error('L\'appareil choisi ne répond pas comme une étiqueteuse Supvan.');
+    }
+    this.material = await client.queryMaterial();
+    this.deviceName = (await client.readDeviceName()) ?? (this.deviceName || 'T50M Pro');
 
     this.pipe = pipe;
     this.client = client;
     this.currentStatus = 'connected';
+    this.notify();
   }
 
-  disconnect(): void {
-    const pipe = this.pipe;
+  // Coupure BLE : l'appareil reste mémorisé pour se reconnecter sans nouvelle fenêtre de choix.
+  private onLinkLost(lost: BlePipe): void {
+    if (this.blePipe !== lost) {
+      return;
+    }
+    this.client = null;
     this.pipe = null;
+    this.currentStatus = 'disconnected';
+    this.track('label_printer_link_lost', {deviceName: this.deviceName});
+    this.notify();
+  }
+
+  private discard(): void {
+    const pipe = this.pipe ?? this.blePipe;
+    this.pipe = null;
+    this.blePipe = null;
     this.client = null;
     this.currentStatus = 'disconnected';
     void pipe?.close();
   }
 
-  async test(): Promise<void> {
-    await this.printLabel({code: TEST_EAN13, price: null, copies: 1}, true);
+  disconnect(): void {
+    this.discard();
+    this.material = null;
+    this.transport = null;
+    this.log('Déconnectée à la demande de l\'utilisateur.');
+    this.notify();
   }
 
-  async print(job: LabelJob): Promise<void> {
-    const error = validateLabelJob(job);
-    if (error) {
-      throw new Error(error);
+  // Client prêt à imprimer ; tente d'abord une reconnexion silencieuse si le BLE s'est coupé.
+  private async requireClient(): Promise<SupvanClient> {
+    if (this.currentStatus === 'connected' && this.client) {
+      return this.client;
     }
-    for (let copy = 0; copy < job.copies; copy += 1) {
-      await this.printLabel(job, false);
+
+    const blePipe = this.blePipe;
+    if (blePipe) {
+      try {
+        await blePipe.reconnect();
+        await this.handshake(blePipe);
+        this.track('label_printer_reconnect', {ok: 'true', deviceName: this.deviceName});
+        if (this.client) {
+          return this.client;
+        }
+      } catch (error) {
+        const raw = rawError(error);
+        this.log(`Reconnexion impossible : ${raw}`);
+        this.track('label_printer_reconnect', {ok: 'false', error: raw});
+      }
+    }
+
+    throw new Error('Imprimante non connectée. Ouvrez « Imprimante » pour la reconnecter.');
+  }
+
+  async print(job: LabelJob, onProgress?: (done: number, total: number) => void): Promise<void> {
+    const invalid = validateLabelJob(job);
+    if (invalid) {
+      throw new Error(invalid);
+    }
+
+    const started = Date.now();
+    this.log(`Impression : code ${job.code}${job.price ? ', avec prix' : ''}, ${job.copies} exemplaire(s), densité ${this.densityLevel}.`);
+    try {
+      const client = await this.requireClient();
+      onProgress?.(0, job.copies);
+      for (let copy = 0; copy < job.copies; copy += 1) {
+        await this.printLabel(client, job, false);
+        onProgress?.(copy + 1, job.copies);
+      }
+      this.log(`Impression terminée en ${((Date.now() - started) / 1000).toFixed(1)} s.`);
+      this.track('label_printer_print', {
+        ok: 'true', code: job.code, copies: String(job.copies), hasPrice: String(job.price !== null),
+        density: String(this.densityLevel), durationMs: String(Date.now() - started),
+        roll: this.material ? `${this.material.widthMm}x${this.material.heightMm}` : '',
+      });
+    } catch (error) {
+      const raw = rawError(error);
+      this.log(`ERREUR d'impression : ${raw}`);
+      this.track('label_printer_print', {
+        ok: 'false', code: job.code, copies: String(job.copies), error: raw, density: String(this.densityLevel),
+        durationMs: String(Date.now() - started),
+      });
+      throw error;
     }
   }
 
-  private async printLabel(job: LabelJob, testLabel: boolean): Promise<void> {
-    const client = this.client;
-    if (this.currentStatus !== 'connected' || !client) {
-      throw new Error('Imprimante non connectée.');
-    }
+  // Étiquette de contrôle du diagnostic (cadre + légende) : hors parcours bénévole.
+  async printDiagnosticLabel(): Promise<void> {
+    const client = await this.requireClient();
+    await this.printLabel(client, {code: TEST_EAN13, price: null, copies: 1}, true);
+  }
 
+  private async printLabel(client: SupvanClient, job: LabelJob, diagnostic: boolean): Promise<void> {
     // Le rouleau a pu changer depuis la connexion : relire sa taille.
     this.material = (await client.queryMaterial()) ?? this.material;
     const material = this.material;
@@ -502,6 +741,7 @@ export class SupvanLabelPrinter implements LabelPrinter {
       throw new Error('Taille du rouleau inconnue : vérifiez que le rouleau est bien en place, capot fermé.');
     }
 
+    this.log(`Rouleau : ${material.widthMm}×${material.heightMm} mm, écart ${material.gapMm} mm, restantes ${material.remaining ?? '?'}.`);
     if (barcodeModuleDots(material.widthMm) < 2) {
       this.log('Attention : rouleau étroit, code-barres très serré (peut être illisible).');
     }
@@ -511,13 +751,27 @@ export class SupvanLabelPrinter implements LabelPrinter {
       price: job.price,
       widthMm: material.widthMm,
       heightMm: material.heightMm,
-      border: testLabel,
-      caption: testLabel ? `TEST ${material.widthMm}x${material.heightMm} mm` : null,
+      border: diagnostic,
+      caption: diagnostic ? `DIAGNOSTIC ${material.widthMm}x${material.heightMm} mm` : null,
     });
-    await client.printBuffers(splitIntoBuffers(image, this.density));
+    await client.printBuffers(splitIntoBuffers(image, this.densityLevel));
   }
 
   describeStatus(status: PrinterStatus): string {
     return describeStatus(status);
+  }
+
+  private track(name: string, properties: {[key: string]: string}): void {
+    this.telemetry?.trackEvent(name, {
+      transport: this.transport ?? '',
+      ...properties,
+      journal: this.journal.slice(-TELEMETRY_JOURNAL_CHARS),
+    });
+  }
+
+  private notify(): void {
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 }
