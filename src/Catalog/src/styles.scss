@@ -491,3 +491,10 @@ app-catalog-administration-page {
     .isbn-analysis-zone .catalogue-book-actions.isbn-analysis-actions { width: 100%; justify-content: flex-start; }
   }
 }
+
+.book-identification-photos { margin-top: 24px; }
+.book-identification-photos h3 { margin: 0 0 12px; color: var(--admin-ink); font-size: 15px; }
+.book-identification-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+.book-identification-photo-grid figure { min-width: 0; margin: 0; }
+.book-identification-photo-grid img { display: block; width: 100%; aspect-ratio: 3 / 4; border: 1px solid var(--admin-line); border-radius: 10px; background: #f2f0e9; object-fit: contain; }
+.book-identification-photo-grid figcaption { margin-top: 5px; color: var(--admin-muted); font-size: 12px; }

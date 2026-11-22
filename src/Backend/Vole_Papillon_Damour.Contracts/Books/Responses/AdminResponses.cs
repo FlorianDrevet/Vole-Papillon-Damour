@@ -1,3 +1,5 @@
+using Vole_Papillon_Damour.Contracts.Books.Requests;
+
 namespace Vole_Papillon_Damour.Contracts.Books.Responses;
 
 public sealed record AdminBookCoverUploadResponse(
@@ -116,7 +118,8 @@ public sealed record AdminBookResponse(
     string? Summary = null,
     IReadOnlyList<string>? Genres = null,
     IReadOnlyList<string>? Subjects = null,
-    string? FallbackSource = null);
+    string? FallbackSource = null,
+    IReadOnlyList<BookPhotoResponse>? Photos = null);
 
 public sealed record AdminBookPageResponse(
     DateTimeOffset GeneratedAt,

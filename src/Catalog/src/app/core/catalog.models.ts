@@ -956,6 +956,7 @@ export interface CatalogAdminBook {
   isHidden: boolean;
   redirectedToIsbn13: string | null;
   coverUrl: string | null;
+  photos?: CatalogAdminBookPhoto[];
   firstSeenAt: string;
   lastAvailableAt: string | null;
   updatedAt: string;

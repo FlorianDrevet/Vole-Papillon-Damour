@@ -1681,7 +1681,12 @@ public static class BookAdministrationController
             result.Summary,
             result.Genres,
             result.Subjects,
-            result.FallbackSource);
+            result.FallbackSource,
+            result.Photos?.Select(photo => new BookPhotoResponse(
+                photo.Id,
+                photo.Url,
+                photo.Position,
+                photo.ContentType)).ToArray());
 
     private static AdminAnnouncementResponse ToResponse(AdminAnnouncementResult result) =>
         new(result.Id, result.Isbn13, result.FairId, result.Quantity, result.Status,

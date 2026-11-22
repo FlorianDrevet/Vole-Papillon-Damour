@@ -1213,6 +1213,30 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Sujets reçus');
   });
 
+  it('shows the scan photos alongside the metadata form for an ISBN without a notice', async () => {
+    auth.isAuthenticated.set(true);
+    const book = Object.assign(catalogueBook({title: null, authors: null}), {
+      photos: [{
+        id: 'photo-1',
+        url: 'https://images.example.test/isbn-non-trouve/photo-1.jpg',
+        position: 0,
+        contentType: 'image/jpeg',
+      }],
+    });
+    api.getBook.and.returnValue(of(book));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.openBook(book.isbn13);
+    fixture.detectChanges();
+
+    const photo = fixture.nativeElement.querySelector(
+      '[data-testid="isbn-not-found-book-photo"]',
+    ) as HTMLImageElement | null;
+    expect(photo).not.toBeNull();
+    expect(photo?.getAttribute('src')).toBe(book.photos[0].url);
+    expect(fixture.nativeElement.querySelector('input[name="metaTitle"]')).not.toBeNull();
+  });
+
   it('saves an edited title and author before marking an absent book complete', async () => {
     auth.isAuthenticated.set(true);
     const book = catalogueBook({title: null, authors: null, isAbsentFromIsbndb: true});

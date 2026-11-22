@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.BookPhotos.AddBookPhoto;
 using Vole_Papillon_Damour.Application.Books.Commands.BookPhotos.DeleteBookPhoto;
+using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.Books.Queries.Admin;
+using Vole_Papillon_Damour.Application.Books.Queries.GetBookPhotos;
 using Vole_Papillon_Damour.Application.Books.Queries.GetBooksWithoutIsbn;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
@@ -18,6 +21,7 @@ public sealed class BookPhotoCommandHandlerTests
     private static readonly DateTime Now = new(2026, 11, 19, 10, 0, 0, DateTimeKind.Utc);
     private static readonly UserId Volunteer = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000077"));
     private const string InternalCode = "2000000000015";
+    private const string NotFoundIsbn = "9782070368228";
 
     [Fact]
     public async Task AddPhoto_StoresThePhotoOfABookWithoutIsbn()
@@ -40,20 +44,103 @@ public sealed class BookPhotoCommandHandlerTests
     }
 
     [Fact]
-    public async Task AddPhoto_RefusesABookWithAnIsbn()
+    public async Task AddPhoto_RefusesABookWithUnavailableMetadata()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
-        Isbn13.TryCreate("9782070409228", out var isbn).Should().BeTrue();
-        fixture.Context.Books.Add(Book.Create(isbn, Now));
+        Isbn13.TryCreate(NotFoundIsbn, out var isbn).Should().BeTrue();
+        var book = Book.Create(isbn, Now);
+        book.RecordMetadataProviderFailure(Now);
+        fixture.Context.Books.Add(book);
         await fixture.Context.SaveChangesAsync();
         fixture.Context.ChangeTracker.Clear();
 
         var result = await CreateAddHandler(fixture, CreateBlob()).Handle(
-            CreateAddCommand("9782070409228", "image/jpeg"),
+            CreateAddCommand(NotFoundIsbn, "image/jpeg"),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("Book.PhotoNotAllowed");
+    }
+
+    [Fact]
+    public async Task AddPhoto_CreatesANotFoundBookForANewUnknownIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var blob = CreateBlob();
+
+        var result = await CreateAddHandler(fixture, blob).Handle(
+            CreateAddCommand(NotFoundIsbn, "image/jpeg"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Url.Should().StartWith("https://blob.test/isbn-non-trouve/" + NotFoundIsbn + "/");
+        var book = await fixture.Context.Books.Include(candidate => candidate.Photos).SingleAsync();
+        book.MetadataStatus.Should().Be(BookMetadataStatus.NotFound);
+        book.Photos.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task AddPhoto_RejectsTheSixthPhotoForANotFoundIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        Isbn13.TryCreate(NotFoundIsbn, out var isbn).Should().BeTrue();
+        var book = Book.Create(isbn, Now);
+        book.RecordMetadataNotFound(Now);
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+
+        var handler = CreateAddHandler(fixture, CreateBlob());
+        for (var index = 0; index < 5; index++)
+        {
+            var added = await handler.Handle(
+                CreateAddCommand(NotFoundIsbn, "image/jpeg"),
+                CancellationToken.None);
+            added.IsError.Should().BeFalse();
+        }
+
+        var result = await handler.Handle(
+            CreateAddCommand(NotFoundIsbn, "image/jpeg"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.TooManyPhotos");
+    }
+
+    [Fact]
+    public async Task GetAdminBook_IncludesPhotosForAnUnfoundIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var added = await CreateAddHandler(fixture, CreateBlob()).Handle(
+            CreateAddCommand(NotFoundIsbn, "image/jpeg"),
+            CancellationToken.None);
+        added.IsError.Should().BeFalse();
+        fixture.Context.ChangeTracker.Clear();
+
+        var result = await new GetAdminBookQueryHandler(fixture.Context).Handle(
+            new GetAdminBookQuery(NotFoundIsbn),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Photos.Should().ContainSingle(photo => photo.Url == added.Value.Url);
+    }
+
+    [Fact]
+    public async Task GetPhotos_ReturnsPhotosInPositionOrderForAnUnfoundIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var addHandler = CreateAddHandler(fixture, CreateBlob());
+        (await addHandler.Handle(CreateAddCommand(NotFoundIsbn, "image/jpeg"), CancellationToken.None))
+            .IsError.Should().BeFalse();
+        (await addHandler.Handle(CreateAddCommand(NotFoundIsbn, "image/png"), CancellationToken.None))
+            .IsError.Should().BeFalse();
+        fixture.Context.ChangeTracker.Clear();
+
+        var result = await new GetBookPhotosQueryHandler(fixture.Context).Handle(
+            new GetBookPhotosQuery(NotFoundIsbn),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Select(photo => photo.Position).Should().Equal(0, 1);
     }
 
     [Fact]

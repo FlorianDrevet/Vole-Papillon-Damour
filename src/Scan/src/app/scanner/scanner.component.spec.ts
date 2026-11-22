@@ -9,6 +9,8 @@ import {defer, of, Subject, throwError} from 'rxjs';
 import {DesignSystemModule} from '@vpd/ui';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
+import {BookPhoto} from './book-photo.model';
+import {BookPhotoService} from './book-photo.service';
 import {CameraScannerService} from './camera-scanner.service';
 import {HomeBookLookupComponent} from './home-book-lookup.component';
 import {ScannerComponent} from './scanner.component';
@@ -40,6 +42,7 @@ describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
   let component: ScannerComponent;
   let metadataService: jasmine.SpyObj<BookMetadataService>;
+  let bookPhotoService: jasmine.SpyObj<BookPhotoService>;
   let cameraService: jasmine.SpyObj<CameraScannerService>;
   let confirmDialog: jasmine.Spy;
   let sessionSummary: ScanSessionSummaryService;
@@ -51,6 +54,14 @@ describe('ScannerComponent', () => {
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
+    bookPhotoService = jasmine.createSpyObj<BookPhotoService>('BookPhotoService', ['getPhotos', 'uploadPhoto']);
+    bookPhotoService.getPhotos.and.returnValue(of([]));
+    bookPhotoService.uploadPhoto.and.returnValue(of({
+      id: 'photo-1',
+      url: 'https://images.example.test/photo-1.jpg',
+      position: 0,
+      contentType: 'image/jpeg',
+    }));
     cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start', 'scanFile']);
     const confirmation = jasmine.createSpyObj<ScanConfirmationService>(
       'ScanConfirmationService',
@@ -96,6 +107,7 @@ describe('ScannerComponent', () => {
       imports: [CommonModule, FormsModule, DesignSystemModule, HomeBookLookupComponent],
       providers: [
         {provide: BookMetadataService, useValue: metadataService},
+        {provide: BookPhotoService, useValue: bookPhotoService},
         {provide: CameraScannerService, useValue: cameraService},
         {provide: ScanApiService, useValue: {getPublicCatalogBook: () => of(null)}},
         {provide: ScanAuthService, useValue: null},
@@ -680,6 +692,76 @@ describe('ScannerComponent', () => {
 
     expect(component.cameraError).toBeNull();
     expect(component.errorMessage).toContain('Aucune notice bibliographique');
+  });
+
+  it('offers book photo capture only when the ISBN has no metadata', () => {
+    const missingFixture = TestBed.createComponent(ScannerComponent);
+    missingFixture.componentInstance.screen = 'tri';
+    missingFixture.componentInstance.isOnline = true;
+    missingFixture.componentInstance.isbnInput = '9782070363735';
+    missingFixture.componentInstance.metadataLookupState = 'not-found';
+    missingFixture.detectChanges();
+
+    expect(missingFixture.nativeElement.querySelector('[data-testid="not-found-photo-capture"]')).not.toBeNull();
+
+    const unavailableFixture = TestBed.createComponent(ScannerComponent);
+    unavailableFixture.componentInstance.screen = 'tri';
+    unavailableFixture.componentInstance.isOnline = true;
+    unavailableFixture.componentInstance.isbnInput = '9782070363735';
+    unavailableFixture.componentInstance.metadataLookupState = 'unavailable';
+    unavailableFixture.detectChanges();
+
+    expect(unavailableFixture.nativeElement.querySelector('[data-testid="not-found-photo-capture"]')).toBeNull();
+    missingFixture.destroy();
+    unavailableFixture.destroy();
+  });
+
+  it('uploads a photo for the current missing ISBN and disables capture at five photos', async () => {
+    const photo: BookPhoto = {
+      id: 'photo-1',
+      url: 'https://images.example.test/photo-1.jpg',
+      position: 0,
+      contentType: 'image/jpeg',
+    };
+    bookPhotoService.uploadPhoto.and.returnValue(of(photo));
+    const uploadFixture = TestBed.createComponent(ScannerComponent);
+    const uploadComponent = uploadFixture.componentInstance;
+    uploadComponent.screen = 'tri';
+    uploadComponent.isOnline = true;
+    uploadComponent.isbnInput = '9782070363735';
+    uploadComponent.metadataLookupState = 'not-found';
+    const input = document.createElement('input');
+    Object.defineProperty(input, 'files', {
+      value: [new File(['photo'], 'book.jpg', {type: 'image/jpeg'})],
+    });
+
+    await uploadComponent.addNotFoundPhoto({target: input} as unknown as Event);
+
+    expect(bookPhotoService.uploadPhoto).toHaveBeenCalledOnceWith(
+      '9782070363735',
+      jasmine.any(File),
+    );
+    expect(uploadComponent.notFoundBookPhotos).toEqual([photo]);
+
+    uploadComponent.notFoundBookPhotos = Array.from({length: 5}, (_, position) => ({
+      ...photo,
+      id: `photo-${position + 1}`,
+      position,
+    }));
+    expect(uploadComponent.canAddNotFoundBookPhoto).toBeFalse();
+
+    const fullFixture = TestBed.createComponent(ScannerComponent);
+    fullFixture.componentInstance.screen = 'tri';
+    fullFixture.componentInstance.isOnline = true;
+    fullFixture.componentInstance.isbnInput = '9782070363735';
+    fullFixture.componentInstance.metadataLookupState = 'not-found';
+    fullFixture.componentInstance.notFoundBookPhotos = uploadComponent.notFoundBookPhotos;
+    fullFixture.detectChanges();
+    expect((fullFixture.nativeElement.querySelector(
+      '[data-testid="not-found-photo-capture"]',
+    ) as HTMLButtonElement).disabled).toBeTrue();
+    uploadFixture.destroy();
+    fullFixture.destroy();
   });
 
   it('falls back to the ISBN cover when the metadata cover cannot be loaded', async () => {

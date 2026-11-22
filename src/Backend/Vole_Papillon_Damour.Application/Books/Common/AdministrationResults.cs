@@ -134,7 +134,8 @@ public sealed record AdminBookResult(
     string? Summary = null,
     IReadOnlyList<string>? Genres = null,
     IReadOnlyList<string>? Subjects = null,
-    string? FallbackSource = null);
+    string? FallbackSource = null,
+    IReadOnlyList<BookPhotoResult>? Photos = null);
 
 public sealed record AdminAnnouncementResult(
     Guid Id,
