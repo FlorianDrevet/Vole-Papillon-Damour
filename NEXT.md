@@ -1046,6 +1046,10 @@ git pull
 
 ## En cours
 
+### Scan — recherche ISBN sur l’accueil — 2026-11-22
+
+L’accueil de l’application Scan propose la recherche d’une fiche du catalogue par ISBN-10/13 saisi ou lu par la caméra. L’ISBN est normalisé avant l’appel public `GET /catalog/books/{isbn13}` ; la fiche affiche les métadonnées disponibles, la couverture et les disponibilités. Un 404 indique qu’aucune fiche n’existe ; les erreurs de connexion restent distinctes. Validation : suite Scan 407/407, build de production réussi, carte testée à 320 px sans débordement. Le navigateur local est redirigé vers la connexion Entra, donc le contrôle visuel authentifié reste à faire. Aucune modification de l’API, Azure, des données ou aucun déploiement. Branche `feat/scan-isbn-search` dans le worktree `VPD-scan-isbn-search` ; [PR #419](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/419) ouverte vers `main`, non fusionnée.
+
 ### Coups de cœur — suivi du merge et de la CI — 2026-11-14
 
 Les PR [#392](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/392) et [#394](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/394) sont fusionnées. Après le merge de #394, `Books runtime - deploy` #43627546776 et `Catalog - deploy` #43627561852 ont réussi. Le contrôle public répond `/health` 200 et `/catalog/me/favorites` 401 sans jeton, ce qui confirme que la route protégée ne renvoie plus 404. `AddBookFavorites` a déjà été appliquée.
@@ -2623,6 +2627,10 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-11-22, la recherche ISBN de l’accueil Scan est uniquement dans le dépôt. Aucun
+service, compte Entra, donnée, ressource Azure ni déploiement n’a été modifié. Après la
+fusion, le contrôle de l’écran avec une session bénévole authentifiée reste à faire.
+
 Au 2026-11-11, l’utilisateur a confirmé la fusion de la [PR #381](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/381)
 et son déploiement. Le correctif en cours ne modifie aucun service externe; son
 déploiement reste en attente de fusion puis de lancement manuel du workflow Scan.
@@ -2862,6 +2870,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-11-22 | Windows — `VPD-scan-isbn-search` | **Scan — recherche de fiche ISBN depuis l’accueil.** Dans le worktree `VPD-scan-isbn-search` (`feat/scan-isbn-search`), saisie ISBN-10/13 normalisée ou scan caméra, consultation de l’endpoint public du catalogue, fiche avec disponibilités et état explicite en cas de 404 ou d’indisponibilité. Suite Scan 407/407, build de production et `graphify update .` réussis ; `git diff --check` réussi. Le bundle initial dépasse le budget Angular de 173,12 kB. La connexion Entra empêche le contrôle navigateur authentifié ; test de largeur 320 px sans débordement. Aucun changement Azure ni déploiement. [PR #419](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/419) ouverte vers `main`, non fusionnée. |
 | 2026-11-22 | Windows — `VPD-manual-request-create-person` | **Demandes manuelles — créer une fiche sans recherche.** Le bouton Personnes et `newRequester()` ne bloquent plus la création avant recherche; la recherche reste disponible pour réutiliser une fiche. Build Catalog, `git diff --check` et Graphify passent. Tests automatisés non lancés; revue visuelle authentifiée bloquée par l’écran Entra. Aucun changement de schéma ni déploiement. [PR #417](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/417) ouverte vers `main`, non fusionnée. |
 | 2026-11-15 | Windows — `Vole-Papillon-Damour-perf-catalogue-admin` | **Portail Catalog — tâches 14–15.** États de chargement par bloc, squelettes, reprise locale et réponses tardives ignorées. Specs ciblées 95/95 ; suite Catalog 659/663 avec quatre échecs reproduits sur les fichiers inchangés de `origin/main` (3 AccountCard, 1 CatalogAccountPage). Build Catalog, build BackOffice et tests .NET 1 164/1 164 réussis. Les contrôles bootstrap BackOffice passent 4/6 (deux attentes du script ne correspondent pas au bootstrap conditionnel présent sur `main`). Vérification réseau/seed impossible faute de daemon Podman/Docker ; les mesures locales précédentes et App Insights avant correctif sont conservées dans le rapport. Le contrôle visuel authentifié à 390/1 440 px reste en attente, l’outil Computer Use ayant arrêté le navigateur par garde de sécurité. Aucun changement Azure ni déploiement. PR à ouvrir après validation finale. |
 | 2026-11-14 | Windows — `VPD-ci-book-favorites-after-merge-20261114` | **CI après le merge des coups de cœur.** La CI #43627523795 a échoué sur les valeurs par défaut de `RecommendationOptions` et une assertion d’annulation concurrente. Restauration du défaut modèle et remise à zéro du tableau avant le binding; tests DI ajoutés. Le test concurrent n’utilise plus de délais fixes et passe 10/10 exécutions; Infrastructure 255/255, Application 759/759, builds API/Worker Release réussis. Pas de déploiement par Codex. La [PR #395](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/395) est ouverte vers `main`; les contrôles CI passent. |

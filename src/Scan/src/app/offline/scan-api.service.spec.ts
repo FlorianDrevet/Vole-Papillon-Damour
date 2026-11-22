@@ -30,6 +30,17 @@ describe('ScanApiService', () => {
 
   afterEach(() => http.verify());
 
+  it('retrieves a public catalog fiche by ISBN', () => {
+    let received: {isbn13: string; title: string | null} | undefined;
+    service.getPublicCatalogBook('9782070363735').subscribe(value => received = value);
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/books/9782070363735`);
+    expect(request.request.method).toBe('GET');
+    request.flush({isbn13: '9782070363735', title: 'Le Petit Prince'});
+
+    expect(received).toEqual({isbn13: '9782070363735', title: 'Le Petit Prince'});
+  });
+
   it('requests the full catalog when no watermark exists', () => {
     const response = createDelta();
     let received: ScanCatalogDeltaResponse | undefined;
