@@ -9,6 +9,7 @@ describe('scan routing', () => {
     expect(childPaths).toEqual(jasmine.arrayWithExactContents([
       '',
       'accueil',
+      'recherche-livre',
       'reprise',
       'tri/mode',
       'tri',
@@ -37,6 +38,7 @@ describe('scan routing', () => {
     expect(children.find(route => route.path === 'tri/livres')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'caisse')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'sans-isbn')?.canActivate).toEqual([scanPrintGuard]);
+    expect(children.find(route => route.path === 'recherche-livre')?.loadComponent).toEqual(jasmine.any(Function));
     expect(children.find(route => route.path === 'tri/fin')?.canActivate?.length).toBe(2);
     expect(children.find(route => route.path === 'livres-rares')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'livres-rares/sans-isbn')?.canActivate?.length).toBe(1);

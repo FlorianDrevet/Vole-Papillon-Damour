@@ -12,7 +12,6 @@ import {AppComponent} from './app.component';
 import {ApplicationInsightsErrorHandler} from './application-insights-error-handler';
 import {ScanLoginComponent} from './auth/scan-login.component';
 import {ScannerComponent} from './scanner/scanner.component';
-import {HomeBookLookupComponent} from './scanner/home-book-lookup.component';
 import {ScanDiagnosticComponent} from './offline/scan-diagnostic.component';
 import {ScanRecoveryComponent} from './offline/scan-recovery.component';
 import {ScanStatusBarComponent} from './offline/scan-status-bar.component';
@@ -62,7 +61,6 @@ import {environment} from '../environments/environment';
     FormsModule,
     HttpClientModule,
     DesignSystemModule,
-    HomeBookLookupComponent,
     RouterModule.forRoot(scanRoutes),
     MsalModule.forRoot(
       msalInstanceFactory(),
