@@ -6,6 +6,14 @@
     accept="image/*"
     capture="environment"
     (change)="scanImage($event)">
+  <input
+    #notFoundPhotoInput
+    id="not-found-photo-input"
+    class="visually-hidden"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    capture="environment"
+    (change)="addNotFoundPhoto($event)">
 
   <ng-template #statusStrip>
     <scan-status-bar
@@ -223,7 +231,7 @@
         <ng-container *ngTemplateOutlet="statusStrip"></ng-container>
 
         <div class="tri-body">
-          <ng-container *ngIf="!localScan && !metadata; else verdictView">
+          <ng-container *ngIf="!localScan && !metadata && metadataLookupState !== 'not-found'; else verdictView">
             <section class="scan-stage" aria-labelledby="scan-instruction-title" (scroll)="onViewportResize()">
               <div #cameraSlot class="camera-slot camera-slot-tri">
                 <div class="scan-reticle" aria-hidden="true">
@@ -391,6 +399,37 @@
                       <strong>{{ metadataLookupState === 'not-found' ? 'Fiche introuvable sur Internet' : 'Recherche en ligne indisponible' }}</strong>
                       <p>Les informations pourront être renseignées à la main plus tard.</p>
                     </div>
+                  </div>
+                  <div
+                    *ngIf="metadataLookupState === 'not-found'"
+                    class="not-found-photo-capture"
+                    data-testid="not-found-photo-capture-panel">
+                    <p>Ajoutez jusqu’à cinq photos pour reconnaître ce livre dans l’administration.</p>
+                    <div *ngIf="bookPhotosLoading" class="not-found-photo-status" role="status">
+                      Chargement des photos…
+                    </div>
+                    <div *ngIf="notFoundBookPhotos.length > 0" class="not-found-photo-grid" aria-label="Photos du livre">
+                      <img
+                        *ngFor="let photo of notFoundBookPhotos; let index = index"
+                        [src]="photo.url"
+                        [alt]="'Photo ' + (index + 1) + ' du livre ISBN ' + activeIsbn"
+                        loading="lazy"
+                        decoding="async">
+                    </div>
+                    <button
+                      type="button"
+                      class="not-found-photo-button"
+                      data-testid="not-found-photo-capture"
+                      [disabled]="!canAddNotFoundBookPhoto"
+                      (click)="openNotFoundPhotoCapture(notFoundPhotoInput)">
+                      {{ bookPhotoUploading ? 'Enregistrement…' : 'Prendre une photo (' + notFoundBookPhotos.length + '/5)' }}
+                    </button>
+                    <p *ngIf="!isOnline" class="not-found-photo-status">
+                      Une connexion est nécessaire pour enregistrer les photos.
+                    </p>
+                    <p *ngIf="bookPhotoError" class="not-found-photo-error" role="alert">
+                      {{ bookPhotoError }}
+                    </p>
                   </div>
                   <p class="book-isbn">ISBN {{ activeIsbn }}</p>
                 </div>

@@ -53,6 +53,8 @@ import {
 } from '../offline/scan-rare-cash.service';
 import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanConfirmationRequest, ScanConfirmationService} from '../scan-confirmation.service';
+import {BookPhoto} from './book-photo.model';
+import {BookPhotoService} from './book-photo.service';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
@@ -124,6 +126,8 @@ const STORAGE_PERSISTENCE_ERROR_FEEDBACK = 'La demande de protection n’a pas p
   standalone: false,
 })
 export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDestroy {
+  private static readonly maximumNotFoundBookPhotos = 5;
+  private static readonly maximumBookPhotoSizeBytes = 8 * 1024 * 1024;
   private static readonly openLibraryCoverUrlTemplate =
     'https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false';
 
@@ -149,6 +153,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   manualError: string | null = null;
   metadata: BookMetadata | null = null;
   metadataLookupState: 'idle' | 'loading' | 'found' | 'not-found' | 'unavailable' = 'idle';
+  notFoundBookPhotos: BookPhoto[] = [];
+  bookPhotosLoading = false;
+  bookPhotoUploading = false;
+  bookPhotoError: string | null = null;
   coverUrl: string | null = null;
   errorMessage: string | null = null;
   cameraError: string | null = null;
@@ -216,6 +224,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
   private cameraStartToken = 0;
+  private bookPhotoActionVersion = 0;
   private accountSwitchAccountId: string | null = null;
   private cameraFrame: string | null = null;
   private cameraSlotElement: HTMLElement | null = null;
@@ -238,6 +247,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly scanPassageAssociation: ScanPassageAssociationService | null = null,
     @Optional() private readonly scanManualRequest: ScanManualRequestService | null = null,
     @Optional() private readonly scanTelemetry: ScanTelemetryService | null = null,
+    @Optional() private readonly bookPhotoService: BookPhotoService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -717,6 +727,91 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   get activeIsbn(): string {
     return this.metadata?.isbn13 ?? this.activeBook?.isbn13 ?? this.isbnInput;
+  }
+
+  get canAddNotFoundBookPhoto(): boolean {
+    return this.metadataLookupState === 'not-found' &&
+      this.isOnline &&
+      !this.bookPhotosLoading &&
+      !this.bookPhotoUploading &&
+      this.notFoundBookPhotos.length < ScannerComponent.maximumNotFoundBookPhotos;
+  }
+
+  openNotFoundPhotoCapture(input: HTMLInputElement): void {
+    if (this.canAddNotFoundBookPhoto) {
+      input.click();
+    }
+  }
+
+  async addNotFoundPhoto(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.metadataLookupState !== 'not-found') {
+      return;
+    }
+
+    const isbn13 = normalizeBookCode(this.activeIsbn);
+    if (!isbn13) {
+      this.bookPhotoError = 'Impossible d’associer la photo à un ISBN valide.';
+      this.refreshView();
+      return;
+    }
+
+    if (!this.isOnline) {
+      this.bookPhotoError = 'Une connexion est nécessaire pour enregistrer cette photo.';
+      this.refreshView();
+      return;
+    }
+
+    if (this.notFoundBookPhotos.length >= ScannerComponent.maximumNotFoundBookPhotos) {
+      this.bookPhotoError = 'Un ISBN sans notice accepte au plus cinq photos.';
+      this.refreshView();
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type.toLowerCase())) {
+      this.bookPhotoError = 'Choisissez une photo JPEG, PNG ou WebP.';
+      this.refreshView();
+      return;
+    }
+
+    if (file.size <= 0 || file.size > ScannerComponent.maximumBookPhotoSizeBytes) {
+      this.bookPhotoError = 'La photo doit peser au plus 8 Mo.';
+      this.refreshView();
+      return;
+    }
+
+    if (!this.bookPhotoService) {
+      this.bookPhotoError = 'Le service de photos est indisponible.';
+      this.refreshView();
+      return;
+    }
+
+    const lookupVersion = this.lookupVersion;
+    const actionVersion = ++this.bookPhotoActionVersion;
+    this.bookPhotoUploading = true;
+    this.bookPhotoError = null;
+    this.refreshView();
+
+    try {
+      const photo = await firstValueFrom(this.bookPhotoService.uploadPhoto(isbn13, file));
+      if (lookupVersion !== this.lookupVersion || actionVersion !== this.bookPhotoActionVersion) {
+        return;
+      }
+
+      this.notFoundBookPhotos = [...this.notFoundBookPhotos, photo]
+        .sort((left, right) => left.position - right.position);
+    } catch {
+      if (lookupVersion === this.lookupVersion && actionVersion === this.bookPhotoActionVersion) {
+        this.bookPhotoError = 'La photo n’a pas pu être enregistrée. Réessayez.';
+      }
+    } finally {
+      if (lookupVersion === this.lookupVersion && actionVersion === this.bookPhotoActionVersion) {
+        this.bookPhotoUploading = false;
+        this.refreshView();
+      }
+    }
   }
 
   // ISBN-13 réimprimable depuis le résultat (RG-175) : aucun mouvement n'est créé.
@@ -2754,6 +2849,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.storageAlert = null;
     this.metadata = null;
     this.metadataLookupState = 'idle';
+    this.bookPhotoActionVersion++;
+    this.notFoundBookPhotos = [];
+    this.bookPhotosLoading = false;
+    this.bookPhotoUploading = false;
+    this.bookPhotoError = null;
     this.coverUrl = null;
     this.localScan = null;
     this.cashLookupResult = null;
@@ -2799,6 +2899,44 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
       : 'La notice ne peut pas être chargée pour le moment.';
     this.refreshView();
+    if (this.metadataLookupState === 'not-found') {
+      void this.loadNotFoundBookPhotos(this.activeIsbn, lookupVersion);
+    }
+  }
+
+  private async loadNotFoundBookPhotos(isbn13: string, lookupVersion: number): Promise<void> {
+    if (!this.bookPhotoService) {
+      return;
+    }
+
+    const actionVersion = ++this.bookPhotoActionVersion;
+    this.bookPhotosLoading = true;
+    this.bookPhotoError = null;
+    this.refreshView();
+
+    try {
+      const photos = await firstValueFrom(this.bookPhotoService.getPhotos(isbn13));
+      if (lookupVersion !== this.lookupVersion || actionVersion !== this.bookPhotoActionVersion) {
+        return;
+      }
+
+      this.notFoundBookPhotos = [...photos].sort((left, right) => left.position - right.position);
+    } catch (error) {
+      if (lookupVersion !== this.lookupVersion || actionVersion !== this.bookPhotoActionVersion) {
+        return;
+      }
+
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.notFoundBookPhotos = [];
+      } else {
+        this.bookPhotoError = 'Les photos déjà enregistrées ne peuvent pas être chargées.';
+      }
+    } finally {
+      if (lookupVersion === this.lookupVersion && actionVersion === this.bookPhotoActionVersion) {
+        this.bookPhotosLoading = false;
+        this.refreshView();
+      }
+    }
   }
 
   private async refreshTriageOtherEditions(lookupVersion: number): Promise<void> {

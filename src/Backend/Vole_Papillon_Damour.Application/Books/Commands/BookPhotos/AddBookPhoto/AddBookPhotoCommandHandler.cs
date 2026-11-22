@@ -6,6 +6,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -24,13 +25,6 @@ public sealed class AddBookPhotoCommandHandler(
         if (!BookCode.TryCreate(command.Code, out var code))
         {
             return Errors.Book.InvalidIsbn(command.Code);
-        }
-
-        if (!code.IsInternal)
-        {
-            return Error.Validation(
-                "Book.PhotoNotAllowed",
-                "Seuls les livres sans ISBN créés sur la plateforme reçoivent des photos.");
         }
 
         if (command.UserId is null || command.UserId.Value == Guid.Empty)
@@ -65,18 +59,41 @@ public sealed class AddBookPhotoCommandHandler(
             .SingleOrDefaultAsync(candidate => candidate.Id == code, cancellationToken);
         if (book is null)
         {
-            return Error.NotFound("Book.NotFound", $"Aucune fiche pour le code {code.Value}.");
+            if (code.IsInternal || !Isbn13.TryCreate(code.Value, out var newIsbn))
+            {
+                return Error.NotFound("Book.NotFound", $"Aucune fiche pour le code {code.Value}.");
+            }
+
+            book = Book.Create(newIsbn, nowUtc);
+            book.RecordMetadataNotFound(nowUtc);
+            dbContext.Books.Add(book);
         }
 
-        if (book.Photos.Count >= BookPhoto.MaximumPerBook)
+        if (!book.IsInternalCode && book.MetadataStatus == BookMetadataStatus.Pending)
+        {
+            book.RecordMetadataNotFound(nowUtc);
+        }
+
+        if (!book.IsInternalCode && book.MetadataStatus != BookMetadataStatus.NotFound)
+        {
+            return Error.Validation(
+                "Book.PhotoNotAllowed",
+                "Seuls les ISBN sans notice bibliographique peuvent recevoir des photos.");
+        }
+
+        var maximumPhotos = book.IsInternalCode
+            ? BookPhoto.MaximumPerBook
+            : BookPhoto.MaximumPerNotFoundIsbn;
+        if (book.Photos.Count >= maximumPhotos)
         {
             return Error.Validation(
                 "Book.TooManyPhotos",
-                $"Un livre accepte au plus {BookPhoto.MaximumPerBook} photos.");
+                $"Un livre accepte au plus {maximumPhotos} photos.");
         }
 
         var photoId = Guid.NewGuid();
-        var blobName = $"sans-isbn/{code.Value}/{photoId:D}{RareBookCommandSupport.ExtensionFor(contentType, command.FileName)}";
+        var prefix = book.IsInternalCode ? "sans-isbn" : "isbn-non-trouve";
+        var blobName = $"{prefix}/{code.Value}/{photoId:D}{RareBookCommandSupport.ExtensionFor(contentType, command.FileName)}";
         var blobUri = await blobService.UploadBookPhotoAsync(blobName, command.Stream, contentType, cancellationToken);
 
         BookPhoto photo;

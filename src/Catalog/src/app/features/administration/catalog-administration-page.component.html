@@ -479,6 +479,24 @@
                             <button class="button button-primary detail-form-action" type="submit" [disabled]="isActionPending('metadata') || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button>
                           </form>
                         </div>
+                        @if (book.photos?.length) {
+                          <section class="book-identification-photos" aria-labelledby="book-identification-photos-title" data-testid="isbn-not-found-photos">
+                            <h3 id="book-identification-photos-title">Photos prises au scan</h3>
+                            <div class="book-identification-photo-grid">
+                              @for (photo of book.photos ?? []; track photo.id; let index = $index) {
+                                <figure>
+                                  <img
+                                    data-testid="isbn-not-found-book-photo"
+                                    [src]="photo.url"
+                                    [alt]="'Photo ' + (index + 1) + ' du livre ISBN ' + book.isbn13"
+                                    loading="lazy"
+                                    decoding="async">
+                                  <figcaption>Photo {{ index + 1 }}</figcaption>
+                                </figure>
+                              }
+                            </div>
+                          </section>
+                        }
                         <section class="isbndb-subjects" aria-labelledby="isbndb-subjects-title">
                           <h3 id="isbndb-subjects-title">Sujets reçus</h3>
                           @if (book.subjects.length) {<div class="isbndb-subject-tags">@for (subject of book.subjects; track subject) {<span>{{ subject }}</span>}</div>} @else {<p>Aucun sujet reçu.</p>}

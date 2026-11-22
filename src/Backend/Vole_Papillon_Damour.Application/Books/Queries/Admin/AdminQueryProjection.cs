@@ -32,7 +32,15 @@ internal static class AdminQueryProjection
             movementRows,
             isRare,
             isbndbRecord?.Subjects,
-            book.RawPayload);
+            book.RawPayload,
+            book.Photos
+                .OrderBy(photo => photo.Position)
+                .Select(photo => new BookPhotoResult(
+                    photo.Id,
+                    photo.BlobUri.AbsoluteUri,
+                    photo.Position,
+                    photo.ContentType))
+                .ToArray());
     }
 
     public static AdminBookResult ToBookResult(
@@ -41,7 +49,7 @@ internal static class AdminQueryProjection
         bool isRare,
         string? recordSubjects,
         string? rawPayload) =>
-        ToBookResultCore(book, announcements, [], isRare, recordSubjects, rawPayload);
+        ToBookResultCore(book, announcements, [], isRare, recordSubjects, rawPayload, []);
 
     private static AdminBookResult ToBookResultCore(
         AdminBookQueryProjection book,
@@ -49,7 +57,8 @@ internal static class AdminQueryProjection
         IReadOnlyList<AdminBookMovementResult> movementRows,
         bool isRare,
         string? recordSubjects,
-        string? rawPayload)
+        string? rawPayload,
+        IReadOnlyList<BookPhotoResult> photos)
     {
         var announcementRows = announcements
             .Where(announcement => announcement.Isbn13 == book.Id)
@@ -109,7 +118,8 @@ internal static class AdminQueryProjection
             IsbndbSubjectReader.Read(recordSubjects, rawPayload),
             book.MetadataSource is { } fallback && fallback != Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.BookMetadataSource.Isbndb
                 ? fallback.ToString()
-                : null);
+                : null,
+            photos);
     }
 
     private static DateTimeOffset? ToOffset(DateTime? value) =>

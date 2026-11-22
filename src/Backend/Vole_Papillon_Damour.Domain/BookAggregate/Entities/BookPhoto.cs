@@ -8,6 +8,7 @@ namespace Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 public sealed class BookPhoto
 {
     public const int MaximumPerBook = 10;
+    public const int MaximumPerNotFoundIsbn = 5;
     public const long MaximumSizeBytes = 8 * 1024 * 1024;
 
     private static readonly string[] SupportedContentTypes = ["image/jpeg", "image/png", "image/webp"];

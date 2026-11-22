@@ -37,18 +37,22 @@ public sealed class Book : AggregateRoot<BookCode>
 
     public IReadOnlyCollection<BookPhoto> Photos => _photos;
 
-    // Photos d'un livre sans ISBN (Q11) : seules les fiches à code interne en reçoivent.
+    // Les fiches à code interne gardent leurs photos. Un ISBN ne peut recevoir des photos
+    // que tant que sa notice est introuvable, afin d'aider l'administration à l'identifier.
     public void AddPhoto(BookPhoto photo, DateTime at)
     {
         ArgumentNullException.ThrowIfNull(photo);
-        if (!IsInternalCode)
+        if (!IsInternalCode && MetadataStatus != BookMetadataStatus.NotFound)
         {
-            throw new InvalidOperationException("Only books without ISBN accept platform photos.");
+            throw new InvalidOperationException("Only books without an ISBN or with not-found metadata accept platform photos.");
         }
 
-        if (_photos.Count >= BookPhoto.MaximumPerBook)
+        var maximumPhotos = IsInternalCode
+            ? BookPhoto.MaximumPerBook
+            : BookPhoto.MaximumPerNotFoundIsbn;
+        if (_photos.Count >= maximumPhotos)
         {
-            throw new InvalidOperationException($"A book accepts at most {BookPhoto.MaximumPerBook} photos.");
+            throw new InvalidOperationException($"A book accepts at most {maximumPhotos} photos.");
         }
 
         _photos.Add(photo);

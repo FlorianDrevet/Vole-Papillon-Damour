@@ -22,6 +22,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
+using Vole_Papillon_Damour.Application.Books.Queries.GetBookPhotos;
 using Vole_Papillon_Damour.Application.Books.Queries.GetDeadStock;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
@@ -825,6 +826,25 @@ public static class BookController
                     })
                 .WithName("AddBookPhoto")
                 .DisableAntiforgery()
+                .RequireAuthorization("TriOrAdmin");
+
+            endpoints.MapGet(
+                    "/books/{code}/photos",
+                    async (
+                        string code,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(new GetBookPhotosQuery(code), cancellationToken);
+                        return result.Match(
+                            photos => Results.Ok(photos.Select(photo => new BookPhotoResponse(
+                                photo.Id,
+                                photo.Url,
+                                photo.Position,
+                                photo.ContentType))),
+                            error => error.Result());
+                    })
+                .WithName("GetBookPhotos")
                 .RequireAuthorization("TriOrAdmin");
 
             endpoints.MapDelete(
