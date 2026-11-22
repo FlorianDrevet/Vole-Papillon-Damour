@@ -239,7 +239,8 @@ export class BlePipe implements SupvanPipe {
     this.log(`Services GATT : ${services.map(service => service.uuid).join(', ') || '(aucun autorisé)'}`);
 
     for (const entry of BLE_SERVICES) {
-      const service = services.find(candidate => candidate.uuid === entry.service);
+      // Bluefy (iPhone) renvoie les UUID en majuscules, Chrome Android en minuscules : on compare sans la casse.
+      const service = services.find(candidate => candidate.uuid.toLowerCase() === entry.service);
       if (!service) {
         continue;
       }
