@@ -13,11 +13,13 @@ import {
   ScanSessionResponse,
   ScanManualRequestCandidate,
   ScanVolunteerStatisticsResponse,
+  ScanPublicCatalogBook,
+  ScanRareBook,
 } from './scan-offline.model';
-import {ScanRareBook} from './scan-offline.model';
 
 const RARE_BOOKS_ADMIN_REQUEST_TIMEOUT_MS = 30_000;
 const SCAN_CATALOG_REQUEST_TIMEOUT_MS = 45_000;
+const CATALOG_BOOK_LOOKUP_TIMEOUT_MS = 15_000;
 const SCAN_CASH_REQUEST_TIMEOUT_MS = 30_000;
 
 export interface OpenScanSessionRequest {
@@ -145,6 +147,12 @@ export class ScanApiService {
       `${this.baseUrl}/scan/catalog/delta`,
       {params},
     ).pipe(timeout({first: SCAN_CATALOG_REQUEST_TIMEOUT_MS}));
+  }
+
+  getPublicCatalogBook(isbn13: string): Observable<ScanPublicCatalogBook> {
+    return this.http.get<ScanPublicCatalogBook>(
+      `${this.baseUrl}/catalog/books/${encodeURIComponent(isbn13)}`,
+    ).pipe(timeout({first: CATALOG_BOOK_LOOKUP_TIMEOUT_MS}));
   }
 
   getManualRequestCandidate(isbn13: string): Observable<ScanManualRequestCandidate | null> {

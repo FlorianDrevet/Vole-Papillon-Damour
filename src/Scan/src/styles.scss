@@ -184,6 +184,9 @@ input:focus-visible {
 
 .home-screen {
   background: var(--scan-paper);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .home-mode-actions,

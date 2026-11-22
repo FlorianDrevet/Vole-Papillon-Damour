@@ -94,6 +94,20 @@ export interface ScanCatalogBook {
   updatedAt: string;
 }
 
+export interface ScanPublicCatalogBook {
+  isbn13: string;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  genre: string | null;
+  coverUrl: string | null;
+  quantityAvailable: number;
+  quantityAnnounced: number;
+  nextFairAt: string | null;
+  isRare: boolean;
+}
+
 export interface ScanManualRequestCandidate {
   requestId: string;
   firstName: string;

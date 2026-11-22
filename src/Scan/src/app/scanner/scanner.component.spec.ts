@@ -10,6 +10,7 @@ import {DesignSystemModule} from '@vpd/ui';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerService} from './camera-scanner.service';
+import {HomeBookLookupComponent} from './home-book-lookup.component';
 import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
 import {
@@ -28,6 +29,7 @@ import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanTelemetryService} from '../offline/scan-telemetry.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanApiService} from '../offline/scan-api.service';
 import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
 import {ScanPassageAssociationService, ScanPassageAssociationState} from '../offline/scan-passage-association.service';
@@ -91,10 +93,11 @@ describe('ScannerComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent, ScanStatusBarComponent, ScanRecoveryComponent],
-      imports: [CommonModule, FormsModule, DesignSystemModule],
+      imports: [CommonModule, FormsModule, DesignSystemModule, HomeBookLookupComponent],
       providers: [
         {provide: BookMetadataService, useValue: metadataService},
         {provide: CameraScannerService, useValue: cameraService},
+        {provide: ScanApiService, useValue: {getPublicCatalogBook: () => of(null)}},
         {provide: ScanAuthService, useValue: null},
         {provide: ScanSyncService, useValue: null},
         ScanStatusService,
@@ -732,6 +735,7 @@ describe('ScannerComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.home-screen')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
+    expect(fixture.nativeElement.querySelector('app-home-book-lookup')).not.toBeNull();
   });
 
   it('places cash after rare books and names the no-ISBN entry with a barcode icon', () => {
