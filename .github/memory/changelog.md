@@ -1,10 +1,10 @@
 # Memory Changelog
 
-Entries are grouped by date; this file retains the 60 days through 2026-11-16.
+Entries are grouped by date; this file retains the 60 days through 2026-11-22.
 
 | Date | Change |
 |---|---|
-| 2026-11-22 | Corrected T50M Pro label orientation by rotating the generated raster 180° before transfer. Scan production build passes; tests and physical printer verification were not run. No deployment. [PR #416](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/416) is open and unmerged. See `.github/memory/04-frontend.md`. |
+| 2026-11-22 | Corrected Scan label orientation by rotating the generated raster 180° before transfer [PR #416 open]. Catalog manual-request creation no longer requires a preceding search; search remains available to reuse existing records. Catalog production build and Graphify update pass with existing bundle/style-budget and CommonJS warnings. Automated tests, physical printer verification, and authenticated responsive review were not run; no deployment. See `.github/memory/04-frontend.md` and `.github/memory/12-manual-book-requests.md`. |
 | 2026-11-21 | Prioritized Catalog homepage recommendations so cards render after the recommendation endpoint; member favorites load afterward to preserve polling. Catalog production build passes with existing bundle/style/CommonJS warnings; tests and authenticated responsive review were not run. No Azure changes or deployment. [PR #410](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/410) is open and unmerged. See `.github/memory/21-book-favorites.md`. |
 | 2026-11-21 | Refactored the Catalog administration no-ISBN page to match the rare-book editor, with grouped manual-entry fields, a clearer internal-code confirmation, and a styled paged list; API contracts and behavior remain unchanged. The Catalog production build, diff check, and Graphify update pass; automated tests were not run and authenticated responsive visual review remains pending. [PR #408](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/408) is open and unmerged. See `.github/memory/04-frontend.md`. |
 | 2026-11-16 | Added the Catalog administration ISBN-not-found workspace with server-paged results, CSV export, and a two-step CSV import, keeping it separate from metadata analysis and exposing typed nonzero navigation badges. Backend release build and tests pass (1,449 tests); Catalog build passes with existing bundle/style/CommonJS warnings. Catalog tests pass 683/687; the current `origin/main` baseline passes 659/663 with the same four failures in unchanged account/card specs. Browser visual comparison was interrupted by the user; no deployment or production import. [PR #401](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/401) is open and unmerged. See `.github/memory/04-frontend.md`. |
@@ -47,9 +47,3 @@ Entries are grouped by date; this file retains the 60 days through 2026-11-16.
 | 2026-09-25 | Corrected a Books migration raw-SQL join to use persisted `Books.Isbn13`; separately reviewed authenticated Catalog mobile surfaces and recorded a production recommendation endpoint 500 follow-up. |
 | 2026-09-24 | Completed F-11 report/admin flow and account-selection work; fixed BnF ISBN-10 matching and rare-book photo preview/contract consistency. Deployment/migration gates were documented per feature. |
 | 2026-09-23 | Corrected ACA deployment validation settings and continued member-selection PR1 with typed API/persistence and anonymous local selection. |
-| 2026-09-22 | Added Scan rare-book mobile/cash workflows and member-account proposal; aligned DEV SQL/ACA cost and observability settings in IaC only. |
-| 2026-09-21 | Fixed BackOffice silent MSAL renewal/iframe bootstrap races and protected the Scan rare-book route; Catalog/Scan auth still requires client-specific smoke checks. |
-| 2026-09-18 | Prepared email branding and BIMI; SPF/DKIM/DMARC were checked read-only. BIMI activation remained blocked on compliant logo/provider credentials. |
-| 2026-09-17 | Completed the RareBooks feature tranche locally and corrected Scan session start timing; deployment/device checks remained separate. |
-| 2026-09-16 | Added RareBooks persistence/admin roles and Catalog workspace, ACS alert IaC/diagnostics, and Scan alert/session correction UX. See `.github/memory/05-data-and-storage.md` and `.github/memory/11-frontend-design-system.md`. |
-| 2026-09-15 | Improved Catalog administration and Scan synchronization/session UX; observability review covered API, Worker, Catalog SSR, Scan, Website, and BackOffice. |

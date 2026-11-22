@@ -3,10 +3,10 @@
 ## Top-Level Layout
 
 - `src/Backend/` - main backend solution and class libraries
-- `src/BackOffice/` - Angular 21 admin UI
-- `src/Website/` - Angular 21 public website
-- `src/Catalog/` - Angular 21 SSR public books catalog
-- `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, rare-book management, cash sales, and synchronization
+- `src/BackOffice/` - Angular 22 admin UI
+- `src/Website/` - Angular 22 public website
+- `src/Catalog/` - Angular 22 SSR public books catalog
+- `src/Scan/` - Angular 22 Scanette PWA for ISBN capture, offline triage, rare-book management, cash sales, and synchronization
 - `src/Backend/Vole_Papillon_Damour.Worker/` - .NET 10 isolated worker for account deletion and Books background jobs
 - `src/MauiCashApp/` - .NET MAUI 10 Android client app
 

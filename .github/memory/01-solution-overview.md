@@ -5,8 +5,8 @@
 `Vole-Papillon-Damour` is the application repository itself, not a bootstrap template. It ships several delivery and runtime surfaces around one shared business domain:
 
 - an ASP.NET Core backend API
-- three Angular 21 web applications (`BackOffice`, `Website`, and the public books `Catalog`)
-- one Angular 21 Scanette PWA for ISBN capture, offline triage, rare-book management, and cash sales (`Scan`)
+- three Angular 22 web applications (`BackOffice`, `Website`, and the public books `Catalog`)
+- one Angular 22 Scanette PWA for ISBN capture, offline triage, rare-book management, and cash sales (`Scan`)
 - one .NET isolated Worker for account deletion, Books `Sweep`/`Enrich`, and alert delivery
 - one .NET MAUI cashier client (`MauiCashApp`)
 

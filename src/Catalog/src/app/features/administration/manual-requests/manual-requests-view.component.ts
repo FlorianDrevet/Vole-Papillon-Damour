@@ -245,9 +245,6 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
   }
 
   newRequester(): void {
-    if (!this.canCreateRequester()) {
-      return;
-    }
     this.requesterSelected.emit(null);
   }
 
