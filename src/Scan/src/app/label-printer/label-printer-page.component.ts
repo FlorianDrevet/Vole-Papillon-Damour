@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy} from '@angular/core';
+import {Location} from '@angular/common';
 
 import {LABEL_PRINTER, LabelPrinter, LabelPrinterTransport} from './label-printer';
 import {MAX_DENSITY} from './supvan/supvan-raster';
@@ -10,6 +11,14 @@ import {MAX_DENSITY} from './supvan/supvan-raster';
   standalone: false,
   template: `
     <main class="printer-page">
+      <button type="button" class="printer-back" data-zone="E6-retour" (click)="goBack()" aria-label="Retour à la page précédente">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 5 7.5 12l7 7"></path>
+          <path d="M8 12h12"></path>
+        </svg>
+        <span>Retour</span>
+      </button>
+
       <header class="printer-header">
         <span class="printer-eyebrow">Matériel</span>
         <h1>Imprimante d'étiquettes</h1>
@@ -61,7 +70,9 @@ import {MAX_DENSITY} from './supvan/supvan-raster';
     </main>
   `,
   styles: [`
-    .printer-page { display: flex; height: 100%; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: 16px; overflow-y: auto; overscroll-behavior-y: contain; padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); background: #f7fbfe; color: #072b45; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+    .printer-page { display: flex; height: 100vh; height: 100dvh; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: 16px; overflow-y: auto; overscroll-behavior-y: contain; padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); background: #f7fbfe; color: #072b45; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+    .printer-back { display: inline-flex; min-height: 44px; align-items: center; align-self: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: #0c6ea6; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .printer-back svg { width: 20px; height: 20px; }
     .printer-header h1 { margin: 6px 0 0; font: 500 30px/1.1 Newsreader, Georgia, serif; }
     .printer-eyebrow { font: 500 11px/1.2 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #41617a; }
     .printer-warning { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; border-left: 4px solid #b42318; background: #fdecea; color: #7a1b14; font-size: 14px; }
@@ -84,7 +95,7 @@ import {MAX_DENSITY} from './supvan/supvan-raster';
     .printer-secondary { border: 1.5px solid #9dc2da; background: #ffffff; color: #0c6ea6; }
     .printer-link { text-align: center; color: #0c6ea6; font-weight: 600; }
     .printer-actions button:disabled { opacity: .5; cursor: not-allowed; }
-    .printer-actions button:focus-visible, .printer-stepper button:focus-visible { outline: 3px solid #0c6ea6; outline-offset: 2px; }
+    .printer-back:focus-visible, .printer-actions button:focus-visible, .printer-stepper button:focus-visible { outline: 3px solid #0c6ea6; outline-offset: 2px; }
   `],
 })
 export class LabelPrinterPageComponent implements OnDestroy {
@@ -101,6 +112,7 @@ export class LabelPrinterPageComponent implements OnDestroy {
   constructor(
     @Inject(LABEL_PRINTER) readonly printer: LabelPrinter,
     private readonly cdr: ChangeDetectorRef,
+    private readonly location: Location,
   ) {
     const preferred = printer.preferredTransport();
     this.canConnect = preferred !== null;
@@ -111,6 +123,10 @@ export class LabelPrinterPageComponent implements OnDestroy {
 
   get connected(): boolean {
     return this.printer.status() === 'connected';
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnDestroy(): void {

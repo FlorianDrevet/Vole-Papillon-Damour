@@ -7,6 +7,7 @@ import {
   DoCheck,
   ElementRef,
   HostListener,
+  Inject,
   Input,
   OnDestroy,
   OnInit,
@@ -60,6 +61,7 @@ import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
 import {normalizeBookCode, normalizeIsbn} from './isbn.util';
 import {isInternalCode} from '../label-printer/ean13';
+import {LABEL_PRINTER, LabelPrinter} from '../label-printer/label-printer';
 import {ScanSessionSummaryService} from '../scan-session-summary.service';
 import {parseMemberCredential} from '../offline/scan-member-card';
 
@@ -159,6 +161,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   bookPhotoError: string | null = null;
   coverUrl: string | null = null;
   errorMessage: string | null = null;
+  labelPrintStatus: string | null = null;
+  labelPrintStatusIsError = false;
+  labelPrintBusy = false;
   cameraError: string | null = null;
   storageAlert: ScanAlert | null = null;
   syncAlert: ScanAlert | null = null;
@@ -248,6 +253,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly scanManualRequest: ScanManualRequestService | null = null,
     @Optional() private readonly scanTelemetry: ScanTelemetryService | null = null,
     @Optional() private readonly bookPhotoService: BookPhotoService | null = null,
+    @Optional() @Inject(LABEL_PRINTER) private readonly labelPrinter: LabelPrinter | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -839,14 +845,34 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.canSort && this.reprintableIsbn !== null;
   }
 
-  reprintIsbnLabel(): void {
+  async reprintIsbnLabel(): Promise<void> {
     const isbn = this.reprintableIsbn;
-    if (isbn === null || !this.router) {
+    if (isbn === null || !this.router || this.labelPrintBusy) {
+      return;
+    }
+
+    const query = isInternalCode(isbn) ? `code=${encodeURIComponent(isbn)}` : `isbn=${encodeURIComponent(isbn)}`;
+
+    if (this.labelPrinter?.status() === 'connected') {
+      this.labelPrintBusy = true;
+      this.labelPrintStatus = 'Impression de l’étiquette…';
+      this.labelPrintStatusIsError = false;
+      this.refreshView();
+
+      try {
+        await this.labelPrinter.print({code: isbn, price: null, copies: 1});
+        this.labelPrintStatus = 'Étiquette ISBN réimprimée.';
+      } catch (error) {
+        this.labelPrintStatus = error instanceof Error ? error.message : 'Impression impossible.';
+        this.labelPrintStatusIsError = true;
+      } finally {
+        this.labelPrintBusy = false;
+        this.refreshView();
+      }
       return;
     }
 
     this.stopCamera();
-    const query = isInternalCode(isbn) ? `code=${encodeURIComponent(isbn)}` : `isbn=${encodeURIComponent(isbn)}`;
     void this.router.navigateByUrl(`/etiquette?${query}`);
   }
 
@@ -1019,6 +1045,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     const normalizedIsbn = normalizeBookCode(rawInput);
     const lookupVersion = ++this.lookupVersion;
+    this.labelPrintStatus = null;
+    this.labelPrintStatusIsError = false;
     this.resetLookupState(false);
 
     if (!normalizedIsbn) {

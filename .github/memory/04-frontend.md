@@ -41,6 +41,7 @@
 
 ## Scan PWA
 
+- Reprinting a scanned ISBN prints one copy immediately when the shared label printer is connected; otherwise Scan opens the existing label preview so the volunteer can connect first. The printer settings, label preview, and Supvan diagnostic routes expose browser-history back navigation and fill the dynamic phone viewport with internal scrolling.
 - Cash ISBN lookup adds its line from the local catalog before bibliographic metadata resolves; an ISBN placeholder is used if the local title is missing, and online metadata enriches the line asynchronously. App Insights events scan_cash_lookup, scan_catalog_lookup, and scan_cash_metadata split local catalog, rare-book, and metadata timings without ISBN/account/volunteer identifiers. The events require the Scan deployment to become available.
 - Scan is an offline-first Angular PWA. Local decisions, catalog projection, session state, and cash sales are persisted in IndexedDB; final scan gestures and sales replay sequentially with client-generated idempotency IDs.
 - The triage session keeps decided scan history (including already-synced gestures) in IndexedDB until session close. The latest-book strip and session list can request an idempotent removal; pending removals stay queued offline, and each list row groups ISBN copies while removing one scan at a time. Cached cover URLs come from bibliographic metadata.

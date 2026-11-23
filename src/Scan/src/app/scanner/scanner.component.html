@@ -330,10 +330,14 @@
                 <button
                   type="button"
                   data-zone="E4-bouton-reimprimer-isbn"
+                  [disabled]="labelPrintBusy"
                   style="min-height: 44px; padding: 0 16px; border: 1px solid #0c6ea6; border-radius: 999px; background: #ffffff; color: #0c6ea6; font-weight: 600; font-size: 14px;"
                   (click)="reprintIsbnLabel()">
-                  Réimprimer l'étiquette ISBN
+                  {{ labelPrintBusy ? 'Impression…' : 'Réimprimer l’étiquette ISBN' }}
                 </button>
+                <p *ngIf="labelPrintStatus" class="scan-feedback reprint-isbn-feedback" [class.reprint-isbn-feedback-error]="labelPrintStatusIsError" role="status" aria-live="polite">
+                  {{ labelPrintStatus }}
+                </p>
               </div>
 
               <div *ngIf="activeFavoriteCount > 0" class="favorite-banner-wrap">

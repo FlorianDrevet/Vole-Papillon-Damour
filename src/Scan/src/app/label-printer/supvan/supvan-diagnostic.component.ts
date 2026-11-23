@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy} from '@angular/core';
+import {Location} from '@angular/common';
 
 import {ScanTelemetryService} from '../../offline/scan-telemetry.service';
 import {SupvanLabelPrinter, webBluetooth, webSerial} from './supvan-printer';
@@ -15,6 +16,14 @@ import {describeStatus, statusErrors} from './supvan-protocol';
   standalone: false,
   template: `
     <main class="diag-page">
+      <button type="button" class="diag-back" data-zone="D1-retour" (click)="goBack()" aria-label="Retour à la page précédente">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 5 7.5 12l7 7"></path>
+          <path d="M8 12h12"></path>
+        </svg>
+        <span>Retour</span>
+      </button>
+
       <header>
         <span class="diag-eyebrow">Matériel</span>
         <h1>Dépannage de l'imprimante</h1>
@@ -69,7 +78,9 @@ import {describeStatus, statusErrors} from './supvan-protocol';
     </main>
   `,
   styles: [`
-    .diag-page { display: flex; flex-direction: column; gap: 16px; padding: 22px 20px 28px; background: #f7fbfe; color: #072b45; box-sizing: border-box; min-height: 100%; }
+    .diag-page { display: flex; height: 100vh; height: 100dvh; min-height: 0; flex-direction: column; gap: 16px; overflow-y: auto; overscroll-behavior-y: contain; padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); background: #f7fbfe; color: #072b45; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+    .diag-back { display: inline-flex; min-height: 44px; align-items: center; align-self: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: #0c6ea6; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .diag-back svg { width: 20px; height: 20px; }
     h1 { margin: 6px 0 0; font: 500 28px/1.1 Newsreader, Georgia, serif; }
     .diag-eyebrow { font: 500 11px/1.2 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #41617a; }
     .diag-card { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: 1px solid #d9e9f4; border-radius: 4px; background: #fff; font-size: 15px; }
@@ -87,6 +98,7 @@ import {describeStatus, statusErrors} from './supvan-protocol';
     .diag-actions button:disabled { opacity: .5; cursor: not-allowed; }
     .diag-density { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
     .diag-density select { min-height: 40px; padding: 0 8px; }
+    .diag-back:focus-visible { outline: 3px solid #0c6ea6; outline-offset: 2px; }
   `],
 })
 export class SupvanDiagnosticComponent implements OnDestroy {
@@ -105,6 +117,7 @@ export class SupvanDiagnosticComponent implements OnDestroy {
     private readonly cdr: ChangeDetectorRef,
     private readonly telemetry: ScanTelemetryService,
     private readonly printer: SupvanLabelPrinter,
+    private readonly location: Location,
   ) {
     // Zoneless : chaque ligne du journal et chaque changement d'état doit redessiner la page.
     this.unsubscribe = printer.subscribe(() => this.cdr.markForCheck());
@@ -120,6 +133,10 @@ export class SupvanDiagnosticComponent implements OnDestroy {
 
   get connected(): boolean {
     return this.printer.status() === 'connected';
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnDestroy(): void {
