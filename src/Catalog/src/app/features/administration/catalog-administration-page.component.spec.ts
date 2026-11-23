@@ -1899,6 +1899,33 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Inventaire.');
   });
 
+  it('opens a book without ISBN and uses its first photo as the cover', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook({
+      isbn13: '2000000000015',
+      photos: [{
+        id: 'photo-1',
+        url: 'https://images.example.test/sans-isbn/2000000000015/cover.jpg',
+        position: 0,
+        contentType: 'image/jpeg',
+      }],
+    });
+    api.getBook.and.returnValue(of(book));
+    api.getNotFoundSummary.and.returnValue(throwError(() => new Error('An ISBN-13 is required.')));
+    fixture.detectChanges();
+    api.getNotFoundSummary.calls.reset();
+
+    await fixture.componentInstance.openBook(book.isbn13);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getNotFoundSummary).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.selectedBook()).toEqual(book);
+    expect(fixture.componentInstance.bookCoverPreviewUrl(book)).toBe(book.photos?.[0]?.url ?? null);
+    expect(fixture.nativeElement.querySelector('.detail-screen .cover-column img')).not.toBeNull();
+  });
+
   it('permanently deletes an unused catalogue fiche with direct stock history after confirmation', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);

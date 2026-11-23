@@ -134,6 +134,10 @@ public sealed class GetAdminBooksQueryHandler(
                     book.Genres.Select(genre => genre.Name).ToArray()))
                 .ToListAsync(cancellationToken);
         var booksByIsbn = pageBooks.ToDictionary(book => book.Id);
+        var photoCoverUrls = await BookPhotoCovers.FirstPhotoUrlsAsync(
+            dbContext,
+            pageIsbns.Where(isbn => isbn.IsInternal).ToArray(),
+            cancellationToken);
         var ids = pageIsbns.ToArray();
         var rareIsbns = ids.Length == 0
             ? []
@@ -169,12 +173,18 @@ public sealed class GetAdminBooksQueryHandler(
         return new AdminBookPageResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             pageIsbns
-                .Select(isbn => AdminQueryProjection.ToBookResult(
-                    booksByIsbn[isbn],
-                    announcements,
-                    rareIsbns.Contains(isbn.Value),
-                    recordSubjects.GetValueOrDefault(isbn),
-                    rawPayloads.GetValueOrDefault(isbn)))
+                .Select(isbn =>
+                {
+                    var book = AdminQueryProjection.ToBookResult(
+                        booksByIsbn[isbn],
+                        announcements,
+                        rareIsbns.Contains(isbn.Value),
+                        recordSubjects.GetValueOrDefault(isbn),
+                        rawPayloads.GetValueOrDefault(isbn));
+                    return book.CoverUrl is null && photoCoverUrls.TryGetValue(isbn.Value, out var photoCoverUrl)
+                        ? book with { CoverUrl = photoCoverUrl }
+                        : book;
+                })
                 .ToArray(),
             totalCount,
             query.Page,
