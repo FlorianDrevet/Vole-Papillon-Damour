@@ -351,7 +351,7 @@ public sealed class ScanBookCommandHandler(
     {
         var counts = await FavoriteCountReader.GetCountsAsync(
             dbContext,
-            [new FavoriteCountSeed(book.Id.Value, book.WorkId)],
+            [new FavoriteCountSeed(book.Id, book.WorkId)],
             cancellationToken);
         return counts.GetValueOrDefault(book.Id.Value);
     }

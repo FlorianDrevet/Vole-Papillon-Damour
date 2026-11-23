@@ -103,6 +103,92 @@ public sealed class GetCatalogDeltaQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_KeepsFavoriteCountsSeparateForBooksWithoutWorkIds()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var firstBook = await fixture.AddBookAsync(
+            "9782070363735",
+            GeneratedAt.AddMinutes(-1));
+        var secondBook = await fixture.AddBookAsync(
+            "9783140464079",
+            GeneratedAt.AddMinutes(-1));
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            firstBook.Id.Value);
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000011"),
+            secondBook.Id.Value);
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Single(book => book.Isbn13 == firstBook.Id.Value)
+            .FavoriteCount.Should().Be(1);
+        result.Value.Books.Single(book => book.Isbn13 == secondBook.Id.Value)
+            .FavoriteCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_WhenFullDeltaContainsInternalCode_ReturnsBookWithoutFavoriteCount()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var internalCode = BookCode.CreateInternalFromSequence(1);
+        fixture.Context.Books.Add(Book.CreateWithInternalCode(
+            internalCode,
+            GeneratedAt.AddMinutes(-1)));
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle(book => book.Isbn13 == internalCode.Value)
+            .Which.FavoriteCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_WhenInternalCodeSharesWorkWithIsbn_DoesNotTreatInternalCodeAsIsbn()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var updatedAt = GeneratedAt.AddMinutes(-1);
+        var internalCode = BookCode.CreateInternalFromSequence(2);
+        var internalBook = Book.CreateWithInternalCode(internalCode, updatedAt);
+        internalBook.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.WorkId],
+                "OL123W"),
+            BookMetadataSource.OpenLibrary,
+            updatedAt,
+            rawPayload: null);
+        fixture.Context.Books.Add(internalBook);
+        var isbnBook = await fixture.AddBookAsync("9782070363735", updatedAt, workId: "OL123W");
+        await fixture.AddMemberFavoriteAsync(
+            Guid.Parse("00000000-0000-0000-0000-000000000010"),
+            isbnBook.Id.Value);
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Single(book => book.Isbn13 == internalCode.Value)
+            .FavoriteCount.Should().Be(0);
+        result.Value.Books.Single(book => book.Isbn13 == isbnBook.Id.Value)
+            .FavoriteCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Handle_IncrementalDeltaReprojectsBookWhenFavoriteCountChanges()
     {
         await using var fixture = await CatalogDeltaFixture.CreateAsync();
