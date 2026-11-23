@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.scan-update-control {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px 6px 11px;
+  border: 1px solid var(--scan-line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.scan-update-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scan-update-version {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--scan-ink);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.scan-update-version strong {
+  overflow: hidden;
+  color: var(--scan-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-overflow: ellipsis;
+}
+
+.scan-update-status {
+  margin: 0;
+  color: var(--scan-slate);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.scan-update-status[data-state='available'] {
+  color: var(--scan-verdict-additional);
+  font-weight: 700;
+}
+
+.scan-update-status[data-state='error'] {
+  color: var(--scan-red);
+}
+
+.scan-update-button {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 5px;
+  background: #0874a5;
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.scan-update-button:hover:not(:disabled) {
+  background: color-mix(in srgb, #0874a5 86%, black);
+}
+
+.scan-update-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.scan-update-button-ready {
+  background: var(--scan-verdict-additional);
+}
+
+.scan-update-button-ready:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--scan-verdict-additional) 86%, black);
+}
+
+.scan-update-button:disabled {
+  background: #edf3f7;
+  color: var(--scan-slate);
+  cursor: not-allowed;
+}

@@ -5,6 +5,7 @@ const localHost = typeof window === 'undefined' ? 'localhost' : window.location.
 
 export const environment: ScanEnvironment = {
   production: false,
+  appVersion: 'local',
   apiUrl: localApiUrlForHost(localHost),
   appInsightsConnectionString: '',
   entra: {
