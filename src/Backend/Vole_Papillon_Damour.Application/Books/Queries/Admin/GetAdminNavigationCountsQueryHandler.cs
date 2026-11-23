@@ -23,15 +23,22 @@ public sealed class GetAdminNavigationCountsQueryHandler(
     {
         var openReports = dbContext.BookNotFoundReports.AsNoTracking()
             .Where(report => report.Status == NotFoundReportStatus.Open);
-        var overdueBefore = dateTimeProvider.UtcNow.AddDays(-7);
+        var now = dateTimeProvider.UtcNow;
+        var overdueBefore = now.AddDays(-7);
         var rareReportFirstSeen = openReports
             .Where(report => report.RareBookId != null)
             .GroupBy(report => report.RareBookId)
             .Select(group => group.Min(report => report.ReportedAt));
-        var notFoundOpenTargets = await rareReportFirstSeen.CountAsync(cancellationToken);
-        var notFoundOverdueTargets = await rareReportFirstSeen.CountAsync(
-            reportedAt => reportedAt < overdueBefore,
-            cancellationToken);
+        var rareReportCounts = await rareReportFirstSeen
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                Open = group.Count(),
+                Overdue = group.Count(reportedAt => reportedAt < overdueBefore),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        var notFoundOpenTargets = rareReportCounts?.Open ?? 0;
+        var notFoundOverdueTargets = rareReportCounts?.Overdue ?? 0;
 
         if (!query.IsRareBooksOnly)
         {
@@ -39,10 +46,16 @@ public sealed class GetAdminNavigationCountsQueryHandler(
                 .Where(report => report.Isbn13 != null)
                 .GroupBy(report => report.Isbn13)
                 .Select(group => group.Min(report => report.ReportedAt));
-            notFoundOpenTargets += await editionReportFirstSeen.CountAsync(cancellationToken);
-            notFoundOverdueTargets += await editionReportFirstSeen.CountAsync(
-                reportedAt => reportedAt < overdueBefore,
-                cancellationToken);
+            var editionReportCounts = await editionReportFirstSeen
+                .GroupBy(_ => 1)
+                .Select(group => new
+                {
+                    Open = group.Count(),
+                    Overdue = group.Count(reportedAt => reportedAt < overdueBefore),
+                })
+                .SingleOrDefaultAsync(cancellationToken);
+            notFoundOpenTargets += editionReportCounts?.Open ?? 0;
+            notFoundOverdueTargets += editionReportCounts?.Overdue ?? 0;
         }
 
         var publishedRareBooks = await dbContext.RareBooks.AsNoTracking()
@@ -61,38 +74,55 @@ public sealed class GetAdminNavigationCountsQueryHandler(
                 publishedRareBooks);
         }
 
-        var now = dateTimeProvider.UtcNow;
         var foundRequests = dbContext.ManualBookRequests.AsNoTracking()
             .Where(request => request.Status == ManualBookRequestStatus.Found);
-        var manualRequestsFound = await foundRequests.CountAsync(cancellationToken);
-        var manualRequestsFoundOverdue = await foundRequests.CountAsync(
-            request => request.FoundAt < now.AddDays(-14),
-            cancellationToken);
+        var manualRequestCounts = await foundRequests
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                Found = group.Count(),
+                Overdue = group.Count(request => request.FoundAt < now.AddDays(-14)),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
         var openScanSessions = await dbContext.ScanSessions.AsNoTracking()
             .CountAsync(session => session.Status == ScanSessionStatus.InProgress, cancellationToken);
-        var catalogueBooks = await AdminQueryPredicates.Catalogue(dbContext.Books.AsNoTracking())
-            .CountAsync(cancellationToken);
-        var isbnQueue = await AdminQueryPredicates.MetadataQueue(dbContext.Books.AsNoTracking())
-            .CountAsync(cancellationToken);
-        var isbndbAbsentToComplete = await AdminQueryPredicates
-            .IsbndbAbsentToComplete(dbContext.Books.AsNoTracking())
-            .CountAsync(cancellationToken);
-        var isbnNotFoundCount = await dbContext.Books.AsNoTracking()
-            .CountAsync(book => book.MetadataStatus == BookMetadataStatus.NotFound, cancellationToken);
-        var isbnFailedCount = await dbContext.Books.AsNoTracking()
-            .CountAsync(book => book.MetadataStatus == BookMetadataStatus.Failed, cancellationToken);
+        var bookCounts = await dbContext.Books.AsNoTracking()
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                CatalogueBooks = group.Count(book =>
+                    (book.MetadataStatus == BookMetadataStatus.Resolved ||
+                     book.MetadataStatus == BookMetadataStatus.Manual) &&
+                    book.Title != null &&
+                    book.Title.Trim() != string.Empty),
+                IsbnQueue = group.Count(book =>
+                    book.MetadataStatus != BookMetadataStatus.Discarded &&
+                    (book.MetadataStatus == BookMetadataStatus.Pending ||
+                     book.MetadataStatus == BookMetadataStatus.Failed ||
+                     book.MetadataStatus == BookMetadataStatus.NotFound ||
+                     book.Title == null ||
+                     book.Title.Trim() == string.Empty)),
+                IsbndbAbsentToComplete = group.Count(book =>
+                    book.IsAbsentFromIsbndb &&
+                    book.IsbndbCompletedAt == null &&
+                    book.Title != null &&
+                    book.Title.Trim() != string.Empty),
+                IsbnNotFoundCount = group.Count(book => book.MetadataStatus == BookMetadataStatus.NotFound),
+                IsbnFailedCount = group.Count(book => book.MetadataStatus == BookMetadataStatus.Failed),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
         return new AdminNavigationCountsResult(
             openScanSessions,
             notFoundOpenTargets,
             notFoundOverdueTargets,
-            manualRequestsFound,
-            manualRequestsFoundOverdue,
-            catalogueBooks,
-            isbnQueue,
-            isbndbAbsentToComplete,
+            manualRequestCounts?.Found ?? 0,
+            manualRequestCounts?.Overdue ?? 0,
+            bookCounts?.CatalogueBooks ?? 0,
+            bookCounts?.IsbnQueue ?? 0,
+            bookCounts?.IsbndbAbsentToComplete ?? 0,
             publishedRareBooks,
-            isbnNotFoundCount,
-            isbnFailedCount);
+            bookCounts?.IsbnNotFoundCount ?? 0,
+            bookCounts?.IsbnFailedCount ?? 0);
     }
 }

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
-import {catchError, forkJoin, of} from 'rxjs';
+import {catchError, of, timeout} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {catalogSearchSidebarGenres, mergeCatalogGenres} from '../../core/catalog-genres';
@@ -19,6 +19,8 @@ import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-cale
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
 const HOME_BOOK_PAGE_SIZE = 8;
+const HOME_BOOK_REQUEST_TIMEOUT_MS = 6_000;
+const HOME_COUNT_REQUEST_TIMEOUT_MS = 8_000;
 
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
@@ -67,6 +69,7 @@ export class CatalogHomePageComponent implements OnInit {
   catalogTotal = signal<number | null>(null);
   catalogHasMore = signal(false);
   catalogCountLoaded = signal(0);
+  catalogCountReady = signal(false);
   rare = signal<CatalogRareBook[]>([]);
   genres = signal<string[]>([]);
   readonly homeGenres = catalogSearchSidebarGenres();
@@ -97,33 +100,21 @@ export class CatalogHomePageComponent implements OnInit {
       return;
     }
 
-    forkJoin({
-      recent: this.api.search({
-        availability: 'available',
-        sort: 'recent',
-        pageSize: HOME_BOOK_PAGE_SIZE,
-        includeTotalCount: true,
-      }).pipe(catchError(() => {
+    this.api.search({
+      availability: 'available',
+      sort: 'recent',
+      pageSize: HOME_BOOK_PAGE_SIZE,
+      includeTotalCount: false,
+    }).pipe(
+      timeout({first: HOME_BOOK_REQUEST_TIMEOUT_MS}),
+      catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
-      })),
-      catalog: this.api.search({
-        availability: 'all',
-        includeExhausted: true,
-        sort: 'recent',
-        pageSize: HOME_BOOK_PAGE_SIZE,
-        includeTotalCount: true,
-      }).pipe(catchError(() => {
-        this.hasLoadError.set(true);
-        return of(EMPTY_SEARCH);
-      })),
-    }).subscribe(({recent, catalog}) => {
+      }),
+    ).subscribe(recent => {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
       this.recentHasMore.set(recent.hasMore);
-      this.catalogTotal.set(catalog.totalCount);
-      this.catalogHasMore.set(catalog.hasMore);
-      this.catalogCountLoaded.set(catalog.books.length);
       this.genres.set(recent.genres ?? []);
       this.loading.set(false);
     });
@@ -382,28 +373,61 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   private loadFairs(): void {
-    this.api.getUpcomingFairs().pipe(catchError(() => {
-      this.hasLoadError.set(true);
-      return of([] as CatalogFair[]);
-    })).subscribe(fairs => {
+    this.api.getUpcomingFairs().pipe(
+      timeout({first: HOME_BOOK_REQUEST_TIMEOUT_MS}),
+      catchError(() => {
+        this.hasLoadError.set(true);
+        return of([] as CatalogFair[]);
+      }),
+    ).subscribe(fairs => {
       this.setFairs(fairs);
       this.loading.set(false);
     });
   }
 
   private loadSupplementaryHomeContent(): void {
-    this.api.getPublicRareBooks({includeSold: false, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
-      this.hasLoadError.set(true);
-      return of(EMPTY_RARE);
-    })).subscribe(rare => {
+    this.loadCatalogCount();
+
+    this.api.getPublicRareBooks({includeSold: false, sort: 'recent', pageSize: 4}).pipe(
+      timeout({first: HOME_COUNT_REQUEST_TIMEOUT_MS}),
+      catchError(() => {
+        this.hasLoadError.set(true);
+        return of(EMPTY_RARE);
+      }),
+    ).subscribe(rare => {
       this.rare.set(rare.books);
       this.rareLoaded.set(true);
     });
 
-    this.api.getUpcomingFairs().pipe(catchError(() => {
-      this.hasLoadError.set(true);
-      return of([] as CatalogFair[]);
-    })).subscribe(fairs => this.setFairs(fairs));
+    this.api.getUpcomingFairs().pipe(
+      timeout({first: HOME_COUNT_REQUEST_TIMEOUT_MS}),
+      catchError(() => {
+        this.hasLoadError.set(true);
+        return of([] as CatalogFair[]);
+      }),
+    ).subscribe(fairs => this.setFairs(fairs));
+  }
+
+  private loadCatalogCount(): void {
+    this.api.search({
+      availability: 'all',
+      includeExhausted: true,
+      sort: 'recent',
+      pageSize: HOME_BOOK_PAGE_SIZE,
+      includeTotalCount: true,
+    }).pipe(
+      timeout({first: HOME_COUNT_REQUEST_TIMEOUT_MS}),
+      catchError(() => {
+        this.hasLoadError.set(true);
+        this.catalogCountReady.set(true);
+        return of(EMPTY_SEARCH);
+      }),
+    ).subscribe(catalog => {
+      this.catalogTotal.set(catalog.totalCount);
+      this.catalogHasMore.set(catalog.hasMore);
+      this.catalogCountLoaded.set(catalog.books.length);
+      this.catalogCountReady.set(true);
+    });
   }
 
   private setFairs(fairs: CatalogFair[]): void {

@@ -23,5 +23,10 @@ public sealed class AdminDashboardSnapshotConfiguration : IEntityTypeConfigurati
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
             .IsRequired();
+        builder.Property(snapshot => snapshot.IsbndbUnmatchedSubjectsJson)
+            .IsUnicode();
+        builder.Property(snapshot => snapshot.IsbndbUnmatchedSubjectsComputedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
     }
 }

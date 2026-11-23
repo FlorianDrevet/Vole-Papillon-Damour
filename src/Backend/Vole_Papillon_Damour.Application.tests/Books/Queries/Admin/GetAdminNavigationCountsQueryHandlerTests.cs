@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -43,11 +42,7 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
             .Handle(new GetAdminBooksQuery(null, null, null, null), default);
         var queue = await new GetBookMetadataQueueQueryHandler(fixture.Context, clock)
             .Handle(new GetBookMetadataQueueQuery(), default);
-        using var cacheServices = CreateHybridCacheProvider();
-        var isbndb = await new GetIsbndbStatusQueryHandler(
-                fixture.Context,
-                clock,
-                cacheServices.GetRequiredService<HybridCache>())
+        var isbndb = await new GetIsbndbStatusQueryHandler(fixture.Context, clock)
             .Handle(new GetIsbndbStatusQuery(), default);
         var rareBooks = await new GetAdminRareBooksQueryHandler(fixture.Context, clock)
             .Handle(new GetAdminRareBooksQuery(Status: "Published"), default);
@@ -69,6 +64,38 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
         counts.Value.IsbnQueue.Should().Be(queue.Value.TotalCount);
         counts.Value.IsbndbAbsentToComplete.Should().Be(isbndb.AbsentToComplete);
         counts.Value.PublishedRareBooks.Should().Be(rareBooks.Value.TotalCount);
+    }
+
+    [Fact]
+    public async Task Handle_UsesSixSqlRoundTripsForFullAdministratorCounts()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await CreatePopulatedFixtureAsync(sql);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        sql.Clear();
+
+        var counts = await new GetAdminNavigationCountsQueryHandler(fixture.Context, clock)
+            .Handle(new GetAdminNavigationCountsQuery(true, false), default);
+
+        counts.IsError.Should().BeFalse();
+        sql.Commands.Should().HaveCount(6);
+    }
+
+    [Fact]
+    public async Task Handle_UsesTwoSqlRoundTripsForRareBooksOnlyCounts()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await CreatePopulatedFixtureAsync(sql);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        sql.Clear();
+
+        var counts = await new GetAdminNavigationCountsQueryHandler(fixture.Context, clock)
+            .Handle(new GetAdminNavigationCountsQuery(false, true), default);
+
+        counts.IsError.Should().BeFalse();
+        sql.Commands.Should().HaveCount(2);
     }
 
     [Fact]
@@ -99,9 +126,9 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
         counts.Value.PublishedRareBooks.Should().Be(publishedRareBooks.Value.TotalCount);
     }
 
-    private static async Task<ScanBookFixture> CreatePopulatedFixtureAsync()
+    private static async Task<ScanBookFixture> CreatePopulatedFixtureAsync(DbCommandInterceptor? interceptor = null)
     {
-        var fixture = await ScanBookFixture.CreateAsync();
+        var fixture = await ScanBookFixture.CreateAsync(interceptor);
         var catalogueBook = await fixture.AddBookAsync("9782070363735", 0);
         catalogueBook.ApplyManualMetadata(
             new BookMetadataPatch("Catalogue", null, null, null, null, null, null, null,
@@ -140,10 +167,4 @@ public sealed class GetAdminNavigationCountsQueryHandlerTests
         return fixture;
     }
 
-    private static ServiceProvider CreateHybridCacheProvider()
-    {
-        var services = new ServiceCollection();
-        services.AddHybridCache();
-        return services.BuildServiceProvider();
-    }
 }

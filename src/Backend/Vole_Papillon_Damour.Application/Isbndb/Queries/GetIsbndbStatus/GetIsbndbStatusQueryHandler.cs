@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -11,17 +11,9 @@ namespace Vole_Papillon_Damour.Application.Isbndb.Queries.GetIsbndbStatus;
 
 public sealed class GetIsbndbStatusQueryHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider,
-    HybridCache cache)
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetIsbndbStatusQuery, IsbndbStatusResult>
 {
-    private const string UnmatchedSubjectsCacheKey = "isbndb:unmatched-subjects";
-    private static readonly HybridCacheEntryOptions UnmatchedSubjectsCacheOptions = new()
-    {
-        Expiration = TimeSpan.FromMinutes(10),
-        LocalCacheExpiration = TimeSpan.FromMinutes(10),
-    };
-
     public async Task<IsbndbStatusResult> Handle(
         GetIsbndbStatusQuery query,
         CancellationToken cancellationToken)
@@ -72,12 +64,11 @@ public sealed class GetIsbndbStatusQueryHandler(
         var lastRun = await dbContext.IsbndbCatchUpRuns.AsNoTracking()
             .OrderByDescending(run => run.StartedAt)
             .FirstOrDefaultAsync(cancellationToken);
-        var unmatchedSubjects = await cache.GetOrCreateAsync(
-            UnmatchedSubjectsCacheKey,
-            dbContext,
-            static async (context, token) => await LoadUnmatchedSubjectsAsync(context, token),
-            UnmatchedSubjectsCacheOptions,
-            cancellationToken: cancellationToken);
+        var unmatchedSubjectsJson = await dbContext.AdminDashboardSnapshots.AsNoTracking()
+            .Where(snapshot => snapshot.Id == AdminDashboardSnapshot.SingletonId)
+            .Select(snapshot => snapshot.IsbndbUnmatchedSubjectsJson)
+            .SingleOrDefaultAsync(cancellationToken);
+        var unmatchedSubjects = DeserializeUnmatchedSubjects(unmatchedSubjectsJson);
 
         var utcStatus = quota.Status(now).ToString();
         var inStockPending = pendingInStock;
@@ -106,37 +97,21 @@ public sealed class GetIsbndbStatusQueryHandler(
             unmatchedSubjects);
     }
 
-    private static async ValueTask<IReadOnlyList<IsbndbUnmatchedSubjectResult>> LoadUnmatchedSubjectsAsync(
-        IProjectDbContext dbContext,
-        CancellationToken cancellationToken)
+    private static IReadOnlyList<IsbndbUnmatchedSubjectResult> DeserializeUnmatchedSubjects(string? json)
     {
-        var records = await dbContext.BookIsbndbRecords.AsNoTracking()
-            .Select(record => new { record.Subjects, record.Publisher, record.Authors })
-            .ToListAsync(cancellationToken);
-
-        var unmatched = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var record in records)
+        if (string.IsNullOrWhiteSpace(json))
         {
-            var subjects = DeserializeStrings(record.Subjects);
-            var authors = DeserializeStrings(record.Authors);
-            foreach (var subject in IsbndbGenreMapper.Map(subjects, record.Publisher, authors).UnmatchedSubjects)
-            {
-                unmatched[subject] = unmatched.GetValueOrDefault(subject) + 1;
-            }
+            return [];
         }
 
-        return unmatched.OrderByDescending(pair => pair.Value)
-            .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
-            .Take(10)
-            .Select(pair => new IsbndbUnmatchedSubjectResult(pair.Key, pair.Value))
-            .ToArray();
-    }
-
-    private static IReadOnlyList<string>? DeserializeStrings(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json)) return null;
-        try { return JsonSerializer.Deserialize<string[]>(json); }
-        catch (JsonException) { return null; }
+        try
+        {
+            return JsonSerializer.Deserialize<IsbndbUnmatchedSubjectResult[]>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     private static DateTimeOffset? ToOffset(DateTime? value) =>

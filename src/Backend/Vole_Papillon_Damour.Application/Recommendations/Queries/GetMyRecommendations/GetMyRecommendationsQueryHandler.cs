@@ -4,17 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
-using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.Recommendations.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendations;
 
 public sealed class GetMyRecommendationsQueryHandler(
     IProjectDbContext dbContext,
-    MemberIdentityService memberIdentityService,
     IRecommendationSettings settings,
     IDateTimeProvider dateTimeProvider,
     PersonalSuggestionEngine suggestionEngine)
@@ -33,12 +32,7 @@ public sealed class GetMyRecommendationsQueryHandler(
             return Error.Validation("Recommendations.InvalidMember", "A valid member identity is required.");
         }
 
-        var member = await memberIdentityService.EnsureAsync(
-            externalId,
-            query.Email,
-            query.FirstName,
-            query.LastName,
-            cancellationToken);
+        var memberId = UserId.Create(externalId);
 
         if (!settings.Enabled)
         {
@@ -47,7 +41,7 @@ public sealed class GetMyRecommendationsQueryHandler(
 
         var preference = await dbContext.MemberRecommendationPreferences
             .AsNoTracking()
-            .SingleOrDefaultAsync(candidate => candidate.UserId == member.Id, cancellationToken);
+            .SingleOrDefaultAsync(candidate => candidate.UserId == memberId, cancellationToken);
         var minimumHearts = query.MinimumHearts ?? preference?.MinimumHearts ?? DefaultMinimumHearts;
 
         if (preference is { Enabled: false })
@@ -65,7 +59,7 @@ public sealed class GetMyRecommendationsQueryHandler(
 
         var favoriteBooks = await dbContext.MemberFavoriteBooks
             .AsNoTracking()
-            .Where(favorite => favorite.UserId == member.Id)
+            .Where(favorite => favorite.UserId == memberId)
             .OrderByDescending(favorite => favorite.AddedAt)
             .ThenBy(favorite => favorite.Isbn13)
             .Take(SeedLimit)
@@ -79,7 +73,7 @@ public sealed class GetMyRecommendationsQueryHandler(
                 from passage in dbContext.CheckoutPassages.AsNoTracking()
                 join line in dbContext.CheckoutPassageLines.AsNoTracking()
                     on passage.Id equals line.CheckoutPassageId
-                where passage.UserId == member.Id &&
+                where passage.UserId == memberId &&
                       passage.Status == CheckoutPassageStatus.Associated &&
                       line.VoidedAt == null &&
                       line.Isbn13 != null
@@ -114,7 +108,7 @@ public sealed class GetMyRecommendationsQueryHandler(
             .ToHashSet(StringComparer.Ordinal);
         var selectionIsbns = (await dbContext.MemberSelectionItems
                 .AsNoTracking()
-                .Where(item => item.UserId == member.Id && item.Isbn13 != null)
+                .Where(item => item.UserId == memberId && item.Isbn13 != null)
                 .Select(item => item.Isbn13)
                 .ToListAsync(cancellationToken))
             .Where(isbn => isbn.HasValue)

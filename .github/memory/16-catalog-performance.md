@@ -119,3 +119,29 @@ production latency after merging and deploying the API.
 - `graphify update .` completed. The authenticated responsive visual check is still pending:
   Windows Computer Use stopped because it could not determine the browser's current URL
   with enough confidence to proceed. No Azure resource, database or deployment changed.
+
+## 2026-11-23 production performance remediation
+
+- Catalog SSR now waits for one available-books search. It omits the count from that
+  request, defers the full-catalogue count until after the first browser render, and
+  caps the critical books/fairs wait at six seconds. Optional homepage requests have an
+  eight-second bound.
+- `GetAdminNavigationCountsQueryHandler` aggregates each table's related counters into
+  one SQL round trip: the full admin path drops from 13 sequential commands to 6, and the
+  rare-books-only path from 3 to 2. SQLite interceptor tests assert both counts and the
+  existing values.
+- `GetIsbndbStatusQueryHandler` now reads unmatched-subject counts from
+  `AdminDashboardSnapshots`. The existing ten-minute Worker refresh computes this
+  aggregate in the background when its stored result is older than 24 hours, streaming
+  only the needed provider-record columns. Migration
+  `AddIsbndbUnmatchedSubjectsSnapshot` adds two nullable columns. Before the first Worker
+  refresh after migration, the status response returns an empty unmatched-subject list.
+- Member recommendation reads derive the member ID from the authenticated external ID;
+  they no longer invoke `MemberIdentityService`, write `LastSeenAt`, or call Entra/Graph.
+  Personalized results still use the member's favorites, purchases, selection, and stored
+  `BookNeighbors` generation at request time.
+- Application tests pass 882/882; Catalog home specs pass 23/23; Catalog production
+  build passes with existing budget/CommonJS warnings. The 95-test administration-page
+  spec has three alert-workflow failures in unchanged frontend files. No Azure resource,
+  database, deployment, or SQL SKU was changed; migration and post-deployment latency
+  verification remain pending.

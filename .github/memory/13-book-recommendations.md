@@ -27,6 +27,11 @@
   show the section. Multiple items use a horizontal, snap-scrolling track; accessible previous
   and next buttons appear only while more content is available in that direction. The scroll
   uses the Catalog's global reduced-motion rule.
+- Member recommendations are composed on request from favorites, purchases, selection and
+  the active `BookNeighbors` generation. `GetMyRecommendationsQueryHandler` now derives the
+  `UserId` directly from the authenticated external ID and does not synchronize the Entra
+  display name on this read path; member identity is still synchronized by the existing
+  account/favorite write flows.
 - The current behavior is specified in `docs/recommandations-livres/07-specification.md`.
   Component regressions live in `similar-books.component.spec.ts`; backend defaults and query
   behavior are covered by the Infrastructure and Application recommendation test projects.
