@@ -787,7 +787,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(callout).not.toBeNull();
     expect(callout.textContent).toContain('Suivre les titres de cette recherche');
     expect(callout.textContent).toContain('édition précise');
-    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(1);
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
   });
 
@@ -848,6 +848,38 @@ describe('CatalogSearchPageComponent', () => {
 
     expect((fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).disabled)
       .toBeFalse();
+  });
+
+  it('allows following a recognized title without selecting an edition', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'work-watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+    routeParams.next(convertToParamMap({q: 'Le grand'}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'Le grand',
+      items: [{...reference, isbn13: null, workId: 'OL42W'}],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const followTitle = fixture.nativeElement.querySelector('.reference-card .reference-follow--work') as HTMLButtonElement;
+    expect(followTitle).not.toBeNull();
+    expect(followTitle.disabled).toBeFalse();
+    followTitle.click();
+    await fixture.whenStable();
+
+    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', jasmine.objectContaining({
+      scope: 'Work', workId: 'OL42W', isbn13: null,
+    }));
   });
 
   it('follows each distinct work returned for the search, even when titles differ', async () => {
@@ -931,7 +963,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(button.getAttribute('aria-disabled')).toBeNull();
     expect(Array.from(callout.parentElement!.children).indexOf(callout))
       .toBeLessThan(Array.from(callout.parentElement!.children).indexOf(referenceList));
-    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(2);
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
   });
 

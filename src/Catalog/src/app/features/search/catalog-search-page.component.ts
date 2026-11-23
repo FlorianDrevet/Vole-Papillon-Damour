@@ -944,6 +944,24 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  shouldShowWorkFollow(index: number, reference: CatalogBookReference): boolean {
+    const workId = reference.workId?.trim().toLocaleLowerCase();
+    if (this.isNumericIsbnSearch() || !workId) {
+      return false;
+    }
+
+    return !this.visibleExternalReferences().slice(0, index).some(candidate =>
+      candidate.workId?.trim().toLocaleLowerCase() === workId);
+  }
+
+  shouldShowEditionFollow(index: number, reference: CatalogBookReference): boolean {
+    if (!reference.isbn13) {
+      return false;
+    }
+
+    return !(this.shouldShowWorkFollow(index, reference) && this.referenceFollowed(reference, 'Work'));
+  }
+
   totalPages(): number {
     if (!this.response || this.response.totalCount === null || this.response.totalCount === 0) {
       return 1;
