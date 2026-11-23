@@ -7,7 +7,7 @@ using Vole_Papillon_Damour.Domain.FavoriteBookAggregate;
 
 namespace Vole_Papillon_Damour.Application.Favorites.Common;
 
-public sealed record FavoriteCountSeed(string Isbn13, string? WorkId);
+public sealed record FavoriteCountSeed(BookCode Code, string? WorkId);
 
 public static class FavoriteCountReader
 {
@@ -22,32 +22,45 @@ public static class FavoriteCountReader
         }
 
         var uniqueSeeds = seeds
-            .GroupBy(seed => seed.Isbn13, StringComparer.Ordinal)
+            .GroupBy(seed => seed.Code.Value, StringComparer.Ordinal)
             .Select(group => group.First())
             .ToArray();
-        var groupKeysByIsbn = uniqueSeeds.ToDictionary(
-            seed => seed.Isbn13,
+        var isbnSeeds = uniqueSeeds
+            .Where(seed => seed.Code.IsIsbn)
+            .ToArray();
+        if (isbnSeeds.Length == 0)
+        {
+            return uniqueSeeds.ToDictionary(
+                seed => seed.Code.Value,
+                _ => 0,
+                StringComparer.Ordinal);
+        }
+
+        var groupKeysByIsbn = isbnSeeds.ToDictionary(
+            seed => seed.Code.Value,
             seed => GetGroupKey(seed),
             StringComparer.Ordinal);
-        var groups = uniqueSeeds
+        var groups = isbnSeeds
             .GroupBy(GetGroupKey, StringComparer.Ordinal)
             .ToDictionary(
                 group => group.Key,
-                group => group.Select(seed => seed.Isbn13).ToHashSet(StringComparer.Ordinal),
+                group => group.Select(seed => seed.Code.Value).ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
-        var groupKeysByWorkId = uniqueSeeds
+        var groupKeysByWorkId = isbnSeeds
             .Where(seed => !string.IsNullOrWhiteSpace(seed.WorkId))
             .GroupBy(seed => seed.WorkId!, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => GetGroupKey(group.First()), StringComparer.Ordinal);
-        var seedIsbns = uniqueSeeds
-            .Select(seed => ParseIsbn(seed.Isbn13))
+        var seedIsbns = isbnSeeds
+            .Select(seed => seed.Code)
             .ToArray();
         var workIds = groupKeysByWorkId.Keys.ToArray();
 
         var relatedBooks = await dbContext.Books
             .AsNoTracking()
-            .Where(book => seedIsbns.Contains(book.Id) ||
-                           (book.WorkId != null && workIds.Contains(book.WorkId)))
+            .Where(book =>
+                !book.IsInternalCode &&
+                (seedIsbns.Contains(book.Id) ||
+                 (book.WorkId != null && workIds.Contains(book.WorkId))))
             .Select(book => new { book.Id, book.WorkId })
             .ToListAsync(cancellationToken);
         foreach (var book in relatedBooks)
@@ -140,16 +153,18 @@ public static class FavoriteCountReader
         }
 
         return uniqueSeeds.ToDictionary(
-            seed => seed.Isbn13,
-            seed => (int)Math.Min(
-                int.MaxValue,
-                memberIdsByGroup[GetGroupKey(seed)].Count + anonymousCountsByGroup[GetGroupKey(seed)]),
+            seed => seed.Code.Value,
+            seed => !seed.Code.IsIsbn
+                ? 0
+                : (int)Math.Min(
+                    int.MaxValue,
+                    memberIdsByGroup[GetGroupKey(seed)].Count + anonymousCountsByGroup[GetGroupKey(seed)]),
             StringComparer.Ordinal);
     }
 
     private static string GetGroupKey(FavoriteCountSeed seed) =>
         string.IsNullOrWhiteSpace(seed.WorkId)
-            ? $"isbn:{seed.Isbn13}"
+            ? $"isbn:{seed.Code.Value}"
             : $"work:{seed.WorkId}";
 
     private static BookCode ParseIsbn(string value)

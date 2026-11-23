@@ -1,5 +1,11 @@
 # 20 - Scan And Cash Offline Reliability
 
+## Internal-code favorite-count failure — 2026-11-22
+
+- App Insights recorded 91 distinct HTTP 500 responses from `GET /scan/catalog/delta`. The exception was `System.InvalidOperationException: Favorite count ISBNs must be valid ISBN-13 values.` Catalog delta started returning generated internal codes for books without an ISBN; the shared favorite-count reader treated every book code as an ISBN and attempted to parse it. A related-books lookup could also include internal codes sharing a WorkId with an ISBN book.
+- `FavoriteCountSeed` now retains the typed `BookCode`. Only actual ISBNs are passed to favorite aggregation or ISBN parsing; internal-code books are returned with favorite count zero, and internal-code rows are excluded from related ISBN candidates. Both the catalog delta and scan-book favorite-count callers use the typed code.
+- Regression coverage includes an internal code by itself, an internal code sharing a WorkId with a favorited ISBN book, separate counts for ISBNs without WorkIds, and a single seeded edition inheriting favorites from a related edition. Application tests pass (881; 70 build warnings). API Release build passes with 0 errors and 71 existing warnings, using installed SDK 10.0.203 because the repository pins unavailable SDK 10.0.404. Stryker reported 32 killed, 10 survived, 17 ignored, 7 without coverage, and 11 compile-error mutants; it also warned that coverage capture failed. That report predates the last direct-reader regression test. No deployment was made; see the current PR for final validation and rollout state.
+
 ## Read-only App Insights review — 2026-11-11
 
 - `POST /scan/sales` had two requests with the same client gesture about 19 ms apart; one hit unique index `IX_BookMovements_ClientGestureId` and surfaced as a database error. The handler previously checked idempotency before saving but did not recover when two concurrent requests both passed that lookup. The losing request now clears tracked state and returns the committed sale when the winning gesture is visible.

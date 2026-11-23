@@ -62,7 +62,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         var favoriteCounts = await FavoriteCountReader.GetCountsAsync(
             dbContext,
             selectedBooks.Books
-                .Select(book => new FavoriteCountSeed(book.Isbn13.Value, book.WorkId))
+                .Select(book => new FavoriteCountSeed(book.Isbn13, book.WorkId))
                 .ToArray(),
             cancellationToken);
         var wantedTargets = await GetWantedTargetsAsync(cancellationToken);
