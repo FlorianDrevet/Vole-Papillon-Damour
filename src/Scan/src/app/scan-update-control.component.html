@@ -1,0 +1,21 @@
+<section class="scan-update-control" aria-label="Version et mise à jour de l’application">
+  <div class="scan-update-copy">
+    <div class="scan-update-version">
+      <span>Version</span>
+      <strong>{{ appVersion }}</strong>
+    </div>
+    <p class="scan-update-status" [attr.data-state]="state()" aria-live="polite">
+      {{ statusMessage }}
+    </p>
+  </div>
+
+  <button
+    type="button"
+    class="scan-update-button"
+    [class.scan-update-button-ready]="state() === 'available'"
+    [disabled]="isActionDisabled"
+    [attr.aria-label]="actionLabel"
+    (click)="handleAction()">
+    {{ actionLabel }}
+  </button>
+</section>

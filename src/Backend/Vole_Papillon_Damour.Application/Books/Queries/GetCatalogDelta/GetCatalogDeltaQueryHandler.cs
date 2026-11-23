@@ -105,7 +105,8 @@ public sealed class GetCatalogDeltaQueryHandler(
                 book.Publisher,
                 book.PublicationYear,
                 ParseOtherIsbns(book.OtherIsbns),
-                favoriteCounts.GetValueOrDefault(book.Isbn13.Value)))
+                favoriteCounts.GetValueOrDefault(book.Isbn13.Value),
+                book.PhysicalFormat))
             .ToArray();
 
         var rareBookSelection = await GetRareBooksToProjectAsync(
@@ -361,6 +362,7 @@ public sealed class GetCatalogDeltaQueryHandler(
                    book.WorkKey,
                    book.Publisher,
                    book.PublicationYear,
+                   book.PhysicalFormat,
                    record == null ? null : record.OtherIsbns);
     }
 
@@ -580,6 +582,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         string? WorkKey,
         string? Publisher,
         int? PublicationYear,
+        string? PhysicalFormat,
         string? OtherIsbns);
 
     private sealed record WatchlistTarget(

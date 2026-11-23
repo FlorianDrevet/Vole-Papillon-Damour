@@ -339,7 +339,9 @@ Au tri, si l'ISBN scanné n'a pas d'exemplaire disponible ni annoncé mais qu'un
 édition de la même œuvre en a, l'écran de résultat affiche le signal **« Autre édition
 déjà à la bourse »** avec le nombre d'exemplaires et, pour chaque édition, l'éditeur et
 l'année. Le signal s'affiche aussi en complément quand l'ISBN scanné a déjà des
-exemplaires.
+exemplaires. Quand le format physique de l'édition scannée est connu et diffère de
+celui d'une édition fortement liée déjà présente, le résultat ajoute un repère orange
+« Nouveau format » et affiche les deux formats. Ce repère complète le verdict de tri.
 
 #### `RG-121` — Le seuil de doublon compte l'œuvre
 Le verdict « inutile d'en garder » (`RG-10`) compte les exemplaires disponibles et

@@ -707,6 +707,22 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       verdict.totalKnownQuantity > 0;
   }
 
+  get newFormatNotice(): {scannedFormat: string; existingFormat: string} | null {
+    const scannedFormat = this.activeBook?.physicalFormat?.trim()
+      || this.metadata?.physicalFormat?.trim();
+    if (!scannedFormat) {
+      return null;
+    }
+
+    const scannedFormatKey = normalizePhysicalFormat(scannedFormat);
+    const existingFormat = this.activeVerdict?.otherEditions.find(edition => {
+      const format = edition.physicalFormat?.trim();
+      return edition.strong && Boolean(format) && normalizePhysicalFormat(format) !== scannedFormatKey;
+    })?.physicalFormat?.trim();
+
+    return existingFormat ? {scannedFormat, existingFormat} : null;
+  }
+
   get activeTitle(): string {
     return this.metadata?.title
       ?? this.activeBook?.title
@@ -3136,4 +3152,14 @@ function isWithinRareSaleCorrectionWindow(occurredAt: string, now = Date.now()):
   return Number.isFinite(occurred) &&
     now >= occurred &&
     now - occurred <= 30_000;
+}
+
+function normalizePhysicalFormat(value: string | null | undefined): string {
+  return value
+    ?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/^format\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('fr-FR') ?? '';
 }

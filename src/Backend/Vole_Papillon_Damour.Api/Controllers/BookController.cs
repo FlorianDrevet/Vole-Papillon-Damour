@@ -921,7 +921,8 @@ public static class BookController
                     book.Publisher,
                     book.PublicationYear,
                     book.OtherIsbns,
-                    book.FavoriteCount))
+                    book.FavoriteCount,
+                    book.PhysicalFormat))
                 .ToArray(),
             result.RareBooks
                 .Select(book => new ScanCatalogRareBookResponse(

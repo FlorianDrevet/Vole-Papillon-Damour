@@ -5,6 +5,12 @@
 - App Insights recorded 91 distinct HTTP 500 responses from `GET /scan/catalog/delta`. The exception was `System.InvalidOperationException: Favorite count ISBNs must be valid ISBN-13 values.` Catalog delta started returning generated internal codes for books without an ISBN; the shared favorite-count reader treated every book code as an ISBN and attempted to parse it. A related-books lookup could also include internal codes sharing a WorkId with an ISBN book.
 - `FavoriteCountSeed` now retains the typed `BookCode`. Only actual ISBNs are passed to favorite aggregation or ISBN parsing; internal-code books are returned with favorite count zero, and internal-code rows are excluded from related ISBN candidates. Both the catalog delta and scan-book favorite-count callers use the typed code.
 - Regression coverage includes an internal code by itself, an internal code sharing a WorkId with a favorited ISBN book, separate counts for ISBNs without WorkIds, and a single seeded edition inheriting favorites from a related edition. Application tests pass (881; 70 build warnings). API Release build passes with 0 errors and 71 existing warnings, using installed SDK 10.0.203 because the repository pins unavailable SDK 10.0.404. Stryker reported 32 killed, 10 survived, 17 ignored, 7 without coverage, and 11 compile-error mutants; it also warned that coverage capture failed. That report predates the last direct-reader regression test. No deployment was made; [PR #425](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/425) is open and unmerged.
+## PWA build identification and update
+
+- The Scan home screen shows the short Git commit ID embedded by `.github/workflows/scan-deploy.yml` through the `SCAN_APP_VERSION` Docker build argument. This identifies the exact source build independently of the manually selected image tag.
+- `ScanUpdateService` checks Angular's service worker on first opening the home screen and exposes a manual recheck. A ready version prompts with a `Mettre à jour` action that reloads the page; it deliberately does not call `activateUpdate()`, which could mix an old shell with new lazy-loaded chunks.
+- The update status is only confirmed after an online service-worker check. In development the service worker is disabled, so the control reports that production PWA updates are unavailable there.
+- `rtk npm run build` passes; the initial JS bundle is 177.41 kB over its 1.50 MB warning budget. Automated specs and authenticated visual review were not run; the local Docker image build was unavailable because Docker is not installed. There was no deployment.
 
 ## Read-only App Insights review — 2026-11-11
 
@@ -18,6 +24,13 @@
 - Ordinary cashier sales use an atomic IndexedDB send/cancel state transition. A still-pending sale can be removed locally and its optimistic stock restored. A sale being transmitted or already accepted by the API retains a correction record and stable void gesture; `POST /scan/sales/{saleMovementId}/void` uses the existing ledger correction command and requires `Caisse`.
 - Multiple same-book cash operations remain composable: cancellation adds only the cancelled quantities to the current local projection, while a sale/void response reapplies any still-pending sales and voids. Regression tests cover cancelling one of several sales, completing one while another remains queued, and receiving one response while another void remains queued.
 - The corrected fair delta query has a provider-backed SQLite regression test with comparable date converters. The sale idempotency race has an Application regression test that simulates the concurrent unique-index winner.
+
+## Physical-format signal in Scan triage — 2026-11-23
+
+- `BookMetadataResponse` already exposes `PhysicalFormat`; the scan catalog delta now carries the same scalar from `Book` through `ScanCatalogBookResult` and `ScanCatalogBookResponse` into the offline `ScanCatalogBook` cache.
+- Scan IndexedDB version 8 invalidates the catalog watermark for version-7 clients so the delta reloads physical formats, while keeping the existing catalog usable offline during that refresh. Older upgrades still use the existing metadata migration that clears stale catalog rows.
+- `ScannerComponent.newFormatNotice` adds the orange « Nouveau format » callout only when the scanned format differs from a strongly linked edition with an available or announced copy. It supplements the current tri verdict; unknown formats and weak title/author links do not trigger it.
+- The catalog delta keeps its existing query count, filters and ordering; the response adds one projected scalar per book.
 
 ## Validation and limits
 

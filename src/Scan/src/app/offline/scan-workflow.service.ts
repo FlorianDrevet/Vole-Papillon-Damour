@@ -647,6 +647,7 @@ export class ScanWorkflowService {
         workKey: metadata.workKey ?? existing?.workKey ?? null,
         publisher: metadata.publisher ?? existing?.publisher ?? null,
         publicationYear: metadata.publicationYear ?? existing?.publicationYear ?? null,
+        physicalFormat: metadata.physicalFormat ?? existing?.physicalFormat ?? null,
         coverUrl: metadata.coverUrl ?? existing?.coverUrl ?? null,
         otherIsbns: existing?.otherIsbns,
         qtyAvailable: existing?.qtyAvailable ?? 0,

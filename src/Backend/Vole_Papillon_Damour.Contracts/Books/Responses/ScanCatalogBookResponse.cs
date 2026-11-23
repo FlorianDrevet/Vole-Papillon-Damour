@@ -17,4 +17,5 @@ public sealed record ScanCatalogBookResponse(
     string? Publisher,
     int? PublicationYear,
     IReadOnlyList<string> OtherIsbns,
-    int FavoriteCount = 0);
+    int FavoriteCount = 0,
+    string? PhysicalFormat = null);

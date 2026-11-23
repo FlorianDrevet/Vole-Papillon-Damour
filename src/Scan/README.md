@@ -30,6 +30,9 @@ l'autorité CIAM avec le chemin du tenant ; le service de connexion fournit auss
 explicitement la page de retour de l'application et affiche l'échec de démarrage au lieu de
 l'ignorer. Le service worker Angular met en cache la coquille et les notices
 bibliographiques, sans mélanger le cache navigateur avec IndexedDB.
+L’écran d’accueil affiche la version du commit embarqué dans le build et vérifie les mises
+à jour disponibles. Une mise à jour prête est appliquée au choix du bénévole via **Mettre à
+jour**, qui recharge la PWA avec la nouvelle version.
 
 La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
 (`TRY_HARDER`) pour les codes 1D. Sur l'écran de tri, elle démarre automatiquement à

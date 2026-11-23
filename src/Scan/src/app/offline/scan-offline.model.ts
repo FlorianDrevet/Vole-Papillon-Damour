@@ -1,5 +1,5 @@
 export const scanDatabaseName = 'vpd-scan';
-export const scanDatabaseVersion = 7;
+export const scanDatabaseVersion = 8;
 
 export const scanStoreNames = {
   catalog: 'catalog',
@@ -82,6 +82,7 @@ export interface ScanCatalogBook {
   workKey?: string | null;
   publisher?: string | null;
   publicationYear?: number | null;
+  physicalFormat?: string | null;
   coverUrl?: string | null;
   otherIsbns?: string[];
   qtyAvailable: number;
@@ -349,6 +350,7 @@ export interface ScanOtherEdition {
   isbn13: string;
   publisher: string | null;
   publicationYear: number | null;
+  physicalFormat?: string | null;
   quantity: number;
   strong: boolean;
 }
