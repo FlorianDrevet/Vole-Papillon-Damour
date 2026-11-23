@@ -35,6 +35,7 @@
 - `/administration/catalogue` requests `availableOnly=true`, filtering `quantityAvailable > 0` in the paged API query. The list shows available copy counts and describes entries as books; the underlying bibliographic record and editor remain available through book details.
 - Complete manual internal-code records may also appear in the admin catalogue. Their list and detail cover fall back to the first uploaded book photo when `CoverUrl` is empty; detail loading skips the ISBN-only not-found summary for internal codes.
 - `Ma sélection` is distinct from `Livres suivis` (work/edition watchlist). Availability, future announcements, and rare-book prices remain truthful and separate; no UI should invent reservations, book prices, role assignment, or physical-carton data.
+- Public Catalog external-reference cards can follow a recognized work across all editions with its `WorkId`, or follow one ISBN edition; a work action appears once for duplicate editions of the same work. Results without `WorkId` remain edition-only until the reference data can identify the work.
 - Catalog V2 uses a pale-paper/navy editorial shell; the shared design details are in `.github/memory/11-frontend-design-system.md`. Member/admin pages use MSAL lazily and read API roles from the API access token, not the ID token.
 - Public cover URLs go through the shared allow-listed transformation helper with a direct-source fallback. Rare-book routes use UUIDs; the API retains legacy slug reads.
 
