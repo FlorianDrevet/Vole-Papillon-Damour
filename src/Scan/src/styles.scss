@@ -722,6 +722,16 @@ input:focus-visible {
   font-weight: 600;
 }
 
+.reprint-isbn-feedback {
+  margin-top: 8px;
+  color: var(--scan-green);
+  font-weight: 600;
+}
+
+.reprint-isbn-feedback-error {
+  color: var(--scan-red);
+}
+
 .scan-progress {
   display: flex;
   max-width: min(300px, 86vw);

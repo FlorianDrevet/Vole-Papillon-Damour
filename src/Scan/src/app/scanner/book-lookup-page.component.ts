@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, ElementRef, Inject, OnDestroy, Optional, ViewChild, signal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {Router} from '@angular/router';
@@ -10,6 +10,7 @@ import {ScanApiService} from '../offline/scan-api.service';
 import {ScanPublicCatalogBook} from '../offline/scan-offline.model';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
 import {normalizeIsbn} from './isbn.util';
+import {LABEL_PRINTER, LabelPrinter} from '../label-printer/label-printer';
 
 type BookLookupState = 'idle' | 'invalid' | 'loading' | 'found' | 'not-found' | 'unavailable';
 
@@ -32,6 +33,9 @@ export class BookLookupPageComponent implements OnDestroy {
   readonly cameraActive = signal(false);
   readonly cameraStarting = signal(false);
   readonly cameraError = signal<string | null>(null);
+  readonly reprintBusy = signal(false);
+  readonly reprintStatus = signal<string | null>(null);
+  readonly reprintStatusIsError = signal(false);
 
   private cameraHandle: CameraScannerHandle | null = null;
   private lookupVersion = 0;
@@ -42,6 +46,7 @@ export class BookLookupPageComponent implements OnDestroy {
     private readonly cameraScanner: CameraScannerService,
     private readonly router: Router,
     private readonly auth: ScanAuthService,
+    @Optional() @Inject(LABEL_PRINTER) private readonly printer: LabelPrinter | null = null,
   ) {}
 
   get canReprintLabel(): boolean {
@@ -52,13 +57,31 @@ export class BookLookupPageComponent implements OnDestroy {
     void this.router.navigateByUrl('/accueil');
   }
 
-  reprintLabel(): void {
+  async reprintLabel(): Promise<void> {
     const book = this.book();
-    if (!book || !this.canReprintLabel) {
+    if (!book || !this.canReprintLabel || this.reprintBusy()) {
       return;
     }
 
-    void this.router.navigateByUrl(`/etiquette?isbn=${encodeURIComponent(book.isbn13)}`);
+    const printer = this.printer;
+    if (!printer || printer.status() !== 'connected') {
+      void this.router.navigateByUrl(`/etiquette?isbn=${encodeURIComponent(book.isbn13)}`);
+      return;
+    }
+
+    this.reprintBusy.set(true);
+    this.reprintStatusIsError.set(false);
+    this.reprintStatus.set('Impression de l’étiquette…');
+
+    try {
+      await printer.print({code: book.isbn13, price: null, copies: 1});
+      this.reprintStatus.set('Étiquette réimprimée.');
+    } catch (error) {
+      this.reprintStatus.set(error instanceof Error ? error.message : 'Impression impossible.');
+      this.reprintStatusIsError.set(true);
+    } finally {
+      this.reprintBusy.set(false);
+    }
   }
 
   onIsbnChanged(value: string): void {
@@ -68,6 +91,8 @@ export class BookLookupPageComponent implements OnDestroy {
     this.book.set(null);
     this.nextFairLabel.set(null);
     this.cameraError.set(null);
+    this.reprintStatus.set(null);
+    this.reprintStatusIsError.set(false);
   }
 
   async search(rawValue = this.isbn()): Promise<void> {

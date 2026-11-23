@@ -124,9 +124,18 @@
       type="button"
       class="book-lookup-reprint"
       data-zone="book-lookup-reprint"
+      [disabled]="reprintBusy()"
       (click)="reprintLabel()">
-      Réimprimer l’étiquette
+      {{ reprintBusy() ? 'Impression…' : 'Réimprimer l’étiquette' }}
     </button>
+    <p
+      *ngIf="reprintStatus()"
+      class="book-lookup-reprint-status"
+      [class.book-lookup-reprint-status-error]="reprintStatusIsError()"
+      role="status"
+      aria-live="polite">
+      {{ reprintStatus() }}
+    </p>
 
     <p *ngIf="lookupState() === 'invalid'" class="book-lookup-message" role="alert">
       Saisissez un ISBN-10 ou ISBN-13 valide.
