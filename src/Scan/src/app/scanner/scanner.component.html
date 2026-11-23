@@ -313,6 +313,16 @@
                     <p>{{ verdictSummary }}</p>
                   </div>
                 </div>
+                <div
+                  *ngIf="newFormatNotice as newFormat"
+                  class="new-format-indicator"
+                  role="note"
+                  aria-label="Nouveau format détecté"
+                  data-testid="new-format-indicator">
+                  <strong>Nouveau format</strong>
+                  <span>Format scanné : {{ newFormat.scannedFormat }}</span>
+                  <span>Déjà à la bourse : {{ newFormat.existingFormat }}</span>
+                </div>
                 <p *ngIf="!isOnline" class="verdict-freshness" data-zone="E10-fraicheur">{{ offlineFreshnessLabel }}</p>
               </article>
 

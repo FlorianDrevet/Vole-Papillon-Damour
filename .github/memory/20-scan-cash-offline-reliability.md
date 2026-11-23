@@ -20,6 +20,13 @@
 - Multiple same-book cash operations remain composable: cancellation adds only the cancelled quantities to the current local projection, while a sale/void response reapplies any still-pending sales and voids. Regression tests cover cancelling one of several sales, completing one while another remains queued, and receiving one response while another void remains queued.
 - The corrected fair delta query has a provider-backed SQLite regression test with comparable date converters. The sale idempotency race has an Application regression test that simulates the concurrent unique-index winner.
 
+## Physical-format signal in Scan triage — 2026-11-23
+
+- `BookMetadataResponse` already exposes `PhysicalFormat`; the scan catalog delta now carries the same scalar from `Book` through `ScanCatalogBookResult` and `ScanCatalogBookResponse` into the offline `ScanCatalogBook` cache.
+- Scan IndexedDB version 8 invalidates the catalog watermark for version-7 clients so the delta reloads physical formats, while keeping the existing catalog usable offline during that refresh. Older upgrades still use the existing metadata migration that clears stale catalog rows.
+- `ScannerComponent.newFormatNotice` adds the orange « Nouveau format » callout only when the scanned format differs from a strongly linked edition with an available or announced copy. It supplements the current tri verdict; unknown formats and weak title/author links do not trigger it.
+- The catalog delta keeps its existing query count, filters and ordering; the response adds one projected scalar per book.
+
 ## Validation and limits
 
 - Full Scan suite: 329/329; Application tests: 710/710; API tests: 93/93; API build and Scan production build pass. The directly targeted auth/API/store/sync/workflow subset passes 113/113.

@@ -85,6 +85,7 @@ export class ScanVerdictService {
           isbn13: candidate.isbn13,
           publisher: candidate.publisher ?? null,
           publicationYear: candidate.publicationYear ?? null,
+          physicalFormat: candidate.physicalFormat ?? null,
           quantity: candidate.qtyAvailable + candidate.qtyAnnounced,
           strong,
         }];

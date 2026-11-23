@@ -30,6 +30,7 @@ import {
 import type {ScanDiagnosticStoreState} from './scan-diagnostic-export';
 import {
   forceCatalogResyncForMetadataUpgrade,
+  forceCatalogResyncForPhysicalFormatUpgrade,
   migrateLegacyScanOutboxEntry,
   LegacyScanOutboxEntry,
 } from './scan-local-store-migration';
@@ -1922,6 +1923,7 @@ export class ScanLocalStoreService {
 
         if (request.transaction) {
           forceCatalogResyncForMetadataUpgrade(event.oldVersion, request.transaction);
+          forceCatalogResyncForPhysicalFormatUpgrade(event.oldVersion, request.transaction);
         }
 
         if (event.oldVersion < 3 && database.objectStoreNames.contains(scanStoreNames.outbox)) {
