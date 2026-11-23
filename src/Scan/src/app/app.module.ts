@@ -18,6 +18,7 @@ import {ScanStatusBarComponent} from './offline/scan-status-bar.component';
 import {ScanConfirmationComponent} from './scan-confirmation.component';
 import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
+import {ScanUpdateControlComponent} from './scan-update-control.component';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
 import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
@@ -47,6 +48,7 @@ import {environment} from '../environments/environment';
     ScanConfirmationComponent,
     ScanPageComponent,
     ScanShellComponent,
+    ScanUpdateControlComponent,
     ScanStatisticsComponent,
     ScanRareBookFormComponent,
     ScanRareBookListComponent,

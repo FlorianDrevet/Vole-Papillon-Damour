@@ -2,6 +2,7 @@ import type {ScanEnvironment} from './environment.model';
 
 export const environment: ScanEnvironment = {
   production: true,
+  appVersion: 'local',
   apiUrl: 'https://vole-papillon-damour-backend.onrender.com',
   appInsightsConnectionString: '__APPINSIGHTS_CONNECTION_STRING__',
   entra: {
