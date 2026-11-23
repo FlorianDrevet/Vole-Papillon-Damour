@@ -6,6 +6,7 @@ import {
 } from './scan-offline.model';
 
 const catalogEditionMetadataVersion = 7;
+const catalogPhysicalFormatVersion = 8;
 
 export function shouldForceCatalogResync(oldVersion: number): boolean {
   return oldVersion > 0 && oldVersion < catalogEditionMetadataVersion;
@@ -20,6 +21,20 @@ export function forceCatalogResyncForMetadataUpgrade(
   }
 
   transaction.objectStore(scanStoreNames.catalog).clear();
+  transaction.objectStore(scanStoreNames.session).delete('catalog-sync');
+}
+
+export function forceCatalogResyncForPhysicalFormatUpgrade(
+  oldVersion: number,
+  transaction: IDBTransaction,
+): void {
+  if (
+    oldVersion < catalogEditionMetadataVersion ||
+    oldVersion >= catalogPhysicalFormatVersion
+  ) {
+    return;
+  }
+
   transaction.objectStore(scanStoreNames.session).delete('catalog-sync');
 }
 

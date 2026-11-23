@@ -4,6 +4,7 @@ export interface BookMetadata {
   authors: string | null;
   publisher: string | null;
   publicationYear: number | null;
+  physicalFormat?: string | null;
   coverUrl: string | null;
   coverSource?: string | null;
   source: string;

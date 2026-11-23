@@ -869,6 +869,7 @@ export class ScanSyncService {
       workKey: current?.workKey ?? null,
       publisher: current?.publisher ?? null,
       publicationYear: current?.publicationYear ?? null,
+      physicalFormat: current?.physicalFormat ?? null,
       coverUrl: current?.coverUrl ?? null,
       otherIsbns: current?.otherIsbns,
       qtyAvailable: Math.max(0, response.qtyAvailable - (

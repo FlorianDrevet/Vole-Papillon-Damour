@@ -2,6 +2,26 @@
   display: block;
 }
 
+.new-format-indicator {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 12px;
+  border-top: 3px solid var(--scan-verdict-additional);
+  background: #fff2e8;
+  color: var(--scan-ink);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.new-format-indicator strong {
+  color: var(--scan-verdict-additional);
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
 .manual-request-rare-note {
   margin: 0;
   padding: 9px 18px;
