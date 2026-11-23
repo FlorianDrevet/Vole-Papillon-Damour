@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, EventEmitter, Input, Output, signal, ChangeDetectionStrategy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, EventEmitter, Input, Output, signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -35,6 +35,16 @@ export class ManualRequestAddDialogComponent {
   readonly saving = signal(false);
   readonly searchComplete = signal(false);
   readonly error = signal<string | null>(null);
+  readonly canAddRequest = computed(() => {
+    const book = this.selectedBook();
+    if (!book) {
+      return false;
+    }
+
+    return this.scope() === 'Work'
+      ? Boolean(book.workId?.trim())
+      : Boolean(book.isbn13?.trim());
+  });
 
   query = '';
   private referenceSearchSequence = 0;
@@ -95,15 +105,31 @@ export class ManualRequestAddDialogComponent {
   }
 
   async selectBook(book: CatalogBookReference): Promise<void> {
+    if (!book.isbn13?.trim() && !book.workId?.trim()) {
+      return;
+    }
+
     this.error.set(null);
     this.selectedBook.set(book);
-    this.scope.set('Edition');
+    this.scope.set(book.isbn13?.trim() ? 'Edition' : 'Work');
     await this.loadStock();
+  }
+
+  isBookSelected(book: CatalogBookReference): boolean {
+    const selected = this.selectedBook();
+    if (!selected) {
+      return false;
+    }
+
+    const selectedIsbn13 = selected.isbn13?.trim();
+    return selectedIsbn13
+      ? selectedIsbn13 === book.isbn13?.trim()
+      : !book.isbn13?.trim() && Boolean(selected.workId?.trim()) && selected.workId?.trim() === book.workId?.trim();
   }
 
   async selectScope(scope: CatalogManualRequestScope): Promise<void> {
     const book = this.selectedBook();
-    if (book && ((scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13))) {
+    if (book && ((scope === 'Work' && !book.workId?.trim()) || (scope === 'Edition' && !book.isbn13?.trim()))) {
       return;
     }
     this.scope.set(scope);
@@ -119,14 +145,14 @@ export class ManualRequestAddDialogComponent {
     if (!this.accessToken || !this.requesterId || !book || this.saving()) {
       return;
     }
-    if ((scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13)) {
+    if ((scope === 'Work' && !book.workId?.trim()) || (scope === 'Edition' && !book.isbn13?.trim())) {
       return;
     }
 
     const request: CatalogManualBookRequestWrite = {
       scope,
-      workId: scope === 'Work' ? book.workId : null,
-      isbn13: scope === 'Edition' ? book.isbn13 : null,
+      workId: scope === 'Work' ? book.workId?.trim() : null,
+      isbn13: scope === 'Edition' ? book.isbn13?.trim() : null,
       title: book.title,
       authors: book.authors,
       publisher: book.publisher,
@@ -163,15 +189,15 @@ export class ManualRequestAddDialogComponent {
     const sequence = ++this.stockLoadSequence;
     const book = this.selectedBook();
     const scope = this.scope();
-    if (!this.accessToken || !book || (scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13)) {
+    if (!this.accessToken || !book || (scope === 'Work' && !book.workId?.trim()) || (scope === 'Edition' && !book.isbn13?.trim())) {
       this.stock.set(null);
       this.loadingStock.set(false);
       return;
     }
 
     const target = scope === 'Work'
-      ? {scope: 'Work' as const, workId: book.workId!}
-      : {scope: 'Edition' as const, isbn13: book.isbn13!};
+      ? {scope: 'Work' as const, workId: book.workId!.trim()}
+      : {scope: 'Edition' as const, isbn13: book.isbn13!.trim()};
     this.loadingStock.set(true);
     this.stock.set(null);
     try {

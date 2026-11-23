@@ -60,14 +60,14 @@
         <div class="manual-request-add-loading" role="status">Recherche dans les livres publiés…</div>
       } @else if (searchComplete()) {
         <fieldset class="manual-request-results" data-testid="manual-request-results">
-          <legend>Éditions trouvées · {{ results().length }} résultats</legend>
-          @for (book of results(); track book.isbn13 || book.title) {
-            <label class="manual-request-result" [class.selected]="selectedBook()?.isbn13 === book.isbn13">
-              <input type="radio" name="manualBookReference" [checked]="selectedBook()?.isbn13 === book.isbn13" [disabled]="!book.isbn13 || loadingStock()" (change)="selectBook(book)">
+          <legend>Livres trouvés · {{ results().length }} résultats</legend>
+          @for (book of results(); track book.isbn13 || book.workId || book.title) {
+            <label class="manual-request-result" [class.selected]="isBookSelected(book)">
+              <input type="radio" name="manualBookReference" [checked]="isBookSelected(book)" [disabled]="(!book.isbn13?.trim() && !book.workId?.trim()) || loadingStock()" (change)="selectBook(book)">
               <span>
                 <strong>{{ book.title || 'Titre inconnu' }}</strong>
                 <small>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</small>
-                <small>ISBN {{ book.isbn13 || 'non renseigné' }}</small>
+                <small>@if (book.isbn13) { ISBN {{ book.isbn13 }} } @else if (book.workId) { Œuvre reconnue · toutes éditions } @else { ISBN non renseigné }</small>
               </span>
             </label>
           } @empty {
@@ -75,7 +75,7 @@
           }
         </fieldset>
       } @else {
-        <p class="manual-request-add-prompt">Les éditions correspondant à votre recherche apparaîtront ici. Choisissez une édition pour préciser la demande, ou gardez « toutes les éditions ».</p>
+        <p class="manual-request-add-prompt">Les livres correspondant à votre recherche apparaîtront ici. Choisissez une référence, puis précisez si la personne cherche toutes les éditions reconnues ou une édition particulière.</p>
       }
     </div>
 
@@ -97,7 +97,7 @@
 
       <footer class="manual-request-add-actions">
         <button class="button button-outline" data-testid="manual-request-add-cancel" type="button" [disabled]="saving()" (click)="closed.emit()">Annuler</button>
-        <button class="button button-dark" data-testid="manual-request-add-submit" type="button" [disabled]="saving() || !selectedBook()?.isbn13" (click)="add(false)">
+        <button class="button button-dark" data-testid="manual-request-add-submit" type="button" [disabled]="saving() || !canAddRequest()" (click)="add(false)">
           {{ saving() ? 'Ajout…' : 'Ajouter la demande' }}
         </button>
       </footer>

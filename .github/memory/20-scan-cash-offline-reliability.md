@@ -1,5 +1,12 @@
 # 20 - Scan And Cash Offline Reliability
 
+## PWA build identification and update
+
+- The Scan home screen shows the short Git commit ID embedded by `.github/workflows/scan-deploy.yml` through the `SCAN_APP_VERSION` Docker build argument. This identifies the exact source build independently of the manually selected image tag.
+- `ScanUpdateService` checks Angular's service worker on first opening the home screen and exposes a manual recheck. A ready version prompts with a `Mettre à jour` action that reloads the page; it deliberately does not call `activateUpdate()`, which could mix an old shell with new lazy-loaded chunks.
+- The update status is only confirmed after an online service-worker check. In development the service worker is disabled, so the control reports that production PWA updates are unavailable there.
+- `rtk npm run build` passes; the initial JS bundle is 177.41 kB over its 1.50 MB warning budget. Automated specs and authenticated visual review were not run; the local Docker image build was unavailable because Docker is not installed. There was no deployment.
+
 ## Read-only App Insights review — 2026-11-11
 
 - `POST /scan/sales` had two requests with the same client gesture about 19 ms apart; one hit unique index `IX_BookMovements_ClientGestureId` and surfaced as a database error. The handler previously checked idempotency before saving but did not recover when two concurrent requests both passed that lookup. The losing request now clears tracked state and returns the committed sale when the winning gesture is visible.

@@ -15,6 +15,11 @@ and search results remain available for reusing existing matches. In the add-boo
 default scope, selecting an edition switches to edition-only, and only the edition list
 scrolls between the fixed search/scope header and stock/actions footer.
 
+The add-book dialog accepts a reference with a recognized `WorkId` even when no ISBN is
+available. Such a result selects work scope and can be added without an edition; references
+with an ISBN retain the edition default and can be switched to work scope when a `WorkId`
+is available.
+
 ## Architecture and privacy
 
 - Domain slice: `ManualRequester` and `ManualBookRequest` under

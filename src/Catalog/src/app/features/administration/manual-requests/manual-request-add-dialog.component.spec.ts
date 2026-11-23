@@ -18,6 +18,7 @@ describe('ManualRequestAddDialogComponent', () => {
     authors: 'Antoine de Saint-Exupéry', publisher: 'Gallimard', publicationYear: 2007,
     coverUrl: null, source: 'OpenLibrary',
   };
+  const workOnlyBook: CatalogBookReference = {...workBook, isbn13: null};
   const editionOnlyBook: CatalogBookReference = {...workBook, isbn13: '9782070584628', workId: null};
   const searchResponse: CatalogReferenceSearchResponse = {
     generatedAt: '2026-10-12T09:00:00Z', query: 'petit prince', items: [workBook], page: 1, pageSize: 20,
@@ -67,6 +68,30 @@ describe('ManualRequestAddDialogComponent', () => {
     expect(fixture.componentInstance.scope()).toBe('Edition');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Ce livre ne peut être suivi que dans cette édition.');
     expect(fixture.nativeElement.querySelector('[data-testid="manual-request-scope-work"]')?.disabled).toBeTrue();
+  });
+
+  it('allows adding a work request when the reference has no ISBN', async () => {
+    catalogApi.searchReferences.and.returnValue(of({...searchResponse, items: [workOnlyBook]}));
+    fixture.detectChanges();
+    fixture.componentInstance.query = 'petit prince';
+    await fixture.componentInstance.searchBooks();
+    fixture.detectChanges();
+
+    const result = fixture.nativeElement.querySelector('[name="manualBookReference"]') as HTMLInputElement;
+    expect(result.disabled).toBeFalse();
+
+    await fixture.componentInstance.selectBook(workOnlyBook);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.scope()).toBe('Work');
+    expect((fixture.nativeElement.querySelector('[data-testid="manual-request-add-submit"]') as HTMLButtonElement).disabled)
+      .toBeFalse();
+
+    await fixture.componentInstance.add(false);
+
+    expect(adminApi.addManualBookRequest).toHaveBeenCalledWith('access-token', 'requester-1', jasmine.objectContaining({
+      scope: 'Work', workId: 'OL123W', isbn13: null, pickFromStock: false,
+    }));
   });
 
   it('hides the stock panel when the selected target has no stock', async () => {

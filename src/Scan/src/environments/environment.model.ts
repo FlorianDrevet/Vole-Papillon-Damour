@@ -1,5 +1,6 @@
 export interface ScanEnvironment {
   production: boolean;
+  appVersion: string;
   apiUrl: string;
   appInsightsConnectionString: string;
   entra: ScanEntraEnvironment;
