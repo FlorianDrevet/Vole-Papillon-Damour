@@ -122,6 +122,13 @@ production latency after merging and deploying the API.
 
 ## 2026-11-23 production performance remediation
 
+- Read-only production App Insights traces showed Catalog SSR `GET /` at p95 2.76 s and
+  max 125 s; one maximum trace waited roughly 126 s on two `/catalog/search` calls even
+  though correlated API requests were about one second. SQL DTU was low around the incident;
+  the trace instead points to an API response/connection-pool wait. Personalized
+  recommendations measured p95 580 ms / max 7.5 s, with Entra identity work on one slow
+  trace. Admin ISBNdb status measured p95/max 59.1 s with about 738 ms in SQL dependencies;
+  navigation counts measured p95 3.4 s.
 - Catalog SSR now waits for one available-books search. It omits the count from that
   request, defers the full-catalogue count until after the first browser render, and
   caps the critical books/fairs wait at six seconds. Optional homepage requests have an
@@ -140,8 +147,10 @@ production latency after merging and deploying the API.
   they no longer invoke `MemberIdentityService`, write `LastSeenAt`, or call Entra/Graph.
   Personalized results still use the member's favorites, purchases, selection, and stored
   `BookNeighbors` generation at request time.
-- Application tests pass 882/882; Catalog home specs pass 23/23; Catalog production
+- Application tests pass 886/886 after rebase; Catalog home specs pass 23/23; Catalog production
   build passes with existing budget/CommonJS warnings. The 95-test administration-page
   spec has three alert-workflow failures in unchanged frontend files. No Azure resource,
   database, deployment, or SQL SKU was changed; migration and post-deployment latency
-  verification remain pending.
+  verification remain pending. [PR #427](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/427)
+  is open and unmerged; after merge run Books runtime with `run_migrations: true`, then
+  Catalog, and remeasure the endpoints above.
