@@ -149,7 +149,7 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent)
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
-    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: true});
+    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 8, includeTotalCount: false});
     expect(api.getPublicRareBooks).toHaveBeenCalledWith({includeSold: false, sort: 'recent', pageSize: 4});
   });
 
@@ -170,6 +170,30 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(api.getPublicRareBooks).toHaveBeenCalled();
     expect(api.getUpcomingFairs).toHaveBeenCalled();
+  });
+
+  it('shows recent books before the whole-catalogue count finishes loading', async () => {
+    fixture.destroy();
+    const catalogueCountResponse = new Subject<CatalogSearchResponse>();
+    api.search.and.callFake(params => params?.availability === 'all'
+      ? catalogueCountResponse
+      : of(searchResponse));
+
+    fixture = TestBed.createComponent(CatalogHomePageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.recent()).toEqual([book]);
+    expect(fixture.componentInstance.catalogTotal()).toBeNull();
+    expect(fixture.componentInstance.catalogCountReady()).toBeFalse();
+
+    catalogueCountResponse.next({...searchResponse, totalCount: 950});
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.catalogTotal()).toBe(950);
+    expect(fixture.componentInstance.catalogCountReady()).toBeTrue();
   });
 
   it('opens a branded genre menu instead of relying on the native select popup', () => {

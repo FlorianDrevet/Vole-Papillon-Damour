@@ -133,6 +133,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<int>("DeadStockMinQuantity")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("IsbndbUnmatchedSubjectsComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IsbndbUnmatchedSubjectsJson")
+                        .IsUnicode(true)
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("AdminDashboardSnapshots", null, t =>

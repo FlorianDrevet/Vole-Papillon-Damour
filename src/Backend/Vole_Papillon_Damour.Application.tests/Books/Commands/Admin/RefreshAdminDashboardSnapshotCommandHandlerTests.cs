@@ -8,6 +8,8 @@ using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
@@ -84,6 +86,41 @@ public sealed class RefreshAdminDashboardSnapshotCommandHandlerTests
         (await fixture.Context.AdminDashboardSnapshots.CountAsync()).Should().Be(1);
         snapshot.DeadStockMinAgeDays.Should().Be(0);
         snapshot.DeadStockMinQuantity.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Handle_PersistsUnmatchedSubjectsAndOnlyRebuildsThatSnapshotOncePerDay()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        Isbn13.TryCreate("9782070409228", out var isbn).Should().BeTrue();
+        fixture.Context.BookIsbndbRecords.Add(BookIsbndbRecord.Create(
+            isbn,
+            Now,
+            authors: "[\"Hugo, Victor\"]",
+            subjects: "[\"Romans\",\"Robinsonades\"]"));
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        var handler = new RefreshAdminDashboardSnapshotCommandHandler(fixture.Context, clock);
+        sql.Clear();
+
+        var firstRefresh = await handler.Handle(new RefreshAdminDashboardSnapshotCommand(), CancellationToken.None);
+
+        firstRefresh.IsError.Should().BeFalse();
+        sql.Commands.Should().Contain(command =>
+            command.Contains("BookIsbndbRecords", StringComparison.OrdinalIgnoreCase));
+        var snapshot = await fixture.Context.AdminDashboardSnapshots.SingleAsync();
+        snapshot.IsbndbUnmatchedSubjectsJson.Should().Contain("Robinsonades");
+        snapshot.IsbndbUnmatchedSubjectsComputedAt.Should().Be(Now);
+
+        sql.Clear();
+        clock.UtcNow.Returns(Now.AddHours(1));
+        var secondRefresh = await handler.Handle(new RefreshAdminDashboardSnapshotCommand(), CancellationToken.None);
+
+        secondRefresh.IsError.Should().BeFalse();
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("BookIsbndbRecords", StringComparison.OrdinalIgnoreCase));
     }
 
     private static AssociationSettingsEntity CreateSettings(int deadStockMinAgeDays, int deadStockMinQuantity)

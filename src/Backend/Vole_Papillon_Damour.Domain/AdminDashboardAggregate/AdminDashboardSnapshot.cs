@@ -12,6 +12,8 @@ public sealed class AdminDashboardSnapshot
     public int DeadStockMinAgeDays { get; private set; }
     public int DeadStockMinQuantity { get; private set; }
     public DateTime ComputedAt { get; private set; }
+    public string? IsbndbUnmatchedSubjectsJson { get; private set; }
+    public DateTime? IsbndbUnmatchedSubjectsComputedAt { get; private set; }
 
     private AdminDashboardSnapshot()
     {
@@ -43,5 +45,12 @@ public sealed class AdminDashboardSnapshot
         DeadStockMinAgeDays = deadStockMinAgeDays;
         DeadStockMinQuantity = deadStockMinQuantity;
         ComputedAt = DomainTime.RequireUtc(computedAt, nameof(computedAt));
+    }
+
+    public void RefreshIsbndbUnmatchedSubjects(string subjectsJson, DateTime computedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(subjectsJson);
+        IsbndbUnmatchedSubjectsJson = subjectsJson;
+        IsbndbUnmatchedSubjectsComputedAt = DomainTime.RequireUtc(computedAt, nameof(computedAt));
     }
 }

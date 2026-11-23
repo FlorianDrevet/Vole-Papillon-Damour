@@ -27,7 +27,13 @@
   show the section. Multiple items use a horizontal, snap-scrolling track; accessible previous
   and next buttons appear only while more content is available in that direction. The scroll
   uses the Catalog's global reduced-motion rule.
+- Member recommendations are composed on request from favorites, purchases, selection and
+  the active `BookNeighbors` generation. `GetMyRecommendationsQueryHandler` now derives the
+  `UserId` directly from the authenticated external ID and does not synchronize the Entra
+  display name on this read path; member identity is still synchronized by the existing
+  account/favorite write flows.
 - The current behavior is specified in `docs/recommandations-livres/07-specification.md`.
   Component regressions live in `similar-books.component.spec.ts`; backend defaults and query
   behavior are covered by the Infrastructure and Application recommendation test projects.
 - `Book.Summary` is ISBN-level bibliographic data and the public book detail reads it directly. `WorkGrouping` receives summaries keyed by ISBN and prefers that value, with a legacy-profile fallback. `RefreshBookSimilarityProfilesCommandHandler` copies a fetched legacy summary into an empty `Book.Summary` and clears summary fields before persisting refreshed `NoticeJson`; profile refresh remains gated by `Recommendations:Enabled`.
+- Production recommendations performance follow-up: `GetMyRecommendationsQueryHandler` no longer calls `MemberIdentityService.EnsureAsync` on reads, avoiding profile/Entra synchronization in the homepage request. Personalized output is still composed at read time from precomputed `BookNeighbors` and member activity. Application tests pass 886/886. The related performance changes are in [PR #427](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/427), open and unmerged; no deployment or SKU change.

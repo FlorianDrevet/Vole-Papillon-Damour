@@ -1,11 +1,11 @@
 using System.Data.Common;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.DependencyInjection;
 using Vole_Papillon_Damour.Application.Isbndb.Queries.GetIsbndbStatus;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Domain.AdminDashboardAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -55,17 +55,16 @@ public sealed class GetIsbndbStatusQueryHandlerTests
             Now.AddDays(-2),
             authors: "[\"Hugo, Victor\"]",
             subjects: "[\"Romans\",\"Robinsonades\",\"Self Service\"]"));
+        AddUnmatchedSubjectsSnapshot(fixture);
 
         var run = IsbndbCatchUpRun.Create(Now.AddHours(-2));
         run.Finish(Now.AddHours(-1), 1, 2, 0, 7, IsbndbCatchUpStopReason.Completed);
         fixture.Context.IsbndbCatchUpRuns.Add(run);
         await fixture.Context.SaveChangesAsync();
 
-        using var cacheServices = CreateHybridCacheProvider();
         var handler = new GetIsbndbStatusQueryHandler(
             fixture.Context,
-            new FixedDateTimeProvider(Now),
-            cacheServices.GetRequiredService<HybridCache>());
+            new FixedDateTimeProvider(Now));
         var result = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
 
         result.DailyLimit.Should().Be(5_000);
@@ -82,7 +81,7 @@ public sealed class GetIsbndbStatusQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_aggregates_book_counts_and_caches_unmatched_subjects_for_ten_minutes()
+    public async Task Handle_aggregates_book_counts_and_reads_persisted_unmatched_subjects()
     {
         var sql = new SqlCaptureInterceptor();
         await using var fixture = await ScanBookFixture.CreateAsync(sql);
@@ -106,13 +105,10 @@ public sealed class GetIsbndbStatusQueryHandlerTests
             Now.AddDays(-2),
             authors: "[\"Hugo, Victor\"]",
             subjects: "[\"Romans\",\"Robinsonades\"]"));
+        AddUnmatchedSubjectsSnapshot(fixture);
         await fixture.Context.SaveChangesAsync();
 
-        using var cacheServices = CreateHybridCacheProvider();
-        var handler = new GetIsbndbStatusQueryHandler(
-            fixture.Context,
-            new FixedDateTimeProvider(Now),
-            cacheServices.GetRequiredService<HybridCache>());
+        var handler = new GetIsbndbStatusQueryHandler(fixture.Context, new FixedDateTimeProvider(Now));
 
         sql.Clear();
         var first = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
@@ -131,12 +127,38 @@ public sealed class GetIsbndbStatusQueryHandlerTests
             command.Contains("BookIsbndbRecords", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static ServiceProvider CreateHybridCacheProvider()
+    [Fact]
+    public async Task Handle_does_not_scan_provider_records_on_an_interactive_status_read()
     {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddHybridCache();
-        return services.BuildServiceProvider();
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await ScanBookFixture.CreateAsync(sql);
+        Isbn13.TryCreate("9782070409228", out var isbn).Should().BeTrue();
+        fixture.Context.BookIsbndbRecords.Add(BookIsbndbRecord.Create(
+            isbn,
+            Now.AddDays(-2),
+            authors: "[\"Hugo, Victor\"]",
+            subjects: "[\"Romans\",\"Robinsonades\"]"));
+        await fixture.Context.SaveChangesAsync();
+
+        var handler = new GetIsbndbStatusQueryHandler(
+            fixture.Context,
+            new FixedDateTimeProvider(Now));
+        sql.Clear();
+
+        var result = await handler.Handle(new GetIsbndbStatusQuery(), CancellationToken.None);
+
+        result.UnmatchedSubjects.Should().BeEmpty();
+        sql.Commands.Should().NotContain(command =>
+            command.Contains("BookIsbndbRecords", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void AddUnmatchedSubjectsSnapshot(ScanBookFixture fixture)
+    {
+        var snapshot = AdminDashboardSnapshot.Create(0, 180, 1, Now);
+        snapshot.RefreshIsbndbUnmatchedSubjects(
+            JsonSerializer.Serialize(new[] { new IsbndbUnmatchedSubjectResult("Robinsonades", 1) }),
+            Now);
+        fixture.Context.AdminDashboardSnapshots.Add(snapshot);
     }
 
     private sealed class FixedDateTimeProvider(DateTime now) : Application.Common.Interfaces.Services.IDateTimeProvider

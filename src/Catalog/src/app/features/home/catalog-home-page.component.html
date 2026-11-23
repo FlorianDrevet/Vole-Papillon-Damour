@@ -260,6 +260,8 @@
           <strong>{{ total }}</strong> {{ total === 1 ? 'titre dans le catalogue' : 'titres dans le catalogue' }}
         } @else if (catalogHasMore()) {
           <strong>Plus de {{ catalogCountLoaded() }}</strong> titres dans le catalogue
+        } @else if (!catalogCountReady()) {
+          <strong>Le catalogue</strong> est en cours de chargement
         } @else {
           <strong>Le catalogue</strong> est en cours de mise à jour
         }

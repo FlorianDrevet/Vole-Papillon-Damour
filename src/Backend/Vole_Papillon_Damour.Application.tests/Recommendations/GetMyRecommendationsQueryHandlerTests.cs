@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
-using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.Recommendations.Common;
 using Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendations;
 using Vole_Papillon_Damour.Application.tests.CheckoutPassages;
@@ -11,6 +10,7 @@ using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Recommendations;
 
@@ -50,6 +50,25 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Status.Should().Be(RecommendationStatus.NoFavorites);
         result.Value.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_DoesNotSynchronizeMemberIdentityOnRead()
+    {
+        await using var fixture = await CheckoutPassageFixture.CreateAsync(Now);
+        var member = await fixture.AddMemberAsync();
+        var lastSeenAt = Now.AddHours(-2);
+        member.SynchronizeExternalIdentity(
+            member.ExternalId!,
+            member.Email!,
+            lastSeenAt,
+            new Name("Jeanne", "Martin"));
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await CreateHandler(fixture).Handle(QueryFor(member), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        member.LastSeenAt.Should().Be(lastSeenAt);
     }
 
     [Fact]
@@ -283,7 +302,6 @@ public sealed class GetMyRecommendationsQueryHandlerTests
         settings.PersonalMaxCount.Returns(personalMaxCount);
         return new GetMyRecommendationsQueryHandler(
             fixture.Context,
-            new MemberIdentityService(fixture.Context, new CheckoutPassageTestClock(Now)),
             settings,
             new CheckoutPassageTestClock(Now),
             new PersonalSuggestionEngine(settings));
