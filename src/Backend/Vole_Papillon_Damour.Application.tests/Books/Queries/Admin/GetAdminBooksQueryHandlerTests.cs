@@ -6,8 +6,10 @@ using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries.Admin;
 
@@ -40,6 +42,40 @@ public sealed class GetAdminBooksQueryHandlerTests
         result.Value.Page.Should().Be(2);
         result.Value.PageSize.Should().Be(1);
         result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070408504");
+    }
+
+    [Fact]
+    public async Task Handle_UsesFirstPhotoAsCoverForBookWithoutIsbn()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var code = BookCode.CreateInternal("2000000000015");
+        var book = Book.CreateWithInternalCode(code, ScanBookCommandHandlerTests.ReceivedAt);
+        SetTitle(book, "Livre sans ISBN");
+        book.RecordAvailableEntry(ScanBookCommandHandlerTests.ReceivedAt);
+        book.AddPhoto(
+            BookPhoto.Create(
+                Guid.Parse("d7972e91-4dc1-48d0-97d4-84ea0867988b"),
+                code,
+                new Uri("https://blob.test/sans-isbn/2000000000015/cover.jpg"),
+                "sans-isbn/2000000000015/cover.jpg",
+                0,
+                "image/jpeg",
+                1024,
+                ScanBookCommandHandlerTests.ReceivedAt,
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000042"))),
+            ScanBookCommandHandlerTests.ReceivedAt);
+        fixture.Context.Books.Add(book);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+
+        var result = await new GetAdminBooksQueryHandler(fixture.Context, clock).Handle(
+            new GetAdminBooksQuery(null, null, null, null, 1, 50),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.CoverUrl
+            .Should().Be("https://blob.test/sans-isbn/2000000000015/cover.jpg");
     }
 
     [Fact]

@@ -1515,7 +1515,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   private async loadBookDetail(token: string, isbn13: string): Promise<void> {
     const [book, reportSummary] = await Promise.all([
       firstValueFrom(this.api.getBook(token, isbn13)),
-      firstValueFrom(this.api.getNotFoundSummary(token, {isbn13})),
+      isInternalCode(isbn13)
+        ? Promise.resolve(null)
+        : firstValueFrom(this.api.getNotFoundSummary(token, {isbn13})),
     ]);
     this.selectedBook.set(book);
     this.selectedBookNotFoundSummary.set(reportSummary);
@@ -1782,7 +1784,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     const pending = this.pendingBookCover();
     return pending?.isbn13 === book.isbn13 && pending.previewUrl
       ? pending.previewUrl
-      : book.coverUrl;
+      : book.coverUrl ?? (isInternalCode(book.isbn13) ? book.photos?.[0]?.url ?? null : null);
   }
 
   hasPendingBookCover(book: CatalogAdminBook): boolean {
